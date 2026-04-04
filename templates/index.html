@@ -8,10 +8,22 @@
 
 <h1>CareOps: SQL Analyst</h1>
 
-<p>Try a query:</p>
+<div class="mission-box">
+    <h2>Level 1: Medicare Population</h2>
+    <p><strong>Mission:</strong> Return all patients with Medicare insurance.</p>
+    <p><strong>Goal:</strong> Show patient_id, first_name, last_name, and insurance_type.</p>
+</div>
 
-<textarea id="query">SELECT * FROM patients;</textarea><br>
-<button onclick="runQuery()">Run Query</button>
+<p>Write your SQL query:</p>
+
+<textarea id="query">SELECT patient_id, first_name, last_name, insurance_type FROM patients WHERE insurance_type = 'Medicare';</textarea><br>
+
+<div class="button-row">
+    <button onclick="runQuery()">Run Query</button>
+    <button onclick="checkAnswer()">Check Answer</button>
+</div>
+
+<div id="feedback"></div>
 
 <div id="output"></div>
 
