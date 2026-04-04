@@ -24,3 +24,8 @@ async function runQuery() {
         row.forEach(cell => html += `<td>${cell}</td>`);
         html += "</tr>";
     });
+
+    html += "</table>";
+
+    output.innerHTML = html;
+}
