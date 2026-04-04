@@ -50,3 +50,19 @@ function checkAnswer() {
         }
     }
 }
+function loadLevel2() {
+    currentLevel = 2;
+
+    document.querySelector(".mission-box").innerHTML = `
+        <h2>Level 2: Encounters by Facility</h2>
+        <p><strong>Mission:</strong> Count the number of encounters at each facility.</p>
+        <p><strong>Goal:</strong> Return facility and count.</p>
+    `;
+
+    document.getElementById("query").value =
+        "SELECT facility, COUNT(*) as count FROM encounters GROUP BY facility;";
+
+    document.getElementById("feedback").innerHTML = "";
+    document.getElementById("next-level").innerHTML = "";
+    document.getElementById("output").innerHTML = "";
+}
