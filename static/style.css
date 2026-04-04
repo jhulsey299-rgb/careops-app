@@ -1,25 +1,57 @@
 body {
     font-family: Arial, sans-serif;
     margin: 20px;
+    background: #f7f9fc;
+    color: #1f2937;
+}
+
+h1 {
+    margin-bottom: 10px;
+}
+
+.mission-box {
+    background: #ffffff;
+    border: 1px solid #d0d7de;
+    border-left: 6px solid #2563eb;
+    padding: 16px;
+    margin-bottom: 20px;
+    border-radius: 6px;
+    max-width: 900px;
 }
 
 textarea {
     width: 100%;
-    height: 120px;
-    margin-bottom: 10px;
+    max-width: 900px;
+    height: 140px;
+    margin-bottom: 12px;
+    padding: 10px;
+    font-family: Consolas, monospace;
+    font-size: 14px;
+}
+
+.button-row {
+    margin-bottom: 16px;
 }
 
 button {
     padding: 10px 16px;
     cursor: pointer;
-    margin-bottom: 16px;
+    margin-right: 10px;
+    margin-bottom: 10px;
+}
+
+#feedback {
+    margin: 12px 0;
+    font-size: 16px;
 }
 
 table {
     border-collapse: collapse;
     margin-top: 12px;
+    background: white;
 }
 
 th, td {
     padding: 8px 10px;
+    border: 1px solid #cbd5e1;
 }
