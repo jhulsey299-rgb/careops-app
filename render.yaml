@@ -1,0 +1,6 @@
+Services:
+  - type: web
+    name: careops
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
