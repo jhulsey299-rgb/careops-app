@@ -57,11 +57,3 @@ def query():
 
 if __name__ == "__main__":
     app.run()
-
-
-
-Sent from my iPhone
-
-> On Apr 4, 2026, at 9:44 AM, Josh Hulsey <jhulsey299@gmail.com> wrote:
->
-> ﻿body {
