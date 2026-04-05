@@ -4,30 +4,30 @@
     <title>CareOps SQL Analyst</title>
     <link rel="stylesheet" href="/static/style.css">
 </head>
+
 <body>
 
-<h1>CareOps: SQL Analyst</h1>
+    <h1>CareOps: SQL Analyst</h1>
 
-<div class="mission-box">
-    <h2>Level 1: Medicare Population</h2>
-    <p><strong>Mission:</strong> Return all patients with Medicare insurance.</p>
-    <p><strong>Goal:</strong> Show patient_id, first_name, last_name, and insurance_type.</p>
-</div>
+    <div class="mission-box">
+        <!-- This will be dynamically filled by app.js -->
+    </div>
 
-<p>Write your SQL query:</p>
+    <p>Write your SQL query:</p>
 
-<textarea id="query">SELECT patient_id, first_name, last_name, insurance_type FROM patients WHERE insurance_type = 'Medicare';</textarea><br>
+    <textarea id="query" rows="6" cols="80"></textarea><br>
 
-<div class="button-row">
-    <button onclick="runQuery()">Run Query</button>
-    <button onclick="checkAnswer()">Check Answer</button>
-</div>
+    <div class="button-row">
+        <button onclick="runQuery()">Run Query</button>
+        <button onclick="checkAnswer()">Check Answer</button>
+    </div>
 
-<div id="feedback"></div>
-<div id="next-level"></div>   
-<div id="output"></div>
+    <div id="feedback"></div>
+    <div id="next-level"></div>
 
-<script src="/static/app.js"></script>
+    <div id="output"></div>
+
+    <script src="/static/app.js"></script>
 
 </body>
 </html>
