@@ -111,16 +111,64 @@ const levels = [
         ]
     }
 ];
+
+async function runQuery() {
+    const query = document.getElementById("query").value;
+
+    const res = await fetch("/query", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query: query })
+    });
+
+    const data = await res.json();
+    const output = document.getElementById("output");
+
+    if (data.error) {
+        output.innerText = data.error;
+        lastResult = null;
+        return;
+    }
+
+    lastResult = data;
+
+    let html = "<table border='1'><tr>";
+    data.columns.forEach(function(col) {
+        html += "<th>" + col + "</th>";
+    });
+    html += "</tr>";
+
+    data.rows.forEach(function(row) {
+        html += "<tr>";
+        row.forEach(function(cell) {
+            html += "<td>" + cell + "</td>";
+        });
+        html += "</tr>";
+    });
+
+    html += "</table>";
+    output.innerHTML = html;
+}
+
+function checkAnswer() {
+    const feedback = document.getElementById("feedback");
+    const nextLevelDiv = document.getElementById("next-level");
+
+    if (!lastResult) {
+        feedback.innerHTML = "<p style='color:red;'><strong>Run your query first.</strong></p>";
+        return;
+    }
+
     const level = levels[currentLevel];
 
     const columnsMatch = JSON.stringify(lastResult.columns) === JSON.stringify(level.expectedColumns);
     const rowsMatch = JSON.stringify(lastResult.rows) === JSON.stringify(level.expectedRows);
 
     if (columnsMatch && rowsMatch) {
-        feedback.innerHTML = `<p style='color:green;'><strong>Correct!</strong> You completed ${level.title}.</p>`;
+        feedback.innerHTML = "<p style='color:green;'><strong>Correct!</strong> You completed " + level.title + ".</p>";
 
         if (currentLevel < levels.length - 1) {
-            nextLevelDiv.innerHTML = `<button onclick="loadLevel(${currentLevel + 1})">Next Level</button>`;
+            nextLevelDiv.innerHTML = '<button onclick="loadLevel(' + (currentLevel + 1) + ')">Next Level</button>';
         } else {
             nextLevelDiv.innerHTML = "<p><strong>You completed all 10 levels.</strong></p>";
         }
@@ -134,11 +182,11 @@ function loadLevel(index) {
     currentLevel = index;
     const level = levels[index];
 
-    document.querySelector(".mission-box").innerHTML = `
-        <h2>${level.title}</h2>
-        <p><strong>Mission:</strong> ${level.mission}</p>
-        <p><strong>Goal:</strong> ${level.goal}</p>
-    `;
+    document.querySelector(".mission-box").innerHTML =
+        "<h2>" + level.title + "</h2>" +
+        "<p><strong>Mission:</strong> " + level.mission + "</p>" +
+        "<p><strong>Goal:</strong> " + level.goal + "</p>";
+
 
     document.getElementById("query").value = level.starterQuery;
     document.getElementById("feedback").innerHTML = "";
