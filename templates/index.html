@@ -7,25 +7,46 @@
 
 <body>
 
-    <h1>CareOps: SQL Analyst</h1>
+    <div class="app-shell">
+        <aside class="schema-panel">
+            <h2>Schema Explorer</h2>
 
-    <div class="mission-box">
-        <!-- This will be dynamically filled by app.js -->
+            <div class="schema-section">
+                <h3>Tables</h3>
+                <div id="schema-tables"></div>
+            </div>
+
+            <div class="schema-section">
+                <h3>Relationships</h3>
+                <div id="schema-relationships"></div>
+            </div>
+
+            <div class="schema-section">
+                <h3>Level Hint</h3>
+                <div id="level-hint">Hints for the current level will appear here.</div>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <h1>CareOps: SQL Analyst</h1>
+
+            <div class="mission-box">
+            </div>
+
+            <p>Write your SQL query:</p>
+
+            <textarea id="query" rows="8" cols="80"></textarea><br>
+
+            <div class="button-row">
+                <button onclick="runQuery()">Run Query</button>
+                <button onclick="checkAnswer()">Check Answer</button>
+            </div>
+
+            <div id="feedback"></div>
+            <div id="next-level"></div>
+            <div id="output"></div>
+        </main>
     </div>
-
-    <p>Write your SQL query:</p>
-
-    <textarea id="query" rows="6" cols="80"></textarea><br>
-
-    <div class="button-row">
-        <button onclick="runQuery()">Run Query</button>
-        <button onclick="checkAnswer()">Check Answer</button>
-    </div>
-
-    <div id="feedback"></div>
-    <div id="next-level"></div>
-
-    <div id="output"></div>
 
     <script src="/static/app.js"></script>
 
