@@ -354,3 +354,145 @@ async function runBackendQuery(queryText) {
 
     return await res.json();
 }
+
+async function runQuery() {
+    const query = document.getElementById("query
+").value;
+
+    const output = document.getElementById("outpu
+t");
+
+
+    const data = await runBackendQuery(query);
+
+    if (data.error) {
+        output.innerText = data.error;
+        lastResult = null;
+        return;
+    }
+
+    lastResult = data;
+    renderResultTable(data);
+}
+
+function renderResultTable(data) {
+    const output = document.getElementById("outpu
+t");
+
+
+    let html = "<table border='1'><tr>";
+    data.columns.forEach(function(
+col) {
+
+        html += "<th>" + col + "</th>";
+    });
+    html += "</tr>";
+
+    data.rows.forEach(function(row
+) {
+
+        html += "<tr>";
+        row.forEach(function(cell) {
+            html += "<td>" + cell + "</td>";
+        });
+        html += "</tr>";
+    });
+
+    html += "</table>";
+    output.innerHTML = html;
+}
+
+function normalizeResults(data) {
+    const normalizedRows = data.rows.map(function(row) {
+        return row.map(function(cell) {
+            if (cell === null || cell === undefined) return null;
+            return String(cell);
+        });
+    });
+
+    return {
+        columns: data.columns.map(function(col) { return String(col); }),
+        rows: normalizedRows
+    };
+}
+
+function arraysEqual(a, b) {
+    return JSON.stringify(a) === JSON.stringify(b);
+}
+
+async function checkAnswer() {
+    const feedback = document.getElementById("feedb
+ack");
+
+    const nextLevelDiv = document.getElementById("next-
+level");
+
+
+    if (!lastResult) {
+        feedback.innerHTML = "<p style='color:red;'><strong>Run your query first.</strong></p>";
+        return;
+    }
+
+    const level = levels[currentLevel];
+    const solutionResult = await runBackendQuery(level.solution
+Query);
+
+
+    if (solutionResult.error) {
+        feedback.innerHTML = "<p style='color:red;'><strong>Val
+idation error:</strong> " + solutionResult.error + "</p>";
+
+        return;
+    }
+
+    const userNormalized = normalizeResults(lastResult);
+    const solutionNormalized = normalizeResults(solutionResul
+t);
+
+    const columnsMatch = arraysEqual(userNormalized.columns, solutionNormalized.columns);
+    const rowsMatch = arraysEqual(userNormalized.rows, solutionNormalized.rows);
+
+
+    if (columnsMatch && rowsMatch) {
+        feedback.innerHTML =
+            "<p style='color:green;'><strong>C
+orrect!</strong> You completed " + level.title + ".</p>";
+
+
+        if (currentLevel < levels.length - 1) {
+            nextLevelDiv.innerHTML =
+                '<button onclick="loadLevel(' + (currentLevel + 1) + ')">Next Level</button>';
+        } else {
+            nextLevelDiv.innerHTML =
+                "<p><strong>You completed all 20 levels.</strong></p>";
+        }
+    } else {
+        feedback.innerHTML =
+            "<p style='color:red;'><strong>Not quite.</strong> Check your filters, joins, grouping, ordering, and returned columns.</p>";
+        nextLevelDiv.innerHTML = "";
+    }
+}
+
+function loadLevel(index) {
+    currentLevel = index;
+    const level = levels[index];
+
+    document.querySelector(".missi
+on-box").innerHTML =
+
+        "<h2>" + level.title + "</h2>" +
+        "<p><strong>Mission:</strong> " + level.mission + "</p>" +
+        "<p><strong>Goal:</strong> " + level.goal + "</p>";
+
+    document.getElementById("query
+").value = level.starterQuery;
+    document.getElementById("feedback").innerHTML = "";
+    document.getElementById("next-level").innerHTML = "";
+    document.getElementById("output").innerHTML = "";
+
+    lastResult = null;
+}
+
+window.onload = function() {
+    loadLevel(0);
+};
