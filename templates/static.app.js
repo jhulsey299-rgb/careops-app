@@ -1,68 +1,442 @@
-let currentLevel = 1;
+let lastResult = null;
+let currentLevel = 0;
 
-function checkAnswer() {
-    const feedback = document.getElementById("feedback");
-    const nextLevelDiv = document.getElementById("next-level");
-
-    if (!lastResult) {
-        feedback.innerHTML = "<p style='color:red;'><strong>Run your query first.</strong></p>";
-        return;
+const schema = {
+  tables: [
+    {
+      name: "patients",
+      description: "Patient demographic and risk information.",
+      keyColumns: ["patient_id"],
+      notableColumns: ["first_name", "last_name", "age", "gender", "insurance_type", "risk_score", "city"]
+    },
+    {
+      name: "providers",
+      description: "Provider, specialty, and facility assignment data.",
+      keyColumns: ["provider_id"],
+      notableColumns: ["provider_name", "specialty", "facility", "department", "years_experience"]
+    },
+    {
+      name: "encounters",
+      description: "Hospital and clinic encounters tied to patients and providers.",
+      keyColumns: ["encounter_id", "patient_id", "provider_id"],
+      notableColumns: ["facility", "department", "encounter_type", "status", "admit_date", "discharge_date", "length_of_stay"]
+    },
+    {
+      name: "appointments",
+      description: "Scheduled visits tied to patients and providers.",
+      keyColumns: ["appointment_id", "patient_id", "provider_id"],
+      notableColumns: ["facility", "department", "appointment_date", "status"]
+    },
+    {
+      name: "charges",
+      description: "Financial charges tied to encounters and patients.",
+      keyColumns: ["charge_id", "encounter_id", "patient_id"],
+      notableColumns: ["payer", "amount", "charge_type", "charge_date"]
+    },
+    {
+      name: "claims",
+      description: "Claim outcomes, denials, billed amounts, and paid amounts.",
+      keyColumns: ["claim_id", "encounter_id", "patient_id"],
+      notableColumns: ["payer", "claim_status", "denial_reason", "billed_amount", "paid_amount"]
     }
+  ],
+  relationships: [
+    "patients.patient_id = encounters.patient_id",
+    "patients.patient_id = appointments.patient_id",
+    "patients.patient_id = charges.patient_id",
+    "patients.patient_id = claims.patient_id",
+    "providers.provider_id = encounters.provider_id",
+    "providers.provider_id = appointments.provider_id",
+    "encounters.encounter_id = charges.encounter_id",
+    "encounters.encounter_id = claims.encounter_id"
+  ]
+};
 
-    if (currentLevel === 1) {
-        const expectedColumns = ["patient_id", "first_name", "last_name", "insurance_type"];
-        const expectedRows = [
-            [1, "John", "Smith", "Medicare"],
-            [3, "Bob", "Brown", "Medicare"]
-        ];
+const levels = [
+  {
+    title: "Level 1: Medicare Population",
+    mission: "Return all patients with Medicare insurance.",
+    goal: "Show patient_id, first_name, last_name, and insurance_type.",
+    starterQuery: "SELECT patient_id, first_name, last_name, insurance_type FROM patients WHERE insurance_type = 'Medicare';",
+    solutionQuery: "SELECT patient_id, first_name, last_name, insurance_type FROM patients WHERE insurance_type = 'Medicare';",
+    hint: "Use the patients table and filter insurance_type to Medicare."
+  },
+  {
+    title: "Level 2: Encounters by Facility",
+    mission: "Count the number of encounters at each facility.",
+    goal: "Return facility and count.",
+    starterQuery: "SELECT facility, COUNT(*) AS count FROM encounters GROUP BY facility;",
+    solutionQuery: "SELECT facility, COUNT(*) AS count FROM encounters GROUP BY facility;",
+    hint: "Use the encounters table. Group by facility and count the rows."
+  },
+  {
+    title: "Level 3: Active Cardiology Patients",
+    mission: "Find all active encounters currently in Cardiology.",
+    goal: "Show encounter_id, patient_id, department, and status.",
+    starterQuery: "SELECT encounter_id, patient_id, department, status FROM encounters WHERE department = 'Cardiology' AND status = 'Active';",
+    solutionQuery: "SELECT encounter_id, patient_id, department, status FROM encounters WHERE department = 'Cardiology' AND status = 'Active';",
+    hint: "Stay in the encounters table and filter both department and status."
+  },
+  {
+    title: "Level 4: Discharged Encounters",
+    mission: "Return all discharged encounters.",
+    goal: "Show encounter_id, patient_id, department, and discharge_date.",
+    starterQuery: "SELECT encounter_id, patient_id, department, discharge_date FROM encounters WHERE status = 'Discharged';",
+    solutionQuery: "SELECT encounter_id, patient_id, department, discharge_date FROM encounters WHERE status = 'Discharged';",
+    hint: "Filter the encounters table to discharged rows."
+  },
+  {
+    title: "Level 5: Patients Sorted by Last Name",
+    mission: "Return all patients sorted by last name, then first name.",
+    goal: "Show patient_id, first_name, last_name, and insurance_type.",
+    starterQuery: "SELECT patient_id, first_name, last_name, insurance_type FROM patients ORDER BY last_name, first_name;",
+    solutionQuery: "SELECT patient_id, first_name, last_name, insurance_type FROM patients ORDER BY last_name, first_name;",
+    hint: "Use ORDER BY last_name, first_name."
+  },
+  {
+    title: "Level 6: Patients by Insurance Type",
+    mission: "Count patients by insurance type.",
+    goal: "Return insurance_type and patient_count.",
+    starterQuery: "SELECT insurance_type, COUNT(*) AS patient_count FROM patients GROUP BY insurance_type;",
+    solutionQuery: "SELECT insurance_type, COUNT(*) AS patient_count FROM patients GROUP BY insurance_type;",
+    hint: "Group the patients table by insurance_type."
+  },
+  {
+    title: "Level 7: No-Show Appointments by Facility",
+    mission: "Count no-show appointments by facility.",
+    goal: "Return facility and no_show_count.",
+    starterQuery: "SELECT facility, COUNT(*) AS no_show_count FROM appointments WHERE status = 'No Show' GROUP BY facility;",
+    solutionQuery: "SELECT facility, COUNT(*) AS no_show_count FROM appointments WHERE status = 'No Show' GROUP BY facility;",
+    hint: "Use appointments, filter to No Show, then group by facility."
+  },
+  {
+    title: "Level 8: Charges by Payer",
+    mission: "Calculate total charged dollars by payer.",
+    goal: "Return payer and total_amount.",
+    starterQuery: "SELECT payer, ROUND(SUM(amount), 2) AS total_amount FROM charges GROUP BY payer;",
+    solutionQuery: "SELECT payer, ROUND(SUM(amount), 2) AS total_amount FROM charges GROUP BY payer;",
+    hint: "Use SUM(amount) grouped by payer."
+  },
+  {
+    title: "Level 9: Average LOS by Facility",
+    mission: "Calculate average length of stay for completed encounters by facility.",
+    goal: "Return facility and avg_los.",
+    starterQuery: "SELECT facility, ROUND(AVG(length_of_stay), 2) AS avg_los FROM encounters WHERE length_of_stay IS NOT NULL GROUP BY facility;",
+    solutionQuery: "SELECT facility, ROUND(AVG(length_of_stay), 2) AS avg_los FROM encounters WHERE length_of_stay IS NOT NULL GROUP BY facility;",
+    hint: "Only average non-null length_of_stay values."
+  },
+  {
+    title: "Level 10: ER Encounters by Status",
+    mission: "Count ER encounters by status.",
+    goal: "Return status and encounter_count.",
+    starterQuery: "SELECT status, COUNT(*) AS encounter_count FROM encounters WHERE department = 'ER' GROUP BY status;",
+    solutionQuery: "SELECT status, COUNT(*) AS encounter_count FROM encounters WHERE department = 'ER' GROUP BY status;",
+    hint: "Filter department to ER, then group by status."
+  },
+  {
+    title: "Level 11: Encounters with Patient Names",
+    mission: "Join encounters to patients.",
+    goal: "Show encounter_id, first_name, last_name, facility, and department for discharged encounters.",
+    starterQuery: "SELECT e.encounter_id, p.first_name, p.last_name, e.facility, e.department FROM encounters e JOIN patients p ON e.patient_id = p.patient_id WHERE e.status = 'Discharged';",
+    solutionQuery: "SELECT e.encounter_id, p.first_name, p.last_name, e.facility, e.department FROM encounters e JOIN patients p ON e.patient_id = p.patient_id WHERE e.status = 'Discharged';",
+    hint: "Join encounters.patient_id to patients.patient_id."
+  },
+  {
+    title: "Level 12: Visits per Provider",
+    mission: "Count encounters for each provider.",
+    goal: "Return provider_name and visit_count, highest to lowest.",
+    starterQuery: "SELECT pr.provider_name, COUNT(*) AS visit_count FROM encounters e JOIN providers pr ON e.provider_id = pr.provider_id GROUP BY pr.provider_name ORDER BY visit_count DESC, pr.provider_name;",
+    solutionQuery: "SELECT pr.provider_name, COUNT(*) AS visit_count FROM encounters e JOIN providers pr ON e.provider_id = pr.provider_id GROUP BY pr.provider_name ORDER BY visit_count DESC, pr.provider_name;",
+    hint: "Join encounters to providers using provider_id."
+  },
+  {
+    title: "Level 13: Patients Without Scheduled Appointments",
+    mission: "Find patients who have never had an appointment.",
+    goal: "Show patient_id, first_name, and last_name.",
+    starterQuery: "SELECT p.patient_id, p.first_name, p.last_name FROM patients p LEFT JOIN appointments a ON p.patient_id = a.patient_id WHERE a.appointment_id IS NULL;",
+    solutionQuery: "SELECT p.patient_id, p.first_name, p.last_name FROM patients p LEFT JOIN appointments a ON p.patient_id = a.patient_id WHERE a.appointment_id IS NULL;",
+    hint: "Use a LEFT JOIN from patients to appointments, then find NULL appointment_id values."
+  },
+  {
+    title: "Level 14: Denied Claims by Payer",
+    mission: "Count denied claims and sum billed dollars by payer.",
+    goal: "Return payer, denied_claims, and denied_billed_amount.",
+    starterQuery: "SELECT payer, COUNT(*) AS denied_claims, ROUND(SUM(billed_amount), 2) AS denied_billed_amount FROM claims WHERE claim_status = 'Denied' GROUP BY payer;",
+    solutionQuery: "SELECT payer, COUNT(*) AS denied_claims, ROUND(SUM(billed_amount), 2) AS denied_billed_amount FROM claims WHERE claim_status = 'Denied' GROUP BY payer;",
+    hint: "Stay in claims and filter claim_status to Denied."
+  },
+  {
+    title: "Level 15: Charges by Provider Specialty",
+    mission: "Sum total charge dollars by provider specialty using encounters and providers.",
+    goal: "Return specialty and total_charge_amount.",
+    starterQuery: "SELECT pr.specialty, ROUND(SUM(ch.amount), 2) AS total_charge_amount FROM charges ch JOIN encounters e ON ch.encounter_id = e.encounter_id JOIN providers pr ON e.provider_id = pr.provider_id GROUP BY pr.specialty;",
+    solutionQuery: "SELECT pr.specialty, ROUND(SUM(ch.amount), 2) AS total_charge_amount FROM charges ch JOIN encounters e ON ch.encounter_id = e.encounter_id JOIN providers pr ON e.provider_id = pr.provider_id GROUP BY pr.specialty;",
+    hint: "Join charges to encounters using encounter_id, then encounters to providers using provider_id."
+  },
+  {
+    title: "Level 16: 30-Day Readmissions",
+    mission: "Identify patients who had another encounter within 30 days after discharge.",
+    goal: "Show distinct patient_id values.",
+    starterQuery: "SELECT DISTINCT e1.patient_id FROM encounters e1 JOIN encounters e2 ON e1.patient_id = e2.patient_id AND e2.admit_date > e1.discharge_date AND julianday(e2.admit_date) - julianday(e1.discharge_date) <= 30 WHERE e1.discharge_date IS NOT NULL ORDER BY e1.patient_id;",
+    solutionQuery: "SELECT DISTINCT e1.patient_id FROM encounters e1 JOIN encounters e2 ON e1.patient_id = e2.patient_id AND e2.admit_date > e1.discharge_date AND julianday(e2.admit_date) - julianday(e1.discharge_date) <= 30 WHERE e1.discharge_date IS NOT NULL ORDER BY e1.patient_id;",
+    hint: "Self-join encounters on patient_id and compare a later admit_date to an earlier discharge_date."
+  },
+  {
+    title: "Level 17: Top Denied Dollars by Facility",
+    mission: "Find denied billed dollars by facility.",
+    goal: "Return facility and denied_amount ordered highest to lowest.",
+    starterQuery: "SELECT e.facility, ROUND(SUM(c.billed_amount), 2) AS denied_amount FROM claims c JOIN encounters e ON c.encounter_id = e.encounter_id WHERE c.claim_status = 'Denied' GROUP BY e.facility ORDER BY denied_amount DESC, e.facility;",
+    solutionQuery: "SELECT e.facility, ROUND(SUM(c.billed_amount), 2) AS denied_amount FROM claims c JOIN encounters e ON c.encounter_id = e.encounter_id WHERE c.claim_status = 'Denied' GROUP BY e.facility ORDER BY denied_amount DESC, e.facility;",
+    hint: "Join claims to encounters using encounter_id, then group by facility."
+  },
+  {
+    title: "Level 18: High-Risk Patients with Multiple ER Visits",
+    mission: "Find high-risk patients with more than one ER encounter.",
+    goal: "Show patient_id, first_name, last_name, risk_score, and er_visits.",
+    starterQuery: "SELECT p.patient_id, p.first_name, p.last_name, p.risk_score, COUNT(*) AS er_visits FROM patients p JOIN encounters e ON p.patient_id = e.patient_id WHERE e.department = 'ER' AND p.risk_score >= 70 GROUP BY p.patient_id, p.first_name, p.last_name, p.risk_score HAVING COUNT(*) > 1 ORDER BY er_visits DESC, p.patient_id;",
+    solutionQuery: "SELECT p.patient_id, p.first_name, p.last_name, p.risk_score, COUNT(*) AS er_visits FROM patients p JOIN encounters e ON p.patient_id = e.patient_id WHERE e.department = 'ER' AND p.risk_score >= 70 GROUP BY p.patient_id, p.first_name, p.last_name, p.risk_score HAVING COUNT(*) > 1 ORDER BY er_visits DESC, p.patient_id;",
+    hint: "Join patients to encounters, filter to ER, group by patient, then use HAVING COUNT(*) > 1."
+  },
+  {
+    title: "Level 19: Patients with Appointments but No Completed Encounter",
+    mission: "Find patients who had a completed appointment but no completed encounter.",
+    goal: "Show distinct patient_id, first_name, and last_name.",
+    starterQuery: "SELECT DISTINCT p.patient_id, p.first_name, p.last_name FROM patients p JOIN appointments a ON p.patient_id = a.patient_id LEFT JOIN encounters e ON p.patient_id = e.patient_id AND e.status = 'Completed' WHERE a.status = 'Completed' AND e.encounter_id IS NULL ORDER BY p.patient_id;",
+    solutionQuery: "SELECT DISTINCT p.patient_id, p.first_name, p.last_name FROM patients p JOIN appointments a ON p.patient_id = a.patient_id LEFT JOIN encounters e ON p.patient_id = e.patient_id AND e.status = 'Completed' WHERE a.status = 'Completed' AND e.encounter_id IS NULL ORDER BY p.patient_id;",
+    hint: "Join patients to appointments, then LEFT JOIN encounters filtered to Completed, and keep rows where the encounter is NULL."
+  },
+  {
+    title: "Level 20: Rank Providers by Encounter Volume",
+    mission: "Rank providers by total encounter volume.",
+    goal: "Return provider_name, specialty, encounter_count, and volume_rank.",
+    starterQuery: "SELECT provider_name, specialty, encounter_count, RANK() OVER (ORDER BY encounter_count DESC) AS volume_rank FROM (SELECT pr.provider_name, pr.specialty, COUNT(*) AS encounter_count FROM providers pr JOIN encounters e ON pr.provider_id = e.provider_id GROUP BY pr.provider_id, pr.provider_name, pr.specialty) t ORDER BY volume_rank, provider_name;",
+    solutionQuery: "SELECT provider_name, specialty, encounter_count, RANK() OVER (ORDER BY encounter_count DESC) AS volume_rank FROM (SELECT pr.provider_name, pr.specialty, COUNT(*) AS encounter_count FROM providers pr JOIN encounters e ON pr.provider_id = e.provider_id GROUP BY pr.provider_id, pr.provider_name, pr.specialty) t ORDER BY volume_rank, provider_name;",
+    hint: "First calculate encounter count per provider in a subquery, then apply RANK() over encounter_count descending."
+  },
+  {
+    title: "Level 21: Readmission Count by Facility",
+    mission: "Calculate 30-day readmission counts by facility.",
+    goal: "Return facility and readmission_count.",
+    starterQuery: "SELECT e1.facility, COUNT(DISTINCT e2.encounter_id) AS readmission_count FROM encounters e1 JOIN encounters e2 ON e1.patient_id = e2.patient_id AND e2.admit_date > e1.discharge_date AND julianday(e2.admit_date) - julianday(e1.discharge_date) <= 30 WHERE e1.discharge_date IS NOT NULL GROUP BY e1.facility;",
+    solutionQuery: "SELECT e1.facility, COUNT(DISTINCT e2.encounter_id) AS readmission_count FROM encounters e1 JOIN encounters e2 ON e1.patient_id = e2.patient_id AND e2.admit_date > e1.discharge_date AND julianday(e2.admit_date) - julianday(e1.discharge_date) <= 30 WHERE e1.discharge_date IS NOT NULL GROUP BY e1.facility;",
+    hint: "Use a self-join on encounters and group the later readmissions by the index encounter facility."
+  },
+  {
+    title: "Level 22: Average LOS by Department and Encounter Type",
+    mission: "Calculate average LOS by department and encounter type.",
+    goal: "Return department, encounter_type, and avg_los.",
+    starterQuery: "SELECT department, encounter_type, ROUND(AVG(length_of_stay), 2) AS avg_los FROM encounters WHERE length_of_stay IS NOT NULL GROUP BY department, encounter_type;",
+    solutionQuery: "SELECT department, encounter_type, ROUND(AVG(length_of_stay), 2) AS avg_los FROM encounters WHERE length_of_stay IS NOT NULL GROUP BY department, encounter_type;",
+    hint: "Group by both department and encounter_type."
+  },
+  {
+    title: "Level 23: Denial Rate by Payer",
+    mission: "Calculate denied claims as a percent of all claims by payer.",
+    goal: "Return payer, total_claims, denied_claims, and denial_rate.",
+    starterQuery: "SELECT payer, COUNT(*) AS total_claims, SUM(CASE WHEN claim_status = 'Denied' THEN 1 ELSE 0 END) AS denied_claims, ROUND(100.0 * SUM(CASE WHEN claim_status = 'Denied' THEN 1 ELSE 0 END) / COUNT(*), 2) AS denial_rate FROM claims GROUP BY payer;",
+    solutionQuery: "SELECT payer, COUNT(*) AS total_claims, SUM(CASE WHEN claim_status = 'Denied' THEN 1 ELSE 0 END) AS denied_claims, ROUND(100.0 * SUM(CASE WHEN claim_status = 'Denied' THEN 1 ELSE 0 END) / COUNT(*), 2) AS denial_rate FROM claims GROUP BY payer;",
+    hint: "Use conditional aggregation with CASE WHEN claim_status = 'Denied'."
+  },
+  {
+    title: "Level 24: Top 10 Highest-Risk Patients by Total Charges",
+    mission: "Find the top 10 highest-risk patients by total charges.",
+    goal: "Return patient_id, first_name, last_name, risk_score, and total_charges.",
+    starterQuery: "SELECT p.patient_id, p.first_name, p.last_name, p.risk_score, ROUND(SUM(c.amount), 2) AS total_charges FROM patients p JOIN charges c ON p.patient_id = c.patient_id GROUP BY p.patient_id, p.first_name, p.last_name, p.risk_score ORDER BY p.risk_score DESC, total_charges DESC LIMIT 10;",
+    solutionQuery: "SELECT p.patient_id, p.first_name, p.last_name, p.risk_score, ROUND(SUM(c.amount), 2) AS total_charges FROM patients p JOIN charges c ON p.patient_id = c.patient_id GROUP BY p.patient_id, p.first_name, p.last_name, p.risk_score ORDER BY p.risk_score DESC, total_charges DESC LIMIT 10;",
+    hint: "Join patients to charges, aggregate total charges, sort by risk_score descending, then total charges descending."
+  },
+  {
+    title: "Level 25: No-Show Rate by Department",
+    mission: "Calculate appointment no-show rate by department.",
+    goal: "Return department, total_appointments, no_shows, and no_show_rate.",
+    starterQuery: "SELECT department, COUNT(*) AS total_appointments, SUM(CASE WHEN status = 'No Show' THEN 1 ELSE 0 END) AS no_shows, ROUND(100.0 * SUM(CASE WHEN status = 'No Show' THEN 1 ELSE 0 END) / COUNT(*), 2) AS no_show_rate FROM appointments GROUP BY department;",
+    solutionQuery: "SELECT department, COUNT(*) AS total_appointments, SUM(CASE WHEN status = 'No Show' THEN 1 ELSE 0 END) AS no_shows, ROUND(100.0 * SUM(CASE WHEN status = 'No Show' THEN 1 ELSE 0 END) / COUNT(*), 2) AS no_show_rate FROM appointments GROUP BY department;",
+    hint: "Use conditional aggregation by department."
+  },
+  {
+    title: "Level 26: Providers Above Average Encounter Volume",
+    mission: "Find providers whose encounter volume is above the average provider volume.",
+    goal: "Return provider_name and encounter_count.",
+    starterQuery: "SELECT provider_name, encounter_count FROM (SELECT pr.provider_name, COUNT(*) AS encounter_count FROM providers pr JOIN encounters e ON pr.provider_id = e.provider_id GROUP BY pr.provider_id, pr.provider_name) t WHERE encounter_count > (SELECT AVG(encounter_count) FROM (SELECT COUNT(*) AS encounter_count FROM encounters GROUP BY provider_id) x) ORDER BY encounter_count DESC, provider_name;",
+    solutionQuery: "SELECT provider_name, encounter_count FROM (SELECT pr.provider_name, COUNT(*) AS encounter_count FROM providers pr JOIN encounters e ON pr.provider_id = e.provider_id GROUP BY pr.provider_id, pr.provider_name) t WHERE encounter_count > (SELECT AVG(encounter_count) FROM (SELECT COUNT(*) AS encounter_count FROM encounters GROUP BY provider_id) x) ORDER BY encounter_count DESC, provider_name;",
+    hint: "Use a subquery to calculate provider counts and compare them to the average provider count."
+  },
+  {
+    title: "Level 27: Patients with Multiple ED Visits",
+    mission: "Identify patients with more than one ED encounter.",
+    goal: "Return patient_id and ed_visits.",
+    starterQuery: "SELECT patient_id, COUNT(*) AS ed_visits FROM encounters WHERE department = 'ER' GROUP BY patient_id HAVING COUNT(*) > 1 ORDER BY ed_visits DESC, patient_id;",
+    solutionQuery: "SELECT patient_id, COUNT(*) AS ed_visits FROM encounters WHERE department = 'ER' GROUP BY patient_id HAVING COUNT(*) > 1 ORDER BY ed_visits DESC, patient_id;",
+    hint: "Filter to ER encounters, group by patient_id, then use HAVING COUNT(*) > 1."
+  },
+  {
+    title: "Level 28: Net Collection Rate by Payer",
+    mission: "Calculate paid amount as a percentage of billed amount by payer.",
+    goal: "Return payer, billed_total, paid_total, and net_collection_rate.",
+    starterQuery: "SELECT payer, ROUND(SUM(billed_amount), 2) AS billed_total, ROUND(SUM(paid_amount), 2) AS paid_total, ROUND(100.0 * SUM(paid_amount) / SUM(billed_amount), 2) AS net_collection_rate FROM claims GROUP BY payer;",
+    solutionQuery: "SELECT payer, ROUND(SUM(billed_amount), 2) AS billed_total, ROUND(SUM(paid_amount), 2) AS paid_total, ROUND(100.0 * SUM(paid_amount) / SUM(billed_amount), 2) AS net_collection_rate FROM claims GROUP BY payer;",
+    hint: "Use SUM(paid_amount) divided by SUM(billed_amount)."
+  },
+  {
+    title: "Level 29: Observation Encounters Over 48 Hours",
+    mission: "Find observation encounters with LOS greater than 48 hours.",
+    goal: "Return encounter_id, patient_id, facility, department, and length_of_stay.",
+    starterQuery: "SELECT encounter_id, patient_id, facility, department, length_of_stay FROM encounters WHERE encounter_type = 'Observation' AND length_of_stay > 2 ORDER BY length_of_stay DESC, encounter_id;",
+    solutionQuery: "SELECT encounter_id, patient_id, facility, department, length_of_stay FROM encounters WHERE encounter_type = 'Observation' AND length_of_stay > 2 ORDER BY length_of_stay DESC, encounter_id;",
+    hint: "Observation stays over 48 hours means length_of_stay greater than 2 days in this simplified dataset."
+  },
+  {
+    title: "Level 30: Department Ranking by Denied Dollars",
+    mission: "Rank departments by total denied billed amount.",
+    goal: "Return department, denied_amount, and denial_rank.",
+    starterQuery: "SELECT department, denied_amount, RANK() OVER (ORDER BY denied_amount DESC) AS denial_rank FROM (SELECT e.department, ROUND(SUM(c.billed_amount), 2) AS denied_amount FROM claims c JOIN encounters e ON c.encounter_id = e.encounter_id WHERE c.claim_status = 'Denied' GROUP BY e.department) t ORDER BY denial_rank, department;",
+    solutionQuery: "SELECT department, denied_amount, RANK() OVER (ORDER BY denied_amount DESC) AS denial_rank FROM (SELECT e.department, ROUND(SUM(c.billed_amount), 2) AS denied_amount FROM claims c JOIN encounters e ON c.encounter_id = e.encounter_id WHERE c.claim_status = 'Denied' GROUP BY e.department) t ORDER BY denial_rank, department;",
+    hint: "Aggregate denied billed amount by department in a subquery, then apply RANK()."
+  }
+];
 
-        const columnsMatch =
-            JSON.stringify(lastResult.columns) === JSON.stringify(expectedColumns);
+function renderSchemaExplorer() {
+  const tablesDiv = document.getElementById("schema-tables");
+  const relationshipsDiv = document.getElementById("schema-relationships");
 
-        const rowsMatch =
-            JSON.stringify(lastResult.rows) === JSON.stringify(expectedRows);
+  let tablesHtml = "";
+  schema.tables.forEach(function(table) {
+    tablesHtml +=
+      '<div class="schema-card">' +
+      '<h4>' + table.name + '</h4>' +
+      '<p><strong>Description:</strong> ' + table.description + '</p>' +
+      '<p><strong>Keys:</strong> ' + table.keyColumns.join(", ") + '</p>' +
+      '<p><strong>Columns:</strong> ' + table.notableColumns.join(", ") + '</p>' +
+      '</div>';
+  });
+  tablesDiv.innerHTML = tablesHtml;
 
-        if (columnsMatch && rowsMatch) {
-            feedback.innerHTML = "<p style='color:green;'><strong>Correct!</strong> You completed Level 1.</p>";
-            nextLevelDiv.innerHTML = "<button onclick='loadLevel2()'>Next Level</button>";
-        } else {
-            feedback.innerHTML = "<p style='color:red;'><strong>Not quite.</strong></p>";
-        }
-    }
-
-    if (currentLevel === 2) {
-        const expectedColumns = ["facility", "count"];
-        const expectedRows = [
-            ["TGMH", 2],
-            ["Waccamaw", 1]
-        ];
-
-        const columnsMatch =
-            JSON.stringify(lastResult.columns) === JSON.stringify(expectedColumns);
-
-        const rowsMatch =
-            JSON.stringify(lastResult.rows) === JSON.stringify(expectedRows);
-
-        if (columnsMatch && rowsMatch) {
-            feedback.innerHTML = "<p style='color:green;'><strong>Correct!</strong> You completed Level 2.</p>";
-        } else {
-            feedback.innerHTML = "<p style='color:red;'><strong>Try again.</strong></p>";
-        }
-    }
+  let relHtml = "";
+  schema.relationships.forEach(function(rel) {
+    relHtml += '<div class="relationship-item">' + rel + '</div>';
+  });
+  relationshipsDiv.innerHTML = relHtml;
 }
-function loadLevel2() {
-    currentLevel = 2;
 
-    document.querySelector(".mission-box").innerHTML = `
-        <h2>Level 2: Encounters by Facility</h2>
-        <p><strong>Mission:</strong> Count the number of encounters at each facility.</p>
-        <p><strong>Goal:</strong> Return facility and count.</p>
-    `;
-
-    document.getElementById("query").value =
-        "SELECT facility, COUNT(*) as count FROM encounters GROUP BY facility;";
-
-    document.getElementById("feedback").innerHTML = "";
-    document.getElementById("next-level").innerHTML = "";
-    document.getElementById("output").innerHTML = "";
+async function runBackendQuery(queryText) {
+  const res = await fetch("/query", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ query: queryText })
+  });
+  return await res.json();
 }
+
+function renderResultTable(data) {
+  const output = document.getElementById("output");
+  let html = "<table border='1'><tr>";
+
+  data.columns.forEach(function(col) {
+    html += "<th>" + col + "</th>";
+  });
+  html += "</tr>";
+
+  data.rows.forEach(function(row) {
+    html += "<tr>";
+    row.forEach(function(cell) {
+      html += "<td>" + cell + "</td>";
+    });
+    html += "</tr>";
+  });
+
+  html += "</table>";
+  output.innerHTML = html;
+}
+
+function normalizeResults(data) {
+  return {
+    columns: data.columns.map(function(col) {
+      return String(col);
+    }),
+    rows: data.rows.map(function(row) {
+      return row.map(function(cell) {
+        if (cell === null || cell === undefined) return null;
+        return String(cell);
+      });
+    })
+  };
+}
+
+function arraysEqual(a, b) {
+  return JSON.stringify(a) === JSON.stringify(b);
+}
+
+async function runQuery() {
+  const query = document.getElementById("query").value;
+  const output = document.getElementById("output");
+  const data = await runBackendQuery(query);
+
+  if (data.error) {
+    output.innerText = data.error;
+    lastResult = null;
+    return;
+  }
+
+  lastResult = data;
+  renderResultTable(data);
+}
+
+async function checkAnswer() {
+  const feedback = document.getElementById("feedback");
+  const nextLevelDiv = document.getElementById("next-level");
+
+  if (!lastResult) {
+    feedback.innerHTML = "<p style='color:red;'><strong>Run your query first.</strong></p>";
+    return;
+  }
+
+  const level = levels[currentLevel];
+  const solutionResult = await runBackendQuery(level.solutionQuery);
+
+  if (solutionResult.error) {
+    feedback.innerHTML = "<p style='color:red;'><strong>Validation error:</strong> " + solutionResult.error + "</p>";
+    return;
+  }
+
+  const userNormalized = normalizeResults(lastResult);
+  const solutionNormalized = normalizeResults(solutionResult);
+
+  const columnsMatch = arraysEqual(userNormalized.columns, solutionNormalized.columns);
+  const rowsMatch = arraysEqual(userNormalized.rows, solutionNormalized.rows);
+
+  if (columnsMatch && rowsMatch) {
+    feedback.innerHTML = "<p style='color:green;'><strong>Correct!</strong> You completed " + level.title + ".</p>";
+
+    if (currentLevel < levels.length - 1) {
+      nextLevelDiv.innerHTML = '<button onclick="loadLevel(' + (currentLevel + 1) + ')">Next Level</button>';
+    } else {
+      nextLevelDiv.innerHTML = "<p><strong>You completed all 30 levels.</strong></p>";
+    }
+  } else {
+    feedback.innerHTML = "<p style='color:red;'><strong>Not quite.</strong> Check your filters, joins, grouping, ordering, and returned columns.</p>";
+    nextLevelDiv.innerHTML = "";
+  }
+}
+
+function loadLevel(index) {
+  currentLevel = index;
+  const level = levels[index];
+
+  const missionBox = document.querySelector(".mission-box");
+  missionBox.innerHTML =
+    "<h2>" + level.title + "</h2>" +
+    "<p><strong>Mission:</strong> " + level.mission + "</p>" +
+    "<p><strong>Goal:</strong> " + level.goal + "</p>";
+
+  document.getElementById("level-hint").innerHTML = level.hint || "No hint available for this level.";
+  document.getElementById("query").value = level.starterQuery;
+  document.getElementById("feedback").innerHTML = "";
+  document.getElementById("next-level").innerHTML = "";
+  document.getElementById("output").innerHTML = "";
+  lastResult = null;
+}
+
+window.onload = function() {
+  renderSchemaExplorer();
+  loadLevel(0);
+};
