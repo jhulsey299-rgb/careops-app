@@ -1,4 +1,5 @@
-let lastResult = null;
+et lastResult = null;
+let currentLevel = 1;
 
 async function runQuery() {
     const query = document.getElementById("query").value;
@@ -35,29 +36,19 @@ async function runQuery() {
     output.innerHTML = html;
 }
 
-function checkAnswer() {
-    const feedback = document.getElementById("feedback");
+function loadLevel2() {
+    currentLevel = 2;
 
-    if (!lastResult) {
-        feedback.innerHTML = "<p style='color:red;'><strong>Run your query first.</strong></p>";
-        return;
-    }
+    document.querySelector(".mission-box").innerHTML = `
+        <h2>Level 2: Encounters by Facility</h2>
+        <p><strong>Mission:</strong> Count the number of encounters at each facility.</p>
+        <p><strong>Goal:</strong> Return facility and count.</p>
+    `;
 
-    const expectedColumns = ["patient_id", "first_name", "last_name", "insurance_type"];
-    const expectedRows = [
-        [1, "John", "Smith", "Medicare"],
-        [3, "Bob", "Brown", "Medicare"]
-    ];
+    document.getElementById("query").value =
+        "SELECT facility, COUNT(*) as count FROM encounters GROUP BY facility;";
 
-    const columnsMatch =
-        JSON.stringify(lastResult.columns) === JSON.stringify(expectedColumns);
-
-    const rowsMatch =
-        JSON.stringify(lastResult.rows) === JSON.stringify(expectedRows);
-
-    if (columnsMatch && rowsMatch) {
-        feedback.innerHTML = "<p style='color:green;'><strong>Correct!</strong> You completed Level 1.</p>";
-    } else {
-        feedback.innerHTML = "<p style='color:red;'><strong>Not quite.</strong> Make sure you return only Medicare patients and include the correct columns.</p>";
-    }
+    document.getElementById("feedback").innerHTML = "";
+    document.getElementById("next-level").innerHTML = "";
+    document.getElementById("output").innerHTML = "";
 }
