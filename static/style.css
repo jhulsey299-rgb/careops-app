@@ -1,32 +1,91 @@
 body {
     font-family: Arial, sans-serif;
-    margin: 20px;
-    background: #f7f9fc;
+    margin: 0;
+    background: #f4f7fb;
     color: #1f2937;
 }
 
+.app-shell {
+    display: flex;
+    min-height: 100vh;
+}
+
+.schema-panel {
+    width: 320px;
+    background: #ffffff;
+    border-right: 1px solid #dbe2ea;
+    padding: 20px;
+    box-sizing: border-box;
+    overflow-y: auto;
+}
+
+.main-content {
+    flex: 1;
+    padding: 24px;
+    box-sizing: border-box;
+}
+
 h1 {
-    margin-bottom: 10px;
+    margin-top: 0;
+    margin-bottom: 16px;
+}
+
+h2, h3 {
+    margin-top: 0;
+}
+
+.schema-section {
+    margin-bottom: 24px;
+}
+
+.schema-card {
+    background: #f8fafc;
+    border: 1px solid #dbe2ea;
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 12px;
+}
+
+.schema-card h4 {
+    margin: 0 0 8px 0;
+    color: #1d4ed8;
+}
+
+.schema-card p {
+    margin: 4px 0;
+    font-size: 14px;
+}
+
+.relationship-item {
+    background: #f8fafc;
+    border: 1px solid #dbe2ea;
+    border-radius: 8px;
+    padding: 10px;
+    margin-bottom: 8px;
+    font-size: 14px;
 }
 
 .mission-box {
     background: #ffffff;
-    border: 1px solid #d0d7de;
+    border: 1px solid #dbe2ea;
     border-left: 6px solid #2563eb;
     padding: 16px;
     margin-bottom: 20px;
-    border-radius: 6px;
-    max-width: 900px;
+    border-radius: 8px;
 }
 
 textarea {
     width: 100%;
-    max-width: 900px;
-    height: 140px;
+    max-width: 1000px;
+    height: 180px;
     margin-bottom: 12px;
-    padding: 10px;
+    padding: 12px;
     font-family: Consolas, monospace;
     font-size: 14px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    box-sizing: border-box;
+    background: #ffffff;
 }
 
 .button-row {
@@ -38,6 +97,15 @@ button {
     cursor: pointer;
     margin-right: 10px;
     margin-bottom: 10px;
+    border: none;
+    border-radius: 6px;
+    background: #2563eb;
+    color: white;
+    font-weight: 600;
+}
+
+button:hover {
+    background: #1d4ed8;
 }
 
 #feedback {
@@ -45,13 +113,40 @@ button {
     font-size: 16px;
 }
 
+#level-hint {
+    background: #fff7ed;
+    border: 1px solid #fed7aa;
+    border-radius: 8px;
+    padding: 12px;
+    font-size: 14px;
+    line-height: 1.4;
+}
+
 table {
     border-collapse: collapse;
     margin-top: 12px;
     background: white;
+    border: 1px solid #cbd5e1;
 }
 
 th, td {
     padding: 8px 10px;
     border: 1px solid #cbd5e1;
+    text-align: left;
+}
+
+th {
+    background: #eff6ff;
+}
+
+@media (max-width: 1000px) {
+    .app-shell {
+        flex-direction: column;
+    }
+
+    .schema-panel {
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid #dbe2ea;
+    }
 }
