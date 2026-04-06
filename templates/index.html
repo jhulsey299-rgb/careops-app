@@ -147,7 +147,31 @@
     </div>
 </div>
 
-<script src="/static/app.js"></script>
+<div id="js-error-banner" style="display:none; margin-top:16px; padding:14px; border:1px solid #fecaca; background:#fee2e2; color:#991b1b; border-radius:12px; font-weight:600; white-space:pre-wrap;"></div>
+
+<script>
+window.addEventListener('error', function (event) {
+    var banner = document.getElementById('js-error-banner');
+    if (!banner) return;
+    banner.style.display = 'block';
+    banner.textContent =
+        'JavaScript Error:\\n' +
+        'Message: ' + event.message + '\\n' +
+        'File: ' + event.filename + '\\n' +
+        'Line: ' + event.lineno + '\\n' +
+        'Column: ' + event.colno;
+});
+window.addEventListener('unhandledrejection', function (event) {
+    var banner = document.getElementById('js-error-banner');
+    if (!banner) return;
+    banner.style.display = 'block';
+    banner.textContent =
+        'Unhandled Promise Error:\\n' +
+        String(event.reason);
+});
+</script>
+
+<script src="/static/app.js?v=3"></script>
 
 </body>
 </html>
