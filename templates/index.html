@@ -52,7 +52,6 @@
         </div>
 
         <div class="dashboard-actions">
-            <button onclick="restoreProgress()">Restore Progress</button>
             <button onclick="resetAllProgress()">Reset Progress</button>
         </div>
 
@@ -62,6 +61,15 @@
         </div>
 
         <h1>CareOps: SQL Analyst</h1>
+
+        <div class="level-nav">
+            <button onclick="goPreviousLevel()">Previous</button>
+
+            <select id="level-select"></select>
+
+            <button onclick="jumpToSelectedLevel()">Go</button>
+            <button onclick="goNextLevel()">Next</button>
+        </div>
 
         <div class="mission-box"></div>
 
