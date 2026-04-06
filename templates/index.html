@@ -1,53 +1,184 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>CareOps SQL Analyst</title>
-  <link rel="stylesheet" href="/static/style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CareOps SQL Analyst</title>
+    <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
+<div class="app-shell">
+    <aside class="schema-panel" id="schema-panel">
+        <div class="schema-header">
+            <h2>Schema Explorer</h2>
+            <p>Reference tables, relationships, and hints while you solve each level.</p>
+        </div>
 
-<div class="container">
+        <section class="schema-section">
+            <div class="section-title-row">
+                <h3>Tables</h3>
+                <span class="section-helper-text">Click a table to open the viewer</span>
+            </div>
+            <div id="schema-tables"></div>
+        </section>
 
-  <div class="left">
-    <h2>Schema Explorer</h2>
-  </div>
+        <section class="schema-section">
+            <h3>Relationships</h3>
+            <div id="schema-relationships"></div>
+        </section>
 
-  <div class="main">
-    <h1>CareOps: SQL Analyst</h1>
+        <section class="schema-section">
+            <h3>Hints / Guidance</h3>
+            <div id="level-hint" class="hint-box">
+                Run your query and check your answer. After two wrong tries, you'll get a targeted hint. After the third wrong try, the answer will be shown.
+            </div>
+        </section>
+    </aside>
 
-    <div class="dashboard">
-      <div id="progress-text">0/30 levels completed</div>
-      <div id="current-level">Level 1</div>
-      <div>Badges: <span id="badges">0</span></div>
-    </div>
+    <div id="schema-resizer"></div>
 
-    <button onclick="resetAllProgress()">Reset Progress</button>
+    <main class="main-content">
+        <section class="hero-banner">
+            <div class="hero-copy">
+                <div class="hero-kicker">Healthcare SQL Training Simulator</div>
+                <h1>CareOps: SQL Analyst</h1>
+                <p>Practice SQL with realistic hospital analytics scenarios, guided schema exploration, progressive hints, and tracked progression across 30 levels.</p>
+            </div>
+        </section>
 
-    <div class="level-box">
-      <h2 id="level-title"></h2>
-      <p id="level-desc"></p>
-    </div>
+        <section class="top-dashboard">
+            <div class="dashboard-card">
+                <h3>Progress</h3>
+                <p id="progress-text">0 / 30 levels completed</p>
+                <div class="progress-bar-wrap">
+                    <div id="progress-bar"></div>
+                </div>
+            </div>
 
-    <textarea id="query"></textarea>
+            <div class="dashboard-card">
+                <h3>Current Level</h3>
+                <p id="current-level-display">Level 1</p>
+            </div>
 
-    <div class="buttons">
-      <button onclick="runQuery()">Run Query</button>
-      <button onclick="checkAnswer()">Check Answer</button>
-      <button onclick="prevLevel()">Previous</button>
-      <button onclick="nextLevel()">Next</button>
-    </div>
+            <div class="dashboard-card">
+                <h3>Badges</h3>
+                <p id="badge-count">0 earned</p>
+            </div>
+        </section>
 
-    <div id="output"></div>
-  </div>
+        <div class="dashboard-actions">
+            <button onclick="resetAllProgress()">Reset Progress</button>
+        </div>
 
-  <div class="right">
-    <h3>Levels</h3>
-    <div id="levels-panel"></div>
-  </div>
+        <section class="badges-section">
+            <h3>Achievements</h3>
+            <div id="badges-container" class="badges-container"></div>
+        </section>
 
+        <div class="workspace-layout">
+            <section class="play-area">
+                <div class="mission-box">
+                    <div class="mission-meta-row">
+                        <span id="current-difficulty-badge" class="difficulty-badge difficulty-easy">Easy</span>
+                    </div>
+                    <h2 id="level-title">Level 1: Medicare Patients</h2>
+                    <p id="level-desc">Return all Medicare patients.</p>
+                    <p id="level-goal"><strong>Goal:</strong> Return patient_id, first_name, and last_name.</p>
+                    <p id="level-tables"><strong>Relevant Tables:</strong> patients</p>
+                    <p id="level-join-hint"><strong>Join Hint:</strong> No join needed.</p>
+                </div>
+
+                <div class="query-section">
+                    <div class="section-header">
+                        <h3>SQL Workspace</h3>
+                        <p>Write your query below and validate your answer against the level objective.</p>
+                    </div>
+
+                    <label for="query" class="query-label">Write your SQL query:</label>
+                    <textarea id="query" rows="8" cols="80"></textarea>
+
+                    <div class="button-row">
+                        <button onclick="runQuery()">Run Query</button>
+                        <button onclick="checkAnswer()">Check Answer</button>
+                        <button onclick="resetQuery()">Reset Query</button>
+                        <button onclick="prevLevel()">Previous</button>
+                        <button onclick="nextLevel()">Next</button>
+                    </div>
+                </div>
+
+                <div id="feedback"></div>
+                <div id="output"></div>
+            </section>
+
+            <aside class="levels-panel">
+                <div class="levels-panel-header">
+                    <h3>Levels</h3>
+                    <p>Jump between unlocked levels instantly.</p>
+                </div>
+                <div id="levels-panel" class="levels-list"></div>
+            </aside>
+        </div>
+
+        <div id="js-error-banner" class="js-error-banner hidden"></div>
+    </main>
 </div>
 
-<script src="/static/app.js?v=5"></script>
+<div id="table-modal-overlay" class="table-modal-overlay hidden" onclick="closeTableModal(event)">
+    <div class="table-modal" role="dialog" aria-modal="true" aria-labelledby="table-modal-title">
+        <div class="table-modal-header">
+            <div>
+                <div class="table-modal-kicker">Table Viewer</div>
+                <h2 id="table-modal-title">Table</h2>
+                <p id="table-modal-description"></p>
+            </div>
+            <button class="modal-close-btn" onclick="closeTableModal()">✕</button>
+        </div>
 
+        <div class="table-modal-meta">
+            <div class="table-modal-meta-card">
+                <h4>Keys</h4>
+                <p id="table-modal-keys"></p>
+            </div>
+            <div class="table-modal-meta-card">
+                <h4>Columns</h4>
+                <p id="table-modal-columns"></p>
+            </div>
+            <div class="table-modal-meta-card">
+                <h4>Related Joins</h4>
+                <div id="table-modal-relationships"></div>
+            </div>
+        </div>
+
+        <div class="table-modal-preview">
+            <h4>Sample Rows</h4>
+            <div id="table-modal-preview-content"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+window.addEventListener('error', function (event) {
+    var banner = document.getElementById('js-error-banner');
+    if (!banner) return;
+    banner.classList.remove('hidden');
+    banner.textContent =
+        'JavaScript Error:\n' +
+        'Message: ' + event.message + '\n' +
+        'File: ' + event.filename + '\n' +
+        'Line: ' + event.lineno + '\n' +
+        'Column: ' + event.colno;
+});
+
+window.addEventListener('unhandledrejection', function (event) {
+    var banner = document.getElementById('js-error-banner');
+    if (!banner) return;
+    banner.classList.remove('hidden');
+    banner.textContent =
+        'Unhandled Promise Error:\n' +
+        String(event.reason);
+});
+</script>
+
+<script src="/static/app.js?v=6"></script>
 </body>
 </html>
