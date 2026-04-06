@@ -649,7 +649,9 @@ function normalizeCompletedLevels(levelsArray) {
       set.add(num);
     }
   });
-  return Array.from(set).sort(function (a, b) { return a - b; });
+  return Array.from(set).sort(function (a, b) {
+    return a - b;
+  });
 }
 
 function getMaxUnlockedLevel() {
@@ -664,104 +666,6 @@ function getUnlockedLevels() {
     unlocked.push(i);
   }
   return unlocked;
-}
-
-function renderLevelSelector() {
-  const select = document.getElementById("level-select");
-  if (!select) return;
-
-  const unlocked = getUnlockedLevels();
-  let html = "";
-
-  unlocked.forEach(function (levelIndex) {
-    const completed = gameState.completedLevels.indexOf(levelIndex) !== -1;
-    const selected = levelIndex === currentLevel ? "selected" : "";
-    html += `<option value="${levelIndex}" ${selected}>${completed ? "✓ " : ""}${levels[levelIndex].title}</option>`;
-  });
-
-  select.innerHTML = html;
-}
-
-function jumpToSelectedLevel() {
-  const select = document.getElementById("level-select");
-  if (!select) return;
-  const chosen = Number(select.value);
-  if (Number.isNaN(chosen)) return;
-  loadLevel(chosen);
-}
-
-function goPreviousLevel() {
-  const unlocked = getUnlockedLevels();
-  const currentPos = unlocked.indexOf(currentLevel);
-  if (currentPos > 0) {
-    loadLevel(unlocked[currentPos - 1]);
-  }
-}
-
-function goNextLevel() {
-  const unlocked = getUnlockedLevels();
-  const currentPos = unlocked.indexOf(currentLevel);
-  if (currentPos !== -1 && currentPos < unlocked.length - 1) {
-    loadLevel(unlocked[currentPos + 1]);
-  }
-}
-
-function loadGameState() {
-  let parsed = null;
-
-  for (const key of STORAGE_KEYS) {
-    const raw = localStorage.getItem(key);
-    if (!raw) continue;
-    try {
-      parsed = JSON.parse(raw);
-      break;
-    } catch (e) {
-      console.error("Failed to load progress from", key, e);
-    }
-  }
-
-  if (!parsed) return;
-
-  gameState = {
-    currentLevel: parsed.currentLevel ?? 0,
-    completedLevels: normalizeCompletedLevels(parsed.completedLevels ?? []),
-    badges: Array.isArray(parsed.badges) ? parsed.badges : [],
-    wrongAttemptsByLevel: parsed.wrongAttemptsByLevel ?? {},
-    firstTryWins: parsed.firstTryWins ?? 0
-  };
-
-  if (gameState.currentLevel >= levels.length) {
-    gameState.currentLevel = 0;
-  }
-}
-
-function saveGameState() {
-  localStorage.setItem(PRIMARY_STORAGE_KEY, JSON.stringify(gameState));
-}
-
-function resetAllProgress() {
-  STORAGE_KEYS.forEach(function (key) {
-    localStorage.removeItem(key);
-  });
-  localStorage.removeItem(PRIMARY_STORAGE_KEY);
-  localStorage.removeItem(FIRST_QUERY_KEY);
-
-  gameState = {
-    currentLevel: 0,
-    completedLevels: [],
-    badges: [],
-    wrongAttemptsByLevel: {},
-    firstTryWins: 0
-  };
-
-  lastResult = null;
-  currentLevel = 0;
-
-  evaluateBadges();
-  renderBadges();
-  renderLevelSelector();
-  loadLevel(0);
-  updateDashboard();
 }
 
 function hasBadge(id) {
@@ -807,6 +711,39 @@ function evaluateBadges() {
   }
 }
 
+function loadGameState() {
+  let parsed = null;
+
+  for (const key of STORAGE_KEYS) {
+    const raw = localStorage.getItem(key);
+    if (!raw) continue;
+    try {
+      parsed = JSON.parse(raw);
+      break;
+    } catch (e) {
+      console.error("Failed to load progress from", key, e);
+    }
+  }
+
+  if (!parsed) return;
+
+  gameState = {
+    currentLevel: parsed.currentLevel ?? 0,
+    completedLevels: normalizeCompletedLevels(parsed.completedLevels ?? []),
+    badges: Array.isArray(parsed.badges) ? parsed.badges : [],
+    wrongAttemptsByLevel: parsed.wrongAttemptsByLevel ?? {},
+    firstTryWins: parsed.firstTryWins ?? 0
+  };
+
+  if (gameState.currentLevel >= levels.length) {
+    gameState.currentLevel = 0;
+  }
+}
+
+function saveGameState() {
+  localStorage.setItem(PRIMARY_STORAGE_KEY, JSON.stringify(gameState));
+}
+
 function updateDashboard() {
   const progressText = document.getElementById("progress-text");
   const progressBar = document.getElementById("progress-bar");
@@ -833,6 +770,95 @@ function renderBadges() {
     html += `<div class="badge-chip ${earned ? "" : "locked"}">${earned ? "🏅" : "🔒"} ${badge.label}</div>`;
   });
   container.innerHTML = html;
+}
+
+function resetAllProgress() {
+  STORAGE_KEYS.forEach(function (key) {
+    localStorage.removeItem(key);
+  });
+  localStorage.removeItem(PRIMARY_STORAGE_KEY);
+  localStorage.removeItem(FIRST_QUERY_KEY);
+
+  gameState = {
+    currentLevel: 0,
+    completedLevels: [],
+    badges: [],
+    wrongAttemptsByLevel: {},
+    firstTryWins: 0
+  };
+
+  lastResult = null;
+  currentLevel = 0;
+
+  evaluateBadges();
+  renderBadges();
+  renderLevelsPanel();
+  loadLevel(0);
+  updateDashboard();
+}
+
+function renderLevelsPanel() {
+  const container = document.getElementById("levels-list");
+  if (!container) return;
+
+  const unlocked = getUnlockedLevels();
+  const unlockedSet = new Set(unlocked);
+
+  let html = "";
+
+  for (let i = 0; i < levels.length; i++) {
+    const completed = gameState.completedLevels.indexOf(i) !== -1;
+    const isCurrent = i === currentLevel;
+    const isUnlocked = unlockedSet.has(i);
+
+    let classNames = "level-item";
+    if (completed) classNames += " completed";
+    if (isCurrent) classNames += " current";
+    if (!isUnlocked) classNames += " locked";
+
+    let statusText = "Locked";
+    if (completed) {
+      statusText = "Completed";
+    } else if (isCurrent) {
+      statusText = "Current";
+    } else if (isUnlocked) {
+      statusText = "Unlocked";
+    }
+
+    if (isUnlocked) {
+      html += `
+        <button class="${classNames}" onclick="loadLevel(${i})">
+          ${levels[i].title}
+          <span class="level-status">${statusText}</span>
+        </button>
+      `;
+    } else {
+      html += `
+        <button class="${classNames}" disabled>
+          ${levels[i].title}
+          <span class="level-status">${statusText}</span>
+        </button>
+      `;
+    }
+  }
+
+  container.innerHTML = html;
+}
+
+function goPreviousLevel() {
+  const unlocked = getUnlockedLevels();
+  const currentPos = unlocked.indexOf(currentLevel);
+  if (currentPos > 0) {
+    loadLevel(unlocked[currentPos - 1]);
+  }
+}
+
+function goNextLevel() {
+  const unlocked = getUnlockedLevels();
+  const currentPos = unlocked.indexOf(currentLevel);
+  if (currentPos !== -1 && currentPos < unlocked.length - 1) {
+    loadLevel(unlocked[currentPos + 1]);
+  }
 }
 
 function initResizableSchemaPanel() {
@@ -1161,30 +1187,6 @@ function resetQuery() {
   document.getElementById("query").value = levels[currentLevel].starterQuery;
 }
 
-function jumpToSelectedLevel() {
-  const select = document.getElementById("level-select");
-  if (!select) return;
-  const chosen = Number(select.value);
-  if (Number.isNaN(chosen)) return;
-  loadLevel(chosen);
-}
-
-function goPreviousLevel() {
-  const unlocked = getUnlockedLevels();
-  const currentPos = unlocked.indexOf(currentLevel);
-  if (currentPos > 0) {
-    loadLevel(unlocked[currentPos - 1]);
-  }
-}
-
-function goNextLevel() {
-  const unlocked = getUnlockedLevels();
-  const currentPos = unlocked.indexOf(currentLevel);
-  if (currentPos !== -1 && currentPos < unlocked.length - 1) {
-    loadLevel(unlocked[currentPos + 1]);
-  }
-}
-
 async function runQuery() {
   const query = document.getElementById("query").value;
   const output = document.getElementById("output");
@@ -1261,7 +1263,7 @@ async function checkAnswer() {
     saveGameState();
     updateDashboard();
     renderBadges();
-    renderLevelSelector();
+    renderLevelsPanel();
 
     if (nextLevelDiv) {
       if (currentLevel < levels.length - 1) {
@@ -1306,7 +1308,7 @@ async function checkAnswer() {
 
   updateDashboard();
   renderBadges();
-  renderLevelSelector();
+  renderLevelsPanel();
 }
 
 function loadLevel(index) {
@@ -1341,7 +1343,7 @@ function loadLevel(index) {
   lastResult = null;
 
   highlightRelevantSchema(level);
-  renderLevelSelector();
+  renderLevelsPanel();
   updateDashboard();
 }
 
@@ -1352,7 +1354,7 @@ window.onload = function () {
   evaluateBadges();
   renderBadges();
   currentLevel = gameState.currentLevel || 0;
-  renderLevelSelector();
+  renderLevelsPanel();
   loadLevel(currentLevel);
   updateDashboard();
 };
