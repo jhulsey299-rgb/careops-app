@@ -16,7 +16,10 @@
         </div>
 
         <div class="schema-section">
-            <h3>Tables</h3>
+            <div class="section-title-row">
+                <h3>Tables</h3>
+                <span class="section-helper-text">Click a table to open a full viewer</span>
+            </div>
             <div id="schema-tables"></div>
         </div>
 
@@ -109,6 +112,39 @@
             </aside>
         </div>
     </main>
+</div>
+
+<div id="table-modal-overlay" class="table-modal-overlay hidden" onclick="closeTableModal(event)">
+    <div class="table-modal" role="dialog" aria-modal="true" aria-labelledby="table-modal-title">
+        <div class="table-modal-header">
+            <div>
+                <div class="table-modal-kicker">Table Viewer</div>
+                <h2 id="table-modal-title">Table</h2>
+                <p id="table-modal-description"></p>
+            </div>
+            <button class="modal-close-btn" onclick="closeTableModal()">✕</button>
+        </div>
+
+        <div class="table-modal-meta">
+            <div class="table-modal-meta-card">
+                <h4>Keys</h4>
+                <p id="table-modal-keys"></p>
+            </div>
+            <div class="table-modal-meta-card">
+                <h4>Notable Columns</h4>
+                <p id="table-modal-columns"></p>
+            </div>
+            <div class="table-modal-meta-card">
+                <h4>Related Joins</h4>
+                <div id="table-modal-relationships"></div>
+            </div>
+        </div>
+
+        <div class="table-modal-preview">
+            <h4>Sample Rows</h4>
+            <div id="table-modal-preview-content"></div>
+        </div>
+    </div>
 </div>
 
 <script src="/static/app.js"></script>
