@@ -7,7 +7,7 @@
 <body>
 
 <div class="app-shell">
-    <aside class="schema-panel">
+    <aside class="schema-panel" id="schema-panel">
         <h2>Schema Explorer</h2>
 
         <div class="schema-section">
@@ -16,31 +16,19 @@
         </div>
 
         <div class="schema-section">
-            <h3>Table Details</h3>
-            <div id="schema-details" class="schema-card">
-                Click a table to inspect columns and sample rows.
-            </div>
-        </div>
-
-        <div class="schema-section">
             <h3>Relationships</h3>
             <div id="schema-relationships"></div>
         </div>
 
         <div class="schema-section">
-            <h3>Relationship Details</h3>
-            <div id="relationship-details" class="schema-card">
-                Click a relationship to see how the join works.
-            </div>
-        </div>
-
-        <div class="schema-section">
-            <h3>Hint After First Wrong Try</h3>
+            <h3>Hints / Guidance</h3>
             <div id="level-hint" class="hint-box">
-                Run your query and check your answer. If it is wrong, a smarter hint will appear here.
+                Run your query and check your answer. After two wrong tries, you’ll get smart hints. After the third wrong try, the answer will be shown with an explanation.
             </div>
         </div>
     </aside>
+
+    <div id="schema-resizer"></div>
 
     <main class="main-content">
         <h1>CareOps: SQL Analyst</h1>
