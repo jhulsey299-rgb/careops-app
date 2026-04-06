@@ -1436,10 +1436,169 @@ window.onload = function () {
 
 Get Outlook for iOS
 From: Josh Hulsey <jhulsey@tidelandshealth.org>
-Sent: Monday, April 6, 2026 3:31:17 PM
+Sent: Monday, April 6, 2026 3:57:43 PM
 To: Josh Hulsey <jhulsey@tidelandshealth.org>
 Subject: Re:
  
+HTML
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CareOps SQL Analyst</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<div class="app-shell">
+    <aside class="schema-panel" id="schema-panel">
+        <div class="schema-header">
+            <h2>Schema Explorer</h2>
+            <p>Reference tables, relationships, and hints while you solve each level.</p>
+        </div>
+
+        <div class="schema-section">
+            <div class="section-title-row">
+                <h3>Tables</h3>
+                <span class="section-helper-text">Click a table to open a full viewer</span>
+            </div>
+            <div id="schema-tables"></div>
+        </div>
+
+        <div class="schema-section">
+            <h3>Relationships</h3>
+            <div id="schema-relationships"></div>
+        </div>
+
+        <div class="schema-section">
+            <h3>Hints / Guidance</h3>
+            <div id="level-hint" class="hint-box">
+                Run your query and check your answer. After two wrong tries, you’ll get smart hints. After the third wrong try, the answer will be shown with an explanation.
+            </div>
+        </div>
+    </aside>
+
+    <div id="schema-resizer"></div>
+
+    <main class="main-content">
+        <section class="hero-banner">
+            <div class="hero-copy">
+                <div class="hero-kicker">Healthcare SQL Training Simulator</div>
+                <h1>CareOps: SQL Analyst</h1>
+                <p>Practice SQL with realistic hospital analytics scenarios, guided schema exploration, adaptive hints, and tracked progression across 30 levels.</p>
+            </div>
+        </section>
+
+        <section class="top-dashboard">
+            <div class="dashboard-card">
+                <h3>Progress</h3>
+                <p id="progress-text">0 / 30 levels completed</p>
+                <div class="progress-bar-wrap">
+                    <div id="progress-bar"></div>
+                </div>
+            </div>
+
+            <div class="dashboard-card">
+                <h3>Current Level</h3>
+                <p id="current-level-display">Level 1</p>
+            </div>
+
+            <div class="dashboard-card">
+                <h3>Badges</h3>
+                <p id="badge-count">0 earned</p>
+            </div>
+        </section>
+
+        <div class="dashboard-actions">
+            <button onclick="resetAllProgress()">Reset Progress</button>
+        </div>
+
+        <section class="badges-section">
+            <h3>Achievements</h3>
+            <div id="badges-container" class="badges-container"></div>
+        </section>
+
+        <div class="workspace-layout">
+            <section class="play-area">
+                <div class="mission-box"></div>
+
+                <div class="query-section">
+                    <div class="section-header">
+                        <h3>SQL Workspace</h3>
+                        <p>Write your query below and validate your answer against the level objective.</p>
+                    </div>
+
+                    <label for="query" class="query-label">Write your SQL query:</label>
+                    <textarea id="query" rows="8" cols="80"></textarea>
+
+                    <div class="button-row">
+                        <button onclick="runQuery()">Run Query</button>
+                        <button onclick="checkAnswer()">Check Answer</button>
+                        <button onclick="resetQuery()">Reset Query</button>
+                        <button onclick="goPreviousLevel()">Previous</button>
+                        <button onclick="goNextLevel()">Next</button>
+                    </div>
+                </div>
+
+                <div id="feedback"></div>
+                <div id="next-level"></div>
+                <div id="output"></div>
+            </section>
+
+            <aside class="levels-panel">
+                <div class="levels-panel-header">
+                    <h3>Levels</h3>
+                    <p>Jump between unlocked levels instantly.</p>
+                </div>
+                <div id="levels-list" class="levels-list"></div>
+            </aside>
+        </div>
+    </main>
+</div>
+
+<div id="table-modal-overlay" class="table-modal-overlay hidden" onclick="closeTableModal(event)">
+    <div class="table-modal" role="dialog" aria-modal="true" aria-labelledby="table-modal-title">
+        <div class="table-modal-header">
+            <div>
+                <div class="table-modal-kicker">Table Viewer</div>
+                <h2 id="table-modal-title">Table</h2>
+                <p id="table-modal-description"></p>
+            </div>
+            <button class="modal-close-btn" onclick="closeTableModal()">✕</button>
+        </div>
+
+        <div class="table-modal-meta">
+            <div class="table-modal-meta-card">
+                <h4>Keys</h4>
+                <p id="table-modal-keys"></p>
+            </div>
+            <div class="table-modal-meta-card">
+                <h4>Notable Columns</h4>
+                <p id="table-modal-columns"></p>
+            </div>
+            <div class="table-modal-meta-card">
+                <h4>Related Joins</h4>
+                <div id="table-modal-relationships"></div>
+            </div>
+        </div>
+
+        <div class="table-modal-preview">
+            <h4>Sample Rows</h4>
+            <div id="table-modal-preview-content"></div>
+        </div>
+    </div>
+</div>
+
+<script src="/static/app.js"></script>
+
+</body>
+</html>
+
+
+CSS
+
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap');
 
 :root {
@@ -1464,6 +1623,22 @@ Subject: Re:
 
     --danger: #dc2626;
     --danger-soft: #fee2e2;
+
+    --easy-bg: #ecfdf5;
+    --easy-border: #86efac;
+    --easy-text: #166534;
+
+    --intermediate-bg: #eff6ff;
+    --intermediate-border: #93c5fd;
+    --intermediate-text: #1d4ed8;
+
+    --hard-bg: #fff7ed;
+    --hard-border: #fdba74;
+    --hard-text: #c2410c;
+
+    --advanced-bg: #f5f3ff;
+    --advanced-border: #c4b5fd;
+    --advanced-text: #6d28d9;
 
     --shadow-sm: 0 2px 8px rgba(15, 23, 42, 0.05);
     --shadow-md: 0 6px 20px rgba(15, 23, 42, 0.08);
@@ -1514,6 +1689,12 @@ h3 {
     font-size: 1.05rem;
     font-weight: 700;
     margin-bottom: 10px;
+}
+
+h4 {
+    font-size: 0.95rem;
+    font-weight: 700;
+    margin-bottom: 8px;
 }
 
 p {
@@ -1819,7 +2000,7 @@ textarea:focus {
 
 .workspace-layout {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 300px;
+    grid-template-columns: minmax(0, 1fr) 320px;
     gap: 22px;
     align-items: start;
 }
@@ -1854,7 +2035,7 @@ textarea:focus {
     display: flex;
     flex-direction: column;
     gap: 8px;
-    max-height: 70vh;
+    max-height: 72vh;
     overflow-y: auto;
     padding-right: 4px;
 }
@@ -1906,12 +2087,61 @@ textarea:focus {
     box-shadow: none;
 }
 
+.level-item-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+.level-item-title {
+    font-size: 0.9rem;
+    line-height: 1.35;
+}
+
 .level-item .level-status {
     display: block;
     font-size: 0.76rem;
-    margin-top: 5px;
+    margin-top: 6px;
     opacity: 0.8;
     font-weight: 500;
+}
+
+.difficulty-badge {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 5px 8px;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    border: 1px solid transparent;
+}
+
+.difficulty-easy {
+    background: var(--easy-bg);
+    border-color: var(--easy-border);
+    color: var(--easy-text);
+}
+
+.difficulty-intermediate {
+    background: var(--intermediate-bg);
+    border-color: var(--intermediate-border);
+    color: var(--intermediate-text);
+}
+
+.difficulty-hard {
+    background: var(--hard-bg);
+    border-color: var(--hard-border);
+    color: var(--hard-text);
+}
+
+.difficulty-advanced {
+    background: var(--advanced-bg);
+    border-color: var(--advanced-border);
+    color: var(--advanced-text);
 }
 
 .mission-box {
@@ -1923,6 +2153,13 @@ textarea:focus {
 
 .mission-box h2 {
     margin-bottom: 14px;
+}
+
+.mission-meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 12px;
 }
 
 .query-section {
@@ -2040,6 +2277,19 @@ textarea:focus {
     margin-bottom: 16px;
 }
 
+.section-title-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    align-items: baseline;
+    margin-bottom: 8px;
+}
+
+.section-helper-text {
+    font-size: 0.76rem;
+    color: var(--text-faint);
+}
+
 .schema-card,
 .relationship-item {
     border: 1px solid var(--border);
@@ -2092,8 +2342,26 @@ textarea:focus {
     margin-bottom: 10px;
 }
 
+.schema-table-actions {
+    margin: 0 14px 12px;
+}
+
+.schema-table-view-btn {
+    background: white;
+    color: var(--primary);
+    border: 1px solid #bfdbfe;
+    padding: 8px 12px;
+    font-size: 0.84rem;
+}
+
+.schema-table-view-btn:hover {
+    background: var(--primary-soft);
+    color: var(--primary-dark);
+}
+
 .preview-table,
-#output table {
+#output table,
+.table-modal-preview table {
     width: 100%;
     border-collapse: collapse;
     font-size: 0.88rem;
@@ -2105,7 +2373,9 @@ textarea:focus {
 .preview-table th,
 .preview-table td,
 #output th,
-#output td {
+#output td,
+.table-modal-preview th,
+.table-modal-preview td {
     border: 1px solid #e2e8f0;
     padding: 10px 12px;
     text-align: left;
@@ -2113,7 +2383,8 @@ textarea:focus {
 }
 
 .preview-table th,
-#output th {
+#output th,
+.table-modal-preview th {
     background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
     color: var(--text);
     font-weight: 700;
@@ -2122,13 +2393,110 @@ textarea:focus {
 }
 
 .preview-table tr:nth-child(even),
-#output tr:nth-child(even) {
+#output tr:nth-child(even),
+.table-modal-preview tr:nth-child(even) {
     background: #fafcff;
 }
 
 .preview-table tr:hover,
-#output tr:hover {
+#output tr:hover,
+.table-modal-preview tr:hover {
     background: #eff6ff;
+}
+
+.hidden {
+    display: none !important;
+}
+
+.table-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.55);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    z-index: 2000;
+}
+
+.table-modal {
+    width: min(1100px, 100%);
+    max-height: 88vh;
+    overflow: auto;
+    background: white;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-lg);
+    padding: 22px;
+}
+
+.table-modal-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 18px;
+    align-items: flex-start;
+    margin-bottom: 18px;
+}
+
+.table-modal-kicker {
+    display: inline-block;
+    font-size: 0.76rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    background: var(--primary-soft);
+    color: var(--primary-dark);
+    padding: 6px 10px;
+    border-radius: 999px;
+    margin-bottom: 10px;
+}
+
+.modal-close-btn {
+    background: white;
+    color: var(--text-soft);
+    border: 1px solid var(--border);
+    padding: 8px 12px;
+    min-width: 44px;
+}
+
+.modal-close-btn:hover {
+    background: var(--panel-soft);
+    color: var(--text);
+}
+
+.table-modal-meta {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+    margin-bottom: 18px;
+}
+
+.table-modal-meta-card,
+.table-modal-preview {
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: #fcfdff;
+    padding: 16px;
+}
+
+.table-modal-preview {
+    overflow: auto;
+}
+
+.modal-relationship-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.modal-relationship-chip {
+    border: 1px solid #bfdbfe;
+    background: #eff6ff;
+    color: var(--primary-dark);
+    border-radius: 10px;
+    padding: 8px 10px;
+    font-size: 0.84rem;
 }
 
 select {
@@ -2171,6 +2539,10 @@ select {
 
     .levels-panel {
         position: static;
+    }
+
+    .table-modal-meta {
+        grid-template-columns: 1fr;
     }
 }
 
@@ -2225,7 +2597,8 @@ select {
     .query-section,
     #feedback,
     #next-level,
-    #output {
+    #output,
+    .table-modal {
         padding: 14px;
     }
 
@@ -2233,4 +2606,1449 @@ select {
         min-height: 180px;
         font-size: 0.9rem;
     }
+
+    .table-modal-overlay {
+        padding: 12px;
+    }
 }
+
+
+
+
+Static/app.js
+
+let lastResult = null;
+let currentLevel = 0;
+
+const STORAGE_KEYS = [
+  "careops_progress_v3",
+  "careops_progress_v2",
+  "careops_progress_v1",
+  "careops_progress"
+];
+const PRIMARY_STORAGE_KEY = "careops_progress_v3";
+const FIRST_QUERY_KEY = "careops_first_query_done";
+
+let gameState = {
+  currentLevel: 0,
+  completedLevels: [],
+  badges: [],
+  wrongAttemptsByLevel: {},
+  firstTryWins: 0
+};
+
+const badgeCatalog = [
+  { id: "first_query", label: "First Query" },
+  { id: "first_win", label: "First Win" },
+  { id: "three_levels", label: "3 Levels Cleared" },
+  { id: "five_levels", label: "5 Levels Cleared" },
+  { id: "ten_levels", label: "10 Levels Cleared" },
+  { id: "fifteen_levels", label: "15 Levels Cleared" },
+  { id: "twenty_levels", label: "20 Levels Cleared" },
+  { id: "thirty_levels", label: "30 Levels Cleared" },
+  { id: "first_try_three", label: "3 First-Try Wins" },
+  { id: "join_master", label: "Join Master" },
+  { id: "aggregation_ace", label: "Aggregation Ace" },
+  { id: "advanced_analyst", label: "Advanced Analyst" }
+];
+
+const schema = {
+  tables: [
+    {
+      name: "patients",
+      description: "Patient demographic and risk information.",
+      keyColumns: ["patient_id"],
+      notableColumns: ["first_name", "last_name", "age", "gender", "insurance_type", "risk_score", "city"]
+    },
+    {
+      name: "providers",
+      description: "Provider, specialty, and facility assignment data.",
+      keyColumns: ["provider_id"],
+      notableColumns: ["provider_name", "specialty", "facility", "department", "years_experience"]
+    },
+    {
+      name: "encounters",
+      description: "Hospital and clinic encounters tied to patients and providers.",
+      keyColumns: ["encounter_id", "patient_id", "provider_id"],
+      notableColumns: ["facility", "department", "encounter_type", "status", "admit_date", "discharge_date", "length_of_stay"]
+    },
+    {
+      name: "appointments",
+      description: "Scheduled visits tied to patients and providers.",
+      keyColumns: ["appointment_id", "patient_id", "provider_id"],
+      notableColumns: ["facility", "department", "appointment_date", "status"]
+    },
+    {
+      name: "charges",
+      description: "Financial charges tied to encounters and patients.",
+      keyColumns: ["charge_id", "encounter_id", "patient_id"],
+      notableColumns: ["payer", "amount", "charge_type", "charge_date"]
+    },
+    {
+      name: "claims",
+      description: "Claim outcomes tied to encounters and patients.",
+      keyColumns: ["claim_id", "encounter_id", "patient_id"],
+      notableColumns: ["payer", "claim_status", "denial_reason", "billed_amount", "paid_amount"]
+    }
+  ],
+  relationships: [
+    {
+      id: "patients_encounters",
+      label: "patients.patient_id = encounters.patient_id",
+      leftTable: "patients",
+      rightTable: "encounters",
+      explanation: "Use this when you need patient details attached to encounter rows.",
+      example: "JOIN encounters e ON p.patient_id = e.patient_id"
+    },
+    {
+      id: "patients_appointments",
+      label: "patients.patient_id = appointments.patient_id",
+      leftTable: "patients",
+      rightTable: "appointments",
+      explanation: "Use this when analyzing appointment history by patient.",
+      example: "JOIN appointments a ON p.patient_id = a.patient_id"
+    },
+    {
+      id: "patients_charges",
+      label: "patients.patient_id = charges.patient_id",
+      leftTable: "patients",
+      rightTable: "charges",
+      explanation: "Use this when connecting patient details to charges.",
+      example: "JOIN charges ch ON p.patient_id = ch.patient_id"
+    },
+    {
+      id: "patients_claims",
+      label: "patients.patient_id = claims.patient_id",
+      leftTable: "patients",
+      rightTable: "claims",
+      explanation: "Use this when connecting patient details to claims.",
+      example: "JOIN claims c ON p.patient_id = c.patient_id"
+    },
+    {
+      id: "providers_encounters",
+      label: "providers.provider_id = encounters.provider_id",
+      leftTable: "providers",
+      rightTable: "encounters",
+      explanation: "Use this when tying providers to encounter volume or encounter detail.",
+      example: "JOIN encounters e ON pr.provider_id = e.provider_id"
+    },
+    {
+      id: "providers_appointments",
+      label: "providers.provider_id = appointments.provider_id",
+      leftTable: "providers",
+      rightTable: "appointments",
+      explanation: "Use this when tying providers to appointment activity.",
+      example: "JOIN appointments a ON pr.provider_id = a.provider_id"
+    },
+    {
+      id: "encounters_charges",
+      label: "encounters.encounter_id = charges.encounter_id",
+      leftTable: "encounters",
+      rightTable: "charges",
+      explanation: "Use this when tying charge activity to encounters, facilities, and departments.",
+      example: "JOIN charges ch ON e.encounter_id = ch.encounter_id"
+    },
+    {
+      id: "encounters_claims",
+      label: "encounters.encounter_id = claims.encounter_id",
+      leftTable: "encounters",
+      rightTable: "claims",
+      explanation: "Use this when tying claims, denials, and collections to encounter context.",
+      example: "JOIN claims c ON e.encounter_id = c.encounter_id"
+    }
+  ]
+};
+
+const levels = [
+  {
+    title: "Level 1: Medicare Population",
+    mission: "Return all patients with Medicare insurance.",
+    goal: "Show patient_id, first_name, last_name, and insurance_type.",
+    starterQuery: "SELECT patient_id, first_name, last_name, insurance_type FROM patients WHERE insurance_type = 'Medicare';",
+    solutionQuery: "SELECT patient_id, first_name, last_name, insurance_type FROM patients WHERE insurance_type = 'Medicare';",
+    explanation: "This level teaches basic filtering with WHERE. You only need the patients table and a filter on insurance_type.",
+    hint: "Use the patients table and filter insurance_type to Medicare.",
+    tablesUsed: ["patients"],
+    joinHint: "No join needed.",
+    requiredConcepts: ["SELECT", "FROM", "WHERE"],
+    commonMistakes: [
+      "Forgetting to filter insurance_type to Medicare",
+      "Returning extra columns",
+      "Using the wrong table"
+    ]
+  },
+  {
+    title: "Level 2: Encounters by Facility",
+    mission: "Count the number of encounters at each facility.",
+    goal: "Return facility and count.",
+    starterQuery: "SELECT facility, COUNT(*) AS count FROM encounters GROUP BY facility;",
+    solutionQuery: "SELECT facility, COUNT(*) AS count FROM encounters GROUP BY facility;",
+    explanation: "This level teaches aggregation. Count rows and group them by facility.",
+    hint: "Use the encounters table. Group by facility and count the rows.",
+    tablesUsed: ["encounters"],
+    joinHint: "No join needed.",
+    requiredConcepts: ["SELECT", "FROM", "GROUP BY", "COUNT"],
+    commonMistakes: [
+      "Missing GROUP BY facility",
+      "Returning encounter-level detail instead of grouped counts"
+    ]
+  },
+  {
+    title: "Level 3: Active Cardiology Encounters",
+    mission: "Find all active encounters currently in Cardiology.",
+    goal: "Show encounter_id, patient_id, department, and status.",
+    starterQuery: "SELECT encounter_id, patient_id, department, status FROM encounters WHERE department = 'Cardiology' AND status = 'Active';",
+    solutionQuery: "SELECT encounter_id, patient_id, department, status FROM encounters WHERE department = 'Cardiology' AND status = 'Active';",
+    explanation: "This level teaches multi-condition filtering with AND.",
+    hint: "Stay in the encounters table and filter both department and status.",
+    tablesUsed: ["encounters"],
+    joinHint: "No join needed.",
+    requiredConcepts: ["SELECT", "FROM", "WHERE"],
+    commonMistakes: [
+      "Filtering only department but not status",
+      "Filtering only status but not department"
+    ]
+  },
+  {
+    title: "Level 4: Discharged Encounters",
+    mission: "Return all discharged encounters.",
+    goal: "Show encounter_id, patient_id, department, and discharge_date.",
+    starterQuery: "SELECT encounter_id, patient_id, department, discharge_date FROM encounters WHERE status = 'Discharged';",
+    solutionQuery: "SELECT encounter_id, patient_id, department, discharge_date FROM encounters WHERE status = 'Discharged';",
+    explanation: "This level reinforces basic filtering and selecting the right output columns.",
+    hint: "Filter the encounters table to discharged rows.",
+    tablesUsed: ["encounters"],
+    joinHint: "No join needed.",
+    requiredConcepts: ["SELECT", "FROM", "WHERE"],
+    commonMistakes: [
+      "Returning all encounters instead of discharged only",
+      "Returning status instead of discharge_date"
+    ]
+  },
+  {
+    title: "Level 5: Patients Sorted by Last Name",
+    mission: "Return all patients sorted by last name, then first name.",
+    goal: "Show patient_id, first_name, last_name, and insurance_type.",
+    starterQuery: "SELECT patient_id, first_name, last_name, insurance_type FROM patients ORDER BY last_name, first_name;",
+    solutionQuery: "SELECT patient_id, first_name, last_name, insurance_type FROM patients ORDER BY last_name, first_name;",
+    explanation: "This level teaches sorting with ORDER BY using more than one column.",
+    hint: "Use ORDER BY last_name, first_name.",
+    tablesUsed: ["patients"],
+    joinHint: "No join needed.",
+    requiredConcepts: ["SELECT", "FROM", "ORDER BY"],
+    commonMistakes: [
+      "Sorting by first_name first",
+      "No ORDER BY at all"
+    ]
+  },
+  {
+    title: "Level 6: Patients by Insurance Type",
+    mission: "Count patients by insurance type.",
+    goal: "Return insurance_type and patient_count.",
+    starterQuery: "SELECT insurance_type, COUNT(*) AS patient_count FROM patients GROUP BY insurance_type;",
+    solutionQuery: "SELECT insurance_type, COUNT(*) AS patient_count FROM patients GROUP BY insurance_type;",
+    explanation: "This level teaches grouping rows and counting within each category.",
+    hint: "Group the patients table by insurance_type.",
+    tablesUsed: ["patients"],
+    joinHint: "No join needed.",
+    requiredConcepts: ["SELECT", "FROM", "GROUP BY", "COUNT"],
+    commonMistakes: [
+      "Missing GROUP BY",
+      "Returning individual patients instead of grouped counts"
+    ]
+  },
+  {
+    title: "Level 7: No-Show Appointments by Facility",
+    mission: "Count no-show appointments by facility.",
+    goal: "Return facility and no_show_count.",
+    starterQuery: "SELECT facility, COUNT(*) AS no_show_count FROM appointments WHERE status = 'No Show' GROUP BY facility;",
+    solutionQuery: "SELECT facility, COUNT(*) AS no_show_count FROM appointments WHERE status = 'No Show' GROUP BY facility;",
+    explanation: "This combines filtering and grouping.",
+    hint: "Use appointments, filter to No Show, then group by facility.",
+    tablesUsed: ["appointments"],
+    joinHint: "No join needed.",
+    requiredConcepts: ["SELECT", "FROM", "WHERE", "GROUP BY", "COUNT"],
+    commonMistakes: [
+      "Forgetting the No Show filter",
+      "Grouping by department instead of facility"
+    ]
+  },
+  {
+    title: "Level 8: Charges by Payer",
+    mission: "Calculate total charged dollars by payer.",
+    goal: "Return payer and total_amount.",
+    starterQuery: "SELECT payer, ROUND(SUM(amount), 2) AS total_amount FROM charges GROUP BY payer;",
+    solutionQuery: "SELECT payer, ROUND(SUM(amount), 2) AS total_amount FROM charges GROUP BY payer;",
+    explanation: "This teaches SUM and grouping.",
+    hint: "Use SUM(amount) grouped by payer.",
+    tablesUsed: ["charges"],
+    joinHint: "No join needed.",
+    requiredConcepts: ["SELECT", "FROM", "GROUP BY", "SUM"],
+    commonMistakes: [
+      "Using COUNT instead of SUM",
+      "Grouping by charge_type instead of payer"
+    ]
+  },
+  {
+    title: "Level 9: Average LOS by Facility",
+    mission: "Calculate average length of stay by facility.",
+    goal: "Return facility and avg_los.",
+    starterQuery: "SELECT facility, ROUND(AVG(length_of_stay), 2) AS avg_los FROM encounters WHERE length_of_stay IS NOT NULL GROUP BY facility;",
+    solutionQuery: "SELECT facility, ROUND(AVG(length_of_stay), 2) AS avg_los FROM encounters WHERE length_of_stay IS NOT NULL GROUP BY facility;",
+    explanation: "This teaches AVG and filtering out null values before aggregation.",
+    hint: "Only average non-null length_of_stay values.",
+    tablesUsed: ["encounters"],
+    joinHint: "No join needed.",
+    requiredConcepts: ["SELECT", "FROM", "WHERE", "GROUP BY", "AVG"],
+    commonMistakes: [
+      "Averaging all rows including null LOS",
+      "Using SUM instead of AVG"
+    ]
+  },
+  {
+    title: "Level 10: ER Encounters by Status",
+    mission: "Count ER encounters by status.",
+    goal: "Return status and encounter_count.",
+    starterQuery: "SELECT status, COUNT(*) AS encounter_count FROM encounters WHERE department = 'ER' GROUP BY status;",
+    solutionQuery: "SELECT status, COUNT(*) AS encounter_count FROM encounters WHERE department = 'ER' GROUP BY status;",
+    explanation: "This teaches filtered grouping on a specific department.",
+    hint: "Filter department to ER, then group by status.",
+    tablesUsed: ["encounters"],
+    joinHint: "No join needed.",
+    requiredConcepts: ["SELECT", "FROM", "WHERE", "GROUP BY", "COUNT"],
+    commonMistakes: [
+      "Forgetting the ER filter",
+      "Grouping by department instead of status"
+    ]
+  },
+  {
+    title: "Level 11: Encounters with Patient Names",
+    mission: "Join encounters to patients.",
+    goal: "Show encounter_id, first_name, last_name, facility, and department for discharged encounters.",
+    starterQuery: "SELECT e.encounter_id, p.first_name, p.last_name, e.facility, e.department FROM encounters e JOIN patients p ON e.patient_id = p.patient_id WHERE e.status = 'Discharged';",
+    solutionQuery: "SELECT e.encounter_id, p.first_name, p.last_name, e.facility, e.department FROM encounters e JOIN patients p ON e.patient_id = p.patient_id WHERE e.status = 'Discharged';",
+    explanation: "This introduces INNER JOIN using patient_id to combine encounter and patient details.",
+    hint: "Join encounters.patient_id to patients.patient_id.",
+    tablesUsed: ["encounters", "patients"],
+    joinHint: "encounters.patient_id = patients.patient_id",
+    requiredConcepts: ["SELECT", "FROM", "JOIN", "WHERE"],
+    commonMistakes: [
+      "Missing JOIN",
+      "Joining on the wrong key",
+      "Forgetting the discharged filter"
+    ]
+  },
+  {
+    title: "Level 12: Visits per Provider",
+    mission: "Count encounters for each provider.",
+    goal: "Return provider_name and visit_count, highest to lowest.",
+    starterQuery: "SELECT pr.provider_name, COUNT(*) AS visit_count FROM encounters e JOIN providers pr ON e.provider_id = pr.provider_id GROUP BY pr.provider_name ORDER BY visit_count DESC, pr.provider_name;",
+    solutionQuery: "SELECT pr.provider_name, COUNT(*) AS visit_count FROM encounters e JOIN providers pr ON e.provider_id = pr.provider_id GROUP BY pr.provider_name ORDER BY visit_count DESC, pr.provider_name;",
+    explanation: "This combines joining to providers, grouping encounter rows, and sorting the results.",
+    hint: "Join encounters to providers using provider_id.",
+    tablesUsed: ["encounters", "providers"],
+    joinHint: "encounters.provider_id = providers.provider_id",
+    requiredConcepts: ["SELECT", "FROM", "JOIN", "GROUP BY", "ORDER BY", "COUNT"],
+    commonMistakes: [
+      "Missing JOIN",
+      "No GROUP BY",
+      "Missing ORDER BY visit_count DESC"
+    ]
+  },
+  {
+    title: "Level 13: Patients Without Any Appointment",
+    mission: "Find patients who have never had an appointment.",
+    goal: "Show patient_id, first_name, and last_name.",
+    starterQuery: "SELECT p.patient_id, p.first_name, p.last_name FROM patients p LEFT JOIN appointments a ON p.patient_id = a.patient_id WHERE a.appointment_id IS NULL;",
+    solutionQuery: "SELECT p.patient_id, p.first_name, p.last_name FROM patients p LEFT JOIN appointments a ON p.patient_id = a.patient_id WHERE a.appointment_id IS NULL;",
+    explanation: "This teaches LEFT JOIN and NULL filtering to find missing related records.",
+    hint: "Use a LEFT JOIN from patients to appointments, then find NULL appointment_id values.",
+    tablesUsed: ["patients", "appointments"],
+    joinHint: "patients.patient_id = appointments.patient_id",
+    requiredConcepts: ["SELECT", "FROM", "LEFT JOIN", "WHERE"],
+    commonMistakes: [
+      "Using INNER JOIN instead of LEFT JOIN",
+      "Checking the wrong column for NULL"
+    ]
+  },
+  {
+    title: "Level 14: Denied Claims by Payer",
+    mission: "Count denied claims and sum billed dollars by payer.",
+    goal: "Return payer, denied_claims, and denied_billed_amount.",
+    starterQuery: "SELECT payer, COUNT(*) AS denied_claims, ROUND(SUM(billed_amount), 2) AS denied_billed_amount FROM claims WHERE claim_status = 'Denied' GROUP BY payer;",
+    solutionQuery: "SELECT payer, COUNT(*) AS denied_claims, ROUND(SUM(billed_amount), 2) AS denied_billed_amount FROM claims WHERE claim_status = 'Denied' GROUP BY payer;",
+    explanation: "This level teaches filtering a financial table before aggregation.",
+    hint: "Stay in claims and filter claim_status to Denied.",
+    tablesUsed: ["claims"],
+    joinHint: "No join needed.",
+    requiredConcepts: ["SELECT", "FROM", "WHERE", "GROUP BY", "SUM", "COUNT"],
+    commonMistakes: [
+      "Forgetting claim_status = 'Denied'",
+      "Using paid_amount instead of billed_amount"
+    ]
+  },
+  {
+    title: "Level 15: Charges by Provider Specialty",
+    mission: "Sum total charge dollars by provider specialty using encounters and providers.",
+    goal: "Return specialty and total_charge_amount.",
+    starterQuery: "SELECT pr.specialty, ROUND(SUM(ch.amount), 2) AS total_charge_amount FROM charges ch JOIN encounters e ON ch.encounter_id = e.encounter_id JOIN providers pr ON e.provider_id = pr.provider_id GROUP BY pr.specialty;",
+    solutionQuery: "SELECT pr.specialty, ROUND(SUM(ch.amount), 2) AS total_charge_amount FROM charges ch JOIN encounters e ON ch.encounter_id = e.encounter_id JOIN providers pr ON e.provider_id = pr.provider_id GROUP BY pr.specialty;",
+    explanation: "This is a multi-table join: charges to encounters, then encounters to providers, then aggregate by specialty.",
+    hint: "Join charges to encounters using encounter_id, then encounters to providers using provider_id.",
+    tablesUsed: ["charges", "encounters", "providers"],
+    joinHint: "charges.encounter_id = encounters.encounter_id; encounters.provider_id = providers.provider_id",
+    requiredConcepts: ["SELECT", "FROM", "JOIN", "GROUP BY", "SUM"],
+    commonMistakes: [
+      "Missing one of the joins",
+      "Grouping by provider_name instead of specialty"
+    ]
+  },
+  {
+    title: "Level 16: 30-Day Readmissions",
+    mission: "Identify patients who had another encounter within 30 days after discharge.",
+    goal: "Show distinct patient_id values.",
+    starterQuery: "SELECT DISTINCT e1.patient_id FROM encounters e1 JOIN encounters e2 ON e1.patient_id = e2.patient_id AND e2.admit_date > e1.discharge_date AND julianday(e2.admit_date) - julianday(e1.discharge_date) <= 30 WHERE e1.discharge_date IS NOT NULL ORDER BY e1.patient_id;",
+    solutionQuery: "SELECT DISTINCT e1.patient_id FROM encounters e1 JOIN encounters e2 ON e1.patient_id = e2.patient_id AND e2.admit_date > e1.discharge_date AND julianday(e2.admit_date) - julianday(e1.discharge_date) <= 30 WHERE e1.discharge_date IS NOT NULL ORDER BY e1.patient_id;",
+    explanation: "This level teaches a self-join. You compare one encounter to a later encounter for the same patient within 30 days.",
+    hint: "Self-join encounters on patient_id and compare later admit_date to earlier discharge_date.",
+    tablesUsed: ["encounters"],
+    joinHint: "Self-join: encounters.patient_id = encounters.patient_id",
+    requiredConcepts: ["SELECT", "FROM", "JOIN", "WHERE", "ORDER BY", "DISTINCT"],
+    commonMistakes: [
+      "Missing DISTINCT",
+      "Not comparing dates correctly",
+      "Forgetting to exclude null discharge_date"
+    ]
+  },
+  {
+    title: "Level 17: Top Denied Dollars by Facility",
+    mission: "Find denied billed dollars by facility.",
+    goal: "Return facility and denied_amount ordered highest to lowest.",
+    starterQuery: "SELECT e.facility, ROUND(SUM(c.billed_amount), 2) AS denied_amount FROM claims c JOIN encounters e ON c.encounter_id = e.encounter_id WHERE c.claim_status = 'Denied' GROUP BY e.facility ORDER BY denied_amount DESC, e.facility;",
+    solutionQuery: "SELECT e.facility, ROUND(SUM(c.billed_amount), 2) AS denied_amount FROM claims c JOIN encounters e ON c.encounter_id = e.encounter_id WHERE c.claim_status = 'Denied' GROUP BY e.facility ORDER BY denied_amount DESC, e.facility;",
+    explanation: "This ties claim denials back to encounter context so you can attribute denied dollars to facilities.",
+    hint: "Join claims to encounters using encounter_id, then group by facility.",
+    tablesUsed: ["claims", "encounters"],
+    joinHint: "claims.encounter_id = encounters.encounter_id",
+    requiredConcepts: ["SELECT", "FROM", "JOIN", "WHERE", "GROUP BY", "ORDER BY", "SUM"],
+    commonMistakes: [
+      "Using paid_amount instead of billed_amount",
+      "Missing denied filter",
+      "Missing ORDER BY"
+    ]
+  },
+  {
+    title: "Level 18: High-Risk Patients with Multiple ER Visits",
+    mission: "Find high-risk patients with more than one ER encounter.",
+    goal: "Show patient_id, first_name, last_name, risk_score, and er_visits.",
+    starterQuery: "SELECT p.patient_id, p.first_name, p.last_name, p.risk_score, COUNT(*) AS er_visits FROM patients p JOIN encounters e ON p.patient_id = e.patient_id WHERE e.department = 'ER' AND p.risk_score >= 70 GROUP BY p.patient_id, p.first_name, p.last_name, p.risk_score HAVING COUNT(*) > 1 ORDER BY er_visits DESC, p.patient_id;",
+    solutionQuery: "SELECT p.patient_id, p.first_name, p.last_name, p.risk_score, COUNT(*) AS er_visits FROM patients p JOIN encounters e ON p.patient_id = e.patient_id WHERE e.department = 'ER' AND p.risk_score >= 70 GROUP BY p.patient_id, p.first_name, p.last_name, p.risk_score HAVING COUNT(*) > 1 ORDER BY er_visits DESC, p.patient_id;",
+    explanation: "This combines a join, filtering, grouping, and HAVING to find frequent high-risk ER users.",
+    hint: "Join patients to encounters, filter to ER, group by patient, then use HAVING COUNT(*) > 1.",
+    tablesUsed: ["patients", "encounters"],
+    joinHint: "patients.patient_id = encounters.patient_id",
+    requiredConcepts: ["SELECT", "FROM", "JOIN", "WHERE", "GROUP BY", "HAVING", "ORDER BY", "COUNT"],
+    commonMistakes: [
+      "Forgetting risk_score >= 70",
+      "Missing HAVING COUNT(*) > 1",
+      "Grouping incorrectly"
+    ]
+  },
+  {
+    title: "Level 19: Completed Appointments but No Completed Encounter",
+    mission: "Find patients who had a completed appointment but no completed encounter.",
+    goal: "Show distinct patient_id, first_name, and last_name.",
+    starterQuery: "SELECT DISTINCT p.patient_id, p.first_name, p.last_name FROM patients p JOIN appointments a ON p.patient_id = a.patient_id LEFT JOIN encounters e ON p.patient_id = e.patient_id AND e.status = 'Completed' WHERE a.status = 'Completed' AND e.encounter_id IS NULL ORDER BY p.patient_id;",
+    solutionQuery: "SELECT DISTINCT p.patient_id, p.first_name, p.last_name FROM patients p JOIN appointments a ON p.patient_id = a.patient_id LEFT JOIN encounters e ON p.patient_id = e.patient_id AND e.status = 'Completed' WHERE a.status = 'Completed' AND e.encounter_id IS NULL ORDER BY p.patient_id;",
+    explanation: "This finds care gaps by joining completed appointments to patients, then checking whether a matching completed encounter exists.",
+    hint: "Join patients to appointments, then LEFT JOIN encounters filtered to Completed.",
+    tablesUsed: ["patients", "appointments", "encounters"],
+    joinHint: "patients.patient_id = appointments.patient_id; patients.patient_id = encounters.patient_id",
+    requiredConcepts: ["SELECT", "FROM", "JOIN", "LEFT JOIN", "WHERE", "ORDER BY", "DISTINCT"],
+    commonMistakes: [
+      "Using INNER JOIN instead of LEFT JOIN",
+      "Forgetting DISTINCT",
+      "Filtering encounter status in the wrong place"
+    ]
+  },
+  {
+    title: "Level 20: Rank Providers by Encounter Volume",
+    mission: "Rank providers by total encounter volume.",
+    goal: "Return provider_name, specialty, encounter_count, and volume_rank.",
+    starterQuery: "SELECT provider_name, specialty, encounter_count, RANK() OVER (ORDER BY encounter_count DESC) AS volume_rank FROM (SELECT pr.provider_name, pr.specialty, COUNT(*) AS encounter_count FROM providers pr JOIN encounters e ON pr.provider_id = e.provider_id GROUP BY pr.provider_id, pr.provider_name, pr.specialty) t ORDER BY volume_rank, provider_name;",
+    solutionQuery: "SELECT provider_name, specialty, encounter_count, RANK() OVER (ORDER BY encounter_count DESC) AS volume_rank FROM (SELECT pr.provider_name, pr.specialty, COUNT(*) AS encounter_count FROM providers pr JOIN encounters e ON pr.provider_id = e.provider_id GROUP BY pr.provider_id, pr.provider_name, pr.specialty) t ORDER BY volume_rank, provider_name;",
+    explanation: "This level teaches ranking aggregated results with a window function after a subquery.",
+    hint: "Aggregate encounter counts in a subquery, then apply RANK().",
+    tablesUsed: ["providers", "encounters"],
+    joinHint: "providers.provider_id = encounters.provider_id",
+    requiredConcepts: ["SELECT", "FROM", "JOIN", "GROUP BY", "ORDER BY", "RANK", "COUNT"],
+    commonMistakes: [
+      "Missing RANK()",
+      "Ranking raw encounters instead of aggregated counts",
+      "No subquery"
+    ]
+  },
+  {
+    title: "Level 21: Readmission Count by Facility",
+    mission: "Calculate 30-day readmission counts by facility.",
+    goal: "Return facility and readmission_count.",
+    starterQuery: "SELECT e1.facility, COUNT(DISTINCT e2.encounter_id) AS readmission_count FROM encounters e1 JOIN encounters e2 ON e1.patient_id = e2.patient_id AND e2.admit_date > e1.discharge_date AND julianday(e2.admit_date) - julianday(e1.discharge_date) <= 30 WHERE e1.discharge_date IS NOT NULL GROUP BY e1.facility;",
+    solutionQuery: "SELECT e1.facility, COUNT(DISTINCT e2.encounter_id) AS readmission_count FROM encounters e1 JOIN encounters e2 ON e1.patient_id = e2.patient_id AND e2.admit_date > e1.discharge_date AND julianday(e2.admit_date) - julianday(e1.discharge_date) <= 30 WHERE e1.discharge_date IS NOT NULL GROUP BY e1.facility;",
+    explanation: "This extends the readmission logic by aggregating readmission counts at the facility level.",
+    hint: "Use a self-join on encounters and group the later readmissions by facility.",
+    tablesUsed: ["encounters"],
+    joinHint: "Self-join: encounters.patient_id = encounters.patient_id",
+    requiredConcepts: ["SELECT", "FROM", "JOIN", "WHERE", "GROUP BY", "COUNT", "DISTINCT"],
+    commonMistakes: [
+      "Forgetting the self-join",
+      "Missing the 30-day date logic",
+      "Counting all encounters instead of readmissions"
+    ]
+  },
+  {
+    title: "Level 22: Average LOS by Department and Encounter Type",
+    mission: "Calculate average LOS by department and encounter type.",
+    goal: "Return department, encounter_type, and avg_los.",
+    starterQuery: "SELECT department, encounter_type, ROUND(AVG(length_of_stay), 2) AS avg_los FROM encounters WHERE length_of_stay IS NOT NULL GROUP BY department, encounter_type;",
+    solutionQuery: "SELECT department, encounter_type, ROUND(AVG(length_of_stay), 2) AS avg_los FROM encounters WHERE length_of_stay IS NOT NULL GROUP BY department, encounter_type;",
+    explanation: "This groups by two dimensions at once so you can compare LOS across both service and encounter type.",
+    hint: "Group by both department and encounter_type.",
+    tablesUsed: ["encounters"],
+    joinHint: "No join needed.",
+    requiredConcepts: ["SELECT", "FROM", "WHERE", "GROUP BY", "AVG"],
+    commonMistakes: [
+      "Grouping by only one column",
+      "Using SUM instead of AVG",
+      "Including null LOS values"
+    ]
+  },
+  {
+    title: "Level 23: Denial Rate by Payer",
+    mission: "Calculate denied claims as a percent of all claims by payer.",
+    goal: "Return payer, total_claims, denied_claims, and denial_rate.",
+    starterQuery: "SELECT payer, COUNT(*) AS total_claims, SUM(CASE WHEN claim_status = 'Denied' THEN 1 ELSE 0 END) AS denied_claims, ROUND(100.0 * SUM(CASE WHEN claim_status = 'Denied' THEN 1 ELSE 0 END) / COUNT(*), 2) AS denial_rate FROM claims GROUP BY payer;",
+    solutionQuery: "SELECT payer, COUNT(*) AS total_claims, SUM(CASE WHEN claim_status = 'Denied' THEN 1 ELSE 0 END) AS denied_claims, ROUND(100.0 * SUM(CASE WHEN claim_status = 'Denied' THEN 1 ELSE 0 END) / COUNT(*), 2) AS denial_rate FROM claims GROUP BY payer;",
+    explanation: "This introduces conditional aggregation with CASE to calculate rates.",
+    hint: "Use CASE WHEN inside SUM to count denied claims.",
+    tablesUsed: ["claims"],
+    joinHint: "No join needed.",
+    requiredConcepts: ["SELECT", "FROM", "GROUP BY", "SUM", "COUNT", "CASE"],
+    commonMistakes: [
+      "Missing CASE expression",
+      "Using only denied claims instead of all claims in the denominator",
+      "Forgetting to group by payer"
+    ]
+  },
+  {
+    title: "Level 24: Top 10 Highest-Risk Patients by Total Charges",
+    mission: "Find the top 10 highest-risk patients by total charges.",
+    goal: "Return patient_id, first_name, last_name, risk_score, and total_charges.",
+    starterQuery: "SELECT p.patient_id, p.first_name, p.last_name, p.risk_score, ROUND(SUM(c.amount), 2) AS total_charges FROM patients p JOIN charges c ON p.patient_id = c.patient_id GROUP BY p.patient_id, p.first_name, p.last_name, p.risk_score ORDER BY p.risk_score DESC, total_charges DESC LIMIT 10;",
+    solutionQuery: "SELECT p.patient_id, p.first_name, p.last_name, p.risk_score, ROUND(SUM(c.amount), 2) AS total_charges FROM patients p JOIN charges c ON p.patient_id = c.patient_id GROUP BY p.patient_id, p.first_name, p.last_name, p.risk_score ORDER BY p.risk_score DESC, total_charges DESC LIMIT 10;",
+    explanation: "This level combines patient risk with financial burden and introduces LIMIT for top-N analysis.",
+    hint: "Join patients to charges, sum charges, sort by risk then dollars, and limit to 10.",
+    tablesUsed: ["patients", "charges"],
+    joinHint: "patients.patient_id = charges.patient_id",
+    requiredConcepts: ["SELECT", "FROM", "JOIN", "GROUP BY", "ORDER BY", "LIMIT", "SUM"],
+    commonMistakes: [
+      "Missing LIMIT 10",
+      "Sorting by charges only",
+      "Forgetting to aggregate charges"
+    ]
+  },
+  {
+    title: "Level 25: No-Show Rate by Department",
+    mission: "Calculate appointment no-show rate by department.",
+    goal: "Return department, total_appointments, no_shows, and no_show_rate.",
+    starterQuery: "SELECT department, COUNT(*) AS total_appointments, SUM(CASE WHEN status = 'No Show' THEN 1 ELSE 0 END) AS no_shows, ROUND(100.0 * SUM(CASE WHEN status = 'No Show' THEN 1 ELSE 0 END) / COUNT(*), 2) AS no_show_rate FROM appointments GROUP BY department;",
+    solutionQuery: "SELECT department, COUNT(*) AS total_appointments, SUM(CASE WHEN status = 'No Show' THEN 1 ELSE 0 END) AS no_shows, ROUND(100.0 * SUM(CASE WHEN status = 'No Show' THEN 1 ELSE 0 END) / COUNT(*), 2) AS no_show_rate FROM appointments GROUP BY department;",
+    explanation: "This calculates a rate from appointment status categories without filtering away the denominator.",
+    hint: "Use conditional aggregation grouped by department.",
+    tablesUsed: ["appointments"],
+    joinHint: "No join needed.",
+    requiredConcepts: ["SELECT", "FROM", "GROUP BY", "SUM", "COUNT", "CASE"],
+    commonMistakes: [
+      "Using WHERE status = 'No Show' which removes total appointments",
+      "Missing the percentage calculation",
+      "Grouping by facility instead of department"
+    ]
+  },
+  {
+    title: "Level 26: Providers Above Average Encounter Volume",
+    mission: "Find providers whose encounter volume is above the average provider volume.",
+    goal: "Return provider_name and encounter_count.",
+    starterQuery: "SELECT provider_name, encounter_count FROM (SELECT pr.provider_name, COUNT(*) AS encounter_count FROM providers pr JOIN encounters e ON pr.provider_id = e.provider_id GROUP BY pr.provider_id, pr.provider_name) t WHERE encounter_count > (SELECT AVG(encounter_count) FROM (SELECT COUNT(*) AS encounter_count FROM encounters GROUP BY provider_id) x) ORDER BY encounter_count DESC, provider_name;",
+    solutionQuery: "SELECT provider_name, encounter_count FROM (SELECT pr.provider_name, COUNT(*) AS encounter_count FROM providers pr JOIN encounters e ON pr.provider_id = e.provider_id GROUP BY pr.provider_id, pr.provider_name) t WHERE encounter_count > (SELECT AVG(encounter_count) FROM (SELECT COUNT(*) AS encounter_count FROM encounters GROUP BY provider_id) x) ORDER BY encounter_count DESC, provider_name;",
+    explanation: "This teaches using subqueries to compare an entity against an average benchmark.",
+    hint: "Use a subquery for encounter volume, then compare it to the average provider volume.",
+    tablesUsed: ["providers", "encounters"],
+    joinHint: "providers.provider_id = encounters.provider_id",
+    requiredConcepts: ["SELECT", "FROM", "JOIN", "GROUP BY", "ORDER BY"],
+    commonMistakes: [
+      "Not using a subquery for the average",
+      "Comparing against average rows instead of average provider counts",
+      "Missing the provider join"
+    ]
+  },
+  {
+    title: "Level 27: Patients with Multiple ED Visits",
+    mission: "Identify patients with more than one ED encounter.",
+    goal: "Return patient_id and ed_visits.",
+    starterQuery: "SELECT patient_id, COUNT(*) AS ed_visits FROM encounters WHERE department = 'ER' GROUP BY patient_id HAVING COUNT(*) > 1 ORDER BY ed_visits DESC, patient_id;",
+    solutionQuery: "SELECT patient_id, COUNT(*) AS ed_visits FROM encounters WHERE department = 'ER' GROUP BY patient_id HAVING COUNT(*) > 1 ORDER BY ed_visits DESC, patient_id;",
+    explanation: "This level reinforces HAVING for grouped filters.",
+    hint: "Filter to ER encounters, group by patient_id, then use HAVING COUNT(*) > 1.",
+    tablesUsed: ["encounters"],
+    joinHint: "No join needed.",
+    requiredConcepts: ["SELECT", "FROM", "WHERE", "GROUP BY", "HAVING", "ORDER BY", "COUNT"],
+    commonMistakes: [
+      "Using WHERE COUNT(*) > 1 instead of HAVING",
+      "Forgetting the ER filter",
+      "Missing ORDER BY"
+    ]
+  },
+  {
+    title: "Level 28: Net Collection Rate by Payer",
+    mission: "Calculate paid amount as a percentage of billed amount by payer.",
+    goal: "Return payer, billed_total, paid_total, and net_collection_rate.",
+    starterQuery: "SELECT payer, ROUND(SUM(billed_amount), 2) AS billed_total, ROUND(SUM(paid_amount), 2) AS paid_total, ROUND(100.0 * SUM(paid_amount) / SUM(billed_amount), 2) AS net_collection_rate FROM claims GROUP BY payer;",
+    solutionQuery: "SELECT payer, ROUND(SUM(billed_amount), 2) AS billed_total, ROUND(SUM(paid_amount), 2) AS paid_total, ROUND(100.0 * SUM(paid_amount) / SUM(billed_amount), 2) AS net_collection_rate FROM claims GROUP BY payer;",
+    explanation: "This is a classic revenue cycle metric: collections divided by billed dollars.",
+    hint: "Use SUM(paid_amount) divided by SUM(billed_amount), grouped by payer.",
+    tablesUsed: ["claims"],
+    joinHint: "No join needed.",
+    requiredConcepts: ["SELECT", "FROM", "GROUP BY", "SUM"],
+    commonMistakes: [
+      "Using AVG instead of SUM",
+      "Dividing row-level values instead of totals",
+      "Forgetting to group by payer"
+    ]
+  },
+  {
+    title: "Level 29: Observation Encounters Over 48 Hours",
+    mission: "Find observation encounters with LOS greater than 48 hours.",
+    goal: "Return encounter_id, patient_id, facility, department, and length_of_stay.",
+    starterQuery: "SELECT encounter_id, patient_id, facility, department, length_of_stay FROM encounters WHERE encounter_type = 'Observation' AND length_of_stay > 2 ORDER BY length_of_stay DESC, encounter_id;",
+    solutionQuery: "SELECT encounter_id, patient_id, facility, department, length_of_stay FROM encounters WHERE encounter_type = 'Observation' AND length_of_stay > 2 ORDER BY length_of_stay DESC, encounter_id;",
+    explanation: "This simulates operational logic for long-stay observation encounters. In this simplified dataset, LOS > 2 days means over 48 hours.",
+    hint: "Observation over 48 hours means length_of_stay > 2 in this simplified dataset.",
+    tablesUsed: ["encounters"],
+    joinHint: "No join needed.",
+    requiredConcepts: ["SELECT", "FROM", "WHERE", "ORDER BY"],
+    commonMistakes: [
+      "Filtering only by LOS but not encounter_type",
+      "Using >= 2 instead of > 2",
+      "Missing ORDER BY"
+    ]
+  },
+  {
+    title: "Level 30: Department Ranking by Denied Dollars",
+    mission: "Rank departments by total denied billed amount.",
+    goal: "Return department, denied_amount, and denial_rank.",
+    starterQuery: "SELECT department, denied_amount, RANK() OVER (ORDER BY denied_amount DESC) AS denial_rank FROM (SELECT e.department, ROUND(SUM(c.billed_amount), 2) AS denied_amount FROM claims c JOIN encounters e ON c.encounter_id = e.encounter_id WHERE c.claim_status = 'Denied' GROUP BY e.department) t ORDER BY denial_rank, department;",
+    solutionQuery: "SELECT department, denied_amount, RANK() OVER (ORDER BY denied_amount DESC) AS denial_rank FROM (SELECT e.department, ROUND(SUM(c.billed_amount), 2) AS denied_amount FROM claims c JOIN encounters e ON c.encounter_id = e.encounter_id WHERE c.claim_status = 'Denied' GROUP BY e.department) t ORDER BY denial_rank, department;",
+    explanation: "This ties revenue-cycle denials back to operational departments and ranks them by impact.",
+    hint: "Aggregate denied dollars by department in a subquery, then apply RANK().",
+    tablesUsed: ["claims", "encounters"],
+    joinHint: "claims.encounter_id = encounters.encounter_id",
+    requiredConcepts: ["SELECT", "FROM", "JOIN", "WHERE", "GROUP BY", "ORDER BY", "RANK"],
+    commonMistakes: [
+      "Missing the subquery",
+      "Ranking before aggregation",
+      "Using paid_amount instead of billed_amount"
+    ]
+  }
+];
+
+function getDifficulty(index) {
+  const levelNumber = index + 1;
+  if (levelNumber <= 5) return "Easy";
+  if (levelNumber <= 10) return "Intermediate";
+  if (levelNumber <= 15) return "Hard";
+  return "Advanced";
+}
+
+function getDifficultyClass(index) {
+  const difficulty = getDifficulty(index).toLowerCase();
+  return `difficulty-${difficulty}`;
+}
+
+function getTableByName(tableName) {
+  return schema.tables.find(function (table) {
+    return table.name === tableName;
+  });
+}
+
+function getRelationshipsForTable(tableName) {
+  return schema.relationships.filter(function (rel) {
+    return rel.leftTable === tableName || rel.rightTable === tableName;
+  });
+}
+
+function normalizeCompletedLevels(levelsArray) {
+  const set = new Set();
+  (levelsArray || []).forEach(function (val) {
+    const num = Number(val);
+    if (!Number.isNaN(num) && num >= 0 && num < levels.length) {
+      set.add(num);
+    }
+  });
+  return Array.from(set).sort(function (a, b) {
+    return a - b;
+  });
+}
+
+function getMaxUnlockedLevel() {
+  if (!gameState.completedLevels.length) return 0;
+  return Math.min(Math.max(...gameState.completedLevels) + 1, levels.length - 1);
+}
+
+function getUnlockedLevels() {
+  const maxUnlocked = getMaxUnlockedLevel();
+  const unlocked = [];
+  for (let i = 0; i <= maxUnlocked; i++) {
+    unlocked.push(i);
+  }
+  return unlocked;
+}
+
+function hasBadge(id) {
+  return gameState.badges.indexOf(id) !== -1;
+}
+
+function awardBadge(id) {
+  if (!hasBadge(id)) {
+    gameState.badges.push(id);
+  }
+}
+
+function evaluateBadges() {
+  gameState.badges = [];
+
+  const completedCount = gameState.completedLevels.length;
+
+  if (completedCount >= 1) awardBadge("first_win");
+  if (completedCount >= 3) awardBadge("three_levels");
+  if (completedCount >= 5) awardBadge("five_levels");
+  if (completedCount >= 10) awardBadge("ten_levels");
+  if (completedCount >= 15) awardBadge("fifteen_levels");
+  if (completedCount >= 20) awardBadge("twenty_levels");
+  if (completedCount >= 30) awardBadge("thirty_levels");
+  if (gameState.firstTryWins >= 3) awardBadge("first_try_three");
+
+  const completedSet = new Set(gameState.completedLevels);
+
+  if (completedSet.has(10) && completedSet.has(11) && completedSet.has(14) && completedSet.has(15)) {
+    awardBadge("join_master");
+  }
+
+  if (completedSet.has(2) && completedSet.has(6) && completedSet.has(8) && completedSet.has(9)) {
+    awardBadge("aggregation_ace");
+  }
+
+  if (completedSet.has(20) && completedSet.has(23) && completedSet.has(24) && completedSet.has(29)) {
+    awardBadge("advanced_analyst");
+  }
+
+  if (localStorage.getItem(FIRST_QUERY_KEY) === "1") {
+    awardBadge("first_query");
+  }
+}
+
+function loadGameState() {
+  let parsed = null;
+
+  for (const key of STORAGE_KEYS) {
+    const raw = localStorage.getItem(key);
+    if (!raw) continue;
+    try {
+      parsed = JSON.parse(raw);
+      break;
+    } catch (e) {
+      console.error("Failed to load progress from", key, e);
+    }
+  }
+
+  if (!parsed) return;
+
+  gameState = {
+    currentLevel: parsed.currentLevel ?? 0,
+    completedLevels: normalizeCompletedLevels(parsed.completedLevels ?? []),
+    badges: Array.isArray(parsed.badges) ? parsed.badges : [],
+    wrongAttemptsByLevel: parsed.wrongAttemptsByLevel ?? {},
+    firstTryWins: parsed.firstTryWins ?? 0
+  };
+
+  if (gameState.currentLevel >= levels.length) {
+    gameState.currentLevel = 0;
+  }
+}
+
+function saveGameState() {
+  localStorage.setItem(PRIMARY_STORAGE_KEY, JSON.stringify(gameState));
+}
+
+function updateDashboard() {
+  const progressText = document.getElementById("progress-text");
+  const progressBar = document.getElementById("progress-bar");
+  const currentLevelDisplay = document.getElementById("current-level-display");
+  const badgeCount = document.getElementById("badge-count");
+
+  const completed = gameState.completedLevels.length;
+  const total = levels.length;
+  const pct = total > 0 ? (completed / total) * 100 : 0;
+
+  if (progressText) progressText.textContent = `${completed} / ${total} levels completed`;
+  if (progressBar) progressBar.style.width = `${pct}%`;
+  if (currentLevelDisplay) currentLevelDisplay.textContent = levels[currentLevel].title;
+  if (badgeCount) badgeCount.textContent = `${gameState.badges.length} earned`;
+}
+
+function renderBadges() {
+  const container = document.getElementById("badges-container");
+  if (!container) return;
+
+  let html = "";
+  badgeCatalog.forEach(function (badge) {
+    const earned = hasBadge(badge.id);
+    html += `<div class="badge-chip ${earned ? "" : "locked"}">${earned ? "🏅" : "🔒"} ${badge.label}</div>`;
+  });
+  container.innerHTML = html;
+}
+
+function resetAllProgress() {
+  STORAGE_KEYS.forEach(function (key) {
+    localStorage.removeItem(key);
+  });
+  localStorage.removeItem(PRIMARY_STORAGE_KEY);
+  localStorage.removeItem(FIRST_QUERY_KEY);
+
+  gameState = {
+    currentLevel: 0,
+    completedLevels: [],
+    badges: [],
+    wrongAttemptsByLevel: {},
+    firstTryWins: 0
+  };
+
+  lastResult = null;
+  currentLevel = 0;
+
+  evaluateBadges();
+  renderBadges();
+  renderLevelsPanel();
+  loadLevel(0);
+  updateDashboard();
+}
+
+function renderLevelsPanel() {
+  const container = document.getElementById("levels-list");
+  if (!container) return;
+
+  const unlocked = getUnlockedLevels();
+  const unlockedSet = new Set(unlocked);
+
+  let html = "";
+
+  for (let i = 0; i < levels.length; i++) {
+    const completed = gameState.completedLevels.indexOf(i) !== -1;
+    const isCurrent = i === currentLevel;
+    const isUnlocked = unlockedSet.has(i);
+    const difficulty = getDifficulty(i);
+
+    let classNames = "level-item";
+    if (completed) classNames += " completed";
+    if (isCurrent) classNames += " current";
+    if (!isUnlocked) classNames += " locked";
+
+    let statusText = "Locked";
+    if (completed) {
+      statusText = "Completed";
+    } else if (isCurrent) {
+      statusText = "Current";
+    } else if (isUnlocked) {
+      statusText = "Unlocked";
+    }
+
+    const itemInner = `
+      <div class="level-item-head">
+        <span class="level-item-title">${levels[i].title}</span>
+        <span class="difficulty-badge ${getDifficultyClass(i)}">${difficulty}</span>
+      </div>
+      <span class="level-status">${statusText}</span>
+    `;
+
+    if (isUnlocked) {
+      html += `<button class="${classNames}" onclick="loadLevel(${i})">${itemInner}</button>`;
+    } else {
+      html += `<button class="${classNames}" disabled>${itemInner}</button>`;
+    }
+  }
+
+  container.innerHTML = html;
+}
+
+function goPreviousLevel() {
+  const unlocked = getUnlockedLevels();
+  const currentPos = unlocked.indexOf(currentLevel);
+  if (currentPos > 0) {
+    loadLevel(unlocked[currentPos - 1]);
+  }
+}
+
+function goNextLevel() {
+  const unlocked = getUnlockedLevels();
+  const currentPos = unlocked.indexOf(currentLevel);
+  if (currentPos !== -1 && currentPos < unlocked.length - 1) {
+    loadLevel(unlocked[currentPos + 1]);
+  }
+}
+
+function initResizableSchemaPanel() {
+  const panel = document.getElementById("schema-panel");
+  const resizer = document.getElementById("schema-resizer");
+  if (!panel || !resizer) return;
+
+  let isDragging = false;
+
+  resizer.addEventListener("mousedown", function () {
+    isDragging = true;
+    document.body.style.userSelect = "none";
+  });
+
+  document.addEventListener("mousemove", function (e) {
+    if (!isDragging) return;
+    const newWidth = Math.min(Math.max(e.clientX, 260), 900);
+    panel.style.width = newWidth + "px";
+  });
+
+  document.addEventListener("mouseup", function () {
+    if (!isDragging) return;
+    isDragging = false;
+    document.body.style.userSelect = "";
+  });
+}
+
+function renderSchemaExplorer() {
+  renderTableCards();
+  renderRelationshipCards();
+}
+
+async function renderTableCards() {
+  const tablesDiv = document.getElementById("schema-tables");
+  if (!tablesDiv) return;
+
+  let html = "";
+  schema.tables.forEach(function (table) {
+    html += `
+      <details class="schema-card schema-table-card" id="table-card-${table.name}">
+        <summary>${table.name}</summary>
+        <p><strong>Description:</strong> ${table.description}</p>
+        <p><strong>Keys:</strong> ${table.keyColumns.join(", ")}</p>
+        <p><strong>Columns:</strong> ${table.notableColumns.join(", ")}</p>
+        <div class="schema-table-actions">
+          <button class="schema-table-view-btn" onclick="openTableModal('${table.name}')">Open Table Viewer</button>
+        </div>
+        <div id="preview-${table.name}">Loading sample rows...</div>
+      </details>
+    `;
+  });
+  tablesDiv.innerHTML = html;
+
+  for (const table of schema.tables) {
+    const preview = await fetchPreview(table.name);
+    const previewDiv = document.getElementById("preview-" + table.name);
+    if (!previewDiv) continue;
+
+    if (preview.error) {
+      previewDiv.innerHTML = `<p>${preview.error}</p>`;
+      continue;
+    }
+
+    previewDiv.innerHTML = buildTableHtml(preview);
+  }
+}
+
+function renderRelationshipCards() {
+  const relDiv = document.getElementById("schema-relationships");
+  if (!relDiv) return;
+
+  let html = "";
+  schema.relationships.forEach(function (rel) {
+    html += `
+      <details class="relationship-item schema-relationship-card" id="rel-card-${rel.id}">
+        <summary>${rel.label}</summary>
+        <p><strong>Why it matters:</strong> ${rel.explanation}</p>
+        <code>${rel.example}</code>
+      </details>
+    `;
+  });
+  relDiv.innerHTML = html;
+}
+
+function buildTableHtml(data) {
+  let html = "<table><tr>";
+  data.columns.forEach(function (col) {
+    html += "<th>" + col + "</th>";
+  });
+  html += "</tr>";
+
+  data.rows.forEach(function (row) {
+    html += "<tr>";
+    row.forEach(function (cell) {
+      html += "<td>" + cell + "</td>";
+    });
+    html += "</tr>";
+  });
+
+  html += "</table>";
+  return html;
+}
+
+async function openTableModal(tableName) {
+  const table = getTableByName(tableName);
+  if (!table) return;
+
+  const overlay = document.getElementById("table-modal-overlay");
+  const title = document.getElementById("table-modal-title");
+  const description = document.getElementById("table-modal-description");
+  const keys = document.getElementById("table-modal-keys");
+  const columns = document.getElementById("table-modal-columns");
+  const relationships = document.getElementById("table-modal-relationships");
+  const previewContent = document.getElementById("table-modal-preview-content");
+
+  title.textContent = table.name;
+  description.textContent = table.description;
+  keys.textContent = table.keyColumns.join(", ");
+  columns.textContent = table.notableColumns.join(", ");
+
+  const related = getRelationshipsForTable(table.name);
+  if (related.length) {
+    let relHtml = `<div class="modal-relationship-list">`;
+    related.forEach(function (rel) {
+      relHtml += `<div class="modal-relationship-chip">${rel.label}</div>`;
+    });
+    relHtml += `</div>`;
+    relationships.innerHTML = relHtml;
+  } else {
+    relationships.innerHTML = "<p>No related joins found.</p>";
+  }
+
+  previewContent.innerHTML = "<p>Loading sample rows...</p>";
+
+  overlay.classList.remove("hidden");
+  document.body.style.overflow = "hidden";
+
+  const preview = await fetchPreview(table.name);
+  if (preview.error) {
+    previewContent.innerHTML = `<p>${preview.error}</p>`;
+  } else {
+    previewContent.innerHTML = buildTableHtml(preview);
+  }
+}
+
+function closeTableModal(event) {
+  if (event && event.target && event.target.id !== "table-modal-overlay") return;
+  const overlay = document.getElementById("table-modal-overlay");
+  overlay.classList.add("hidden");
+  document.body.style.overflow = "";
+}
+
+document.addEventListener("keydown", function (event) {
+  if (event.key === "Escape") {
+    const overlay = document.getElementById("table-modal-overlay");
+    if (overlay && !overlay.classList.contains("hidden")) {
+      closeTableModal();
+    }
+  }
+});
+
+function collapseAllSchemaCards() {
+  document.querySelectorAll(".schema-table-card").forEach(function (card) {
+    card.open = false;
+  });
+  document.querySelectorAll(".schema-relationship-card").forEach(function (card) {
+    card.open = false;
+  });
+}
+
+function relationshipIsRelevant(rel, tablesUsed) {
+  return tablesUsed.indexOf(rel.leftTable) !== -1 && tablesUsed.indexOf(rel.rightTable) !== -1;
+}
+
+function highlightRelevantSchema(level) {
+  collapseAllSchemaCards();
+
+  level.tablesUsed.forEach(function (tableName) {
+    const card = document.getElementById("table-card-" + tableName);
+    if (card) card.open = true;
+  });
+
+  schema.relationships.forEach(function (rel) {
+    if (relationshipIsRelevant(rel, level.tablesUsed)) {
+      const relCard = document.getElementById("rel-card-" + rel.id);
+      if (relCard) relCard.open = true;
+    }
+  });
+}
+
+async function runBackendQuery(queryText) {
+  const res = await fetch("/query", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ query: queryText })
+  });
+  return await res.json();
+}
+
+async function fetchPreview(tableName) {
+  const res = await fetch("/preview/" + encodeURIComponent(tableName));
+  return await res.json();
+}
+
+function renderResultTable(data) {
+  const output = document.getElementById("output");
+  if (!output) return;
+  output.innerHTML = buildTableHtml(data);
+}
+
+function normalizeResults(data) {
+  return {
+    columns: (data.columns || []).map(function (col) {
+      return String(col);
+    }),
+    rows: (data.rows || []).map(function (row) {
+      return row.map(function (cell) {
+        if (cell === null || cell === undefined) return null;
+        return String(cell);
+      });
+    })
+  };
+}
+
+function arraysEqual(a, b) {
+  return JSON.stringify(a) === JSON.stringify(b);
+}
+
+function getRowKey(row) {
+  return JSON.stringify(row);
+}
+
+function countDuplicateRows(rows) {
+  const counts = {};
+  rows.forEach(function (row) {
+    const key = getRowKey(row);
+    counts[key] = (counts[key] || 0) + 1;
+  });
+
+  let duplicates = 0;
+  Object.keys(counts).forEach(function (key) {
+    if (counts[key] > 1) duplicates += counts[key] - 1;
+  });
+
+  return duplicates;
+}
+
+function missingColumns(userCols, solutionCols) {
+  return solutionCols.filter(function (col) {
+    return userCols.indexOf(col) === -1;
+  });
+}
+
+function extraColumns(userCols, solutionCols) {
+  return userCols.filter(function (col) {
+    return solutionCols.indexOf(col) === -1;
+  });
+}
+
+function extractSyntaxErrorMessages(queryResult) {
+  const messages = [];
+  if (queryResult && queryResult.error) {
+    messages.push("SQL syntax/runtime error: " + queryResult.error);
+  }
+  return messages;
+}
+
+function analyzeQueryStructure(level, userQuery) {
+  const q = userQuery.toUpperCase();
+  const issues = [];
+
+  level.tablesUsed.forEach(function (table) {
+    if (q.indexOf(table.toUpperCase()) === -1) {
+      issues.push("You may be missing the `" + table + "` table.");
+    }
+  });
+
+  level.requiredConcepts.forEach(function (concept) {
+    const c = concept.toUpperCase();
+    if (q.indexOf(c) === -1) {
+      issues.push("You may be missing `" + concept + "`.");
+    }
+  });
+
+  if (level.joinHint && level.joinHint !== "No join needed.") {
+    if (level.requiredConcepts.indexOf("LEFT JOIN") !== -1 && q.indexOf("LEFT JOIN") === -1) {
+      issues.push("This level likely requires a `LEFT JOIN`.");
+    } else if (q.indexOf("JOIN") === -1) {
+      issues.push("This level likely requires a `JOIN`.");
+    }
+  }
+
+  return issues;
+}
+
+function analyzeResultDifferences(userData, solutionData) {
+  const messages = [];
+
+  const userCols = userData.columns;
+  const solutionCols = solutionData.columns;
+
+  const missingCols = missingColumns(userCols, solutionCols);
+  const extraCols = extraColumns(userCols, solutionCols);
+
+  if (missingCols.length > 0) {
+    messages.push("You are missing expected columns: " + missingCols.join(", ") + ".");
+  }
+
+  if (extraCols.length > 0) {
+    messages.push("You returned extra columns: " + extraCols.join(", ") + ".");
+  }
+
+  if (userData.rows.length > solutionData.rows.length) {
+    messages.push("Your result has too many rows. You may be missing a filter, DISTINCT, GROUP BY, or correct join condition.");
+  } else if (userData.rows.length < solutionData.rows.length) {
+    messages.push("Your result has too few rows. You may be filtering too much or using the wrong join.");
+  }
+
+  const dupes = countDuplicateRows(userData.rows);
+  if (dupes > 0) {
+    messages.push("Your result has duplicate rows. This often means the join condition is too broad or DISTINCT is needed.");
+  }
+
+  if (arraysEqual(userCols, solutionCols) && userData.rows.length === solutionData.rows.length && !arraysEqual(userData.rows, solutionData.rows)) {
+    messages.push("Your columns and row count look close, but the values or sort order are off.");
+  }
+
+  return messages;
+}
+
+function dedupeMessages(messages) {
+  const seen = {};
+  const deduped = [];
+
+  messages.forEach(function (msg) {
+    if (!seen[msg]) {
+      seen[msg] = true;
+      deduped.push(msg);
+    }
+  });
+
+  return deduped;
+}
+
+function buildHintMessage(level, userQuery, userResultOrNull, solutionData) {
+  let messages = [];
+
+  messages = messages.concat(analyzeQueryStructure(level, userQuery));
+
+  if (userResultOrNull && !userResultOrNull.error) {
+    const userNormalized = normalizeResults(userResultOrNull);
+    messages = messages.concat(analyzeResultDifferences(userNormalized, solutionData));
+  }
+
+  if (userResultOrNull && userResultOrNull.error) {
+    messages = messages.concat(extractSyntaxErrorMessages(userResultOrNull));
+  }
+
+  if (messages.length === 0) {
+    messages.push(level.hint);
+  }
+
+  if (level.commonMistakes && level.commonMistakes.length > 0) {
+    messages.push("Common mistakes for this level: " + level.commonMistakes.join("; ") + ".");
+  }
+
+  messages = dedupeMessages(messages);
+
+  return messages.map(function (m, i) {
+    return (i + 1) + ". " + m;
+  }).join("\n");
+}
+
+function resetQuery() {
+  document.getElementById("query").value = levels[currentLevel].starterQuery;
+}
+
+async function runQuery() {
+  const query = document.getElementById("query").value;
+  const output = document.getElementById("output");
+  const data = await runBackendQuery(query);
+
+  if (localStorage.getItem(FIRST_QUERY_KEY) !== "1") {
+    localStorage.setItem(FIRST_QUERY_KEY, "1");
+    evaluateBadges();
+    saveGameState();
+    renderBadges();
+    updateDashboard();
+  }
+
+  lastResult = data;
+
+  if (data.error) {
+    if (output) output.innerText = data.error;
+    return;
+  }
+
+  renderResultTable(data);
+}
+
+async function checkAnswer() {
+  const feedback = document.getElementById("feedback");
+  const nextLevelDiv = document.getElementById("next-level");
+  const hintDiv = document.getElementById("level-hint");
+  const userQuery = document.getElementById("query").value;
+  const level = levels[currentLevel];
+
+  if (!lastResult) {
+    if (feedback) feedback.innerHTML = "<p style='color:red;'><strong>Run your query first.</strong></p>";
+    return;
+  }
+
+  const solutionResult = await runBackendQuery(level.solutionQuery);
+
+  if (solutionResult.error) {
+    if (feedback) feedback.innerHTML = "<p style='color:red;'><strong>Validation error:</strong> " + solutionResult.error + "</p>";
+    return;
+  }
+
+  const solutionNormalized = normalizeResults(solutionResult);
+
+  let isCorrect = false;
+
+  if (!lastResult.error) {
+    const userNormalized = normalizeResults(lastResult);
+    isCorrect =
+      arraysEqual(userNormalized.columns, solutionNormalized.columns) &&
+      arraysEqual(userNormalized.rows, solutionNormalized.rows);
+  }
+
+  if (isCorrect) {
+    if (feedback) {
+      feedback.innerHTML = "<p style='color:green;'><strong>Correct!</strong> You completed " + level.title + ".</p>";
+    }
+
+    if (hintDiv) {
+      hintDiv.innerHTML = "Nice work. You got it right.";
+    }
+
+    if (gameState.completedLevels.indexOf(currentLevel) === -1) {
+      gameState.completedLevels.push(currentLevel);
+      gameState.completedLevels = normalizeCompletedLevels(gameState.completedLevels);
+    }
+
+    if ((gameState.wrongAttemptsByLevel[currentLevel] || 0) === 0) {
+      gameState.firstTryWins += 1;
+    }
+
+    gameState.currentLevel = currentLevel;
+    evaluateBadges();
+    saveGameState();
+    updateDashboard();
+    renderBadges();
+    renderLevelsPanel();
+
+    if (nextLevelDiv) {
+      if (currentLevel < levels.length - 1) {
+        nextLevelDiv.innerHTML = '<button onclick="loadLevel(' + (Math.min(currentLevel + 1, getMaxUnlockedLevel())) + ')">Next Level</button>';
+      } else {
+        nextLevelDiv.innerHTML = "<p><strong>You completed all 30 levels.</strong></p>";
+      }
+    }
+
+    return;
+  }
+
+  gameState.wrongAttemptsByLevel[currentLevel] = (gameState.wrongAttemptsByLevel[currentLevel] || 0) + 1;
+  const attempts = gameState.wrongAttemptsByLevel[currentLevel];
+  saveGameState();
+
+  if (feedback) {
+    if (lastResult.error) {
+      feedback.innerHTML = "<p style='color:red;'><strong>Your SQL did not run.</strong> Fix the query and try again.</p>";
+    } else {
+      feedback.innerHTML = "<p style='color:red;'><strong>Not quite.</strong> Try revising your query.</p>";
+    }
+  }
+
+  if (hintDiv) {
+    if (attempts >= 3) {
+      hintDiv.innerHTML =
+        "Correct Answer:\n\n" +
+        level.solutionQuery +
+        "\n\nWhy:\n" +
+        level.explanation;
+    } else if (attempts >= 2) {
+      hintDiv.innerHTML = buildHintMessage(level, userQuery, lastResult, solutionNormalized);
+    } else {
+      hintDiv.innerHTML = "First wrong attempt recorded. After one more wrong attempt, you’ll get smart hints.";
+    }
+  }
+
+  if (nextLevelDiv) {
+    nextLevelDiv.innerHTML = "";
+  }
+
+  updateDashboard();
+  renderBadges();
+  renderLevelsPanel();
+}
+
+function loadLevel(index) {
+  const unlocked = getUnlockedLevels();
+  if (unlocked.indexOf(index) === -1) return;
+
+  currentLevel = index;
+  gameState.currentLevel = index;
+  saveGameState();
+
+  const level = levels[index];
+  const difficulty = getDifficulty(index);
+
+  const missionBox = document.querySelector(".mission-box");
+  if (missionBox) {
+    missionBox.innerHTML =
+      `<div class="mission-meta-row"><span class="difficulty-badge ${getDifficultyClass(index)}">${difficulty}</span></div>` +
+      "<h2>" + level.title + "</h2>" +
+      "<p><strong>Mission:</strong> " + level.mission + "</p>" +
+      "<p><strong>Goal:</strong> " + level.goal + "</p>" +
+      "<p><strong>Relevant Tables:</strong> " + level.tablesUsed.join(", ") + "</p>" +
+      "<p><strong>Join Hint:</strong> " + level.joinHint + "</p>";
+  }
+
+  const hintDiv = document.getElementById("level-hint");
+  if (hintDiv) {
+    hintDiv.innerHTML = "Run your query and check your answer. After two wrong tries, you’ll get smart hints. After the third wrong try, the answer will be shown with an explanation.";
+  }
+
+  document.getElementById("query").value = level.starterQuery;
+  document.getElementById("feedback").innerHTML = "";
+  document.getElementById("next-level").innerHTML = "";
+  document.getElementById("output").innerHTML = "";
+  lastResult = null;
+
+  highlightRelevantSchema(level);
+  renderLevelsPanel();
+  updateDashboard();
+}
+
+window.onload = function () {
+  loadGameState();
+  initResizableSchemaPanel();
+  renderSchemaExplorer();
+  evaluateBadges();
+  renderBadges();
+  currentLevel = gameState.currentLevel || 0;
+  renderLevelsPanel();
+  loadLevel(currentLevel);
+  updateDashboard();
+};
