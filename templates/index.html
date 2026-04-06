@@ -62,30 +62,32 @@
 
         <h1>CareOps: SQL Analyst</h1>
 
-        <div class="level-nav">
-            <button onclick="goPreviousLevel()">Previous</button>
+        <div class="workspace-layout">
+            <section class="play-area">
+                <div class="mission-box"></div>
 
-            <select id="level-select"></select>
+                <p>Write your SQL query:</p>
 
-            <button onclick="jumpToSelectedLevel()">Go</button>
-            <button onclick="goNextLevel()">Next</button>
+                <textarea id="query" rows="8" cols="80"></textarea><br>
+
+                <div class="button-row">
+                    <button onclick="runQuery()">Run Query</button>
+                    <button onclick="checkAnswer()">Check Answer</button>
+                    <button onclick="resetQuery()">Reset Query</button>
+                    <button onclick="goPreviousLevel()">Previous</button>
+                    <button onclick="goNextLevel()">Next</button>
+                </div>
+
+                <div id="feedback"></div>
+                <div id="next-level"></div>
+                <div id="output"></div>
+            </section>
+
+            <aside class="levels-panel">
+                <h3>Levels</h3>
+                <div id="levels-list" class="levels-list"></div>
+            </aside>
         </div>
-
-        <div class="mission-box"></div>
-
-        <p>Write your SQL query:</p>
-
-        <textarea id="query" rows="8" cols="80"></textarea><br>
-
-        <div class="button-row">
-            <button onclick="runQuery()">Run Query</button>
-            <button onclick="checkAnswer()">Check Answer</button>
-            <button onclick="resetQuery()">Reset Query</button>
-        </div>
-
-        <div id="feedback"></div>
-        <div id="next-level"></div>
-        <div id="output"></div>
     </main>
 </div>
 
