@@ -1,5 +1,8 @@
 let lastResult = null;
 let currentLevel = 0;
+let wrongAttemptsByLevel = {};
+let selectedTable = null;
+let selectedRelationship = null;
 
 const schema = {
   tables: [
@@ -39,6 +42,72 @@ const schema = {
       keyColumns: ["claim_id", "encounter_id", "patient_id"],
       notableColumns: ["payer", "claim_status", "denial_reason", "billed_amount", "paid_amount"]
     }
+  ],
+  relationships: [
+    {
+      id: "patients_encounters",
+      label: "patients.patient_id = encounters.patient_id",
+      leftTable: "patients",
+      rightTable: "encounters",
+      explanation: "Use this when you need patient details attached to encounter rows.",
+      example: "JOIN encounters e ON p.patient_id = e.patient_id"
+    },
+    {
+      id: "patients_appointments",
+      label: "patients.patient_id = appointments.patient_id",
+      leftTable: "patients",
+      rightTable: "appointments",
+      explanation: "Use this when analyzing appointment history by patient.",
+      example: "JOIN appointments a ON p.patient_id = a.patient_id"
+    },
+    {
+      id: "patients_charges",
+      label: "patients.patient_id = charges.patient_id",
+      leftTable: "patients",
+      rightTable: "charges",
+      explanation: "Use this when connecting patient details to charges.",
+      example: "JOIN charges ch ON p.patient_id = ch.patient_id"
+    },
+    {
+      id: "patients_claims",
+      label: "patients.patient_id = claims.patient_id",
+      leftTable: "patients",
+      rightTable: "claims",
+      explanation: "Use this when connecting patient details to claims.",
+      example: "JOIN claims c ON p.patient_id = c.patient_id"
+    },
+    {
+      id: "providers_encounters",
+      label: "providers.provider_id = encounters.provider_id",
+      leftTable: "providers",
+      rightTable: "encounters",
+      explanation: "Use this when tying providers to encounter volume or encounter detail.",
+      example: "JOIN encounters e ON pr.provider_id = e.provider_id"
+    },
+    {
+      id: "providers_appointments",
+      label: "providers.provider_id = appointments.provider_id",
+      leftTable: "providers",
+      rightTable: "appointments",
+      explanation: "Use this when tying providers to appointment activity.",
+      example: "JOIN appointments a ON pr.provider_id = a.provider_id"
+    },
+    {
+      id: "encounters_charges",
+      label: "encounters.encounter_id = charges.encounter_id",
+      leftTable: "encounters",
+      rightTable: "charges",
+      explanation: "Use this when tying charge activity to encounters, facilities, and departments.",
+      example: "JOIN charges ch ON e.encounter_id = ch.encounter_id"
+    },
+    {
+      id: "encounters_claims",
+      label: "encounters.encounter_id = claims.encounter_id",
+      leftTable: "encounters",
+      rightTable: "claims",
+      explanation: "Use this when tying claims, denials, and collections to encounter context.",
+      example: "JOIN claims c ON e.encounter_id = c.encounter_id"
+    }
   ]
 };
 
@@ -53,7 +122,6 @@ const levels = [
     tablesUsed: ["patients"],
     joinHint: "No join needed.",
     requiredConcepts: ["WHERE"],
-    expectedColumns: ["patient_id", "first_name", "last_name", "insurance_type"],
     commonMistakes: [
       "Forgetting to filter insurance_type to Medicare",
       "Returning extra columns",
@@ -70,14 +138,13 @@ const levels = [
     tablesUsed: ["encounters"],
     joinHint: "No join needed.",
     requiredConcepts: ["GROUP BY", "COUNT"],
-    expectedColumns: ["facility", "count"],
     commonMistakes: [
       "Missing GROUP BY facility",
       "Returning encounter-level detail instead of grouped counts"
     ]
   },
   {
-    title: "Level 3: Active Cardiology Patients",
+    title: "Level 3: Active Cardiology Encounters",
     mission: "Find all active encounters currently in Cardiology.",
     goal: "Show encounter_id, patient_id, department, and status.",
     starterQuery: "SELECT encounter_id, patient_id, department, status FROM encounters WHERE department = 'Cardiology' AND status = 'Active';",
@@ -86,7 +153,6 @@ const levels = [
     tablesUsed: ["encounters"],
     joinHint: "No join needed.",
     requiredConcepts: ["WHERE"],
-    expectedColumns: ["encounter_id", "patient_id", "department", "status"],
     commonMistakes: [
       "Filtering only department but not status",
       "Filtering only status but not department"
@@ -102,7 +168,6 @@ const levels = [
     tablesUsed: ["encounters"],
     joinHint: "No join needed.",
     requiredConcepts: ["WHERE"],
-    expectedColumns: ["encounter_id", "patient_id", "department", "discharge_date"],
     commonMistakes: [
       "Returning all encounters instead of discharged only",
       "Returning status instead of discharge_date"
@@ -118,7 +183,6 @@ const levels = [
     tablesUsed: ["patients"],
     joinHint: "No join needed.",
     requiredConcepts: ["ORDER BY"],
-    expectedColumns: ["patient_id", "first_name", "last_name", "insurance_type"],
     commonMistakes: [
       "Sorting by first_name first",
       "No ORDER BY at all"
@@ -134,7 +198,6 @@ const levels = [
     tablesUsed: ["patients"],
     joinHint: "No join needed.",
     requiredConcepts: ["GROUP BY", "COUNT"],
-    expectedColumns: ["insurance_type", "patient_count"],
     commonMistakes: [
       "Missing GROUP BY",
       "Returning individual patients instead of grouped counts"
@@ -150,7 +213,6 @@ const levels = [
     tablesUsed: ["appointments"],
     joinHint: "No join needed.",
     requiredConcepts: ["WHERE", "GROUP BY", "COUNT"],
-    expectedColumns: ["facility", "no_show_count"],
     commonMistakes: [
       "Forgetting the No Show filter",
       "Grouping by department instead of facility"
@@ -166,7 +228,6 @@ const levels = [
     tablesUsed: ["charges"],
     joinHint: "No join needed.",
     requiredConcepts: ["GROUP BY", "SUM"],
-    expectedColumns: ["payer", "total_amount"],
     commonMistakes: [
       "Using COUNT instead of SUM",
       "Grouping by charge_type instead of payer"
@@ -174,7 +235,7 @@ const levels = [
   },
   {
     title: "Level 9: Average LOS by Facility",
-    mission: "Calculate average length of stay for completed encounters by facility.",
+    mission: "Calculate average length of stay by facility.",
     goal: "Return facility and avg_los.",
     starterQuery: "SELECT facility, ROUND(AVG(length_of_stay), 2) AS avg_los FROM encounters WHERE length_of_stay IS NOT NULL GROUP BY facility;",
     solutionQuery: "SELECT facility, ROUND(AVG(length_of_stay), 2) AS avg_los FROM encounters WHERE length_of_stay IS NOT NULL GROUP BY facility;",
@@ -182,7 +243,6 @@ const levels = [
     tablesUsed: ["encounters"],
     joinHint: "No join needed.",
     requiredConcepts: ["WHERE", "GROUP BY", "AVG"],
-    expectedColumns: ["facility", "avg_los"],
     commonMistakes: [
       "Averaging all rows including null LOS",
       "Using SUM instead of AVG"
@@ -198,7 +258,6 @@ const levels = [
     tablesUsed: ["encounters"],
     joinHint: "No join needed.",
     requiredConcepts: ["WHERE", "GROUP BY", "COUNT"],
-    expectedColumns: ["status", "encounter_count"],
     commonMistakes: [
       "Forgetting the ER filter",
       "Grouping by department instead of status"
@@ -214,7 +273,6 @@ const levels = [
     tablesUsed: ["encounters", "patients"],
     joinHint: "encounters.patient_id = patients.patient_id",
     requiredConcepts: ["JOIN", "WHERE"],
-    expectedColumns: ["encounter_id", "first_name", "last_name", "facility", "department"],
     commonMistakes: [
       "Missing JOIN",
       "Joining on the wrong key",
@@ -231,7 +289,6 @@ const levels = [
     tablesUsed: ["encounters", "providers"],
     joinHint: "encounters.provider_id = providers.provider_id",
     requiredConcepts: ["JOIN", "GROUP BY", "ORDER BY"],
-    expectedColumns: ["provider_name", "visit_count"],
     commonMistakes: [
       "Missing JOIN",
       "No GROUP BY",
@@ -239,7 +296,7 @@ const levels = [
     ]
   },
   {
-    title: "Level 13: Patients Without Scheduled Appointments",
+    title: "Level 13: Patients Without Any Appointment",
     mission: "Find patients who have never had an appointment.",
     goal: "Show patient_id, first_name, and last_name.",
     starterQuery: "SELECT p.patient_id, p.first_name, p.last_name FROM patients p LEFT JOIN appointments a ON p.patient_id = a.patient_id WHERE a.appointment_id IS NULL;",
@@ -248,7 +305,6 @@ const levels = [
     tablesUsed: ["patients", "appointments"],
     joinHint: "patients.patient_id = appointments.patient_id",
     requiredConcepts: ["LEFT JOIN", "WHERE"],
-    expectedColumns: ["patient_id", "first_name", "last_name"],
     commonMistakes: [
       "Using INNER JOIN instead of LEFT JOIN",
       "Checking the wrong column for NULL"
@@ -264,7 +320,6 @@ const levels = [
     tablesUsed: ["claims"],
     joinHint: "No join needed.",
     requiredConcepts: ["WHERE", "GROUP BY", "SUM", "COUNT"],
-    expectedColumns: ["payer", "denied_claims", "denied_billed_amount"],
     commonMistakes: [
       "Forgetting claim_status = 'Denied'",
       "Using paid_amount instead of billed_amount"
@@ -280,7 +335,6 @@ const levels = [
     tablesUsed: ["charges", "encounters", "providers"],
     joinHint: "charges.encounter_id = encounters.encounter_id; encounters.provider_id = providers.provider_id",
     requiredConcepts: ["JOIN", "GROUP BY", "SUM"],
-    expectedColumns: ["specialty", "total_charge_amount"],
     commonMistakes: [
       "Missing one of the joins",
       "Grouping by provider_name instead of specialty"
@@ -296,7 +350,6 @@ const levels = [
     tablesUsed: ["encounters"],
     joinHint: "Self-join: encounters.patient_id = encounters.patient_id",
     requiredConcepts: ["JOIN", "WHERE", "ORDER BY"],
-    expectedColumns: ["patient_id"],
     commonMistakes: [
       "Missing DISTINCT",
       "Not comparing dates correctly",
@@ -313,7 +366,6 @@ const levels = [
     tablesUsed: ["claims", "encounters"],
     joinHint: "claims.encounter_id = encounters.encounter_id",
     requiredConcepts: ["JOIN", "WHERE", "GROUP BY", "ORDER BY"],
-    expectedColumns: ["facility", "denied_amount"],
     commonMistakes: [
       "Using paid_amount instead of billed_amount",
       "Missing denied filter",
@@ -330,7 +382,6 @@ const levels = [
     tablesUsed: ["patients", "encounters"],
     joinHint: "patients.patient_id = encounters.patient_id",
     requiredConcepts: ["JOIN", "WHERE", "GROUP BY", "HAVING", "ORDER BY"],
-    expectedColumns: ["patient_id", "first_name", "last_name", "risk_score", "er_visits"],
     commonMistakes: [
       "Forgetting risk_score >= 70",
       "Missing HAVING COUNT(*) > 1",
@@ -338,7 +389,7 @@ const levels = [
     ]
   },
   {
-    title: "Level 19: Patients with Appointments but No Completed Encounter",
+    title: "Level 19: Completed Appointments but No Completed Encounter",
     mission: "Find patients who had a completed appointment but no completed encounter.",
     goal: "Show distinct patient_id, first_name, and last_name.",
     starterQuery: "SELECT DISTINCT p.patient_id, p.first_name, p.last_name FROM patients p JOIN appointments a ON p.patient_id = a.patient_id LEFT JOIN encounters e ON p.patient_id = e.patient_id AND e.status = 'Completed' WHERE a.status = 'Completed' AND e.encounter_id IS NULL ORDER BY p.patient_id;",
@@ -347,7 +398,6 @@ const levels = [
     tablesUsed: ["patients", "appointments", "encounters"],
     joinHint: "patients.patient_id = appointments.patient_id; patients.patient_id = encounters.patient_id",
     requiredConcepts: ["JOIN", "LEFT JOIN", "WHERE", "ORDER BY"],
-    expectedColumns: ["patient_id", "first_name", "last_name"],
     commonMistakes: [
       "Using INNER JOIN instead of LEFT JOIN",
       "Forgetting DISTINCT",
@@ -364,7 +414,6 @@ const levels = [
     tablesUsed: ["providers", "encounters"],
     joinHint: "providers.provider_id = encounters.provider_id",
     requiredConcepts: ["JOIN", "GROUP BY", "ORDER BY", "RANK"],
-    expectedColumns: ["provider_name", "specialty", "encounter_count", "volume_rank"],
     commonMistakes: [
       "Missing RANK()",
       "Ranking raw encounters instead of aggregated counts",
@@ -381,7 +430,6 @@ const levels = [
     tablesUsed: ["encounters"],
     joinHint: "Self-join: encounters.patient_id = encounters.patient_id",
     requiredConcepts: ["JOIN", "WHERE", "GROUP BY", "COUNT"],
-    expectedColumns: ["facility", "readmission_count"],
     commonMistakes: [
       "Forgetting the self-join",
       "Missing the 30-day date logic",
@@ -398,7 +446,6 @@ const levels = [
     tablesUsed: ["encounters"],
     joinHint: "No join needed.",
     requiredConcepts: ["WHERE", "GROUP BY", "AVG"],
-    expectedColumns: ["department", "encounter_type", "avg_los"],
     commonMistakes: [
       "Grouping by only one column",
       "Using SUM instead of AVG",
@@ -415,7 +462,6 @@ const levels = [
     tablesUsed: ["claims"],
     joinHint: "No join needed.",
     requiredConcepts: ["GROUP BY", "SUM", "COUNT", "CASE"],
-    expectedColumns: ["payer", "total_claims", "denied_claims", "denial_rate"],
     commonMistakes: [
       "Missing CASE expression",
       "Using only denied claims instead of all claims in the denominator",
@@ -432,7 +478,6 @@ const levels = [
     tablesUsed: ["patients", "charges"],
     joinHint: "patients.patient_id = charges.patient_id",
     requiredConcepts: ["JOIN", "GROUP BY", "ORDER BY", "LIMIT", "SUM"],
-    expectedColumns: ["patient_id", "first_name", "last_name", "risk_score", "total_charges"],
     commonMistakes: [
       "Missing LIMIT 10",
       "Sorting by charges only",
@@ -449,7 +494,6 @@ const levels = [
     tablesUsed: ["appointments"],
     joinHint: "No join needed.",
     requiredConcepts: ["GROUP BY", "SUM", "COUNT", "CASE"],
-    expectedColumns: ["department", "total_appointments", "no_shows", "no_show_rate"],
     commonMistakes: [
       "Using WHERE status = 'No Show' which removes total appointments",
       "Missing the percentage calculation",
@@ -466,7 +510,6 @@ const levels = [
     tablesUsed: ["providers", "encounters"],
     joinHint: "providers.provider_id = encounters.provider_id",
     requiredConcepts: ["JOIN", "GROUP BY", "ORDER BY"],
-    expectedColumns: ["provider_name", "encounter_count"],
     commonMistakes: [
       "Not using a subquery for the average",
       "Comparing against average rows instead of average provider counts",
@@ -483,7 +526,6 @@ const levels = [
     tablesUsed: ["encounters"],
     joinHint: "No join needed.",
     requiredConcepts: ["WHERE", "GROUP BY", "HAVING", "ORDER BY"],
-    expectedColumns: ["patient_id", "ed_visits"],
     commonMistakes: [
       "Using WHERE COUNT(*) > 1 instead of HAVING",
       "Forgetting the ER filter",
@@ -500,7 +542,6 @@ const levels = [
     tablesUsed: ["claims"],
     joinHint: "No join needed.",
     requiredConcepts: ["GROUP BY", "SUM"],
-    expectedColumns: ["payer", "billed_total", "paid_total", "net_collection_rate"],
     commonMistakes: [
       "Using AVG instead of SUM",
       "Dividing row-level values instead of totals",
@@ -517,7 +558,6 @@ const levels = [
     tablesUsed: ["encounters"],
     joinHint: "No join needed.",
     requiredConcepts: ["WHERE", "ORDER BY"],
-    expectedColumns: ["encounter_id", "patient_id", "facility", "department", "length_of_stay"],
     commonMistakes: [
       "Filtering only by LOS but not encounter_type",
       "Using >= 2 instead of > 2",
@@ -534,7 +574,6 @@ const levels = [
     tablesUsed: ["claims", "encounters"],
     joinHint: "claims.encounter_id = encounters.encounter_id",
     requiredConcepts: ["JOIN", "WHERE", "GROUP BY", "ORDER BY", "RANK"],
-    expectedColumns: ["department", "denied_amount", "denial_rank"],
     commonMistakes: [
       "Missing the subquery",
       "Ranking before aggregation",
@@ -552,10 +591,143 @@ async function runBackendQuery(queryText) {
   return await res.json();
 }
 
+async function fetchPreview(tableName) {
+  const res = await fetch("/preview/" + encodeURIComponent(tableName));
+  return await res.json();
+}
+
+function renderSchemaExplorer() {
+  renderTableButtons();
+  renderRelationshipButtons();
+}
+
+function renderTableButtons() {
+  const tablesDiv = document.getElementById("schema-tables");
+  if (!tablesDiv) return;
+
+  let html = "";
+  schema.tables.forEach(function(table) {
+    html += '<button class="schema-button" id="table-btn-' + table.name + '" onclick="selectTable(\'' + table.name + '\')">' + table.name + '</button>';
+  });
+  tablesDiv.innerHTML = html;
+}
+
+function renderRelationshipButtons() {
+  const relDiv = document.getElementById("schema-relationships");
+  if (!relDiv) return;
+
+  let html = "";
+  schema.relationships.forEach(function(rel) {
+    html += '<div class="relationship-item" id="rel-btn-' + rel.id + '" onclick="selectRelationship(\'' + rel.id + '\')">' + rel.label + '</div>';
+  });
+  relDiv.innerHTML = html;
+}
+
+function highlightRelevantSchema(level) {
+  document.querySelectorAll(".schema-button").forEach(function(btn) {
+    btn.classList.remove("relevant");
+  });
+
+  document.querySelectorAll(".relationship-item").forEach(function(item) {
+    item.classList.remove("active");
+  });
+
+  level.tablesUsed.forEach(function(tableName) {
+    const btn = document.getElementById("table-btn-" + tableName);
+    if (btn) btn.classList.add("relevant");
+  });
+
+  schema.relationships.forEach(function(rel) {
+    const relevant = level.tablesUsed.indexOf(rel.leftTable) !== -1 && level.tablesUsed.indexOf(rel.rightTable) !== -1;
+    if (relevant) {
+      const item = document.getElementById("rel-btn-" + rel.id);
+      if (item) item.classList.add("active");
+    }
+  });
+}
+
+async function selectTable(tableName) {
+  selectedTable = tableName;
+
+  document.querySelectorAll(".schema-button").forEach(function(btn) {
+    btn.classList.remove("active");
+  });
+
+  const btn = document.getElementById("table-btn-" + tableName);
+  if (btn) btn.classList.add("active");
+
+  const table = schema.tables.find(function(t) {
+    return t.name === tableName;
+  });
+
+  const detailsDiv = document.getElementById("schema-details");
+  if (!detailsDiv) return;
+
+  detailsDiv.innerHTML =
+    "<h4>" + table.name + "</h4>" +
+    "<p><strong>Description:</strong> " + table.description + "</p>" +
+    "<p><strong>Keys:</strong> " + table.keyColumns.join(", ") + "</p>" +
+    "<p><strong>Columns:</strong> " + table.notableColumns.join(", ") + "</p>" +
+    "<p><strong>Sample rows:</strong></p>" +
+    "<p id='preview-loading'>Loading preview...</p>";
+
+  const preview = await fetchPreview(tableName);
+
+  if (preview.error) {
+    const loading = document.getElementById("preview-loading");
+    if (loading) loading.outerHTML = "<p>" + preview.error + "</p>";
+    return;
+  }
+
+  let html = "<table class='preview-table'><tr>";
+  preview.columns.forEach(function(col) {
+    html += "<th>" + col + "</th>";
+  });
+  html += "</tr>";
+
+  preview.rows.forEach(function(row) {
+    html += "<tr>";
+    row.forEach(function(cell) {
+      html += "<td>" + cell + "</td>";
+    });
+    html += "</tr>";
+  });
+
+  html += "</table>";
+
+  const loading = document.getElementById("preview-loading");
+  if (loading) loading.outerHTML = html;
+}
+
+function selectRelationship(relId) {
+  selectedRelationship = relId;
+
+  document.querySelectorAll(".relationship-item").forEach(function(item) {
+    item.classList.remove("active");
+  });
+
+  const relBtn = document.getElementById("rel-btn-" + relId);
+  if (relBtn) relBtn.classList.add("active");
+
+  const rel = schema.relationships.find(function(r) {
+    return r.id === relId;
+  });
+
+  const detailsDiv = document.getElementById("relationship-details");
+  if (!detailsDiv) return;
+
+  detailsDiv.innerHTML =
+    "<h4>" + rel.label + "</h4>" +
+    "<p><strong>Why it matters:</strong> " + rel.explanation + "</p>" +
+    "<p><strong>Example join:</strong></p>" +
+    "<p><code>" + rel.example + "</code></p>";
+}
+
 function renderResultTable(data) {
   const output = document.getElementById("output");
-  let html = "<table border='1'><tr>";
+  if (!output) return;
 
+  let html = "<table><tr>";
   data.columns.forEach(function(col) {
     html += "<th>" + col + "</th>";
   });
@@ -604,9 +776,7 @@ function countDuplicateRows(rows) {
 
   let duplicates = 0;
   Object.keys(counts).forEach(function(key) {
-    if (counts[key] > 1) {
-      duplicates += counts[key] - 1;
-    }
+    if (counts[key] > 1) duplicates += counts[key] - 1;
   });
 
   return duplicates;
@@ -652,7 +822,7 @@ function analyzeQueryStructure(level, userQuery) {
   return issues;
 }
 
-function analyzeResultDifferences(level, userData, solutionData) {
+function analyzeResultDifferences(userData, solutionData) {
   const messages = [];
 
   const userCols = userData.columns;
@@ -675,13 +845,12 @@ function analyzeResultDifferences(level, userData, solutionData) {
     messages.push("Your result has too few rows. You may be filtering too much or using the wrong join.");
   }
 
-  const userDupes = countDuplicateRows(userData.rows);
-  if (userDupes > 0) {
+  const dupes = countDuplicateRows(userData.rows);
+  if (dupes > 0) {
     messages.push("Your result has duplicate rows. This often means the join condition is too broad or DISTINCT is needed.");
   }
 
-  const sameCols = arraysEqual(userCols, solutionCols);
-  if (sameCols && userData.rows.length === solutionData.rows.length && !arraysEqual(userData.rows, solutionData.rows)) {
+  if (arraysEqual(userCols, solutionCols) && userData.rows.length === solutionData.rows.length && !arraysEqual(userData.rows, solutionData.rows)) {
     messages.push("Your columns and row count look close, but the values or sort order are off.");
   }
 
@@ -690,9 +859,8 @@ function analyzeResultDifferences(level, userData, solutionData) {
 
 function buildHintMessage(level, userQuery, userData, solutionData) {
   let messages = [];
-
   messages = messages.concat(analyzeQueryStructure(level, userQuery));
-  messages = messages.concat(analyzeResultDifferences(level, userData, solutionData));
+  messages = messages.concat(analyzeResultDifferences(userData, solutionData));
 
   if (messages.length === 0) {
     messages.push(level.hint);
@@ -715,7 +883,7 @@ async function runQuery() {
   const data = await runBackendQuery(query);
 
   if (data.error) {
-    output.innerText = data.error;
+    if (output) output.innerText = data.error;
     lastResult = null;
     return;
   }
@@ -727,10 +895,11 @@ async function runQuery() {
 async function checkAnswer() {
   const feedback = document.getElementById("feedback");
   const nextLevelDiv = document.getElementById("next-level");
+  const hintDiv = document.getElementById("level-hint");
   const userQuery = document.getElementById("query").value;
 
   if (!lastResult) {
-    feedback.innerHTML = "<p style='color:red;'><strong>Run your query first.</strong></p>";
+    if (feedback) feedback.innerHTML = "<p style='color:red;'><strong>Run your query first.</strong></p>";
     return;
   }
 
@@ -738,7 +907,7 @@ async function checkAnswer() {
   const solutionResult = await runBackendQuery(level.solutionQuery);
 
   if (solutionResult.error) {
-    feedback.innerHTML = "<p style='color:red;'><strong>Validation error:</strong> " + solutionResult.error + "</p>";
+    if (feedback) feedback.innerHTML = "<p style='color:red;'><strong>Validation error:</strong> " + solutionResult.error + "</p>";
     return;
   }
 
@@ -749,21 +918,35 @@ async function checkAnswer() {
   const rowsMatch = arraysEqual(userNormalized.rows, solutionNormalized.rows);
 
   if (columnsMatch && rowsMatch) {
-    feedback.innerHTML =
-      "<p style='color:green;'><strong>Correct!</strong> You completed " + level.title + ".</p>";
+    if (feedback) {
+      feedback.innerHTML = "<p style='color:green;'><strong>Correct!</strong> You completed " + level.title + ".</p>";
+    }
 
-    if (currentLevel < levels.length - 1) {
-      nextLevelDiv.innerHTML =
-        '<button onclick="loadLevel(' + (currentLevel + 1) + ')">Next Level</button>';
-    } else {
-      nextLevelDiv.innerHTML =
-        "<p><strong>You completed all 30 levels.</strong></p>";
+    if (hintDiv) {
+      hintDiv.innerHTML = "Nice work. You got it right.";
+    }
+
+    if (nextLevelDiv) {
+      if (currentLevel < levels.length - 1) {
+        nextLevelDiv.innerHTML = '<button onclick="loadLevel(' + (currentLevel + 1) + ')">Next Level</button>';
+      } else {
+        nextLevelDiv.innerHTML = "<p><strong>You completed all 30 levels.</strong></p>";
+      }
     }
   } else {
-    const smartHint = buildHintMessage(level, userQuery, userNormalized, solutionNormalized);
-    feedback.innerHTML =
-      "<p style='color:red;'><strong>Not quite.</strong> " + smartHint + "</p>";
-    nextLevelDiv.innerHTML = "";
+    wrongAttemptsByLevel[currentLevel] = (wrongAttemptsByLevel[currentLevel] || 0) + 1;
+
+    if (feedback) {
+      feedback.innerHTML = "<p style='color:red;'><strong>Not quite.</strong> Try revising your query.</p>";
+    }
+
+    if (hintDiv && wrongAttemptsByLevel[currentLevel] >= 1) {
+      hintDiv.innerHTML = buildHintMessage(level, userQuery, userNormalized, solutionNormalized);
+    }
+
+    if (nextLevelDiv) {
+      nextLevelDiv.innerHTML = "";
+    }
   }
 }
 
@@ -772,16 +955,18 @@ function loadLevel(index) {
   const level = levels[index];
 
   const missionBox = document.querySelector(".mission-box");
-  missionBox.innerHTML =
-    "<h2>" + level.title + "</h2>" +
-    "<p><strong>Mission:</strong> " + level.mission + "</p>" +
-    "<p><strong>Goal:</strong> " + level.goal + "</p>" +
-    "<p><strong>Relevant Tables:</strong> " + level.tablesUsed.join(", ") + "</p>" +
-    "<p><strong>Join Hint:</strong> " + level.joinHint + "</p>";
+  if (missionBox) {
+    missionBox.innerHTML =
+      "<h2>" + level.title + "</h2>" +
+      "<p><strong>Mission:</strong> " + level.mission + "</p>" +
+      "<p><strong>Goal:</strong> " + level.goal + "</p>" +
+      "<p><strong>Relevant Tables:</strong> " + level.tablesUsed.join(", ") + "</p>" +
+      "<p><strong>Join Hint:</strong> " + level.joinHint + "</p>";
+  }
 
-  const levelHint = document.getElementById("level-hint");
-  if (levelHint) {
-    levelHint.innerHTML = level.hint || "No hint available for this level.";
+  const hintDiv = document.getElementById("level-hint");
+  if (hintDiv) {
+    hintDiv.innerHTML = "Run your query and check your answer. If it is wrong, a smarter hint will appear here.";
   }
 
   document.getElementById("query").value = level.starterQuery;
@@ -789,8 +974,17 @@ function loadLevel(index) {
   document.getElementById("next-level").innerHTML = "";
   document.getElementById("output").innerHTML = "";
   lastResult = null;
+
+  highlightRelevantSchema(level);
+
+  if (level.tablesUsed.length > 0) {
+    selectTable(level.tablesUsed[0]);
+  }
+
+  wrongAttemptsByLevel[currentLevel] = 0;
 }
 
 window.onload = function() {
+  renderSchemaExplorer();
   loadLevel(0);
 };
