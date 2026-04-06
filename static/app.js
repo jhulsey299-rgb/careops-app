@@ -641,6 +641,31 @@ const levels = [
   }
 ];
 
+function getDifficulty(index) {
+  const levelNumber = index + 1;
+  if (levelNumber <= 5) return "Easy";
+  if (levelNumber <= 10) return "Intermediate";
+  if (levelNumber <= 15) return "Hard";
+  return "Advanced";
+}
+
+function getDifficultyClass(index) {
+  const difficulty = getDifficulty(index).toLowerCase();
+  return `difficulty-${difficulty}`;
+}
+
+function getTableByName(tableName) {
+  return schema.tables.find(function (table) {
+    return table.name === tableName;
+  });
+}
+
+function getRelationshipsForTable(tableName) {
+  return schema.relationships.filter(function (rel) {
+    return rel.leftTable === tableName || rel.rightTable === tableName;
+  });
+}
+
 function normalizeCompletedLevels(levelsArray) {
   const set = new Set();
   (levelsArray || []).forEach(function (val) {
@@ -810,6 +835,7 @@ function renderLevelsPanel() {
     const completed = gameState.completedLevels.indexOf(i) !== -1;
     const isCurrent = i === currentLevel;
     const isUnlocked = unlockedSet.has(i);
+    const difficulty = getDifficulty(i);
 
     let classNames = "level-item";
     if (completed) classNames += " completed";
@@ -825,20 +851,18 @@ function renderLevelsPanel() {
       statusText = "Unlocked";
     }
 
+    const itemInner = `
+      <div class="level-item-head">
+        <span class="level-item-title">${levels[i].title}</span>
+        <span class="difficulty-badge ${getDifficultyClass(i)}">${difficulty}</span>
+      </div>
+      <span class="level-status">${statusText}</span>
+    `;
+
     if (isUnlocked) {
-      html += `
-        <button class="${classNames}" onclick="loadLevel(${i})">
-          ${levels[i].title}
-          <span class="level-status">${statusText}</span>
-        </button>
-      `;
+      html += `<button class="${classNames}" onclick="loadLevel(${i})">${itemInner}</button>`;
     } else {
-      html += `
-        <button class="${classNames}" disabled>
-          ${levels[i].title}
-          <span class="level-status">${statusText}</span>
-        </button>
-      `;
+      html += `<button class="${classNames}" disabled>${itemInner}</button>`;
     }
   }
 
@@ -903,6 +927,9 @@ async function renderTableCards() {
         <p><strong>Description:</strong> ${table.description}</p>
         <p><strong>Keys:</strong> ${table.keyColumns.join(", ")}</p>
         <p><strong>Columns:</strong> ${table.notableColumns.join(", ")}</p>
+        <div class="schema-table-actions">
+          <button class="schema-table-view-btn" onclick="openTableModal('${table.name}')">Open Table Viewer</button>
+        </div>
         <div id="preview-${table.name}">Loading sample rows...</div>
       </details>
     `;
@@ -919,22 +946,7 @@ async function renderTableCards() {
       continue;
     }
 
-    let tableHtml = "<table class='preview-table'><tr>";
-    preview.columns.forEach(function (col) {
-      tableHtml += "<th>" + col + "</th>";
-    });
-    tableHtml += "</tr>";
-
-    preview.rows.forEach(function (row) {
-      tableHtml += "<tr>";
-      row.forEach(function (cell) {
-        tableHtml += "<td>" + cell + "</td>";
-      });
-      tableHtml += "</tr>";
-    });
-
-    tableHtml += "</table>";
-    previewDiv.innerHTML = tableHtml;
+    previewDiv.innerHTML = buildTableHtml(preview);
   }
 }
 
@@ -954,6 +966,83 @@ function renderRelationshipCards() {
   });
   relDiv.innerHTML = html;
 }
+
+function buildTableHtml(data) {
+  let html = "<table><tr>";
+  data.columns.forEach(function (col) {
+    html += "<th>" + col + "</th>";
+  });
+  html += "</tr>";
+
+  data.rows.forEach(function (row) {
+    html += "<tr>";
+    row.forEach(function (cell) {
+      html += "<td>" + cell + "</td>";
+    });
+    html += "</tr>";
+  });
+
+  html += "</table>";
+  return html;
+}
+
+async function openTableModal(tableName) {
+  const table = getTableByName(tableName);
+  if (!table) return;
+
+  const overlay = document.getElementById("table-modal-overlay");
+  const title = document.getElementById("table-modal-title");
+  const description = document.getElementById("table-modal-description");
+  const keys = document.getElementById("table-modal-keys");
+  const columns = document.getElementById("table-modal-columns");
+  const relationships = document.getElementById("table-modal-relationships");
+  const previewContent = document.getElementById("table-modal-preview-content");
+
+  title.textContent = table.name;
+  description.textContent = table.description;
+  keys.textContent = table.keyColumns.join(", ");
+  columns.textContent = table.notableColumns.join(", ");
+
+  const related = getRelationshipsForTable(table.name);
+  if (related.length) {
+    let relHtml = `<div class="modal-relationship-list">`;
+    related.forEach(function (rel) {
+      relHtml += `<div class="modal-relationship-chip">${rel.label}</div>`;
+    });
+    relHtml += `</div>`;
+    relationships.innerHTML = relHtml;
+  } else {
+    relationships.innerHTML = "<p>No related joins found.</p>";
+  }
+
+  previewContent.innerHTML = "<p>Loading sample rows...</p>";
+
+  overlay.classList.remove("hidden");
+  document.body.style.overflow = "hidden";
+
+  const preview = await fetchPreview(table.name);
+  if (preview.error) {
+    previewContent.innerHTML = `<p>${preview.error}</p>`;
+  } else {
+    previewContent.innerHTML = buildTableHtml(preview);
+  }
+}
+
+function closeTableModal(event) {
+  if (event && event.target && event.target.id !== "table-modal-overlay") return;
+  const overlay = document.getElementById("table-modal-overlay");
+  overlay.classList.add("hidden");
+  document.body.style.overflow = "";
+}
+
+document.addEventListener("keydown", function (event) {
+  if (event.key === "Escape") {
+    const overlay = document.getElementById("table-modal-overlay");
+    if (overlay && !overlay.classList.contains("hidden")) {
+      closeTableModal();
+    }
+  }
+});
 
 function collapseAllSchemaCards() {
   document.querySelectorAll(".schema-table-card").forEach(function (card) {
@@ -1001,23 +1090,7 @@ async function fetchPreview(tableName) {
 function renderResultTable(data) {
   const output = document.getElementById("output");
   if (!output) return;
-
-  let html = "<table><tr>";
-  data.columns.forEach(function (col) {
-    html += "<th>" + col + "</th>";
-  });
-  html += "</tr>";
-
-  data.rows.forEach(function (row) {
-    html += "<tr>";
-    row.forEach(function (cell) {
-      html += "<td>" + cell + "</td>";
-    });
-    html += "</tr>";
-  });
-
-  html += "</table>";
-  output.innerHTML = html;
+  output.innerHTML = buildTableHtml(data);
 }
 
 function normalizeResults(data) {
@@ -1320,10 +1393,12 @@ function loadLevel(index) {
   saveGameState();
 
   const level = levels[index];
+  const difficulty = getDifficulty(index);
 
   const missionBox = document.querySelector(".mission-box");
   if (missionBox) {
     missionBox.innerHTML =
+      `<div class="mission-meta-row"><span class="difficulty-badge ${getDifficultyClass(index)}">${difficulty}</span></div>` +
       "<h2>" + level.title + "</h2>" +
       "<p><strong>Mission:</strong> " + level.mission + "</p>" +
       "<p><strong>Goal:</strong> " + level.goal + "</p>" +
