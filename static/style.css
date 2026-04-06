@@ -30,6 +30,90 @@ body {
     flex-shrink: 0;
 }
 
+.workspace-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 280px;
+    gap: 20px;
+    align-items: start;
+}
+
+.play-area {
+    min-width: 0;
+}
+
+.levels-panel {
+    background: #ffffff;
+    border: 1px solid #dbe2ea;
+    border-radius: 10px;
+    padding: 16px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    position: sticky;
+    top: 16px;
+}
+
+.levels-panel h3 {
+    margin-bottom: 12px;
+}
+
+.levels-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+.level-item {
+    width: 100%;
+    text-align: left;
+    border: 1px solid #dbe2ea;
+    background: #ffffff;
+    border-radius: 8px;
+    padding: 10px 12px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.level-item:hover {
+    background: #f8fafc;
+}
+
+.level-item.completed {
+    border-color: #93c5fd;
+    background: #eff6ff;
+}
+
+.level-item.current {
+    border-color: #2563eb;
+    background: #dbeafe;
+    font-weight: 700;
+}
+
+.level-item.locked {
+    background: #f3f4f6;
+    color: #9ca3af;
+    border-color: #e5e7eb;
+    cursor: not-allowed;
+}
+
+.level-item .level-status {
+    display: block;
+    font-size: 12px;
+    margin-top: 4px;
+    opacity: 0.8;
+}
+
+@media (max-width: 1100px) {
+    .workspace-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .levels-panel {
+        position: static;
+    }
+}
+
 .level-nav {
     display: flex;
     gap: 10px;
