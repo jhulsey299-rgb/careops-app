@@ -4,51 +4,66 @@
     <title>CareOps SQL Analyst</title>
     <link rel="stylesheet" href="/static/style.css">
 </head>
-
 <body>
 
-    <div class="app-shell">
-        <aside class="schema-panel">
-            <h2>Schema Explorer</h2>
+<div class="app-shell">
+    <aside class="schema-panel">
+        <h2>Schema Explorer</h2>
 
-            <div class="schema-section">
-                <h3>Tables</h3>
-                <div id="schema-tables"></div>
+        <div class="schema-section">
+            <h3>Tables</h3>
+            <div id="schema-tables"></div>
+        </div>
+
+        <div class="schema-section">
+            <h3>Table Details</h3>
+            <div id="schema-details" class="schema-card">
+                Click a table to inspect columns and sample rows.
             </div>
+        </div>
 
-            <div class="schema-section">
-                <h3>Relationships</h3>
-                <div id="schema-relationships"></div>
+        <div class="schema-section">
+            <h3>Relationships</h3>
+            <div id="schema-relationships"></div>
+        </div>
+
+        <div class="schema-section">
+            <h3>Relationship Details</h3>
+            <div id="relationship-details" class="schema-card">
+                Click a relationship to see how the join works.
             </div>
+        </div>
 
-            <div class="schema-section">
-                <h3>Level Hint</h3>
-                <div id="level-hint">Hints for the current level will appear here.</div>
+        <div class="schema-section">
+            <h3>Hint After First Wrong Try</h3>
+            <div id="level-hint" class="hint-box">
+                Run your query and check your answer. If it is wrong, a smarter hint will appear here.
             </div>
-        </aside>
+        </div>
+    </aside>
 
-        <main class="main-content">
-            <h1>CareOps: SQL Analyst</h1>
+    <main class="main-content">
+        <h1>CareOps: SQL Analyst</h1>
 
-            <div class="mission-box">
-            </div>
+        <div class="mission-box"></div>
 
-            <p>Write your SQL query:</p>
+        <p>Write your SQL query:</p>
 
-            <textarea id="query" rows="8" cols="80"></textarea><br>
+        <textarea id="query" rows="8" cols="80"></textarea><br>
 
-            <div class="button-row">
-                <button onclick="runQuery()">Run Query</button>
-                <button onclick="checkAnswer()">Check Answer</button>
-            </div>
+        <div class="button-row">
+            <button onclick="runQuery()">Run Query</button>
+            <button onclick="checkAnswer()">Check Answer</button>
+            <button onclick="resetQuery()">Reset Query</button>
+        </div>
 
-            <div id="feedback"></div>
-            <div id="next-level"></div>
-            <div id="output"></div>
-        </main>
-    </div>
+        <div id="feedback"></div>
+        <div id="next-level"></div>
+        <div id="output"></div>
+    </main>
+</div>
 
-    <script src="/static/app.js"></script>
+<script src="/static/app.js"></script>
 
 </body>
 </html>
