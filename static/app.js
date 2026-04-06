@@ -1,7 +1,12 @@
 let lastResult = null;
 let currentLevel = 0;
 
-const STORAGE_KEY = "careops_progress_v2";
+const STORAGE_KEYS = [
+  "careops_progress_v2",
+  "careops_progress_v1",
+  "careops_progress"
+];
+const PRIMARY_STORAGE_KEY = "careops_progress_v3";
 
 let gameState = {
   currentLevel: 0,
@@ -634,26 +639,48 @@ const levels = [
   }
 ];
 
-function loadGameState() {
-  const raw = localStorage.getItem(STORAGE_KEY);
-  if (!raw) return;
+function normalizeCompletedLevels(levelsArray) {
+  const set = new Set();
+  (levelsArray || []).forEach(function (val) {
+    const num = Number(val);
+    if (!Number.isNaN(num) && num >= 0 && num < levels.length) {
+      set.add(num);
+    }
+  });
+  return Array.from(set).sort(function (a, b) { return a - b; });
+}
 
-  try {
-    const parsed = JSON.parse(raw);
-    gameState = {
-      currentLevel: parsed.currentLevel ?? 0,
-      completedLevels: parsed.completedLevels ?? [],
-      badges: parsed.badges ?? [],
-      wrongAttemptsByLevel: parsed.wrongAttemptsByLevel ?? {},
-      firstTryWins: parsed.firstTryWins ?? 0
-    };
-  } catch (e) {
-    console.error("Failed to load saved progress", e);
+function loadGameState() {
+  let parsed = null;
+
+  for (const key of STORAGE_KEYS) {
+    const raw = localStorage.getItem(key);
+    if (!raw) continue;
+    try {
+      parsed = JSON.parse(raw);
+      break;
+    } catch (e) {
+      console.error("Failed to load progress from", key, e);
+    }
+  }
+
+  if (!parsed) return;
+
+  gameState = {
+    currentLevel: parsed.currentLevel ?? 0,
+    completedLevels: normalizeCompletedLevels(parsed.completedLevels ?? []),
+    badges: Array.isArray(parsed.badges) ? parsed.badges : [],
+    wrongAttemptsByLevel: parsed.wrongAttemptsByLevel ?? {},
+    firstTryWins: parsed.firstTryWins ?? 0
+  };
+
+  if (gameState.currentLevel >= levels.length) {
+    gameState.currentLevel = 0;
   }
 }
 
 function saveGameState() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(gameState));
+  localStorage.setItem(PRIMARY_STORAGE_KEY, JSON.stringify(gameState));
 }
 
 function hasBadge(id) {
@@ -667,6 +694,8 @@ function awardBadge(id) {
 }
 
 function evaluateBadges() {
+  gameState.badges = [];
+
   const completedCount = gameState.completedLevels.length;
 
   if (completedCount >= 1) awardBadge("first_win");
@@ -688,8 +717,12 @@ function evaluateBadges() {
     awardBadge("aggregation_ace");
   }
 
-  if (completedSet.has(20) && completedSet.has(23) && completedSet.has(24) && completedSet.has(30)) {
+  if (completedSet.has(20) && completedSet.has(23) && completedSet.has(24) && completedSet.has(29)) {
     awardBadge("advanced_analyst");
+  }
+
+  if (localStorage.getItem("careops_first_query_done") === "1") {
+    awardBadge("first_query");
   }
 }
 
@@ -701,7 +734,7 @@ function updateDashboard() {
 
   const completed = gameState.completedLevels.length;
   const total = levels.length;
-  const pct = (completed / total) * 100;
+  const pct = total > 0 ? (completed / total) * 100 : 0;
 
   if (progressText) progressText.textContent = `${completed} / ${total} levels completed`;
   if (progressBar) progressBar.style.width = `${pct}%`;
@@ -1052,8 +1085,9 @@ async function runQuery() {
   const output = document.getElementById("output");
   const data = await runBackendQuery(query);
 
-  if (!hasBadge("first_query")) {
-    awardBadge("first_query");
+  if (localStorage.getItem("careops_first_query_done") !== "1") {
+    localStorage.setItem("careops_first_query_done", "1");
+    evaluateBadges();
     saveGameState();
     renderBadges();
     updateDashboard();
@@ -1110,6 +1144,7 @@ async function checkAnswer() {
 
     if (gameState.completedLevels.indexOf(currentLevel) === -1) {
       gameState.completedLevels.push(currentLevel);
+      gameState.completedLevels = normalizeCompletedLevels(gameState.completedLevels);
     }
 
     if ((gameState.wrongAttemptsByLevel[currentLevel] || 0) === 0) {
@@ -1205,5 +1240,7 @@ window.onload = function () {
   renderSchemaExplorer();
   evaluateBadges();
   renderBadges();
-  loadLevel(gameState.currentLevel || 0);
+  currentLevel = gameState.currentLevel || 0;
+  loadLevel(currentLevel);
+  updateDashboard();
 };
