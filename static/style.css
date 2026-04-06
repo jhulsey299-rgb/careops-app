@@ -204,3 +204,70 @@ th {
         cursor: row-resize;
     }
 }
+
+.top-dashboard {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+}
+
+.dashboard-card {
+    background: #ffffff;
+    border: 1px solid #dbe2ea;
+    border-radius: 10px;
+    padding: 14px 16px;
+    min-width: 220px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+
+.dashboard-card h3 {
+    margin-bottom: 8px;
+}
+
+.progress-bar-wrap {
+    width: 100%;
+    height: 12px;
+    background: #e5e7eb;
+    border-radius: 999px;
+    overflow: hidden;
+    margin-top: 8px;
+}
+
+#progress-bar {
+    height: 100%;
+    width: 0%;
+    background: #2563eb;
+    border-radius: 999px;
+    transition: width 0.3s ease;
+}
+
+.badges-section {
+    background: #ffffff;
+    border: 1px solid #dbe2ea;
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 20px;
+}
+
+.badges-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.badge-chip {
+    background: #eff6ff;
+    color: #1d4ed8;
+    border: 1px solid #bfdbfe;
+    border-radius: 999px;
+    padding: 8px 12px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.badge-chip.locked {
+    background: #f3f4f6;
+    color: #6b7280;
+    border: 1px solid #d1d5db;
+}
