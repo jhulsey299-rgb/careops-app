@@ -21,6 +21,32 @@ def safe_los(admit_date, discharge_date):
         return None
     return (discharge_date - admit_date).days
 
+VALID_TABLES = {
+    "patients",
+    "providers",
+    "encounters",
+    "appointments",
+    "charges",
+    "claims"
+}
+
+@app.route("/preview/<table_name>")
+def preview_table(table_name):
+    if table_name not in VALID_TABLES:
+        return jsonify({"error": "Invalid table name"}), 400
+
+    conn = sqlite3.connect(DB)
+    cur = conn.cursor()
+
+    try:
+        cur.execute(f"SELECT * FROM {table_name} LIMIT 8")
+        rows = cur.fetchall()
+        columns = [desc[0] for desc in cur.description] if cur.description else []
+        return jsonify({"columns": columns, "rows": rows})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        conn.close()
 
 def init_db():
     if os.path.exists(DB):
