@@ -1,8 +1,7 @@
 let lastResult = null;
 let currentLevel = 0;
 let wrongAttemptsByLevel = {};
-let selectedTable = null;
-let selectedRelationship = null;
+let currentLevelRunCount = 0;
 
 const schema = {
   tables: [
@@ -45,66 +44,42 @@ const schema = {
   ],
   relationships: [
     {
-      id: "patients_encounters",
       label: "patients.patient_id = encounters.patient_id",
-      leftTable: "patients",
-      rightTable: "encounters",
       explanation: "Use this when you need patient details attached to encounter rows.",
       example: "JOIN encounters e ON p.patient_id = e.patient_id"
     },
     {
-      id: "patients_appointments",
       label: "patients.patient_id = appointments.patient_id",
-      leftTable: "patients",
-      rightTable: "appointments",
       explanation: "Use this when analyzing appointment history by patient.",
       example: "JOIN appointments a ON p.patient_id = a.patient_id"
     },
     {
-      id: "patients_charges",
       label: "patients.patient_id = charges.patient_id",
-      leftTable: "patients",
-      rightTable: "charges",
       explanation: "Use this when connecting patient details to charges.",
       example: "JOIN charges ch ON p.patient_id = ch.patient_id"
     },
     {
-      id: "patients_claims",
       label: "patients.patient_id = claims.patient_id",
-      leftTable: "patients",
-      rightTable: "claims",
       explanation: "Use this when connecting patient details to claims.",
       example: "JOIN claims c ON p.patient_id = c.patient_id"
     },
     {
-      id: "providers_encounters",
       label: "providers.provider_id = encounters.provider_id",
-      leftTable: "providers",
-      rightTable: "encounters",
       explanation: "Use this when tying providers to encounter volume or encounter detail.",
       example: "JOIN encounters e ON pr.provider_id = e.provider_id"
     },
     {
-      id: "providers_appointments",
       label: "providers.provider_id = appointments.provider_id",
-      leftTable: "providers",
-      rightTable: "appointments",
       explanation: "Use this when tying providers to appointment activity.",
       example: "JOIN appointments a ON pr.provider_id = a.provider_id"
     },
     {
-      id: "encounters_charges",
       label: "encounters.encounter_id = charges.encounter_id",
-      leftTable: "encounters",
-      rightTable: "charges",
       explanation: "Use this when tying charge activity to encounters, facilities, and departments.",
       example: "JOIN charges ch ON e.encounter_id = ch.encounter_id"
     },
     {
-      id: "encounters_claims",
       label: "encounters.encounter_id = claims.encounter_id",
-      leftTable: "encounters",
-      rightTable: "claims",
       explanation: "Use this when tying claims, denials, and collections to encounter context.",
       example: "JOIN claims c ON e.encounter_id = c.encounter_id"
     }
@@ -118,6 +93,7 @@ const levels = [
     goal: "Show patient_id, first_name, last_name, and insurance_type.",
     starterQuery: "SELECT patient_id, first_name, last_name, insurance_type FROM patients WHERE insurance_type = 'Medicare';",
     solutionQuery: "SELECT patient_id, first_name, last_name, insurance_type FROM patients WHERE insurance_type = 'Medicare';",
+    explanation: "This level teaches basic filtering with WHERE. You only need the patients table and a filter on insurance_type.",
     hint: "Use the patients table and filter insurance_type to Medicare.",
     tablesUsed: ["patients"],
     joinHint: "No join needed.",
@@ -134,6 +110,7 @@ const levels = [
     goal: "Return facility and count.",
     starterQuery: "SELECT facility, COUNT(*) AS count FROM encounters GROUP BY facility;",
     solutionQuery: "SELECT facility, COUNT(*) AS count FROM encounters GROUP BY facility;",
+    explanation: "This level teaches aggregation. Count rows and group them by facility.",
     hint: "Use the encounters table. Group by facility and count the rows.",
     tablesUsed: ["encounters"],
     joinHint: "No join needed.",
@@ -149,6 +126,7 @@ const levels = [
     goal: "Show encounter_id, patient_id, department, and status.",
     starterQuery: "SELECT encounter_id, patient_id, department, status FROM encounters WHERE department = 'Cardiology' AND status = 'Active';",
     solutionQuery: "SELECT encounter_id, patient_id, department, status FROM encounters WHERE department = 'Cardiology' AND status = 'Active';",
+    explanation: "This level teaches multi-condition filtering with AND.",
     hint: "Stay in the encounters table and filter both department and status.",
     tablesUsed: ["encounters"],
     joinHint: "No join needed.",
@@ -164,6 +142,7 @@ const levels = [
     goal: "Show encounter_id, patient_id, department, and discharge_date.",
     starterQuery: "SELECT encounter_id, patient_id, department, discharge_date FROM encounters WHERE status = 'Discharged';",
     solutionQuery: "SELECT encounter_id, patient_id, department, discharge_date FROM encounters WHERE status = 'Discharged';",
+    explanation: "This level reinforces basic filtering and selecting the right output columns.",
     hint: "Filter the encounters table to discharged rows.",
     tablesUsed: ["encounters"],
     joinHint: "No join needed.",
@@ -179,6 +158,7 @@ const levels = [
     goal: "Show patient_id, first_name, last_name, and insurance_type.",
     starterQuery: "SELECT patient_id, first_name, last_name, insurance_type FROM patients ORDER BY last_name, first_name;",
     solutionQuery: "SELECT patient_id, first_name, last_name, insurance_type FROM patients ORDER BY last_name, first_name;",
+    explanation: "This level teaches sorting with ORDER BY using more than one column.",
     hint: "Use ORDER BY last_name, first_name.",
     tablesUsed: ["patients"],
     joinHint: "No join needed.",
@@ -194,6 +174,7 @@ const levels = [
     goal: "Return insurance_type and patient_count.",
     starterQuery: "SELECT insurance_type, COUNT(*) AS patient_count FROM patients GROUP BY insurance_type;",
     solutionQuery: "SELECT insurance_type, COUNT(*) AS patient_count FROM patients GROUP BY insurance_type;",
+    explanation: "This level teaches grouping rows and counting within each category.",
     hint: "Group the patients table by insurance_type.",
     tablesUsed: ["patients"],
     joinHint: "No join needed.",
@@ -209,6 +190,7 @@ const levels = [
     goal: "Return facility and no_show_count.",
     starterQuery: "SELECT facility, COUNT(*) AS no_show_count FROM appointments WHERE status = 'No Show' GROUP BY facility;",
     solutionQuery: "SELECT facility, COUNT(*) AS no_show_count FROM appointments WHERE status = 'No Show' GROUP BY facility;",
+    explanation: "This combines filtering and grouping.",
     hint: "Use appointments, filter to No Show, then group by facility.",
     tablesUsed: ["appointments"],
     joinHint: "No join needed.",
@@ -224,6 +206,7 @@ const levels = [
     goal: "Return payer and total_amount.",
     starterQuery: "SELECT payer, ROUND(SUM(amount), 2) AS total_amount FROM charges GROUP BY payer;",
     solutionQuery: "SELECT payer, ROUND(SUM(amount), 2) AS total_amount FROM charges GROUP BY payer;",
+    explanation: "This teaches SUM and grouping.",
     hint: "Use SUM(amount) grouped by payer.",
     tablesUsed: ["charges"],
     joinHint: "No join needed.",
@@ -239,6 +222,7 @@ const levels = [
     goal: "Return facility and avg_los.",
     starterQuery: "SELECT facility, ROUND(AVG(length_of_stay), 2) AS avg_los FROM encounters WHERE length_of_stay IS NOT NULL GROUP BY facility;",
     solutionQuery: "SELECT facility, ROUND(AVG(length_of_stay), 2) AS avg_los FROM encounters WHERE length_of_stay IS NOT NULL GROUP BY facility;",
+    explanation: "This teaches AVG and filtering out null values before aggregation.",
     hint: "Only average non-null length_of_stay values.",
     tablesUsed: ["encounters"],
     joinHint: "No join needed.",
@@ -254,6 +238,7 @@ const levels = [
     goal: "Return status and encounter_count.",
     starterQuery: "SELECT status, COUNT(*) AS encounter_count FROM encounters WHERE department = 'ER' GROUP BY status;",
     solutionQuery: "SELECT status, COUNT(*) AS encounter_count FROM encounters WHERE department = 'ER' GROUP BY status;",
+    explanation: "This teaches filtered grouping on a specific department.",
     hint: "Filter department to ER, then group by status.",
     tablesUsed: ["encounters"],
     joinHint: "No join needed.",
@@ -269,6 +254,7 @@ const levels = [
     goal: "Show encounter_id, first_name, last_name, facility, and department for discharged encounters.",
     starterQuery: "SELECT e.encounter_id, p.first_name, p.last_name, e.facility, e.department FROM encounters e JOIN patients p ON e.patient_id = p.patient_id WHERE e.status = 'Discharged';",
     solutionQuery: "SELECT e.encounter_id, p.first_name, p.last_name, e.facility, e.department FROM encounters e JOIN patients p ON e.patient_id = p.patient_id WHERE e.status = 'Discharged';",
+    explanation: "This introduces INNER JOIN using patient_id to combine encounter and patient details.",
     hint: "Join encounters.patient_id to patients.patient_id.",
     tablesUsed: ["encounters", "patients"],
     joinHint: "encounters.patient_id = patients.patient_id",
@@ -285,6 +271,7 @@ const levels = [
     goal: "Return provider_name and visit_count, highest to lowest.",
     starterQuery: "SELECT pr.provider_name, COUNT(*) AS visit_count FROM encounters e JOIN providers pr ON e.provider_id = pr.provider_id GROUP BY pr.provider_name ORDER BY visit_count DESC, pr.provider_name;",
     solutionQuery: "SELECT pr.provider_name, COUNT(*) AS visit_count FROM encounters e JOIN providers pr ON e.provider_id = pr.provider_id GROUP BY pr.provider_name ORDER BY visit_count DESC, pr.provider_name;",
+    explanation: "This combines joining to providers, grouping encounter rows, and sorting the results.",
     hint: "Join encounters to providers using provider_id.",
     tablesUsed: ["encounters", "providers"],
     joinHint: "encounters.provider_id = providers.provider_id",
@@ -301,6 +288,7 @@ const levels = [
     goal: "Show patient_id, first_name, and last_name.",
     starterQuery: "SELECT p.patient_id, p.first_name, p.last_name FROM patients p LEFT JOIN appointments a ON p.patient_id = a.patient_id WHERE a.appointment_id IS NULL;",
     solutionQuery: "SELECT p.patient_id, p.first_name, p.last_name FROM patients p LEFT JOIN appointments a ON p.patient_id = a.patient_id WHERE a.appointment_id IS NULL;",
+    explanation: "This teaches LEFT JOIN and NULL filtering to find missing related records.",
     hint: "Use a LEFT JOIN from patients to appointments, then find NULL appointment_id values.",
     tablesUsed: ["patients", "appointments"],
     joinHint: "patients.patient_id = appointments.patient_id",
@@ -316,6 +304,7 @@ const levels = [
     goal: "Return payer, denied_claims, and denied_billed_amount.",
     starterQuery: "SELECT payer, COUNT(*) AS denied_claims, ROUND(SUM(billed_amount), 2) AS denied_billed_amount FROM claims WHERE claim_status = 'Denied' GROUP BY payer;",
     solutionQuery: "SELECT payer, COUNT(*) AS denied_claims, ROUND(SUM(billed_amount), 2) AS denied_billed_amount FROM claims WHERE claim_status = 'Denied' GROUP BY payer;",
+    explanation: "This level teaches filtering a financial table before aggregation.",
     hint: "Stay in claims and filter claim_status to Denied.",
     tablesUsed: ["claims"],
     joinHint: "No join needed.",
@@ -331,6 +320,7 @@ const levels = [
     goal: "Return specialty and total_charge_amount.",
     starterQuery: "SELECT pr.specialty, ROUND(SUM(ch.amount), 2) AS total_charge_amount FROM charges ch JOIN encounters e ON ch.encounter_id = e.encounter_id JOIN providers pr ON e.provider_id = pr.provider_id GROUP BY pr.specialty;",
     solutionQuery: "SELECT pr.specialty, ROUND(SUM(ch.amount), 2) AS total_charge_amount FROM charges ch JOIN encounters e ON ch.encounter_id = e.encounter_id JOIN providers pr ON e.provider_id = pr.provider_id GROUP BY pr.specialty;",
+    explanation: "This is a multi-table join: charges to encounters, then encounters to providers, then aggregate by specialty.",
     hint: "Join charges to encounters using encounter_id, then encounters to providers using provider_id.",
     tablesUsed: ["charges", "encounters", "providers"],
     joinHint: "charges.encounter_id = encounters.encounter_id; encounters.provider_id = providers.provider_id",
@@ -346,6 +336,7 @@ const levels = [
     goal: "Show distinct patient_id values.",
     starterQuery: "SELECT DISTINCT e1.patient_id FROM encounters e1 JOIN encounters e2 ON e1.patient_id = e2.patient_id AND e2.admit_date > e1.discharge_date AND julianday(e2.admit_date) - julianday(e1.discharge_date) <= 30 WHERE e1.discharge_date IS NOT NULL ORDER BY e1.patient_id;",
     solutionQuery: "SELECT DISTINCT e1.patient_id FROM encounters e1 JOIN encounters e2 ON e1.patient_id = e2.patient_id AND e2.admit_date > e1.discharge_date AND julianday(e2.admit_date) - julianday(e1.discharge_date) <= 30 WHERE e1.discharge_date IS NOT NULL ORDER BY e1.patient_id;",
+    explanation: "This level teaches a self-join. You compare one encounter to a later encounter for the same patient within 30 days.",
     hint: "Self-join encounters on patient_id and compare later admit_date to earlier discharge_date.",
     tablesUsed: ["encounters"],
     joinHint: "Self-join: encounters.patient_id = encounters.patient_id",
@@ -362,6 +353,7 @@ const levels = [
     goal: "Return facility and denied_amount ordered highest to lowest.",
     starterQuery: "SELECT e.facility, ROUND(SUM(c.billed_amount), 2) AS denied_amount FROM claims c JOIN encounters e ON c.encounter_id = e.encounter_id WHERE c.claim_status = 'Denied' GROUP BY e.facility ORDER BY denied_amount DESC, e.facility;",
     solutionQuery: "SELECT e.facility, ROUND(SUM(c.billed_amount), 2) AS denied_amount FROM claims c JOIN encounters e ON c.encounter_id = e.encounter_id WHERE c.claim_status = 'Denied' GROUP BY e.facility ORDER BY denied_amount DESC, e.facility;",
+    explanation: "This ties claim denials back to encounter context so you can attribute denied dollars to facilities.",
     hint: "Join claims to encounters using encounter_id, then group by facility.",
     tablesUsed: ["claims", "encounters"],
     joinHint: "claims.encounter_id = encounters.encounter_id",
@@ -378,6 +370,7 @@ const levels = [
     goal: "Show patient_id, first_name, last_name, risk_score, and er_visits.",
     starterQuery: "SELECT p.patient_id, p.first_name, p.last_name, p.risk_score, COUNT(*) AS er_visits FROM patients p JOIN encounters e ON p.patient_id = e.patient_id WHERE e.department = 'ER' AND p.risk_score >= 70 GROUP BY p.patient_id, p.first_name, p.last_name, p.risk_score HAVING COUNT(*) > 1 ORDER BY er_visits DESC, p.patient_id;",
     solutionQuery: "SELECT p.patient_id, p.first_name, p.last_name, p.risk_score, COUNT(*) AS er_visits FROM patients p JOIN encounters e ON p.patient_id = e.patient_id WHERE e.department = 'ER' AND p.risk_score >= 70 GROUP BY p.patient_id, p.first_name, p.last_name, p.risk_score HAVING COUNT(*) > 1 ORDER BY er_visits DESC, p.patient_id;",
+    explanation: "This combines a join, filtering, grouping, and HAVING to find frequent high-risk ER users.",
     hint: "Join patients to encounters, filter to ER, group by patient, then use HAVING COUNT(*) > 1.",
     tablesUsed: ["patients", "encounters"],
     joinHint: "patients.patient_id = encounters.patient_id",
@@ -394,6 +387,7 @@ const levels = [
     goal: "Show distinct patient_id, first_name, and last_name.",
     starterQuery: "SELECT DISTINCT p.patient_id, p.first_name, p.last_name FROM patients p JOIN appointments a ON p.patient_id = a.patient_id LEFT JOIN encounters e ON p.patient_id = e.patient_id AND e.status = 'Completed' WHERE a.status = 'Completed' AND e.encounter_id IS NULL ORDER BY p.patient_id;",
     solutionQuery: "SELECT DISTINCT p.patient_id, p.first_name, p.last_name FROM patients p JOIN appointments a ON p.patient_id = a.patient_id LEFT JOIN encounters e ON p.patient_id = e.patient_id AND e.status = 'Completed' WHERE a.status = 'Completed' AND e.encounter_id IS NULL ORDER BY p.patient_id;",
+    explanation: "This finds care gaps by joining completed appointments to patients, then checking whether a matching completed encounter exists.",
     hint: "Join patients to appointments, then LEFT JOIN encounters filtered to Completed.",
     tablesUsed: ["patients", "appointments", "encounters"],
     joinHint: "patients.patient_id = appointments.patient_id; patients.patient_id = encounters.patient_id",
@@ -410,6 +404,7 @@ const levels = [
     goal: "Return provider_name, specialty, encounter_count, and volume_rank.",
     starterQuery: "SELECT provider_name, specialty, encounter_count, RANK() OVER (ORDER BY encounter_count DESC) AS volume_rank FROM (SELECT pr.provider_name, pr.specialty, COUNT(*) AS encounter_count FROM providers pr JOIN encounters e ON pr.provider_id = e.provider_id GROUP BY pr.provider_id, pr.provider_name, pr.specialty) t ORDER BY volume_rank, provider_name;",
     solutionQuery: "SELECT provider_name, specialty, encounter_count, RANK() OVER (ORDER BY encounter_count DESC) AS volume_rank FROM (SELECT pr.provider_name, pr.specialty, COUNT(*) AS encounter_count FROM providers pr JOIN encounters e ON pr.provider_id = e.provider_id GROUP BY pr.provider_id, pr.provider_name, pr.specialty) t ORDER BY volume_rank, provider_name;",
+    explanation: "This level teaches ranking aggregated results with a window function after a subquery.",
     hint: "Aggregate encounter counts in a subquery, then apply RANK().",
     tablesUsed: ["providers", "encounters"],
     joinHint: "providers.provider_id = encounters.provider_id",
@@ -426,6 +421,7 @@ const levels = [
     goal: "Return facility and readmission_count.",
     starterQuery: "SELECT e1.facility, COUNT(DISTINCT e2.encounter_id) AS readmission_count FROM encounters e1 JOIN encounters e2 ON e1.patient_id = e2.patient_id AND e2.admit_date > e1.discharge_date AND julianday(e2.admit_date) - julianday(e1.discharge_date) <= 30 WHERE e1.discharge_date IS NOT NULL GROUP BY e1.facility;",
     solutionQuery: "SELECT e1.facility, COUNT(DISTINCT e2.encounter_id) AS readmission_count FROM encounters e1 JOIN encounters e2 ON e1.patient_id = e2.patient_id AND e2.admit_date > e1.discharge_date AND julianday(e2.admit_date) - julianday(e1.discharge_date) <= 30 WHERE e1.discharge_date IS NOT NULL GROUP BY e1.facility;",
+    explanation: "This extends the readmission logic by aggregating readmission counts at the facility level.",
     hint: "Use a self-join on encounters and group the later readmissions by facility.",
     tablesUsed: ["encounters"],
     joinHint: "Self-join: encounters.patient_id = encounters.patient_id",
@@ -442,6 +438,7 @@ const levels = [
     goal: "Return department, encounter_type, and avg_los.",
     starterQuery: "SELECT department, encounter_type, ROUND(AVG(length_of_stay), 2) AS avg_los FROM encounters WHERE length_of_stay IS NOT NULL GROUP BY department, encounter_type;",
     solutionQuery: "SELECT department, encounter_type, ROUND(AVG(length_of_stay), 2) AS avg_los FROM encounters WHERE length_of_stay IS NOT NULL GROUP BY department, encounter_type;",
+    explanation: "This groups by two dimensions at once so you can compare LOS across both service and encounter type.",
     hint: "Group by both department and encounter_type.",
     tablesUsed: ["encounters"],
     joinHint: "No join needed.",
@@ -458,6 +455,7 @@ const levels = [
     goal: "Return payer, total_claims, denied_claims, and denial_rate.",
     starterQuery: "SELECT payer, COUNT(*) AS total_claims, SUM(CASE WHEN claim_status = 'Denied' THEN 1 ELSE 0 END) AS denied_claims, ROUND(100.0 * SUM(CASE WHEN claim_status = 'Denied' THEN 1 ELSE 0 END) / COUNT(*), 2) AS denial_rate FROM claims GROUP BY payer;",
     solutionQuery: "SELECT payer, COUNT(*) AS total_claims, SUM(CASE WHEN claim_status = 'Denied' THEN 1 ELSE 0 END) AS denied_claims, ROUND(100.0 * SUM(CASE WHEN claim_status = 'Denied' THEN 1 ELSE 0 END) / COUNT(*), 2) AS denial_rate FROM claims GROUP BY payer;",
+    explanation: "This introduces conditional aggregation with CASE to calculate rates.",
     hint: "Use CASE WHEN inside SUM to count denied claims.",
     tablesUsed: ["claims"],
     joinHint: "No join needed.",
@@ -474,6 +472,7 @@ const levels = [
     goal: "Return patient_id, first_name, last_name, risk_score, and total_charges.",
     starterQuery: "SELECT p.patient_id, p.first_name, p.last_name, p.risk_score, ROUND(SUM(c.amount), 2) AS total_charges FROM patients p JOIN charges c ON p.patient_id = c.patient_id GROUP BY p.patient_id, p.first_name, p.last_name, p.risk_score ORDER BY p.risk_score DESC, total_charges DESC LIMIT 10;",
     solutionQuery: "SELECT p.patient_id, p.first_name, p.last_name, p.risk_score, ROUND(SUM(c.amount), 2) AS total_charges FROM patients p JOIN charges c ON p.patient_id = c.patient_id GROUP BY p.patient_id, p.first_name, p.last_name, p.risk_score ORDER BY p.risk_score DESC, total_charges DESC LIMIT 10;",
+    explanation: "This level combines patient risk with financial burden and introduces LIMIT for top-N analysis.",
     hint: "Join patients to charges, sum charges, sort by risk then dollars, and limit to 10.",
     tablesUsed: ["patients", "charges"],
     joinHint: "patients.patient_id = charges.patient_id",
@@ -490,6 +489,7 @@ const levels = [
     goal: "Return department, total_appointments, no_shows, and no_show_rate.",
     starterQuery: "SELECT department, COUNT(*) AS total_appointments, SUM(CASE WHEN status = 'No Show' THEN 1 ELSE 0 END) AS no_shows, ROUND(100.0 * SUM(CASE WHEN status = 'No Show' THEN 1 ELSE 0 END) / COUNT(*), 2) AS no_show_rate FROM appointments GROUP BY department;",
     solutionQuery: "SELECT department, COUNT(*) AS total_appointments, SUM(CASE WHEN status = 'No Show' THEN 1 ELSE 0 END) AS no_shows, ROUND(100.0 * SUM(CASE WHEN status = 'No Show' THEN 1 ELSE 0 END) / COUNT(*), 2) AS no_show_rate FROM appointments GROUP BY department;",
+    explanation: "This calculates a rate from appointment status categories without filtering away the denominator.",
     hint: "Use conditional aggregation grouped by department.",
     tablesUsed: ["appointments"],
     joinHint: "No join needed.",
@@ -506,6 +506,7 @@ const levels = [
     goal: "Return provider_name and encounter_count.",
     starterQuery: "SELECT provider_name, encounter_count FROM (SELECT pr.provider_name, COUNT(*) AS encounter_count FROM providers pr JOIN encounters e ON pr.provider_id = e.provider_id GROUP BY pr.provider_id, pr.provider_name) t WHERE encounter_count > (SELECT AVG(encounter_count) FROM (SELECT COUNT(*) AS encounter_count FROM encounters GROUP BY provider_id) x) ORDER BY encounter_count DESC, provider_name;",
     solutionQuery: "SELECT provider_name, encounter_count FROM (SELECT pr.provider_name, COUNT(*) AS encounter_count FROM providers pr JOIN encounters e ON pr.provider_id = e.provider_id GROUP BY pr.provider_id, pr.provider_name) t WHERE encounter_count > (SELECT AVG(encounter_count) FROM (SELECT COUNT(*) AS encounter_count FROM encounters GROUP BY provider_id) x) ORDER BY encounter_count DESC, provider_name;",
+    explanation: "This teaches using subqueries to compare an entity against an average benchmark.",
     hint: "Use a subquery for encounter volume, then compare it to the average provider volume.",
     tablesUsed: ["providers", "encounters"],
     joinHint: "providers.provider_id = encounters.provider_id",
@@ -522,6 +523,7 @@ const levels = [
     goal: "Return patient_id and ed_visits.",
     starterQuery: "SELECT patient_id, COUNT(*) AS ed_visits FROM encounters WHERE department = 'ER' GROUP BY patient_id HAVING COUNT(*) > 1 ORDER BY ed_visits DESC, patient_id;",
     solutionQuery: "SELECT patient_id, COUNT(*) AS ed_visits FROM encounters WHERE department = 'ER' GROUP BY patient_id HAVING COUNT(*) > 1 ORDER BY ed_visits DESC, patient_id;",
+    explanation: "This level reinforces HAVING for grouped filters.",
     hint: "Filter to ER encounters, group by patient_id, then use HAVING COUNT(*) > 1.",
     tablesUsed: ["encounters"],
     joinHint: "No join needed.",
@@ -538,6 +540,7 @@ const levels = [
     goal: "Return payer, billed_total, paid_total, and net_collection_rate.",
     starterQuery: "SELECT payer, ROUND(SUM(billed_amount), 2) AS billed_total, ROUND(SUM(paid_amount), 2) AS paid_total, ROUND(100.0 * SUM(paid_amount) / SUM(billed_amount), 2) AS net_collection_rate FROM claims GROUP BY payer;",
     solutionQuery: "SELECT payer, ROUND(SUM(billed_amount), 2) AS billed_total, ROUND(SUM(paid_amount), 2) AS paid_total, ROUND(100.0 * SUM(paid_amount) / SUM(billed_amount), 2) AS net_collection_rate FROM claims GROUP BY payer;",
+    explanation: "This is a classic revenue cycle metric: collections divided by billed dollars.",
     hint: "Use SUM(paid_amount) divided by SUM(billed_amount), grouped by payer.",
     tablesUsed: ["claims"],
     joinHint: "No join needed.",
@@ -554,6 +557,7 @@ const levels = [
     goal: "Return encounter_id, patient_id, facility, department, and length_of_stay.",
     starterQuery: "SELECT encounter_id, patient_id, facility, department, length_of_stay FROM encounters WHERE encounter_type = 'Observation' AND length_of_stay > 2 ORDER BY length_of_stay DESC, encounter_id;",
     solutionQuery: "SELECT encounter_id, patient_id, facility, department, length_of_stay FROM encounters WHERE encounter_type = 'Observation' AND length_of_stay > 2 ORDER BY length_of_stay DESC, encounter_id;",
+    explanation: "This simulates operational logic for long-stay observation encounters. In this simplified dataset, LOS > 2 days means over 48 hours.",
     hint: "Observation over 48 hours means length_of_stay > 2 in this simplified dataset.",
     tablesUsed: ["encounters"],
     joinHint: "No join needed.",
@@ -570,6 +574,7 @@ const levels = [
     goal: "Return department, denied_amount, and denial_rank.",
     starterQuery: "SELECT department, denied_amount, RANK() OVER (ORDER BY denied_amount DESC) AS denial_rank FROM (SELECT e.department, ROUND(SUM(c.billed_amount), 2) AS denied_amount FROM claims c JOIN encounters e ON c.encounter_id = e.encounter_id WHERE c.claim_status = 'Denied' GROUP BY e.department) t ORDER BY denial_rank, department;",
     solutionQuery: "SELECT department, denied_amount, RANK() OVER (ORDER BY denied_amount DESC) AS denial_rank FROM (SELECT e.department, ROUND(SUM(c.billed_amount), 2) AS denied_amount FROM claims c JOIN encounters e ON c.encounter_id = e.encounter_id WHERE c.claim_status = 'Denied' GROUP BY e.department) t ORDER BY denial_rank, department;",
+    explanation: "This ties revenue-cycle denials back to operational departments and ranks them by impact.",
     hint: "Aggregate denied dollars by department in a subquery, then apply RANK().",
     tablesUsed: ["claims", "encounters"],
     joinHint: "claims.encounter_id = encounters.encounter_id",
@@ -581,6 +586,110 @@ const levels = [
     ]
   }
 ];
+
+function initResizableSchemaPanel() {
+  const panel = document.getElementById("schema-panel");
+  const resizer = document.getElementById("schema-resizer");
+  if (!panel || !resizer) return;
+
+  let isDragging = false;
+
+  resizer.addEventListener("mousedown", function() {
+    isDragging = true;
+    document.body.style.userSelect = "none";
+  });
+
+  document.addEventListener("mousemove", function(e) {
+    if (!isDragging) return;
+    const newWidth = Math.min(Math.max(e.clientX, 260), 800);
+    panel.style.width = newWidth + "px";
+  });
+
+  document.addEventListener("mouseup", function() {
+    isDragging = false;
+    document.body.style.userSelect = "";
+  });
+}
+
+function renderSchemaExplorer() {
+  renderTableCards();
+  renderRelationshipCards();
+}
+
+async function renderTableCards() {
+  const tablesDiv = document.getElementById("schema-tables");
+  if (!tablesDiv) return;
+
+  let html = "";
+  for (const table of schema.tables) {
+    html += `
+      <details class="schema-card" id="table-card-${table.name}">
+        <summary>${table.name}</summary>
+        <p><strong>Description:</strong> ${table.description}</p>
+        <p><strong>Keys:</strong> ${table.keyColumns.join(", ")}</p>
+        <p><strong>Columns:</strong> ${table.notableColumns.join(", ")}</p>
+        <div id="preview-${table.name}">Loading sample rows...</div>
+      </details>
+    `;
+  }
+  tablesDiv.innerHTML = html;
+
+  for (const table of schema.tables) {
+    const preview = await fetchPreview(table.name);
+    const previewDiv = document.getElementById("preview-" + table.name);
+    if (!previewDiv) continue;
+
+    if (preview.error) {
+      previewDiv.innerHTML = `<p>${preview.error}</p>`;
+      continue;
+    }
+
+    let tableHtml = "<table class='preview-table'><tr>";
+    preview.columns.forEach(function(col) {
+      tableHtml += "<th>" + col + "</th>";
+    });
+    tableHtml += "</tr>";
+
+    preview.rows.forEach(function(row) {
+      tableHtml += "<tr>";
+      row.forEach(function(cell) {
+        tableHtml += "<td>" + cell + "</td>";
+      });
+      tableHtml += "</tr>";
+    });
+
+    tableHtml += "</table>";
+    previewDiv.innerHTML = tableHtml;
+  }
+}
+
+function renderRelationshipCards() {
+  const relDiv = document.getElementById("schema-relationships");
+  if (!relDiv) return;
+
+  let html = "";
+  schema.relationships.forEach(function(rel) {
+    html += `
+      <details class="relationship-item">
+        <summary>${rel.label}</summary>
+        <p><strong>Why it matters:</strong> ${rel.explanation}</p>
+        <code>${rel.example}</code>
+      </details>
+    `;
+  });
+  relDiv.innerHTML = html;
+}
+
+function highlightRelevantSchema(level) {
+  schema.tables.forEach(function(table) {
+    const card = document.getElementById("table-card-" + table.name);
+    if (!card) return;
+
+    if (level.tablesUsed.indexOf(table.name) !== -1) {
+      card.open = true;
+    }
+  });
+}
 
 async function runBackendQuery(queryText) {
   const res = await fetch("/query", {
@@ -594,133 +703,6 @@ async function runBackendQuery(queryText) {
 async function fetchPreview(tableName) {
   const res = await fetch("/preview/" + encodeURIComponent(tableName));
   return await res.json();
-}
-
-function renderSchemaExplorer() {
-  renderTableButtons();
-  renderRelationshipButtons();
-}
-
-function renderTableButtons() {
-  const tablesDiv = document.getElementById("schema-tables");
-  if (!tablesDiv) return;
-
-  let html = "";
-  schema.tables.forEach(function(table) {
-    html += '<button class="schema-button" id="table-btn-' + table.name + '" onclick="selectTable(\'' + table.name + '\')">' + table.name + '</button>';
-  });
-  tablesDiv.innerHTML = html;
-}
-
-function renderRelationshipButtons() {
-  const relDiv = document.getElementById("schema-relationships");
-  if (!relDiv) return;
-
-  let html = "";
-  schema.relationships.forEach(function(rel) {
-    html += '<div class="relationship-item" id="rel-btn-' + rel.id + '" onclick="selectRelationship(\'' + rel.id + '\')">' + rel.label + '</div>';
-  });
-  relDiv.innerHTML = html;
-}
-
-function highlightRelevantSchema(level) {
-  document.querySelectorAll(".schema-button").forEach(function(btn) {
-    btn.classList.remove("relevant");
-  });
-
-  document.querySelectorAll(".relationship-item").forEach(function(item) {
-    item.classList.remove("active");
-  });
-
-  level.tablesUsed.forEach(function(tableName) {
-    const btn = document.getElementById("table-btn-" + tableName);
-    if (btn) btn.classList.add("relevant");
-  });
-
-  schema.relationships.forEach(function(rel) {
-    const relevant = level.tablesUsed.indexOf(rel.leftTable) !== -1 && level.tablesUsed.indexOf(rel.rightTable) !== -1;
-    if (relevant) {
-      const item = document.getElementById("rel-btn-" + rel.id);
-      if (item) item.classList.add("active");
-    }
-  });
-}
-
-async function selectTable(tableName) {
-  selectedTable = tableName;
-
-  document.querySelectorAll(".schema-button").forEach(function(btn) {
-    btn.classList.remove("active");
-  });
-
-  const btn = document.getElementById("table-btn-" + tableName);
-  if (btn) btn.classList.add("active");
-
-  const table = schema.tables.find(function(t) {
-    return t.name === tableName;
-  });
-
-  const detailsDiv = document.getElementById("schema-details");
-  if (!detailsDiv) return;
-
-  detailsDiv.innerHTML =
-    "<h4>" + table.name + "</h4>" +
-    "<p><strong>Description:</strong> " + table.description + "</p>" +
-    "<p><strong>Keys:</strong> " + table.keyColumns.join(", ") + "</p>" +
-    "<p><strong>Columns:</strong> " + table.notableColumns.join(", ") + "</p>" +
-    "<p><strong>Sample rows:</strong></p>" +
-    "<p id='preview-loading'>Loading preview...</p>";
-
-  const preview = await fetchPreview(tableName);
-
-  if (preview.error) {
-    const loading = document.getElementById("preview-loading");
-    if (loading) loading.outerHTML = "<p>" + preview.error + "</p>";
-    return;
-  }
-
-  let html = "<table class='preview-table'><tr>";
-  preview.columns.forEach(function(col) {
-    html += "<th>" + col + "</th>";
-  });
-  html += "</tr>";
-
-  preview.rows.forEach(function(row) {
-    html += "<tr>";
-    row.forEach(function(cell) {
-      html += "<td>" + cell + "</td>";
-    });
-    html += "</tr>";
-  });
-
-  html += "</table>";
-
-  const loading = document.getElementById("preview-loading");
-  if (loading) loading.outerHTML = html;
-}
-
-function selectRelationship(relId) {
-  selectedRelationship = relId;
-
-  document.querySelectorAll(".relationship-item").forEach(function(item) {
-    item.classList.remove("active");
-  });
-
-  const relBtn = document.getElementById("rel-btn-" + relId);
-  if (relBtn) relBtn.classList.add("active");
-
-  const rel = schema.relationships.find(function(r) {
-    return r.id === relId;
-  });
-
-  const detailsDiv = document.getElementById("relationship-details");
-  if (!detailsDiv) return;
-
-  detailsDiv.innerHTML =
-    "<h4>" + rel.label + "</h4>" +
-    "<p><strong>Why it matters:</strong> " + rel.explanation + "</p>" +
-    "<p><strong>Example join:</strong></p>" +
-    "<p><code>" + rel.example + "</code></p>";
 }
 
 function renderResultTable(data) {
@@ -870,7 +852,7 @@ function buildHintMessage(level, userQuery, userData, solutionData) {
     messages.push("Common mistakes for this level: " + level.commonMistakes.join("; ") + ".");
   }
 
-  return messages.join(" ");
+  return messages.join("\n");
 }
 
 function resetQuery() {
@@ -881,6 +863,8 @@ async function runQuery() {
   const query = document.getElementById("query").value;
   const output = document.getElementById("output");
   const data = await runBackendQuery(query);
+
+  currentLevelRunCount += 1;
 
   if (data.error) {
     if (output) output.innerText = data.error;
@@ -933,20 +917,29 @@ async function checkAnswer() {
         nextLevelDiv.innerHTML = "<p><strong>You completed all 30 levels.</strong></p>";
       }
     }
-  } else {
-    wrongAttemptsByLevel[currentLevel] = (wrongAttemptsByLevel[currentLevel] || 0) + 1;
+    return;
+  }
 
-    if (feedback) {
-      feedback.innerHTML = "<p style='color:red;'><strong>Not quite.</strong> Try revising your query.</p>";
-    }
+  wrongAttemptsByLevel[currentLevel] = (wrongAttemptsByLevel[currentLevel] || 0) + 1;
+  const attempts = wrongAttemptsByLevel[currentLevel];
 
-    if (hintDiv && wrongAttemptsByLevel[currentLevel] >= 1) {
+  if (feedback) {
+    feedback.innerHTML = "<p style='color:red;'><strong>Not quite.</strong> Try revising your query.</p>";
+  }
+
+  if (hintDiv) {
+    if (attempts >= 3) {
+      hintDiv.innerHTML =
+        "Answer:\n\n" + level.solutionQuery + "\n\nExplanation:\n" + level.explanation;
+    } else if (attempts >= 2) {
       hintDiv.innerHTML = buildHintMessage(level, userQuery, userNormalized, solutionNormalized);
+    } else {
+      hintDiv.innerHTML = "First wrong try recorded. One more wrong try will trigger smart hints.";
     }
+  }
 
-    if (nextLevelDiv) {
-      nextLevelDiv.innerHTML = "";
-    }
+  if (nextLevelDiv) {
+    nextLevelDiv.innerHTML = "";
   }
 }
 
@@ -966,7 +959,7 @@ function loadLevel(index) {
 
   const hintDiv = document.getElementById("level-hint");
   if (hintDiv) {
-    hintDiv.innerHTML = "Run your query and check your answer. If it is wrong, a smarter hint will appear here.";
+    hintDiv.innerHTML = "Run your query and check your answer. After two wrong tries, you’ll get smart hints. After the third wrong try, the answer will be shown with an explanation.";
   }
 
   document.getElementById("query").value = level.starterQuery;
@@ -974,17 +967,14 @@ function loadLevel(index) {
   document.getElementById("next-level").innerHTML = "";
   document.getElementById("output").innerHTML = "";
   lastResult = null;
+  currentLevelRunCount = 0;
 
   highlightRelevantSchema(level);
-
-  if (level.tablesUsed.length > 0) {
-    selectTable(level.tablesUsed[0]);
-  }
-
   wrongAttemptsByLevel[currentLevel] = 0;
 }
 
 window.onload = function() {
+  initResizableSchemaPanel();
   renderSchemaExplorer();
   loadLevel(0);
 };
