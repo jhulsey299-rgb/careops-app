@@ -1,6 +1,8 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CareOps SQL Analyst</title>
     <link rel="stylesheet" href="/static/style.css">
 </head>
@@ -8,7 +10,10 @@
 
 <div class="app-shell">
     <aside class="schema-panel" id="schema-panel">
-        <h2>Schema Explorer</h2>
+        <div class="schema-header">
+            <h2>Schema Explorer</h2>
+            <p>Reference tables, relationships, and hints while you solve each level.</p>
+        </div>
 
         <div class="schema-section">
             <h3>Tables</h3>
@@ -31,7 +36,15 @@
     <div id="schema-resizer"></div>
 
     <main class="main-content">
-        <div class="top-dashboard">
+        <section class="hero-banner">
+            <div class="hero-copy">
+                <div class="hero-kicker">Healthcare SQL Training Simulator</div>
+                <h1>CareOps: SQL Analyst</h1>
+                <p>Practice SQL with realistic hospital analytics scenarios, guided schema exploration, adaptive hints, and tracked progression across 30 levels.</p>
+            </div>
+        </section>
+
+        <section class="top-dashboard">
             <div class="dashboard-card">
                 <h3>Progress</h3>
                 <p id="progress-text">0 / 30 levels completed</p>
@@ -49,33 +62,37 @@
                 <h3>Badges</h3>
                 <p id="badge-count">0 earned</p>
             </div>
-        </div>
+        </section>
 
         <div class="dashboard-actions">
             <button onclick="resetAllProgress()">Reset Progress</button>
         </div>
 
-        <div class="badges-section">
+        <section class="badges-section">
             <h3>Achievements</h3>
             <div id="badges-container" class="badges-container"></div>
-        </div>
-
-        <h1>CareOps: SQL Analyst</h1>
+        </section>
 
         <div class="workspace-layout">
             <section class="play-area">
                 <div class="mission-box"></div>
 
-                <p>Write your SQL query:</p>
+                <div class="query-section">
+                    <div class="section-header">
+                        <h3>SQL Workspace</h3>
+                        <p>Write your query below and validate your answer against the level objective.</p>
+                    </div>
 
-                <textarea id="query" rows="8" cols="80"></textarea><br>
+                    <label for="query" class="query-label">Write your SQL query:</label>
+                    <textarea id="query" rows="8" cols="80"></textarea>
 
-                <div class="button-row">
-                    <button onclick="runQuery()">Run Query</button>
-                    <button onclick="checkAnswer()">Check Answer</button>
-                    <button onclick="resetQuery()">Reset Query</button>
-                    <button onclick="goPreviousLevel()">Previous</button>
-                    <button onclick="goNextLevel()">Next</button>
+                    <div class="button-row">
+                        <button onclick="runQuery()">Run Query</button>
+                        <button onclick="checkAnswer()">Check Answer</button>
+                        <button onclick="resetQuery()">Reset Query</button>
+                        <button onclick="goPreviousLevel()">Previous</button>
+                        <button onclick="goNextLevel()">Next</button>
+                    </div>
                 </div>
 
                 <div id="feedback"></div>
@@ -84,7 +101,10 @@
             </section>
 
             <aside class="levels-panel">
-                <h3>Levels</h3>
+                <div class="levels-panel-header">
+                    <h3>Levels</h3>
+                    <p>Jump between unlocked levels instantly.</p>
+                </div>
                 <div id="levels-list" class="levels-list"></div>
             </aside>
         </div>
