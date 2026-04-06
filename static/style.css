@@ -11,7 +11,7 @@ body {
 }
 
 .schema-panel {
-    width: 320px;
+    width: 360px;
     background: #ffffff;
     border-right: 1px solid #dbe2ea;
     padding: 20px;
@@ -30,12 +30,12 @@ h1 {
     margin-bottom: 16px;
 }
 
-h2, h3 {
+h2, h3, h4 {
     margin-top: 0;
 }
 
 .schema-section {
-    margin-bottom: 24px;
+    margin-bottom: 22px;
 }
 
 .schema-card {
@@ -43,17 +43,40 @@ h2, h3 {
     border: 1px solid #dbe2ea;
     border-radius: 8px;
     padding: 12px;
-    margin-bottom: 12px;
-}
-
-.schema-card h4 {
-    margin: 0 0 8px 0;
-    color: #1d4ed8;
 }
 
 .schema-card p {
-    margin: 4px 0;
+    margin: 6px 0;
     font-size: 14px;
+    line-height: 1.4;
+}
+
+.schema-button {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: #f8fafc;
+    color: #1f2937;
+    border: 1px solid #dbe2ea;
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.schema-button:hover {
+    background: #eff6ff;
+}
+
+.schema-button.active {
+    background: #dbeafe;
+    border-color: #60a5fa;
+    color: #1d4ed8;
+}
+
+.schema-button.relevant {
+    border-left: 6px solid #16a34a;
 }
 
 .relationship-item {
@@ -63,6 +86,34 @@ h2, h3 {
     padding: 10px;
     margin-bottom: 8px;
     font-size: 14px;
+    cursor: pointer;
+}
+
+.relationship-item:hover {
+    background: #eff6ff;
+}
+
+.relationship-item.active {
+    background: #ecfdf5;
+    border-color: #86efac;
+}
+
+.preview-table {
+    width: 100%;
+    margin-top: 10px;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.preview-table th,
+.preview-table td {
+    border: 1px solid #cbd5e1;
+    padding: 6px 8px;
+    text-align: left;
+}
+
+.preview-table th {
+    background: #eff6ff;
 }
 
 .mission-box {
@@ -113,13 +164,13 @@ button:hover {
     font-size: 16px;
 }
 
-#level-hint {
+.hint-box {
     background: #fff7ed;
     border: 1px solid #fed7aa;
     border-radius: 8px;
     padding: 12px;
     font-size: 14px;
-    line-height: 1.4;
+    line-height: 1.5;
 }
 
 table {
