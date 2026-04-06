@@ -512,3 +512,12 @@ function loadLevel(index) {
     renderLevelsPanel();
     updateDashboard();
 }
+
+// ======================
+// MAKE FUNCTIONS GLOBAL
+// ======================
+window.runQuery = runQuery;
+window.checkAnswer = checkAnswer;
+window.resetAllProgress = resetAllProgress;
+window.nextLevel = nextLevel;
+window.prevLevel = prevLevel;
