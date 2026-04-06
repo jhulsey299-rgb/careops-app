@@ -58,9 +58,9 @@ h1, h2, h3, h4 {
 }
 
 h1 {
-    font-size: 2rem;
+    font-size: 2.15rem;
     font-weight: 700;
-    margin-bottom: 18px;
+    margin-bottom: 10px;
 }
 
 h2 {
@@ -108,7 +108,8 @@ button {
         transform var(--transition),
         box-shadow var(--transition),
         background var(--transition),
-        border-color var(--transition);
+        border-color var(--transition),
+        color var(--transition);
     box-shadow: var(--shadow-sm);
 }
 
@@ -170,7 +171,7 @@ textarea:focus {
 
 .schema-panel {
     width: 320px;
-    background: rgba(255, 255, 255, 0.9);
+    background: rgba(255, 255, 255, 0.92);
     backdrop-filter: blur(10px);
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
@@ -180,6 +181,22 @@ textarea:focus {
     top: 16px;
     max-height: calc(100vh - 32px);
     overflow-y: auto;
+}
+
+.schema-header {
+    margin-bottom: 18px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.schema-header h2 {
+    margin-bottom: 6px;
+}
+
+.schema-header p {
+    margin: 0;
+    color: var(--text-faint);
+    font-size: 0.92rem;
 }
 
 #schema-resizer {
@@ -205,6 +222,58 @@ textarea:focus {
     min-width: 0;
 }
 
+.hero-banner {
+    background: linear-gradient(135deg, #0f172a 0%, #1d4ed8 50%, #60a5fa 100%);
+    color: white;
+    border-radius: 20px;
+    padding: 28px 28px 24px;
+    margin-bottom: 18px;
+    box-shadow: var(--shadow-lg);
+    position: relative;
+    overflow: hidden;
+}
+
+.hero-banner::after {
+    content: "";
+    position: absolute;
+    width: 220px;
+    height: 220px;
+    right: -60px;
+    top: -60px;
+    background: rgba(255, 255, 255, 0.10);
+    border-radius: 50%;
+}
+
+.hero-copy {
+    position: relative;
+    z-index: 1;
+    max-width: 760px;
+}
+
+.hero-kicker {
+    display: inline-block;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    background: rgba(255, 255, 255, 0.16);
+    color: #eff6ff;
+    padding: 7px 10px;
+    border-radius: 999px;
+    margin-bottom: 12px;
+}
+
+.hero-banner h1,
+.hero-banner p {
+    color: white;
+}
+
+.hero-banner p {
+    margin-bottom: 0;
+    max-width: 760px;
+    opacity: 0.95;
+}
+
 .top-dashboard {
     display: grid;
     grid-template-columns: repeat(3, minmax(220px, 1fr));
@@ -217,10 +286,11 @@ textarea:focus {
 .mission-box,
 .levels-panel,
 .schema-section,
+.query-section,
 #feedback,
 #next-level,
 #output {
-    background: rgba(255, 255, 255, 0.92);
+    background: rgba(255, 255, 255, 0.94);
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-sm);
@@ -322,6 +392,22 @@ textarea:focus {
     top: 16px;
 }
 
+.levels-panel-header {
+    margin-bottom: 14px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.levels-panel-header h3 {
+    margin-bottom: 4px;
+}
+
+.levels-panel-header p {
+    margin: 0;
+    font-size: 0.9rem;
+    color: var(--text-faint);
+}
+
 .levels-list {
     display: flex;
     flex-direction: column;
@@ -397,11 +483,36 @@ textarea:focus {
     margin-bottom: 14px;
 }
 
+.query-section {
+    padding: 20px;
+    margin-bottom: 16px;
+}
+
+.section-header {
+    margin-bottom: 14px;
+}
+
+.section-header h3 {
+    margin-bottom: 4px;
+}
+
+.section-header p {
+    margin: 0;
+    color: var(--text-faint);
+}
+
+.query-label {
+    display: inline-block;
+    margin-bottom: 10px;
+    font-weight: 600;
+    color: var(--text);
+}
+
 .button-row {
     display: flex;
     flex-wrap: wrap;
     gap: 10px;
-    margin: 14px 0 18px;
+    margin: 14px 0 0;
 }
 
 .button-row button:nth-child(1) {
@@ -651,6 +762,11 @@ select {
         font-size: 1.6rem;
     }
 
+    .hero-banner {
+        padding: 20px 18px;
+        border-radius: 16px;
+    }
+
     .button-row {
         flex-direction: column;
     }
@@ -664,6 +780,7 @@ select {
     .mission-box,
     .levels-panel,
     .schema-section,
+    .query-section,
     #feedback,
     #next-level,
     #output {
