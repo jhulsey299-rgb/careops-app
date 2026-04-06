@@ -30,6 +30,23 @@ body {
     flex-shrink: 0;
 }
 
+.level-nav {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 18px;
+}
+
+.level-nav select {
+    min-width: 220px;
+    padding: 10px 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    background: white;
+    font-size: 14px;
+}
+
 #schema-resizer:hover {
     background: #93c5fd;
 }
