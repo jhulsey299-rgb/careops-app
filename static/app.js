@@ -1,6 +1,30 @@
 let lastResult = null;
 let currentLevel = 0;
-let wrongAttemptsByLevel = {};
+
+const STORAGE_KEY = "careops_progress_v2";
+
+let gameState = {
+  currentLevel: 0,
+  completedLevels: [],
+  badges: [],
+  wrongAttemptsByLevel: {},
+  firstTryWins: 0
+};
+
+const badgeCatalog = [
+  { id: "first_query", label: "First Query" },
+  { id: "first_win", label: "First Win" },
+  { id: "three_levels", label: "3 Levels Cleared" },
+  { id: "five_levels", label: "5 Levels Cleared" },
+  { id: "ten_levels", label: "10 Levels Cleared" },
+  { id: "fifteen_levels", label: "15 Levels Cleared" },
+  { id: "twenty_levels", label: "20 Levels Cleared" },
+  { id: "thirty_levels", label: "30 Levels Cleared" },
+  { id: "first_try_three", label: "3 First-Try Wins" },
+  { id: "join_master", label: "Join Master" },
+  { id: "aggregation_ace", label: "Aggregation Ace" },
+  { id: "advanced_analyst", label: "Advanced Analyst" }
+];
 
 const schema = {
   tables: [
@@ -610,6 +634,93 @@ const levels = [
   }
 ];
 
+function loadGameState() {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (!raw) return;
+
+  try {
+    const parsed = JSON.parse(raw);
+    gameState = {
+      currentLevel: parsed.currentLevel ?? 0,
+      completedLevels: parsed.completedLevels ?? [],
+      badges: parsed.badges ?? [],
+      wrongAttemptsByLevel: parsed.wrongAttemptsByLevel ?? {},
+      firstTryWins: parsed.firstTryWins ?? 0
+    };
+  } catch (e) {
+    console.error("Failed to load saved progress", e);
+  }
+}
+
+function saveGameState() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(gameState));
+}
+
+function hasBadge(id) {
+  return gameState.badges.indexOf(id) !== -1;
+}
+
+function awardBadge(id) {
+  if (!hasBadge(id)) {
+    gameState.badges.push(id);
+  }
+}
+
+function evaluateBadges() {
+  const completedCount = gameState.completedLevels.length;
+
+  if (completedCount >= 1) awardBadge("first_win");
+  if (completedCount >= 3) awardBadge("three_levels");
+  if (completedCount >= 5) awardBadge("five_levels");
+  if (completedCount >= 10) awardBadge("ten_levels");
+  if (completedCount >= 15) awardBadge("fifteen_levels");
+  if (completedCount >= 20) awardBadge("twenty_levels");
+  if (completedCount >= 30) awardBadge("thirty_levels");
+  if (gameState.firstTryWins >= 3) awardBadge("first_try_three");
+
+  const completedSet = new Set(gameState.completedLevels);
+
+  if (completedSet.has(10) && completedSet.has(11) && completedSet.has(14) && completedSet.has(15)) {
+    awardBadge("join_master");
+  }
+
+  if (completedSet.has(2) && completedSet.has(6) && completedSet.has(8) && completedSet.has(9)) {
+    awardBadge("aggregation_ace");
+  }
+
+  if (completedSet.has(20) && completedSet.has(23) && completedSet.has(24) && completedSet.has(30)) {
+    awardBadge("advanced_analyst");
+  }
+}
+
+function updateDashboard() {
+  const progressText = document.getElementById("progress-text");
+  const progressBar = document.getElementById("progress-bar");
+  const currentLevelDisplay = document.getElementById("current-level-display");
+  const badgeCount = document.getElementById("badge-count");
+
+  const completed = gameState.completedLevels.length;
+  const total = levels.length;
+  const pct = (completed / total) * 100;
+
+  if (progressText) progressText.textContent = `${completed} / ${total} levels completed`;
+  if (progressBar) progressBar.style.width = `${pct}%`;
+  if (currentLevelDisplay) currentLevelDisplay.textContent = levels[currentLevel].title;
+  if (badgeCount) badgeCount.textContent = `${gameState.badges.length} earned`;
+}
+
+function renderBadges() {
+  const container = document.getElementById("badges-container");
+  if (!container) return;
+
+  let html = "";
+  badgeCatalog.forEach(function (badge) {
+    const earned = hasBadge(badge.id);
+    html += `<div class="badge-chip ${earned ? "" : "locked"}">${earned ? "🏅" : "🔒"} ${badge.label}</div>`;
+  });
+  container.innerHTML = html;
+}
+
 function initResizableSchemaPanel() {
   const panel = document.getElementById("schema-panel");
   const resizer = document.getElementById("schema-resizer");
@@ -941,6 +1052,13 @@ async function runQuery() {
   const output = document.getElementById("output");
   const data = await runBackendQuery(query);
 
+  if (!hasBadge("first_query")) {
+    awardBadge("first_query");
+    saveGameState();
+    renderBadges();
+    updateDashboard();
+  }
+
   lastResult = data;
 
   if (data.error) {
@@ -990,6 +1108,20 @@ async function checkAnswer() {
       hintDiv.innerHTML = "Nice work. You got it right.";
     }
 
+    if (gameState.completedLevels.indexOf(currentLevel) === -1) {
+      gameState.completedLevels.push(currentLevel);
+    }
+
+    if ((gameState.wrongAttemptsByLevel[currentLevel] || 0) === 0) {
+      gameState.firstTryWins += 1;
+    }
+
+    gameState.currentLevel = currentLevel;
+    evaluateBadges();
+    saveGameState();
+    updateDashboard();
+    renderBadges();
+
     if (nextLevelDiv) {
       if (currentLevel < levels.length - 1) {
         nextLevelDiv.innerHTML = '<button onclick="loadLevel(' + (currentLevel + 1) + ')">Next Level</button>';
@@ -1001,8 +1133,9 @@ async function checkAnswer() {
     return;
   }
 
-  wrongAttemptsByLevel[currentLevel] = (wrongAttemptsByLevel[currentLevel] || 0) + 1;
-  const attempts = wrongAttemptsByLevel[currentLevel];
+  gameState.wrongAttemptsByLevel[currentLevel] = (gameState.wrongAttemptsByLevel[currentLevel] || 0) + 1;
+  const attempts = gameState.wrongAttemptsByLevel[currentLevel];
+  saveGameState();
 
   if (feedback) {
     if (lastResult.error) {
@@ -1029,10 +1162,16 @@ async function checkAnswer() {
   if (nextLevelDiv) {
     nextLevelDiv.innerHTML = "";
   }
+
+  updateDashboard();
+  renderBadges();
 }
 
 function loadLevel(index) {
   currentLevel = index;
+  gameState.currentLevel = index;
+  saveGameState();
+
   const level = levels[index];
 
   const missionBox = document.querySelector(".mission-box");
@@ -1056,12 +1195,15 @@ function loadLevel(index) {
   document.getElementById("output").innerHTML = "";
   lastResult = null;
 
-  wrongAttemptsByLevel[currentLevel] = 0;
   highlightRelevantSchema(level);
+  updateDashboard();
 }
 
 window.onload = function () {
+  loadGameState();
   initResizableSchemaPanel();
   renderSchemaExplorer();
-  loadLevel(0);
+  evaluateBadges();
+  renderBadges();
+  loadLevel(gameState.currentLevel || 0);
 };
