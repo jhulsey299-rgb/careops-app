@@ -1473,7 +1473,6 @@ function initSchemaResizer() {
         document.body.classList.remove("resizing-schema");
         saveProgress();
     });
-}
 
 // ======================
 // APP.JS DROP 2 OF 3
