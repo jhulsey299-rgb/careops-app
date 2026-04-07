@@ -1661,7 +1661,7 @@ function renderCurriculumNav() {
             lessonBtn.innerHTML = `
                 <div class="lesson-item-head">
                     <span class="lesson-item-title">${lesson.title}</span>
-                    <span class="lesson-type-badge ${lessonTypeClass(lesson.type)}">${lesson.type}</span>
+                    <span class="lesson-type-badge ${lessonTypeClass(lesson.type)}">${formatLessonType(lesson.type)}</span>
                 </div>
                 <span class="lesson-status">${isLessonCompleted(lesson.id) ? "Completed" : "Available"}</span>
             `;
