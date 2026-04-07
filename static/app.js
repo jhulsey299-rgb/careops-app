@@ -1287,8 +1287,9 @@ function difficultyClassFromLabel(label) {
     return "difficulty-advanced";
 }
 
-function lessonTypeClass(type) {
-    return 'lesson-type-${type}' ;
+function formatLessonType(type) {
+    if (!type) return "";
+    return type.charAt(0).toUpperCase() + type.slice(1).toLowerCase();
 }
 
 
