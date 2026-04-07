@@ -1628,12 +1628,18 @@ function renderCurriculumNav() {
         const wrap = document.createElement("div");
         wrap.className = "curriculum-category";
 
+        const difficulty = categoryDifficulty(category);
+        const difficultyClass = difficultyClassFromLabel(difficulty);
+
         const header = document.createElement("button");
         header.className = "curriculum-category-header";
         header.type = "button";
         header.innerHTML = `
             <span class="curriculum-category-title">${category.title}</span>
-            <span class="curriculum-category-meta">${categoryProgressText(category)}</span>
+            <div class="curriculum-category-header-meta">
+                <span class="difficulty-badge ${difficultyClass}">${difficulty}</span>
+                <span class="curriculum-category-meta">${categoryProgressText(category)}</span>
+            </div>
         `;
 
         const lessonsWrap = document.createElement("div");
