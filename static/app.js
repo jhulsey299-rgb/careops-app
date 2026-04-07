@@ -2081,6 +2081,8 @@ window.resetScenario = resetScenario;
 window.resetAllProgress = resetAllProgress;
 window.openTableModal = openTableModal;
 window.closeTableModal = closeTableModal;
+window.showTrackOverview = showTrackOverview;
+window.showLessonWorkspace = showLessonWorkspace;
 
 // ======================
 // DROP 5 END
