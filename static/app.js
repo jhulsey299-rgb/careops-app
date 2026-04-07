@@ -1707,7 +1707,7 @@ function renderLessonHeader(record) {
 
     const typeBadge = document.getElementById("current-lesson-type-badge");
     typeBadge.className = `lesson-type-badge ${lessonTypeClass(lesson.type)}`;
-    typeBadge.innerText = lesson.type;
+  typeBadge.innerText = formatLessonType(lesson.type);
 
     const categoryBadge = document.getElementById("current-category-badge");
     categoryBadge.className = "difficulty-badge difficulty-intermediate";
