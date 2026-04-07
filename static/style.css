@@ -2030,3 +2030,67 @@ button:hover::after {
     padding: 6px 10px;
     font-size: 0.76rem;
 }
+
+/* Cleaner right-panel curriculum rows */
+.levels-list {
+    gap: 8px;
+}
+
+.curriculum-category {
+    border: none;
+    background: transparent;
+    box-shadow: none;
+}
+
+.curriculum-category-header {
+    width: 100%;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    background: #ffffff;
+    padding: 10px 12px;
+    text-align: left;
+    box-shadow: none;
+}
+
+.curriculum-category-header:hover {
+    background: #f8fbff;
+    border-color: #bfdbfe;
+}
+
+.curriculum-category-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 10px;
+    align-items: center;
+}
+
+.curriculum-category-main {
+    min-width: 0;
+}
+
+.curriculum-category-title {
+    display: block;
+    font-size: 0.88rem;
+    font-weight: 700;
+    line-height: 1.25;
+    margin-bottom: 5px;
+}
+
+.curriculum-category-header-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+}
+
+.curriculum-category-meta {
+    font-size: 0.72rem;
+    color: var(--text-faint);
+    font-weight: 600;
+}
+
+.curriculum-category-arrow {
+    font-size: 1.1rem;
+    color: #94a3b8;
+    line-height: 1;
+}
