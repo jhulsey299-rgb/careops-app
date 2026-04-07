@@ -77,8 +77,6 @@
 
         <div class="workspace-layout">
             <section class="play-area">
-
-                <!-- TRACK OVERVIEW -->
                 <section id="track-overview" class="track-overview-panel">
                     <div class="track-overview-header">
                         <div>
@@ -124,14 +122,13 @@
 
                     <div class="track-category-section">
                         <div class="section-header">
-                            <h3>Track Categories</h3>
-                            <p>Choose a category to begin or jump back into where you left off.</p>
+                            <h3>Badges</h3>
+                            <p>Complete each curriculum category to earn its badge.</p>
                         </div>
                         <div id="track-category-cards" class="track-category-cards"></div>
                     </div>
                 </section>
 
-                <!-- LESSON WORKSPACE -->
                 <section id="lesson-workspace">
                     <div id="lesson-header-card" class="mission-box">
                         <div class="mission-meta-row">
@@ -241,17 +238,19 @@
 
             <aside class="levels-panel" id="levels-panel">
                 <div class="levels-panel-header">
-    <div class="levels-panel-title-row">
-        <div>
-            <h3 id="track-title">Curriculum</h3>
-            <p id="track-description">Track and category navigation will appear here.</p>
-        </div>
-        <button type="button" id="toggle-levels-panel-btn" class="panel-toggle-btn">Collapse</button>
-    </div>
-</div>
+                    <div class="levels-panel-title-row">
+                        <div>
+                            <h3 id="track-title">SQL Foundations for Hospital Data</h3>
+                            <p id="track-description">Curriculum, difficulty, and completion tracking.</p>
+                        </div>
+                        <button type="button" id="toggle-levels-panel-btn" class="panel-toggle-btn">Collapse</button>
+                    </div>
+                </div>
+
                 <div class="button-row side-panel-actions">
                     <button type="button" id="open-overview-btn">Track Overview</button>
                 </div>
+
                 <div id="category-list" class="levels-list"></div>
             </aside>
         </div>
@@ -316,6 +315,6 @@ window.addEventListener('unhandledrejection', function (event) {
 });
 </script>
 
-<script src="/static/app.js?v=8"></script>
+<script src="/static/app.js?v=9"></script>
 </body>
 </html>
