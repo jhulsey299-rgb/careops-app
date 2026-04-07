@@ -1289,6 +1289,7 @@ function difficultyClassFromLabel(label) {
 
 function lessonTypeClass (type) {
     return 'lesson-type-${type}';
+}
 
 function formatLessonType(type) {
     if (!type) return "";
