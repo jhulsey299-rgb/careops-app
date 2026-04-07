@@ -2061,7 +2061,9 @@ window.onload = function () {
     renderAchievements();
     renderCurriculumNav();
     updateDashboard();
-    loadLesson(appState.currentLessonId);
+    bindOverviewButtons();
+    renderTrackOverview();
+    showTrackOverview();
 };
 
 // ======================
