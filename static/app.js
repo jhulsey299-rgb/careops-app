@@ -1938,12 +1938,13 @@ function resetAllProgress() {
     attempts = 0;
     lastRunQuery = "";
 
-    applySchemaPanelWidth();
+   applySchemaPanelWidth();
     renderSchema();
     renderAchievements();
     renderCurriculumNav();
     updateDashboard();
-    loadLesson(firstLesson.id);
+    renderTrackOverview();
+    showTrackOverview();
 }
 
 // ======================
