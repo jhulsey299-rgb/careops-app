@@ -1338,19 +1338,20 @@ function achievements() {
     const completed = completedLessonCount();
     const firstTry = appState.firstTryLessonIds.length;
     return [
-        { label: "First Lesson", earned: completed >= 1 },
-        { label: "3 Lessons Completed", earned: completed >= 3 },
-        { label: "5 Lessons Completed", earned: completed >= 5 },
-        { label: "10 Lessons Completed", earned: completed >= 10 },
-        { label: "15 Lessons Completed", earned: completed >= 15 },
-        { label: "20 Lessons Completed", earned: completed >= 20 },
-        { label: "30 Lessons Completed", earned: completed >= 30 },
-        { label: "50 Lessons Completed", earned: completed >= 50 },
-        { label: "65 Lessons Completed", earned: completed >= 65 },
-        { label: "3 First-Try Wins", earned: firstTry >= 3 },
-        { label: "10 First-Try Wins", earned: firstTry >= 10 }
+        { label: "First Lesson", earned: completed >= 1, emoji: "🎯" },
+        { label: "3 Lessons Completed", earned: completed >= 3, emoji: "📘" },
+        { label: "5 Lessons Completed", earned: completed >= 5, emoji: "📚" },
+        { label: "10 Lessons Completed", earned: completed >= 10, emoji: "🚀" },
+        { label: "15 Lessons Completed", earned: completed >= 15, emoji: "🏥" },
+        { label: "20 Lessons Completed", earned: completed >= 20, emoji: "📊" },
+        { label: "30 Lessons Completed", earned: completed >= 30, emoji: "🏆" },
+        { label: "50 Lessons Completed", earned: completed >= 50, emoji: "🔥" },
+        { label: "65 Lessons Completed", earned: completed >= 65, emoji: "👑" },
+        { label: "3 First-Try Wins", earned: firstTry >= 3, emoji: "⚡" },
+        { label: "10 First-Try Wins", earned: firstTry >= 10, emoji: "💡" }
     ];
 }
+
 
 // ======================
 // STORAGE
