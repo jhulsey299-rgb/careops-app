@@ -1580,7 +1580,6 @@ function initSchemaResizer() {
         document.body.classList.remove("resizing-schema");
         saveProgress();
     });
-}
 
     document.addEventListener("mousemove", function (event) {
         if (!dragging) return;
