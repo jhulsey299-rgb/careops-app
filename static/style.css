@@ -1088,3 +1088,111 @@ textarea:focus {
         padding: 14px;
     }
 }
+
+/* =========================
+   UI POLISH PATCH
+   ========================= */
+
+.curriculum-category-header-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    margin-top: 6px;
+}
+
+.side-panel-actions {
+    margin-bottom: 18px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.side-panel-actions button {
+    width: 100%;
+    font-weight: 700;
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+}
+
+.side-panel-actions button:hover {
+    background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+}
+
+.track-category-card-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+}
+
+.track-category-progress-text {
+    font-size: 0.84rem;
+    color: var(--text-faint);
+    font-weight: 600;
+}
+
+.track-category-card .difficulty-badge {
+    font-size: 0.72rem;
+}
+
+.badge-chip {
+    font-size: 0.9rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+}
+
+.badges-container {
+    row-gap: 12px;
+}
+
+.levels-panel {
+    padding-top: 20px;
+}
+
+.levels-list {
+    gap: 12px;
+}
+
+.curriculum-category {
+    border-radius: 16px;
+}
+
+.curriculum-category-header {
+    padding: 15px 15px 13px;
+}
+
+.curriculum-category-title {
+    font-size: 0.95rem;
+}
+
+.curriculum-category-meta {
+    font-size: 0.76rem;
+}
+
+.track-overview-panel {
+    padding-bottom: 28px;
+}
+
+.track-category-section {
+    margin-top: 18px;
+}
+
+.track-category-cards {
+    margin-top: 16px;
+}
+
+.track-category-card {
+    min-height: 150px;
+}
+
+.track-category-enter {
+    margin-top: 14px;
+    margin-bottom: 0;
+}
+
+@media (max-width: 1200px) {
+    .track-category-card-meta {
+        align-items: flex-start;
+    }
+}
