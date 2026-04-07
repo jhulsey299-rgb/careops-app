@@ -1547,7 +1547,8 @@ function applySchemaPanelWidth() {
 function initSchemaResizer() {
     const resizer = document.getElementById("schema-resizer");
     const panel = document.getElementById("schema-panel");
-    if (!resizer || !panel) return;
+    const shell = document.querySelector(".app-shell");
+    if (!resizer || !panel || !shell) return;
 
     let dragging = false;
 
@@ -1556,7 +1557,30 @@ function initSchemaResizer() {
         event.preventDefault();
         document.body.style.userSelect = "none";
         document.body.style.cursor = "col-resize";
+        document.body.classList.add("resizing-schema");
     });
+
+    document.addEventListener("mousemove", function (event) {
+        if (!dragging) return;
+
+        const shellRect = shell.getBoundingClientRect();
+        const nextWidth = event.clientX - shellRect.left;
+        const maxWidth = Math.min(Math.floor(window.innerWidth * 0.72), 1100);
+
+        appState.schemaPanelWidth = Math.max(260, Math.min(nextWidth, maxWidth));
+        applySchemaPanelWidth();
+    });
+
+    document.addEventListener("mouseup", function () {
+        if (!dragging) return;
+
+        dragging = false;
+        document.body.style.userSelect = "";
+        document.body.style.cursor = "";
+        document.body.classList.remove("resizing-schema");
+        saveProgress();
+    });
+}
 
     document.addEventListener("mousemove", function (event) {
         if (!dragging) return;
