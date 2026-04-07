@@ -1287,6 +1287,10 @@ function difficultyClassFromLabel(label) {
     return "difficulty-advanced";
 }
 
+function lessonTypeClass( type ) {
+    return 'lesson-type-$( type ) ;
+}
+
 
 function normalizeSql(sql) {
     return String(sql || "")
