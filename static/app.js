@@ -1435,6 +1435,28 @@ function initSchemaResizer() {
         if (!dragging) return;
 
         const shellRect = shell.getBoundingClientRect();
+        const nextWidth = event.clientX - shellRect.left;
+        const maxWidth = Math.floor(window.innerWidth * 0.55);
+
+        appState.schemaPanelWidth = Math.max(260, Math.min(nextWidth, maxWidth));
+        applySchemaPanelWidth();
+    });
+
+    document.addEventListener("mouseup", function () {
+        if (!dragging) return;
+
+        dragging = false;
+        document.body.style.userSelect = "";
+        document.body.style.cursor = "";
+        document.body.classList.remove("resizing-schema");
+        saveProgress();
+    });
+}
+
+    document.addEventListener("mousemove", function (event) {
+        if (!dragging) return;
+
+        const shellRect = shell.getBoundingClientRect();
         const maxWidth = Math.floor(window.innerWidth * 0.92);
         const nextWidth = event.clientX - shellRect.left;
 
