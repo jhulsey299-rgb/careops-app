@@ -1610,7 +1610,7 @@ function renderAchievements() {
     achievements().forEach(achievement => {
         const chip = document.createElement("div");
         chip.className = achievement.earned ? "badge-chip" : "badge-chip locked";
-        chip.innerText = `${achievement.earned ? "🏅" : "🔒"} ${achievement.label}`;
+        chip.innerText = `${achievement.emoji} ${achievement.label}`;
         container.appendChild(chip);
     });
 }
