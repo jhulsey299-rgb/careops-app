@@ -18,7 +18,7 @@ let appState = {
 
 let attempts = 0;
 let lastRunQuery = "";
-
+}
 // ======================
 // SCHEMA DATA
 // ======================
