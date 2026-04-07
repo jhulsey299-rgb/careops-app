@@ -2179,6 +2179,7 @@ window.onload = function () {
     renderCurriculumNav();
     updateDashboard();
     bindOverviewButtons();
+    bindLevelsPanelToggle();
     renderTrackOverview();
     showTrackOverview();
 };
