@@ -1402,12 +1402,14 @@ function closeTableModal(event) {
 // ======================
 function applySchemaPanelWidth() {
     const panel = document.getElementById("schema-panel");
-    if (!panel) return;
+    const shell = document.querySelector(".app-shell");
+    if (!panel || !shell) return;
 
-    const maxWidth = Math.floor(window.innerWidth * 0.92);
+    const maxWidth = Math.floor(window.innerWidth * 0.55);
     const width = Math.max(260, Math.min(appState.schemaPanelWidth || 320, maxWidth));
 
     panel.style.width = `${width}px`;
+    shell.style.gridTemplateColumns = `${width}px 14px 1fr`;
     appState.schemaPanelWidth = width;
 }
 
