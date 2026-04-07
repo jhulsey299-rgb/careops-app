@@ -1,3 +1,128 @@
+/* =========================
+   SCHEMA PANEL + RESIZER FIX (CRITICAL)
+   ========================= */
+
+/* Allow MUCH wider expansion */
+.schema-panel {
+    min-width: 260px;
+    max-width: none; /* REMOVE HARD LIMIT */
+    width: 320px;
+    overflow-x: auto;
+}
+
+/* Full-height drag handle */
+#schema-resizer {
+    width: 14px;
+    min-height: 100vh;
+    cursor: col-resize;
+    position: relative;
+    flex-shrink: 0;
+}
+
+#schema-resizer::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 5px;
+    width: 4px;
+    border-radius: 999px;
+    background: linear-gradient(180deg, #dbeafe 0%, #cbd5e1 100%);
+    opacity: 0.9;
+}
+
+body.resizing-schema #schema-resizer::before {
+    background: linear-gradient(180deg, #60a5fa 0%, #2563eb 100%);
+}
+
+/* Tables expand naturally */
+.preview-table,
+.table-modal-preview table {
+    min-width: 900px; /* IMPORTANT */
+}
+
+/* Layout breathing */
+.workspace-layout {
+    grid-template-columns: minmax(0, 1fr) 300px;
+    gap: 24px;
+}
+
+/* Remove artificial squeezing */
+.play-area {
+    max-width: 100%;
+}
+
+/* =========================
+   BADGES (CENTER SCREEN)
+   ========================= */
+
+.track-category-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 18px;
+}
+
+/* Badge card */
+.track-badge-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px 16px;
+    border-radius: 18px;
+    border: 2px dashed #e2e8f0;
+    background: #ffffff;
+    transition: all 0.25s ease;
+}
+
+/* Locked badge */
+.track-badge-card.locked {
+    opacity: 0.6;
+}
+
+/* Earned badge */
+.track-badge-card.earned {
+    border: 2px solid #60a5fa;
+    background: linear-gradient(135deg, #eff6ff 0%, #ffffff 100%);
+    box-shadow: var(--shadow-md);
+}
+
+/* Badge icon */
+.track-badge-icon {
+    font-size: 32px;
+    margin-bottom: 10px;
+}
+
+.track-badge-icon.locked {
+    color: #cbd5e1;
+}
+
+.track-badge-icon.earned {
+    color: #2563eb;
+}
+
+/* Badge name */
+.track-badge-name {
+    font-weight: 700;
+    font-size: 0.9rem;
+    text-align: center;
+    margin-bottom: 8px;
+}
+
+/* Badge meta */
+.track-badge-meta {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    font-size: 0.75rem;
+}
+
+Get Outlook for iOS
+From: Josh Hulsey <jhulsey@tidelandshealth.org>
+Sent: Tuesday, April 7, 2026 4:02:21 PM
+To: Josh Hulsey <jhulsey@tidelandshealth.org>
+Subject: Re: Re:
+ 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap');
 
 :root {
