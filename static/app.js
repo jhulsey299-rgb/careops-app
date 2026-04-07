@@ -2029,6 +2029,44 @@ function renderTrackOverview() {
         const totalLessons = category.lessons.length;
         const completedLessons = category.lessons.filter((lesson) => isLessonCompleted(lesson.id)).length;
         const firstLesson = category.lessons[0];
+        const difficulty = categoryDifficulty(category);
+        const difficultyClass = difficultyClassFromLabel(difficulty);
+
+        const card = document.createElement("button");
+        card.type = "button";
+        card.className = "track-category-card";
+        card.innerHTML = `
+            <div class="track-category-card-top">
+                <h3>${category.title}</h3>
+                <span class="track-category-count">${totalLessons} Lessons</span>
+            </div>
+            <div class="track-category-card-meta">
+                <span class="difficulty-badge ${difficultyClass}">${difficulty}</span>
+                <span class="track-category-progress-text">${completedLessons}/${totalLessons} completed</span>
+            </div>
+            <div class="progress-bar-wrap">
+                <div class="track-category-progress-bar" style="width:${totalLessons ? (completedLessons / totalLessons) * 100 : 0}%"></div>
+            </div>
+            <p class="track-category-enter">Open Category</p>
+        `;
+
+        card.addEventListener("click", function () {
+            if (firstLesson) {
+                loadLesson(firstLesson.id);
+            }
+        });
+
+        cardsWrap.appendChild(card);
+    });
+}
+
+    if (!cardsWrap) return;
+    cardsWrap.innerHTML = "";
+
+    categories.forEach((category) => {
+        const totalLessons = category.lessons.length;
+        const completedLessons = category.lessons.filter((lesson) => isLessonCompleted(lesson.id)).length;
+        const firstLesson = category.lessons[0];
 
         const card = document.createElement("button");
         card.type = "button";
