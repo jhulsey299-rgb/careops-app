@@ -2159,6 +2159,16 @@ function bindOverviewButtons() {
         });
     }
 }
+function bindLevelsPanelToggle() {
+    const btn = document.getElementById("toggle-levels-panel-btn");
+    const panel = document.getElementById("levels-panel");
+    if (!btn || !panel) return;
+
+    btn.addEventListener("click", function () {
+        panel.classList.toggle("collapsed");
+        btn.innerText = panel.classList.contains("collapsed") ? "Expand" : "Collapse";
+    });
+}
 window.onload = function () {
     loadProgress();
     initializeStateDefaults();
