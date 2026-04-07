@@ -1255,9 +1255,38 @@ function getCurrentLesson() {
     return record ? record.lesson : null;
 }
 
-function lessonTypeClass(type) {
-    return `lesson-type-${type}`;
+function categoryDifficulty(category) {
+    const order = [
+        "getting_started",
+        "selecting_columns",
+        "filtering_rows",
+        "sorting_results",
+        "strings",
+        "numbers_and_calculations",
+        "null_handling",
+        "boolean_logic",
+        "case_statements",
+        "aggregations",
+        "group_by",
+        "having",
+        "inner_joins"
+    ];
+
+    const idx = order.indexOf(category.id);
+
+    if (idx <= 3) return "Easy";
+    if (idx <= 8) return "Intermediate";
+    if (idx <= 11) return "Hard";
+    return "Advanced";
 }
+
+function difficultyClassFromLabel(label) {
+    if (label === "Easy") return "difficulty-easy";
+    if (label === "Intermediate") return "difficulty-intermediate";
+    if (label === "Hard") return "difficulty-hard";
+    return "difficulty-advanced";
+}
+
 
 function normalizeSql(sql) {
     return String(sql || "")
