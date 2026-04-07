@@ -2064,7 +2064,6 @@ function renderTrackOverview() {
 
         cardsWrap.appendChild(card);
     });
-}
 
     if (!cardsWrap) return;
     cardsWrap.innerHTML = "";
