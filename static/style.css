@@ -2094,3 +2094,27 @@ button:hover::after {
     color: #94a3b8;
     line-height: 1;
 }
+
+/* Make locked badges visible */
+.track-badge-card.locked {
+    opacity: 1;
+    background: #fcfdff;
+    border: 2px dashed #cbd5e1;
+}
+
+.track-badge-icon.locked {
+    color: #64748b;
+    border: 2px dashed #94a3b8;
+    background: #f1f5f9;
+    opacity: 1;
+}
+
+.track-badge-name {
+    color: #334155;
+}
+
+.track-badge-card.locked .track-badge-name,
+.track-badge-card.locked .track-badge-progress {
+    opacity: 1;
+}
+
