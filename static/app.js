@@ -1509,7 +1509,7 @@ function renderAchievements() {
 // RIGHT PANEL CURRICULUM NAV
 // only place for tracking + navigation
 // ======================
-function renderCurriculumNav() {
+Function renderCurriculumNav() {
     const list = document.getElementById("category-list");
     if (!list) return;
 
@@ -1523,6 +1523,7 @@ function renderCurriculumNav() {
         const difficultyClass = difficultyClassFromLabel(difficulty);
         const total = category.lessons.length;
         const done = category.lessons.filter(lesson => isLessonCompleted(lesson.id)).length;
+        const isComplete = done === total;
 
         const header = document.createElement("button");
         header.className = "curriculum-category-header";
@@ -1534,6 +1535,7 @@ function renderCurriculumNav() {
                     <div class="curriculum-category-header-meta">
                         <span class="difficulty-badge ${difficultyClass}">${difficulty}</span>
                         <span class="curriculum-category-meta">${done}/${total} completed</span>
+                        ${isComplete ? `<span class="curriculum-complete-pill">Completed</span>` : ``}
                     </div>
                 </div>
                 <div class="curriculum-category-arrow">›</div>
