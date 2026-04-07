@@ -1536,6 +1536,17 @@ function closeTableModal(event) {
 // ======================
 // SCHEMA RESIZER
 // ======================
+function applySchemaPanelWidth() {
+    const panel = document.getElementById("schema-panel");
+    if (!panel) return;
+
+    const maxWidth = Math.floor(window.innerWidth * 0.92);
+    const width = Math.max(260, Math.min(appState.schemaPanelWidth || 320, maxWidth));
+
+    panel.style.width = `${width}px`;
+    appState.schemaPanelWidth = width;
+}
+
 function initSchemaResizer() {
     const resizer = document.getElementById("schema-resizer");
     const panel = document.getElementById("schema-panel");
