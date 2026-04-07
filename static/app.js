@@ -1752,6 +1752,8 @@ function loadLesson(lessonId) {
     appState.currentCategoryId = record.categoryId;
     attempts = 0;
     lastRunQuery = "";
+     showLessonWorkspace();
+
 
     renderLessonHeader(record);
     renderHintBox(record.lesson);
