@@ -1534,9 +1534,12 @@ function closeTableModal(event) {
 // ======================
 function applySchemaPanelWidth() {
     const panel = document.getElementById("schema-panel");
-    if (!panel) return;
+    const shell = document.querySelector(".app-shell");
+    if (!panel || !shell) return;
 
-    const width = Math.max(260, Math.min(appState.schemaPanelWidth || 320, 700));
+    const maxWidth = Math.min(Math.floor(window.innerWidth * 0.72), 1100);
+    const width = Math.max(260, Math.min(appState.schemaPanelWidth || 320, maxWidth));
+
     panel.style.width = `${width}px`;
     appState.schemaPanelWidth = width;
 }
