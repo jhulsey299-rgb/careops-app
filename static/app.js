@@ -1947,6 +1947,109 @@ function resetAllProgress() {
 // ======================
 // INIT
 // ======================
+// ======================
+// OVERVIEW / TRACK SCREEN
+// ======================
+function showTrackOverview() {
+    const overview = document.getElementById("track-overview");
+    const workspace = document.getElementById("lesson-workspace");
+
+    if (overview) overview.classList.remove("hidden");
+    if (workspace) workspace.classList.add("hidden");
+
+    renderTrackOverview();
+}
+
+function showLessonWorkspace() {
+    const overview = document.getElementById("track-overview");
+    const workspace = document.getElementById("lesson-workspace");
+
+    if (overview) overview.classList.add("hidden");
+    if (workspace) workspace.classList.remove("hidden");
+}
+
+function renderTrackOverview() {
+    const track = getTrack();
+    const categories = getAllCategories();
+    const completed = completedLessonCount();
+    const total = totalLessonCount();
+
+    const titleEl = document.getElementById("track-overview-title");
+    const descEl = document.getElementById("track-overview-description");
+    const progressTextEl = document.getElementById("track-overview-progress-text");
+    const progressBarEl = document.getElementById("track-overview-progress-bar");
+    const trackLabelEl = document.getElementById("track-title-display-overview");
+    const cardsWrap = document.getElementById("track-category-cards");
+
+    if (trackLabelEl) trackLabelEl.innerText = track.title;
+    if (titleEl) titleEl.innerText = track.title;
+    if (descEl) descEl.innerText = track.description;
+    if (progressTextEl) progressTextEl.innerText = `${completed} of ${total} lessons completed`;
+    if (progressBarEl) {
+        progressBarEl.style.width = `${total ? (completed / total) * 100 : 0}%`;
+    }
+
+    if (!cardsWrap) return;
+    cardsWrap.innerHTML = "";
+
+    categories.forEach((category) => {
+        const totalLessons = category.lessons.length;
+        const completedLessons = category.lessons.filter((lesson) => isLessonCompleted(lesson.id)).length;
+        const firstLesson = category.lessons[0];
+
+        const card = document.createElement("button");
+        card.type = "button";
+        card.className = "track-category-card";
+        card.innerHTML = `
+            <div class="track-category-card-top">
+                <h3>${category.title}</h3>
+                <span class="track-category-count">${totalLessons} Lessons</span>
+            </div>
+            <p class="track-category-progress">${completedLessons}/${totalLessons} completed</p>
+            <div class="progress-bar-wrap">
+                <div class="track-category-progress-bar" style="width:${totalLessons ? (completedLessons / totalLessons) * 100 : 0}%"></div>
+            </div>
+            <p class="track-category-enter">Open Category</p>
+        `;
+
+        card.addEventListener("click", function () {
+            if (firstLesson) {
+                loadLesson(firstLesson.id);
+            }
+        });
+
+        cardsWrap.appendChild(card);
+    });
+}
+
+function bindOverviewButtons() {
+    const openOverviewBtn = document.getElementById("open-overview-btn");
+    const resumeTrackBtn = document.getElementById("resume-track-btn");
+    const startTrackBtn = document.getElementById("start-track-btn");
+
+    if (openOverviewBtn) {
+        openOverviewBtn.addEventListener("click", function () {
+            showTrackOverview();
+        });
+    }
+
+    if (resumeTrackBtn) {
+        resumeTrackBtn.addEventListener("click", function () {
+            if (appState.currentLessonId) {
+                loadLesson(appState.currentLessonId);
+            }
+        });
+    }
+
+    if (startTrackBtn) {
+        startTrackBtn.addEventListener("click", function () {
+            const firstTrack = curriculum[0];
+            const firstCategory = firstTrack.categories[0];
+            const firstLesson = firstCategory.lessons[0];
+            loadLesson(firstLesson.id);
+        });
+    }
+}
 window.onload = function () {
     loadProgress();
     initializeStateDefaults();
