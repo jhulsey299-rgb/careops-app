@@ -1698,7 +1698,6 @@ function renderCurriculumNav() {
         header.className = "curriculum-category-header";
         header.type = "button";
         header.innerHTML = `
-            <span class="curriculum-category-title">${category.title}</span>
             <div class="curriculum-category-header-meta">
                 <span class="difficulty-badge ${difficultyClass}">${difficulty}</span>
                 <span class="curriculum-category-meta">${categoryProgressText(category)}</span>
