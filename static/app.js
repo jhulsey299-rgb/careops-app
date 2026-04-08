@@ -1853,6 +1853,25 @@ function renderScenarioLesson(lesson) {
     document.getElementById("scenario-feedback").innerHTML = "";
 }
 
+function renderChallengeLesson(lesson) {
+    hideAllLessonBodies();
+    document.getElementById("challenge-content").classList.remove("hidden");
+
+    const queryBox = document.getElementById("query");
+    queryBox.value = lesson.starterQuery || "";
+
+    document.getElementById("feedback").innerHTML = "";
+    document.getElementById("output").innerHTML = "";
+    attempts = 0;
+    lastRunQuery = "";
+
+    previewSchemaFromQuery(queryBox.value);
+
+    queryBox.oninput = function () {
+        previewSchemaFromQuery(queryBox.value);
+    };
+}
+
 function loadLesson(lessonId) {
     const record = getLessonRecordById(lessonId);
     if (!record) return;
