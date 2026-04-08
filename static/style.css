@@ -1474,3 +1474,12 @@ body.resizing-schema #schema-resizer::before {
     gap: 8px;
     margin-top: 4px;
 }
+
+.detected-table-preview {
+    margin-top: 18px;
+}
+
+.detected-table-preview h4 {
+    margin: 0 0 8px;
+}
+
