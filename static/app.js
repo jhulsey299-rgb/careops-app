@@ -1934,7 +1934,16 @@ function renderTrackOverview() {
 
         cardsWrap.appendChild(badge);
     });
-}
+function bindOverviewButtons() {
+    const openOverviewBtn = document.getElementById("open-overview-btn");
+    const resumeTrackBtn = document.getElementById("resume-track-btn");
+    const startTrackBtn = document.getElementById("start-track-btn");
+
+    if (openOverviewBtn) {
+        openOverviewBtn.addEventListener("click", function () {
+            showTrackOverview();
+        });
+    }
 
     if (resumeTrackBtn) {
         resumeTrackBtn.addEventListener("click", function () {
