@@ -1547,13 +1547,6 @@ function renderCurriculumNav() {
 
         wrap.appendChild(header);
         list.appendChild(wrap);
-    });
-}
-        });
-
-        wrap.appendChild(header);
-        list.appendChild(wrap);
-    });
 }
 
 // ======================
