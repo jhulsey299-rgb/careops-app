@@ -1483,13 +1483,19 @@ function updateDashboard() {
     }
 
     if (badgeCount) {
-        badgeCount.innerText = `${achievements().filter(a => a.earned).length} earned`;
+        const earnedCategoryBadges = getAllCategories().filter(category => {
+            const totalLessons = category.lessons.length;
+            const completedLessons = category.lessons.filter(lesson => isLessonCompleted(lesson.id)).length;
+            return totalLessons > 0 && completedLessons === totalLessons;
+        }).length;
+
+        badgeCount.innerText = `${earnedCategoryBadges} category badges earned`;
     }
 
     const trackTitle = document.getElementById("track-title");
     const trackDescription = document.getElementById("track-description");
     if (trackTitle) trackTitle.innerText = track.title;
-    if (trackDescription) trackDescription.innerText = track.description;
+    if (trackDescription) trackDescription.innerText = "Curriculum, difficulty, and completion tracking.";
 }
 
 function renderAchievements() {
@@ -1509,26 +1515,24 @@ function renderAchievements() {
 // RIGHT PANEL CURRICULUM NAV
 // only place for tracking + navigation
 // ======================
-Function renderCurriculumNav() {
+function renderCurriculumNav() {
     const list = document.getElementById("category-list");
     if (!list) return;
 
     list.innerHTML = "";
 
     getAllCategories().forEach(category => {
-        const wrap = document.createElement("div");
-        wrap.className = "curriculum-category";
-
         const difficulty = categoryDifficulty(category);
         const difficultyClass = difficultyClassFromLabel(difficulty);
         const total = category.lessons.length;
         const done = category.lessons.filter(lesson => isLessonCompleted(lesson.id)).length;
-        const isComplete = done === total;
+        const isComplete = total > 0 && done === total;
 
-        const header = document.createElement("button");
-        header.className = "curriculum-category-header";
-        header.type = "button";
-        header.innerHTML = `
+        const row = document.createElement("button");
+        row.className = `curriculum-category-header ${isComplete ? "is-complete" : ""}`;
+        row.type = "button";
+
+        row.innerHTML = `
             <div class="curriculum-category-row">
                 <div class="curriculum-category-main">
                     <span class="curriculum-category-title">${category.title}</span>
@@ -1542,14 +1546,16 @@ Function renderCurriculumNav() {
             </div>
         `;
 
-        header.addEventListener("click", function () {
-            if (category.lessons.length) {
-                loadLesson(category.lessons[0].id);
+        row.addEventListener("click", function () {
+            const firstIncomplete = category.lessons.find(lesson => !isLessonCompleted(lesson.id));
+            const targetLesson = firstIncomplete || category.lessons[0];
+
+            if (targetLesson) {
+                loadLesson(targetLesson.id);
             }
         });
 
-        wrap.appendChild(header);
-        list.appendChild(wrap);
+        list.appendChild(row);
     });
 }
 
@@ -1566,6 +1572,9 @@ function hideAllLessonBodies() {
 function renderLessonHeader(record) {
     const { categoryTitle, lesson } = record;
     const track = getTrack();
+    const category = getCategoryById(record.categoryId);
+    const difficulty = category ? categoryDifficulty(category) : "Intermediate";
+    const difficultyClass = difficultyClassFromLabel(difficulty);
 
     document.getElementById("track-title-display").innerText = track.title;
     document.getElementById("lesson-title").innerText = lesson.title;
@@ -1576,7 +1585,7 @@ function renderLessonHeader(record) {
     typeBadge.innerText = formatLessonType(lesson.type);
 
     const categoryBadge = document.getElementById("current-category-badge");
-    categoryBadge.className = "difficulty-badge difficulty-intermediate";
+    categoryBadge.className = `difficulty-badge ${difficultyClass}`;
     categoryBadge.innerText = categoryTitle;
 
     document.getElementById("lesson-tables").innerHTML =
@@ -1602,6 +1611,8 @@ function renderHintBox(lesson) {
 
 function renderExecutiveTakeaway(lesson) {
     const wrap = document.getElementById("executive-takeaway");
+    if (!wrap) return;
+
     if (!lesson.executiveTakeaway || !lesson.executiveTakeaway.show) {
         wrap.classList.add("hidden");
         return;
@@ -1690,6 +1701,7 @@ function markConceptComplete() {
     renderAchievements();
     renderCurriculumNav();
     updateDashboard();
+    renderTrackOverview();
     saveProgress();
 
     const feedback = document.getElementById("feedback");
@@ -1743,6 +1755,7 @@ function checkAnswer() {
         renderAchievements();
         renderCurriculumNav();
         updateDashboard();
+        renderTrackOverview();
         saveProgress();
         return;
     }
@@ -1785,6 +1798,7 @@ function submitScenario() {
         renderAchievements();
         renderCurriculumNav();
         updateDashboard();
+        renderTrackOverview();
         saveProgress();
     } else {
         feedback.innerHTML = "<p style='color:#dc2626; font-weight:700;'>Not quite. Re-read the prompt and think about which table or action best fits the question.</p>";
@@ -1852,153 +1866,3 @@ function resetAllProgress() {
     renderTrackOverview();
     showTrackOverview();
 }
-
-// ======================
-// APP.JS DROP 3 OF 3
-// ======================
-
-// ======================
-// OVERVIEW / TRACK SCREEN
-// ======================
-function showTrackOverview() {
-    const overview = document.getElementById("track-overview");
-    const workspace = document.getElementById("lesson-workspace");
-
-    if (overview) overview.classList.remove("hidden");
-    if (workspace) workspace.classList.add("hidden");
-
-    renderTrackOverview();
-}
-
-function showLessonWorkspace() {
-    const overview = document.getElementById("track-overview");
-    const workspace = document.getElementById("lesson-workspace");
-
-    if (overview) overview.classList.add("hidden");
-    if (workspace) workspace.classList.remove("hidden");
-}
-
-function renderTrackOverview() {
-    const track = getTrack();
-    const categories = getAllCategories();
-    const completed = completedLessonCount();
-    const total = totalLessonCount();
-
-    const titleEl = document.getElementById("track-overview-title");
-    const descEl = document.getElementById("track-overview-description");
-    const progressTextEl = document.getElementById("track-overview-progress-text");
-    const progressBarEl = document.getElementById("track-overview-progress-bar");
-    const trackLabelEl = document.getElementById("track-title-display-overview");
-    const cardsWrap = document.getElementById("track-category-cards");
-
-    if (trackLabelEl) trackLabelEl.innerText = track.title;
-    if (titleEl) titleEl.innerText = track.title;
-    if (descEl) descEl.innerText = track.description;
-    if (progressTextEl) progressTextEl.innerText = `${completed} of ${total} lessons completed`;
-    if (progressBarEl) {
-        progressBarEl.style.width = `${total ? (completed / total) * 100 : 0}%`;
-    }
-
-    if (!cardsWrap) return;
-    cardsWrap.innerHTML = "";
-
-    categories.forEach(category => {
-        const totalLessons = category.lessons.length;
-        const completedLessons = category.lessons.filter(lesson => isLessonCompleted(lesson.id)).length;
-        const fullyComplete = completedLessons === totalLessons;
-        const difficulty = categoryDifficulty(category);
-        const difficultyClass = difficultyClassFromLabel(difficulty);
-
-        const badge = document.createElement("div");
-        badge.className = `track-badge-card ${fullyComplete ? "earned" : "locked"}`;
-        badge.innerHTML = `
-            <div class="track-badge-icon-wrap">
-                <div class="track-badge-icon ${fullyComplete ? "earned" : "locked"}">
-                    ${fullyComplete ? "🏅" : "◌"}
-                </div>
-            </div>
-            <div class="track-badge-name">${category.title}</div>
-            <div class="track-badge-meta">
-                <span class="difficulty-badge ${difficultyClass}">${difficulty}</span>
-                <span class="track-badge-progress">${completedLessons}/${totalLessons}</span>
-            </div>
-        `;
-
-        cardsWrap.appendChild(badge);
-    });
-}
-
-function bindOverviewButtons() {
-    const openOverviewBtn = document.getElementById("open-overview-btn");
-    const resumeTrackBtn = document.getElementById("resume-track-btn");
-    const startTrackBtn = document.getElementById("start-track-btn");
-
-    if (openOverviewBtn) {
-        openOverviewBtn.addEventListener("click", function () {
-            showTrackOverview();
-        });
-    }
-
-    if (resumeTrackBtn) {
-        resumeTrackBtn.addEventListener("click", function () {
-            if (appState.currentLessonId) {
-                loadLesson(appState.currentLessonId);
-            }
-        });
-    }
-
-    if (startTrackBtn) {
-        startTrackBtn.addEventListener("click", function () {
-            const firstTrack = curriculum[0];
-            const firstCategory = firstTrack.categories[0];
-            const firstLesson = firstCategory.lessons[0];
-            loadLesson(firstLesson.id);
-        });
-    }
-}
-
-function bindLevelsPanelToggle() {
-    const btn = document.getElementById("toggle-levels-panel-btn");
-    const panel = document.getElementById("levels-panel");
-    if (!btn || !panel) return;
-
-    btn.addEventListener("click", function () {
-        panel.classList.toggle("collapsed");
-        btn.innerText = panel.classList.contains("collapsed") ? "Expand" : "Collapse";
-    });
-}
-
-// ======================
-// INIT
-// ======================
-window.onload = function () {
-    loadProgress();
-    initializeStateDefaults();
-    applySchemaPanelWidth();
-    initSchemaResizer();
-    renderSchema();
-    renderAchievements();
-    renderCurriculumNav();
-    updateDashboard();
-    bindOverviewButtons();
-    bindLevelsPanelToggle();
-    renderTrackOverview();
-    showTrackOverview();
-};
-
-// ======================
-// GLOBALS FOR HTML
-// ======================
-window.runQuery = runQuery;
-window.checkAnswer = checkAnswer;
-window.resetQuery = resetQuery;
-window.nextLesson = nextLesson;
-window.prevLesson = prevLesson;
-window.markConceptComplete = markConceptComplete;
-window.submitScenario = submitScenario;
-window.resetScenario = resetScenario;
-window.resetAllProgress = resetAllProgress;
-window.openTableModal = openTableModal;
-window.closeTableModal = closeTableModal;
-window.showTrackOverview = showTrackOverview;
-window.showLessonWorkspace = showLessonWorkspace;
