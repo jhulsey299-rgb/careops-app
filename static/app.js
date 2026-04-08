@@ -1,7 +1,7 @@
 // ======================
 // CAREOPS SQL ANALYST
 // APP.JS
-// REAL SQL EXECUTION LAYER
+// ENTERPRISE CLEAN BUILD
 // ======================
 
 // ======================
@@ -20,8 +20,6 @@ let appState = {
 
 let attempts = 0;
 let lastRunQuery = "";
-let SQL = null;
-let lessonDb = null;
 
 // ======================
 // SCHEMA DATA
@@ -237,29 +235,17 @@ function generateMockCell(tableName, columnName, rowNum) {
 
 function buildTwentySampleRows(table) {
     const rows = [];
+
     for (let rowNum = 1; rowNum <= 20; rowNum += 1) {
         const row = table.notableColumns.map(columnName => generateMockCell(table.name, columnName, rowNum));
         rows.push(row);
     }
+
     return rows;
 }
 
 schema.tables.forEach(table => {
     table.sampleRows = buildTwentySampleRows(table);
-});
-
-// add some realistic nulls back in
-schema.tables.forEach(table => {
-    if (table.name === "encounters") {
-        table.sampleRows.forEach((row, index) => {
-            if (index % 4 === 0) {
-                const dischargeDateIndex = table.notableColumns.indexOf("discharge_date");
-                if (dischargeDateIndex >= 0) {
-                    row[dischargeDateIndex] = null;
-                }
-            }
-        });
-    }
 });
 
 // ======================
@@ -1251,6 +1237,10 @@ function getAllLessons() {
     return lessons;
 }
 
+function getCategoryById(categoryId) {
+    return getAllCategories().find(c => c.id === categoryId) || null;
+}
+
 function getLessonRecordById(lessonId) {
     return getAllLessons().find(item => item.lesson.id === lessonId) || null;
 }
@@ -1282,6 +1272,7 @@ function categoryDifficulty(category) {
     ];
 
     const idx = order.indexOf(category.id);
+
     if (idx <= 3) return "Easy";
     if (idx <= 8) return "Intermediate";
     if (idx <= 11) return "Hard";
@@ -1347,6 +1338,7 @@ function markLessonFirstTry(lessonId) {
 function achievements() {
     const completed = completedLessonCount();
     const firstTry = appState.firstTryLessonIds.length;
+
     return [
         { label: "First Lesson", earned: completed >= 1, emoji: "🎯" },
         { label: "3 Lessons Completed", earned: completed >= 3, emoji: "📘" },
@@ -1362,13 +1354,10 @@ function achievements() {
     ];
 }
 
-function escapeHtml(value) {
-    return String(value)
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#39;");
+function categoryBadgeCount() {
+    return getAllCategories().filter(category =>
+        category.lessons.every(lesson => isLessonCompleted(lesson.id))
+    ).length;
 }
 
 // ======================
@@ -1406,6 +1395,18 @@ function initializeStateDefaults() {
     if (!appState.currentLessonId) {
         appState.currentLessonId = track.categories[0].lessons[0].id;
     }
+}
+
+// ======================
+// ESCAPING
+// ======================
+function escapeHtml(value) {
+    return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
 }
 
 // ======================
@@ -1570,148 +1571,181 @@ function closeTableModal(event) {
 }
 
 // ======================
-// REAL SQL ENGINE
+// QUERY EXECUTION + RESULT RENDERING
 // ======================
-function inferSQLiteType(columnName, sampleValue) {
-    const lower = String(columnName).toLowerCase();
+function parseSqlQuery(sql) {
+    const cleaned = String(sql || "").trim().replace(/;$/, "");
+    const normalized = cleaned.replace(/\s+/g, " ");
 
-    if (
-        lower.endsWith("_id") ||
-        lower.includes("age") ||
-        lower.includes("score") ||
-        lower.includes("amount") ||
-        lower.includes("billed_amount")
-    ) {
-        return Number.isInteger(sampleValue) ? "INTEGER" : "REAL";
-    }
+    const match = normalized.match(
+        /^select\s+(.+?)\s+from\s+([a-z_][a-z0-9_]*)(?:\s+where\s+(.+?))?(?:\s+order\s+by\s+([a-z_][a-z0-9_]*)(?:\s+(asc|desc))?)?$/i
+    );
 
-    if (
-        lower.includes("length_of_stay")
-    ) {
-        return "REAL";
-    }
-
-    if (
-        lower.includes("date")
-    ) {
-        return "TEXT";
-    }
-
-    if (typeof sampleValue === "number") {
-        return Number.isInteger(sampleValue) ? "INTEGER" : "REAL";
-    }
-
-    return "TEXT";
-}
-
-function toSqlLiteral(value) {
-    if (value === null || value === undefined) return "NULL";
-    if (typeof value === "number") return Number.isFinite(value) ? String(value) : "NULL";
-    return `'${String(value).replace(/'/g, "''")}'`;
-}
-
-function createFreshDatabase() {
-    if (!SQL) {
-        throw new Error("SQL engine has not finished loading yet.");
-    }
-
-    const db = new SQL.Database();
-
-    schema.tables.forEach(table => {
-        const columnDefs = table.notableColumns.map((columnName, index) => {
-            const firstNonNull = table.sampleRows.find(row => row[index] !== null && row[index] !== undefined);
-            const sampleValue = firstNonNull ? firstNonNull[index] : "";
-            const sqliteType = inferSQLiteType(columnName, sampleValue);
-
-            const isKey = table.keyColumns.includes(columnName);
-            return `${columnName} ${sqliteType}${isKey ? " PRIMARY KEY" : ""}`;
-        });
-
-        db.run(`CREATE TABLE ${table.name} (${columnDefs.join(", ")});`);
-
-        table.sampleRows.forEach(row => {
-            const valuesSql = row.map(toSqlLiteral).join(", ");
-            db.run(`INSERT INTO ${table.name} (${table.notableColumns.join(", ")}) VALUES (${valuesSql});`);
-        });
-    });
-
-    return db;
-}
-
-async function initializeSqlEngine() {
-    if (typeof initSqlJs !== "function") {
-        throw new Error("sql.js did not load. Check that the CDN script is present in the HTML before app.js.");
-    }
-
-    SQL = await initSqlJs({
-        locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/${file}`
-    });
-
-    lessonDb = createFreshDatabase();
-}
-
-function executeSqlAgainstFreshDb(sql) {
-    const db = createFreshDatabase();
-
-    try {
-        const result = db.exec(sql);
-
-        if (!result.length) {
-            return {
-                ok: true,
-                columns: [],
-                rows: [],
-                rowCount: 0
-            };
-        }
-
-        const first = result[0];
-        return {
-            ok: true,
-            columns: first.columns || [],
-            rows: first.values || [],
-            rowCount: (first.values || []).length
-        };
-    } catch (error) {
+    if (!match) {
         return {
             ok: false,
-            error: error && error.message ? error.message : String(error)
+            error: "I could not parse this query yet. Right now I support basic SELECT ... FROM ... with optional WHERE and ORDER BY."
         };
-    } finally {
-        db.close();
     }
-}
 
-function normalizeCellForCompare(value) {
-    if (value === null || value === undefined) return "__NULL__";
-    if (typeof value === "number") return Number(value).toFixed(10).replace(/\.?0+$/, "");
-    return String(value).trim().toLowerCase();
-}
+    const selectPart = match[1].trim();
+    const tableName = match[2].trim();
+    const wherePart = match[3] ? match[3].trim() : null;
+    const orderByColumn = match[4] ? match[4].trim() : null;
+    const orderDirection = match[5] ? match[5].trim().toUpperCase() : "ASC";
 
-function normalizeRowForCompare(row) {
-    return row.map(normalizeCellForCompare).join("||");
-}
+    const columns = selectPart === "*"
+        ? ["*"]
+        : selectPart.split(",").map(col => col.trim());
 
-function normalizeResultForCompare(result) {
-    const rows = (result.rows || []).map(normalizeRowForCompare).sort();
     return {
-        columnCount: (result.columns || []).length,
-        rows
+        ok: true,
+        raw: cleaned,
+        columns,
+        tableName,
+        wherePart,
+        orderByColumn,
+        orderDirection
     };
 }
 
-function resultsEquivalent(userResult, solutionResult) {
-    const a = normalizeResultForCompare(userResult);
-    const b = normalizeResultForCompare(solutionResult);
+function buildRowObjects(table) {
+    return table.sampleRows.map(row => {
+        const obj = {};
+        table.notableColumns.forEach((col, index) => {
+            obj[col] = row[index];
+        });
+        return obj;
+    });
+}
 
-    if (a.columnCount !== b.columnCount) return false;
-    if (a.rows.length !== b.rows.length) return false;
+function parseWhereClause(wherePart) {
+    if (!wherePart) return null;
 
-    for (let i = 0; i < a.rows.length; i += 1) {
-        if (a.rows[i] !== b.rows[i]) return false;
+    const match = wherePart.match(/^([a-z_][a-z0-9_]*)\s*(=|>|<|>=|<=)\s*(.+)$/i);
+    if (!match) {
+        return {
+            ok: false,
+            error: "Only simple WHERE clauses are supported right now, like insurance_type = 'Medicare' or amount > 2000."
+        };
     }
 
-    return true;
+    let rawValue = match[3].trim();
+
+    if (
+        (rawValue.startsWith("'") && rawValue.endsWith("'")) ||
+        (rawValue.startsWith('"') && rawValue.endsWith('"'))
+    ) {
+        rawValue = rawValue.slice(1, -1);
+    }
+
+    const numericValue = Number(rawValue);
+    const value = Number.isNaN(numericValue) ? rawValue : numericValue;
+
+    return {
+        ok: true,
+        column: match[1].trim(),
+        operator: match[2].trim(),
+        value
+    };
+}
+
+function compareValues(left, operator, right) {
+    const leftNumber = Number(left);
+    const rightNumber = Number(right);
+    const bothNumeric = !Number.isNaN(leftNumber) && !Number.isNaN(rightNumber);
+
+    const a = bothNumeric ? leftNumber : String(left).toLowerCase();
+    const b = bothNumeric ? rightNumber : String(right).toLowerCase();
+
+    if (operator === "=") return a === b;
+    if (operator === ">") return a > b;
+    if (operator === "<") return a < b;
+    if (operator === ">=") return a >= b;
+    if (operator === "<=") return a <= b;
+
+    return false;
+}
+
+function executeParsedQuery(parsed) {
+    const table = getTableByName(parsed.tableName);
+    if (!table) {
+        return {
+            ok: false,
+            error: `Table "${parsed.tableName}" was not found in the schema.`
+        };
+    }
+
+    const availableColumns = table.notableColumns;
+
+    if (parsed.columns[0] !== "*") {
+        const invalidColumns = parsed.columns.filter(col => !availableColumns.includes(col));
+        if (invalidColumns.length) {
+            return {
+                ok: false,
+                error: `Unknown column(s): ${invalidColumns.join(", ")}`
+            };
+        }
+    }
+
+    const whereConfig = parseWhereClause(parsed.wherePart);
+    if (whereConfig && whereConfig.ok === false) {
+        return {
+            ok: false,
+            error: whereConfig.error
+        };
+    }
+
+    if (whereConfig && !availableColumns.includes(whereConfig.column)) {
+        return {
+            ok: false,
+            error: `Column "${whereConfig.column}" was not found in table "${table.name}".`
+        };
+    }
+
+    if (parsed.orderByColumn && !availableColumns.includes(parsed.orderByColumn)) {
+        return {
+            ok: false,
+            error: `ORDER BY column "${parsed.orderByColumn}" was not found in table "${table.name}".`
+        };
+    }
+
+    let rows = buildRowObjects(table);
+
+    if (whereConfig) {
+        rows = rows.filter(row => compareValues(row[whereConfig.column], whereConfig.operator, whereConfig.value));
+    }
+
+    if (parsed.orderByColumn) {
+        rows.sort((a, b) => {
+            const left = a[parsed.orderByColumn];
+            const right = b[parsed.orderByColumn];
+
+            const leftNumber = Number(left);
+            const rightNumber = Number(right);
+            const bothNumeric = !Number.isNaN(leftNumber) && !Number.isNaN(rightNumber);
+
+            let comparison = 0;
+
+            if (bothNumeric) {
+                comparison = leftNumber - rightNumber;
+            } else {
+                comparison = String(left).localeCompare(String(right));
+            }
+
+            return parsed.orderDirection === "DESC" ? comparison * -1 : comparison;
+        });
+    }
+
+    const selectedColumns = parsed.columns[0] === "*" ? availableColumns : parsed.columns;
+    const displayRows = rows.map(row => selectedColumns.map(col => row[col]));
+
+    return {
+        ok: true,
+        tableName: table.name,
+        columns: selectedColumns,
+        rows: displayRows
+    };
 }
 
 function buildResultTable(columns, rows) {
@@ -1735,38 +1769,16 @@ function buildResultTable(columns, rows) {
     return html;
 }
 
-function findSqlErrorLocation(sql, errorMessage) {
-    const nearMatch = String(errorMessage || "").match(/near\s+"([^"]+)"/i);
-    if (!nearMatch) return null;
-
-    const token = nearMatch[1];
-    const loweredSql = String(sql).toLowerCase();
-    const loweredToken = token.toLowerCase();
-    const index = loweredSql.indexOf(loweredToken);
-
-    if (index === -1) {
-        return `The SQL appears to break near "${token}".`;
-    }
-
-    return `The SQL appears to break near "${token}" around character ${index + 1}.`;
-}
-
-function explainQueryMistake(userSql, solutionSql, lesson, userResultError = "") {
+function explainQueryMistake(userSql, solutionSql, lesson) {
     const user = userSql.toLowerCase();
     const solution = solutionSql.toLowerCase();
-
-    if (userResultError) {
-        const locationText = findSqlErrorLocation(userSql, userResultError);
-        if (locationText) return `${locationText} ${userResultError}`;
-        return userResultError;
-    }
 
     if (!user.includes("select")) {
         return "Your query is missing SELECT at the beginning.";
     }
 
     if (!user.includes("from")) {
-        return "The issue is around the middle of the query: you are missing a FROM clause.";
+        return "The issue is around the middle of the query. You are missing a FROM clause.";
     }
 
     const expectedTableMatch = solution.match(/\bfrom\s+([a-z_][a-z0-9_]*)/i);
@@ -1776,12 +1788,12 @@ function explainQueryMistake(userSql, solutionSql, lesson, userResultError = "")
         return `The table looks wrong. You used "${actualTableMatch[1]}", but this lesson expects "${expectedTableMatch[1]}".`;
     }
 
-    if (solution.includes("join") && !user.includes("join")) {
-        return "This lesson needs a JOIN, but your query does not include one.";
-    }
-
     if (solution.includes("where") && !user.includes("where")) {
         return "You are missing the WHERE clause needed for this lesson.";
+    }
+
+    if (solution.includes("order by") && !user.includes("order by")) {
+        return "You are missing the ORDER BY clause needed for this lesson.";
     }
 
     if (solution.includes("group by") && !user.includes("group by")) {
@@ -1792,24 +1804,8 @@ function explainQueryMistake(userSql, solutionSql, lesson, userResultError = "")
         return "You are missing the HAVING clause needed for this lesson.";
     }
 
-    if (solution.includes("order by") && !user.includes("order by")) {
-        return "You are missing the ORDER BY clause needed for this lesson.";
-    }
-
-    if (solution.includes("count(") && !user.includes("count(")) {
-        return "This lesson expects an aggregation with COUNT().";
-    }
-
-    if (solution.includes("sum(") && !user.includes("sum(")) {
-        return "This lesson expects an aggregation with SUM().";
-    }
-
-    if (solution.includes("avg(") && !user.includes("avg(")) {
-        return "This lesson expects an aggregation with AVG().";
-    }
-
-    if (solution.includes("case") && !user.includes("case")) {
-        return "This lesson expects CASE logic, but your query does not include CASE.";
+    if (solution.includes("join") && !user.includes("join")) {
+        return "You are missing the JOIN needed for this lesson.";
     }
 
     return `The structure is close, but part of the SQL does not match the requested output. Focus on: ${lesson.hint || "the exact columns, filters, and ordering requested."}`;
@@ -1818,20 +1814,12 @@ function explainQueryMistake(userSql, solutionSql, lesson, userResultError = "")
 function explainCorrectAnswer(lesson) {
     const solution = lesson.solutionQuery || "";
 
+    if (/select\s+\*\s+from/i.test(solution)) {
+        return "This works because the lesson asks for every column and every row from the requested table.";
+    }
+
     if (/join/i.test(solution)) {
-        return "This works because it combines the needed tables using the correct join key and returns the requested fields.";
-    }
-
-    if (/group by/i.test(solution) && /having/i.test(solution)) {
-        return "This works because it groups the data first, then filters those grouped results to only the categories that meet the threshold.";
-    }
-
-    if (/group by/i.test(solution)) {
-        return "This works because it summarizes the data at the requested grouping level instead of returning raw rows.";
-    }
-
-    if (/case/i.test(solution)) {
-        return "This works because it converts raw data into clearer business categories using CASE.";
+        return "This works because the answer combines related tables using the correct join key and returns the requested fields.";
     }
 
     if (/where/i.test(solution) && /order by/i.test(solution)) {
@@ -1844,10 +1832,6 @@ function explainCorrectAnswer(lesson) {
 
     if (/order by/i.test(solution)) {
         return "This works because it returns the requested fields and sorts them in the required order.";
-    }
-
-    if (/select\s+\*\s+from/i.test(solution)) {
-        return "This works because the lesson asks for every column and every row from the requested table.";
     }
 
     return "This works because it matches the requested table and returns exactly what the lesson asked for.";
@@ -1922,6 +1906,8 @@ function updateDashboard() {
     const progressBar = document.getElementById("progress-bar");
     const currentLevelDisplay = document.getElementById("current-level-display");
     const badgeCount = document.getElementById("badge-count");
+    const trackTitle = document.getElementById("track-title");
+    const trackDescription = document.getElementById("track-description");
 
     if (progressText) {
         progressText.innerText = `${completed} / ${total} lessons completed`;
@@ -1936,14 +1922,9 @@ function updateDashboard() {
     }
 
     if (badgeCount) {
-        const categoryBadgeCount = getAllCategories().filter(category =>
-            category.lessons.every(lesson => isLessonCompleted(lesson.id))
-        ).length;
-        badgeCount.innerText = `${categoryBadgeCount} category badges earned`;
+        badgeCount.innerText = `${categoryBadgeCount()} category badges earned`;
     }
 
-    const trackTitle = document.getElementById("track-title");
-    const trackDescription = document.getElementById("track-description");
     if (trackTitle) trackTitle.innerText = track.title;
     if (trackDescription) trackDescription.innerText = "Curriculum, difficulty, and completion tracking.";
 }
@@ -1996,7 +1977,8 @@ function renderCurriculumNav() {
 
         header.addEventListener("click", function () {
             if (category.lessons.length) {
-                loadLesson(category.lessons[0].id);
+                const firstIncomplete = category.lessons.find(lesson => !isLessonCompleted(lesson.id));
+                loadLesson((firstIncomplete || category.lessons[0]).id);
             }
         });
 
@@ -2024,24 +2006,40 @@ function renderLessonHeader(record) {
     const { categoryTitle, lesson } = record;
     const track = getTrack();
 
-    document.getElementById("track-title-display").innerText = track.title;
-    document.getElementById("lesson-title").innerText = lesson.title;
-    document.getElementById("lesson-objective").innerText = lesson.objective || "";
-
+    const trackTitleDisplay = document.getElementById("track-title-display");
+    const lessonTitle = document.getElementById("lesson-title");
+    const lessonObjective = document.getElementById("lesson-objective");
     const typeBadge = document.getElementById("current-lesson-type-badge");
-    typeBadge.className = `lesson-type-badge ${lessonTypeClass(lesson.type)}`;
-    typeBadge.innerText = formatLessonType(lesson.type);
-
     const categoryBadge = document.getElementById("current-category-badge");
-    categoryBadge.className = "difficulty-badge difficulty-intermediate";
-    categoryBadge.innerText = categoryTitle;
+    const lessonTables = document.getElementById("lesson-tables");
+    const lessonJoinHint = document.getElementById("lesson-join-hint");
+    const lessonSqlFocus = document.getElementById("lesson-sql-focus");
 
-    document.getElementById("lesson-tables").innerHTML =
-        `<strong>Relevant Tables:</strong> ${escapeHtml((lesson.relevantTables || []).join(", ") || "—")}`;
-    document.getElementById("lesson-join-hint").innerHTML =
-        `<strong>Join Hint:</strong> ${escapeHtml(lesson.joinHint || "—")}`;
-    document.getElementById("lesson-sql-focus").innerHTML =
-        `<strong>SQL Focus:</strong> ${escapeHtml(sqlFocusText(lesson.sql_focus))}`;
+    if (trackTitleDisplay) trackTitleDisplay.innerText = track.title;
+    if (lessonTitle) lessonTitle.innerText = lesson.title;
+    if (lessonObjective) lessonObjective.innerText = lesson.objective || "";
+
+    if (typeBadge) {
+        typeBadge.className = `lesson-type-badge ${lessonTypeClass(lesson.type)}`;
+        typeBadge.innerText = formatLessonType(lesson.type);
+    }
+
+    if (categoryBadge) {
+        categoryBadge.className = "difficulty-badge difficulty-intermediate";
+        categoryBadge.innerText = categoryTitle;
+    }
+
+    if (lessonTables) {
+        lessonTables.innerHTML = `<strong>Relevant Tables:</strong> ${escapeHtml((lesson.relevantTables || []).join(", ") || "—")}`;
+    }
+
+    if (lessonJoinHint) {
+        lessonJoinHint.innerHTML = `<strong>Join Hint:</strong> ${escapeHtml(lesson.joinHint || "—")}`;
+    }
+
+    if (lessonSqlFocus) {
+        lessonSqlFocus.innerHTML = `<strong>SQL Focus:</strong> ${escapeHtml(sqlFocusText(lesson.sql_focus))}`;
+    }
 }
 
 function renderHintBox(lesson) {
@@ -2175,7 +2173,7 @@ function markConceptComplete() {
     }
 }
 
-async function runQuery() {
+function runQuery() {
     const lesson = getCurrentLesson();
     if (!lesson || lesson.type !== "challenge") return;
 
@@ -2190,17 +2188,22 @@ async function runQuery() {
         return;
     }
 
-    if (!SQL) {
-        output.innerHTML = "<p>SQL engine is still loading. Try again in a second.</p>";
-        return;
-    }
-
+    const parsed = parseSqlQuery(query);
     const detectedTables = detectTablesFromSql(query);
+
     if (detectedTables.length) {
         highlightRelevantSchema(detectedTables);
     }
 
-    const result = executeSqlAgainstFreshDb(query);
+    if (!parsed.ok) {
+        output.innerHTML = `
+            <p><strong>Query execution failed.</strong></p>
+            <p>${escapeHtml(parsed.error)}</p>
+        `;
+        return;
+    }
+
+    const result = executeParsedQuery(parsed);
 
     if (!result.ok) {
         output.innerHTML = `
@@ -2211,14 +2214,14 @@ async function runQuery() {
     }
 
     output.innerHTML = `
-        <p><strong>Query executed.</strong></p>
+        <p><strong>Query executed (simulation).</strong></p>
         <p><code>${escapeHtml(query)}</code></p>
-        <p><strong>${result.rowCount}</strong> row(s) returned.</p>
-        ${result.columns.length ? buildResultTable(result.columns, result.rows) : "<p>No result set returned.</p>"}
+        <p><strong>${result.rows.length}</strong> row(s) returned from <strong>${escapeHtml(result.tableName)}</strong>.</p>
+        ${buildResultTable(result.columns, result.rows)}
     `;
 }
 
-async function checkAnswer() {
+function checkAnswer() {
     const lesson = getCurrentLesson();
     if (!lesson || lesson.type !== "challenge") return;
 
@@ -2231,25 +2234,12 @@ async function checkAnswer() {
         return;
     }
 
-    if (!SQL) {
-        feedback.innerHTML = "<p style='color:#dc2626; font-weight:700;'>SQL engine is still loading. Try again in a second.</p>";
-        return;
-    }
-
     attempts += 1;
 
     const userSql = normalizeSql(query);
     const solutionSql = normalizeSql(lesson.solutionQuery || "");
 
-    const userResult = executeSqlAgainstFreshDb(query);
-    const solutionResult = executeSqlAgainstFreshDb(lesson.solutionQuery || "");
-
-    if (!solutionResult.ok) {
-        feedback.innerHTML = `<p style='color:#dc2626; font-weight:700;'>The lesson solution failed internally:</p><p>${escapeHtml(solutionResult.error)}</p>`;
-        return;
-    }
-
-    if (userResult.ok && (userSql === solutionSql || resultsEquivalent(userResult, solutionResult))) {
+    if (userSql === solutionSql) {
         feedback.innerHTML = "<p style='color:#16a34a; font-weight:700;'>✅ Correct!</p>";
         markLessonComplete(lesson.id);
 
@@ -2265,22 +2255,21 @@ async function checkAnswer() {
         return;
     }
 
-    const issueMessage = explainQueryMistake(
-        query,
-        lesson.solutionQuery || "",
-        lesson,
-        userResult.ok ? "" : userResult.error
-    );
+    const issueMessage = explainQueryMistake(userSql, solutionSql, lesson);
 
     if (attempts === 1) {
         feedback.innerHTML = `<p style='color:#dc2626; font-weight:700;'>❌ Not quite.</p><p>${escapeHtml(issueMessage)}</p>`;
-        hint.innerText = "Try again. Focus on the lesson objective, relevant table, and required SQL clause.";
+        if (hint) {
+            hint.innerText = "Try again. Focus on the lesson objective, relevant table, and required SQL clause.";
+        }
         return;
     }
 
     if (attempts === 2) {
         feedback.innerHTML = `<p style='color:#dc2626; font-weight:700;'>❌ Still not quite.</p><p>${escapeHtml(issueMessage)}</p>`;
-        hint.innerText = `Hint: ${lesson.hint || "Review the exact output requested and compare it to your SELECT, FROM, joins, filters, and aggregation logic."}`;
+        if (hint) {
+            hint.innerText = `Hint: ${lesson.hint || "Review the exact output requested and compare it to your SELECT, FROM, and filtering logic."}`;
+        }
         return;
     }
 
@@ -2289,11 +2278,11 @@ async function checkAnswer() {
         <p><strong>Correct answer:</strong></p>
         <p><code>${escapeHtml(lesson.solutionQuery || "")}</code></p>
         <p><strong>Why:</strong> ${escapeHtml(explainCorrectAnswer(lesson))}</p>
-        <p><strong>Expected result:</strong> ${solutionResult.rowCount} row(s).</p>
-        ${solutionResult.columns.length ? buildResultTable(solutionResult.columns, solutionResult.rows) : "<p>No result set returned.</p>"}
     `;
 
-    hint.innerText = `Answer shown. ${explainCorrectAnswer(lesson)}`;
+    if (hint) {
+        hint.innerText = `Answer shown. ${explainCorrectAnswer(lesson)}`;
+    }
 }
 
 function resetQuery() {
@@ -2304,6 +2293,7 @@ function resetQuery() {
     document.getElementById("feedback").innerHTML = "";
     document.getElementById("output").innerHTML = "";
     attempts = 0;
+    lastRunQuery = "";
     highlightRelevantSchema(lesson.relevantTables || []);
     renderHintBox(lesson);
 }
@@ -2394,6 +2384,7 @@ function resetAllProgress() {
     updateDashboard();
     renderTrackOverview();
     showTrackOverview();
+    saveProgress();
 }
 
 // ======================
@@ -2434,6 +2425,7 @@ function renderTrackOverview() {
     if (titleEl) titleEl.innerText = track.title;
     if (descEl) descEl.innerText = track.description;
     if (progressTextEl) progressTextEl.innerText = `${completed} of ${total} lessons completed`;
+
     if (progressBarEl) {
         progressBarEl.style.width = `${total ? (completed / total) * 100 : 0}%`;
     }
@@ -2512,12 +2504,7 @@ function bindLevelsPanelToggle() {
 // ======================
 // INIT
 // ======================
-window.onload = async function () {
-    const hintBox = document.getElementById("level-hint");
-    if (hintBox) {
-        hintBox.innerText = "Loading SQL engine and lesson database...";
-    }
-
+window.onload = function () {
     loadProgress();
     initializeStateDefaults();
     applySchemaPanelWidth();
@@ -2530,23 +2517,6 @@ window.onload = async function () {
     bindLevelsPanelToggle();
     renderTrackOverview();
     showTrackOverview();
-
-    try {
-        await initializeSqlEngine();
-        if (hintBox) {
-            hintBox.innerText = "Lesson guidance and SQL hints will appear here.";
-        }
-    } catch (error) {
-        console.error(error);
-        const banner = document.getElementById("js-error-banner");
-        if (banner) {
-            banner.classList.remove("hidden");
-            banner.textContent = `SQL Engine Error:\n${String(error.message || error)}`;
-        }
-        if (hintBox) {
-            hintBox.innerText = "The SQL engine failed to load. Check the sql.js CDN script in the HTML.";
-        }
-    }
 };
 
 // ======================
