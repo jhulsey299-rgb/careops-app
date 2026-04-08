@@ -62,7 +62,7 @@
 
             <div class="dashboard-card">
                 <h3>Badges</h3>
-                <p id="badge-count">0 earned</p>
+                <p id="badge-count">0 category badges earned</p>
             </div>
         </section>
 
@@ -82,9 +82,7 @@
                         <div>
                             <p class="track-label" id="track-title-display-overview">Track</p>
                             <h2 id="track-overview-title">SQL Foundations for Hospital Data</h2>
-                            <p id="track-overview-description">
-                                Learn SQL through real hospital analytics scenarios.
-                            </p>
+                            <p id="track-overview-description">Learn SQL through real hospital analytics scenarios.</p>
                         </div>
                     </div>
 
@@ -132,7 +130,7 @@
                 <section id="lesson-workspace">
                     <div id="lesson-header-card" class="mission-box">
                         <div class="mission-meta-row">
-                            <span id="current-lesson-type-badge" class="difficulty-badge difficulty-easy">Concept</span>
+                            <span id="current-lesson-type-badge" class="lesson-type-badge lesson-type-concept">Concept</span>
                             <span id="current-category-badge" class="difficulty-badge difficulty-intermediate">Category</span>
                         </div>
 
@@ -267,7 +265,7 @@
                 <h2 id="table-modal-title">Table</h2>
                 <p id="table-modal-description"></p>
             </div>
-            <button class="modal-close-btn" onclick="closeTableModal()">✕</button>
+            <button class="modal-close-btn" type="button" onclick="closeTableModal()">✕</button>
         </div>
 
         <div class="table-modal-meta">
@@ -310,11 +308,10 @@ window.addEventListener('unhandledrejection', function (event) {
     if (!banner) return;
     banner.classList.remove('hidden');
     banner.textContent =
-        'Unhandled Promise Error:\n' +
-        String(event.reason);
+        'Unhandled Promise Error:\n' + String(event.reason);
 });
 </script>
 
-<script src="/static/app.js?v=9"></script>
+<script src="/static/app.js?v=10"></script>
 </body>
 </html>
