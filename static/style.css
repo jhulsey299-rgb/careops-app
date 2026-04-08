@@ -74,7 +74,7 @@ body {
     min-height: 100%;
     background: linear-gradient(180deg, var(--bg) 0%, var(--bg-soft) 100%);
     color: var(--text);
-    font-family: 'Inter', sans-serif;
+    font-family: "Inter", sans-serif;
 }
 
 body {
@@ -135,7 +135,7 @@ li {
 }
 
 code {
-    font-family: 'Fira Code', monospace;
+    font-family: "Fira Code", monospace;
     font-size: 0.9rem;
     background: #f8fafc;
     color: var(--primary-dark);
@@ -148,7 +148,7 @@ button {
     border: 1px solid transparent;
     background: var(--primary);
     color: white;
-    font-family: 'Inter', sans-serif;
+    font-family: "Inter", sans-serif;
     font-weight: 600;
     font-size: 0.95rem;
     border-radius: 10px;
@@ -163,6 +163,20 @@ button {
     box-shadow: var(--shadow-sm);
     position: relative;
     overflow: hidden;
+}
+
+button::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0) 0%,
+        rgba(255, 255, 255, 0.18) 50%,
+        rgba(255, 255, 255, 0) 100%
+    );
+    transform: translateX(-120%);
+    transition: transform 0.5s ease;
 }
 
 button:hover {
@@ -187,15 +201,6 @@ button:disabled {
     transform: none;
 }
 
-button::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.18) 50%, rgba(255,255,255,0) 100%);
-    transform: translateX(-120%);
-    transition: transform 0.5s ease;
-}
-
 textarea {
     width: 100%;
     min-height: 220px;
@@ -208,9 +213,16 @@ textarea {
     font-size: 0.96rem;
     line-height: 1.55;
     box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.04);
-    transition: border-color var(--transition), box-shadow var(--transition), background var(--transition);
-    font-family: 'Fira Code', monospace;
-    background-image: linear-gradient(180deg, rgba(248,250,252,0.8), rgba(255,255,255,1));
+    transition:
+        border-color var(--transition),
+        box-shadow var(--transition),
+        background var(--transition);
+    font-family: "Fira Code", monospace;
+    background-image: linear-gradient(
+        180deg,
+        rgba(248, 250, 252, 0.8),
+        rgba(255, 255, 255, 1)
+    );
 }
 
 textarea:focus {
@@ -249,6 +261,24 @@ textarea:focus {
 .play-area {
     min-width: 0;
     max-width: 100%;
+}
+
+/* Shared cards */
+.schema-section,
+.dashboard-card,
+.badges-section,
+.mission-box,
+.query-section,
+.concept-card,
+.levels-panel,
+#feedback,
+#output,
+#scenario-feedback,
+.track-overview-panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
 }
 
 /* Left panel */
@@ -308,23 +338,6 @@ body.resizing-schema #schema-resizer::before {
     margin: 0;
     color: var(--text-faint);
     font-size: 0.92rem;
-}
-
-.schema-section,
-.dashboard-card,
-.badges-section,
-.mission-box,
-.query-section,
-.concept-card,
-.levels-panel,
-#feedback,
-#output,
-#scenario-feedback,
-.track-overview-panel {
-    background: var(--panel);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-sm);
 }
 
 .schema-section {
@@ -423,7 +436,11 @@ body.resizing-schema #schema-resizer::before {
     inset: auto -20% -60% auto;
     width: 160px;
     height: 160px;
-    background: radial-gradient(circle, rgba(96, 165, 250, 0.12) 0%, rgba(96, 165, 250, 0) 72%);
+    background: radial-gradient(
+        circle,
+        rgba(96, 165, 250, 0.12) 0%,
+        rgba(96, 165, 250, 0) 72%
+    );
     pointer-events: none;
 }
 
@@ -472,13 +489,22 @@ body.resizing-schema #schema-resizer::before {
     content: "";
     position: absolute;
     inset: 0;
-    background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.35) 50%, rgba(255,255,255,0) 100%);
+    background: linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0) 0%,
+        rgba(255, 255, 255, 0.35) 50%,
+        rgba(255, 255, 255, 0) 100%
+    );
     animation: shimmerBar 2.8s linear infinite;
 }
 
 @keyframes shimmerBar {
-    from { transform: translateX(-100%); }
-    to { transform: translateX(100%); }
+    from {
+        transform: translateX(-100%);
+    }
+    to {
+        transform: translateX(100%);
+    }
 }
 
 /* Achievements */
@@ -581,7 +607,7 @@ body.resizing-schema #schema-resizer::before {
     margin-top: 16px;
 }
 
-/* Center badges */
+/* Badge cards */
 .track-badge-card {
     display: flex;
     flex-direction: column;
@@ -593,14 +619,18 @@ body.resizing-schema #schema-resizer::before {
     transition: all 0.25s ease;
     position: relative;
     overflow: hidden;
-    min-height: 190px;
+    min-height: 210px;
 }
 
 .track-badge-card::before {
     content: "";
     position: absolute;
     inset: 0;
-    background: radial-gradient(circle at top right, rgba(37, 99, 235, 0.08), transparent 42%);
+    background: radial-gradient(
+        circle at top right,
+        rgba(37, 99, 235, 0.08),
+        transparent 42%
+    );
     pointer-events: none;
 }
 
@@ -627,35 +657,46 @@ body.resizing-schema #schema-resizer::before {
     display: flex;
     align-items: center;
     justify-content: center;
+    margin-bottom: 12px;
 }
 
-.track-badge-icon {
-    width: 76px;
-    height: 76px;
-    border-radius: 999px;
+.track-badge-ring {
+    --badge-progress: 0%;
+    width: 84px;
+    height: 84px;
+    border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: 12px;
-    transition: transform 0.22s ease, box-shadow 0.22s ease;
-    font-size: 32px;
+    background: conic-gradient(#60a5fa var(--badge-progress), #e2e8f0 0);
+    padding: 6px;
+    transition: background 0.25s ease;
 }
 
-.track-badge-card:hover .track-badge-icon {
-    transform: scale(1.05);
+.track-badge-ring.earned {
+    background: conic-gradient(#2563eb 100%, #2563eb 0);
+}
+
+.track-badge-icon {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 30px;
+    background: white;
 }
 
 .track-badge-icon.locked {
-    color: #64748b;
-    border: 2px dashed #94a3b8;
-    background: #f1f5f9;
-    opacity: 1;
+    color: #94a3b8;
+    border: 2px dashed #cbd5e1;
 }
 
 .track-badge-icon.earned {
     color: #2563eb;
-    background: linear-gradient(180deg, #eff6ff 0%, #dbeafe 100%);
     border: 2px solid #93c5fd;
+    background: linear-gradient(180deg, #eff6ff 0%, #dbeafe 100%);
     box-shadow: 0 10px 24px rgba(37, 99, 235, 0.16);
 }
 
@@ -668,22 +709,12 @@ body.resizing-schema #schema-resizer::before {
     color: #334155;
 }
 
-.track-badge-card.locked .track-badge-name,
-.track-badge-card.locked .track-badge-progress {
-    opacity: 1;
-}
-
 .track-badge-meta {
     display: flex;
-    gap: 8px;
-    align-items: center;
-    font-size: 0.75rem;
     justify-content: center;
-    flex-wrap: wrap;
-}
-
-.track-badge-progress {
-    font-weight: 700;
+    align-items: center;
+    gap: 8px;
+    margin-top: 4px;
 }
 
 /* Right panel */
@@ -696,7 +727,11 @@ body.resizing-schema #schema-resizer::before {
     top: 16px;
     transition: all 0.25s ease;
     overflow: hidden;
-    background: linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(248,251,255,0.98) 100%);
+    background: linear-gradient(
+        180deg,
+        rgba(255, 255, 255, 0.98) 0%,
+        rgba(248, 251, 255, 0.98) 100%
+    );
     box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
     backdrop-filter: blur(10px);
 }
@@ -845,12 +880,12 @@ body.resizing-schema #schema-resizer::before {
 .curriculum-category-header-meta {
     display: flex;
     flex-wrap: wrap;
-    gap: 6px;
+    gap: 8px;
     align-items: center;
 }
 
 .curriculum-category-meta {
-    font-size: 0.72rem;
+    font-size: 0.74rem;
     color: var(--text-faint);
     font-weight: 600;
 }
@@ -899,7 +934,11 @@ body.resizing-schema #schema-resizer::before {
     width: 130px;
     height: 130px;
     border-radius: 50%;
-    background: radial-gradient(circle, rgba(37, 99, 235, 0.08) 0%, rgba(37, 99, 235, 0) 70%);
+    background: radial-gradient(
+        circle,
+        rgba(37, 99, 235, 0.08) 0%,
+        rgba(37, 99, 235, 0) 70%
+    );
     pointer-events: none;
 }
 
@@ -976,7 +1015,11 @@ body.resizing-schema #schema-resizer::before {
 .concept-card {
     padding: 16px;
     margin-bottom: 14px;
-    background: linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(248,251,255,0.98) 100%);
+    background: linear-gradient(
+        180deg,
+        rgba(255, 255, 255, 0.98) 0%,
+        rgba(248, 251, 255, 0.98) 100%
+    );
 }
 
 #feedback,
@@ -995,6 +1038,11 @@ body.resizing-schema #schema-resizer::before {
 #output:empty,
 #scenario-feedback:empty {
     display: none;
+}
+
+.query-results-table-wrap {
+    overflow-x: auto;
+    margin-top: 12px;
 }
 
 /* Hint */
@@ -1268,14 +1316,16 @@ body.resizing-schema #schema-resizer::before {
 /* Scrollbars */
 .schema-panel::-webkit-scrollbar,
 .levels-list::-webkit-scrollbar,
-.table-modal::-webkit-scrollbar {
+.table-modal::-webkit-scrollbar,
+.query-results-table-wrap::-webkit-scrollbar {
     width: 10px;
     height: 10px;
 }
 
 .schema-panel::-webkit-scrollbar-thumb,
 .levels-list::-webkit-scrollbar-thumb,
-.table-modal::-webkit-scrollbar-thumb {
+.table-modal::-webkit-scrollbar-thumb,
+.query-results-table-wrap::-webkit-scrollbar-thumb {
     background: #cbd5e1;
     border-radius: 999px;
     border: 2px solid transparent;
@@ -1284,7 +1334,8 @@ body.resizing-schema #schema-resizer::before {
 
 .schema-panel::-webkit-scrollbar-track,
 .levels-list::-webkit-scrollbar-track,
-.table-modal::-webkit-scrollbar-track {
+.table-modal::-webkit-scrollbar-track,
+.query-results-table-wrap::-webkit-scrollbar-track {
     background: transparent;
 }
 
@@ -1386,100 +1437,3 @@ body.resizing-schema #schema-resizer::before {
         padding: 22px 20px 20px;
     }
 }
-
-/* ===== BADGE + RIGHT PANEL CLEANUP ===== */
-
-/* Right panel: remove difficulty styling dependence */
-.curriculum-category-header-meta {
-    gap: 8px;
-}
-
-.curriculum-category-meta {
-    font-size: 0.74rem;
-    color: var(--text-faint);
-    font-weight: 600;
-}
-
-.curriculum-complete-pill {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 4px 8px;
-    border-radius: 999px;
-    font-size: 0.68rem;
-    font-weight: 700;
-    background: #dcfce7;
-    color: #166534;
-    border: 1px solid #86efac;
-}
-
-/* Badge cards */
-.track-badge-card {
-    min-height: 210px;
-}
-
-.track-badge-icon-wrap {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 12px;
-}
-
-.track-badge-ring {
-    --badge-progress: 0%;
-    width: 84px;
-    height: 84px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background:
-        conic-gradient(#60a5fa var(--badge-progress), #e2e8f0 0);
-    padding: 6px;
-    transition: background 0.25s ease;
-}
-
-.track-badge-ring.earned {
-    background:
-        conic-gradient(#2563eb 100%, #2563eb 0);
-}
-
-.track-badge-icon {
-    width: 100%;
-    height: 100%;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 30px;
-    background: white;
-}
-
-.track-badge-icon.locked {
-    color: #94a3b8;
-    border: 2px dashed #cbd5e1;
-}
-
-.track-badge-icon.earned {
-    color: #2563eb;
-    border: 2px solid #93c5fd;
-    background: linear-gradient(180deg, #eff6ff 0%, #dbeafe 100%);
-    box-shadow: 0 10px 24px rgba(37, 99, 235, 0.16);
-}
-
-.track-badge-meta {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 8px;
-    margin-top: 4px;
-}
-
-.detected-table-preview {
-    margin-top: 18px;
-}
-
-.detected-table-preview h4 {
-    margin: 0 0 8px;
-}
-
