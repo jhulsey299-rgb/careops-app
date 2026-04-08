@@ -1844,16 +1844,6 @@ function runQuery() {
     `;
 }
 
-    previewSchemaFromQuery(query);
-
-    const output = document.getElementById("output");
-    output.innerHTML = `
-        <p><strong>Query executed (simulation).</strong></p>
-        <p><code>${query.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</code></p>
-        ${output.innerHTML}
-    `;
-}
-
 function renderScenarioLesson(lesson) {
     hideAllLessonBodies();
     document.getElementById("scenario-content").classList.remove("hidden");
