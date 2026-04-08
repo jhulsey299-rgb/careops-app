@@ -1920,36 +1920,27 @@ function renderTrackOverview() {
         const fullyComplete = completedLessons === totalLessons;
         const difficulty = categoryDifficulty(category);
         const difficultyClass = difficultyClassFromLabel(difficulty);
+        const completionPercent = totalLessons ? (completedLessons / totalLessons) * 100 : 0;
 
         const badge = document.createElement("div");
         badge.className = `track-badge-card ${fullyComplete ? "earned" : "locked"}`;
         badge.innerHTML = `
             <div class="track-badge-icon-wrap">
-                <div class="track-badge-icon ${fullyComplete ? "earned" : "locked"}">
-                    ${fullyComplete ? "🏅" : "◌"}
+                <div class="track-badge-ring ${fullyComplete ? "earned" : ""}" style="--badge-progress:${completionPercent}%;">
+                    <div class="track-badge-icon ${fullyComplete ? "earned" : "locked"}">
+                        ${fullyComplete ? "🏅" : "◌"}
+                    </div>
                 </div>
             </div>
             <div class="track-badge-name">${category.title}</div>
             <div class="track-badge-meta">
                 <span class="difficulty-badge ${difficultyClass}">${difficulty}</span>
-                <span class="track-badge-progress">${completedLessons}/${totalLessons}</span>
             </div>
         `;
 
         cardsWrap.appendChild(badge);
     });
 }
-
-function bindOverviewButtons() {
-    const openOverviewBtn = document.getElementById("open-overview-btn");
-    const resumeTrackBtn = document.getElementById("resume-track-btn");
-    const startTrackBtn = document.getElementById("start-track-btn");
-
-    if (openOverviewBtn) {
-        openOverviewBtn.addEventListener("click", function () {
-            showTrackOverview();
-        });
-    }
 
     if (resumeTrackBtn) {
         resumeTrackBtn.addEventListener("click", function () {
