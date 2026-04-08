@@ -1483,13 +1483,7 @@ function updateDashboard() {
     }
 
     if (badgeCount) {
-        const earnedCategoryBadges = getAllCategories().filter(category => {
-            const totalLessons = category.lessons.length;
-            const completedLessons = category.lessons.filter(lesson => isLessonCompleted(lesson.id)).length;
-            return totalLessons > 0 && completedLessons === totalLessons;
-        }).length;
-
-        badgeCount.innerText = `${earnedCategoryBadges} category badges earned`;
+        badgeCount.innerText = `${achievements().filter(a => a.earned).length} earned`;
     }
 
     const trackTitle = document.getElementById("track-title");
@@ -1522,17 +1516,19 @@ function renderCurriculumNav() {
     list.innerHTML = "";
 
     getAllCategories().forEach(category => {
+        const wrap = document.createElement("div");
+        wrap.className = "curriculum-category";
+
         const difficulty = categoryDifficulty(category);
         const difficultyClass = difficultyClassFromLabel(difficulty);
         const total = category.lessons.length;
         const done = category.lessons.filter(lesson => isLessonCompleted(lesson.id)).length;
-        const isComplete = total > 0 && done === total;
+        const isComplete = done === total;
 
-        const row = document.createElement("button");
-        row.className = `curriculum-category-header ${isComplete ? "is-complete" : ""}`;
-        row.type = "button";
-
-        row.innerHTML = `
+        const header = document.createElement("button");
+        header.className = "curriculum-category-header";
+        header.type = "button";
+        header.innerHTML = `
             <div class="curriculum-category-row">
                 <div class="curriculum-category-main">
                     <span class="curriculum-category-title">${category.title}</span>
@@ -1546,16 +1542,14 @@ function renderCurriculumNav() {
             </div>
         `;
 
-        row.addEventListener("click", function () {
-            const firstIncomplete = category.lessons.find(lesson => !isLessonCompleted(lesson.id));
-            const targetLesson = firstIncomplete || category.lessons[0];
-
-            if (targetLesson) {
-                loadLesson(targetLesson.id);
+        header.addEventListener("click", function () {
+            if (category.lessons.length) {
+                loadLesson(category.lessons[0].id);
             }
         });
 
-        list.appendChild(row);
+        wrap.appendChild(header);
+        list.appendChild(wrap);
     });
 }
 
@@ -1563,18 +1557,20 @@ function renderCurriculumNav() {
 // LESSON RENDERING
 // ======================
 function hideAllLessonBodies() {
-    document.getElementById("concept-content").classList.add("hidden");
-    document.getElementById("challenge-content").classList.add("hidden");
-    document.getElementById("scenario-content").classList.add("hidden");
-    document.getElementById("executive-takeaway").classList.add("hidden");
+    const concept = document.getElementById("concept-content");
+    const challenge = document.getElementById("challenge-content");
+    const scenario = document.getElementById("scenario-content");
+    const executive = document.getElementById("executive-takeaway");
+
+    if (concept) concept.classList.add("hidden");
+    if (challenge) challenge.classList.add("hidden");
+    if (scenario) scenario.classList.add("hidden");
+    if (executive) executive.classList.add("hidden");
 }
 
 function renderLessonHeader(record) {
     const { categoryTitle, lesson } = record;
     const track = getTrack();
-    const category = getCategoryById(record.categoryId);
-    const difficulty = category ? categoryDifficulty(category) : "Intermediate";
-    const difficultyClass = difficultyClassFromLabel(difficulty);
 
     document.getElementById("track-title-display").innerText = track.title;
     document.getElementById("lesson-title").innerText = lesson.title;
@@ -1585,7 +1581,7 @@ function renderLessonHeader(record) {
     typeBadge.innerText = formatLessonType(lesson.type);
 
     const categoryBadge = document.getElementById("current-category-badge");
-    categoryBadge.className = `difficulty-badge ${difficultyClass}`;
+    categoryBadge.className = "difficulty-badge difficulty-intermediate";
     categoryBadge.innerText = categoryTitle;
 
     document.getElementById("lesson-tables").innerHTML =
@@ -1701,7 +1697,6 @@ function markConceptComplete() {
     renderAchievements();
     renderCurriculumNav();
     updateDashboard();
-    renderTrackOverview();
     saveProgress();
 
     const feedback = document.getElementById("feedback");
@@ -1866,3 +1861,153 @@ function resetAllProgress() {
     renderTrackOverview();
     showTrackOverview();
 }
+
+// ======================
+// APP.JS DROP 3 OF 3
+// ======================
+
+// ======================
+// OVERVIEW / TRACK SCREEN
+// ======================
+function showTrackOverview() {
+    const overview = document.getElementById("track-overview");
+    const workspace = document.getElementById("lesson-workspace");
+
+    if (overview) overview.classList.remove("hidden");
+    if (workspace) workspace.classList.add("hidden");
+
+    renderTrackOverview();
+}
+
+function showLessonWorkspace() {
+    const overview = document.getElementById("track-overview");
+    const workspace = document.getElementById("lesson-workspace");
+
+    if (overview) overview.classList.add("hidden");
+    if (workspace) workspace.classList.remove("hidden");
+}
+
+function renderTrackOverview() {
+    const track = getTrack();
+    const categories = getAllCategories();
+    const completed = completedLessonCount();
+    const total = totalLessonCount();
+
+    const titleEl = document.getElementById("track-overview-title");
+    const descEl = document.getElementById("track-overview-description");
+    const progressTextEl = document.getElementById("track-overview-progress-text");
+    const progressBarEl = document.getElementById("track-overview-progress-bar");
+    const trackLabelEl = document.getElementById("track-title-display-overview");
+    const cardsWrap = document.getElementById("track-category-cards");
+
+    if (trackLabelEl) trackLabelEl.innerText = track.title;
+    if (titleEl) titleEl.innerText = track.title;
+    if (descEl) descEl.innerText = track.description;
+    if (progressTextEl) progressTextEl.innerText = `${completed} of ${total} lessons completed`;
+    if (progressBarEl) {
+        progressBarEl.style.width = `${total ? (completed / total) * 100 : 0}%`;
+    }
+
+    if (!cardsWrap) return;
+    cardsWrap.innerHTML = "";
+
+    categories.forEach(category => {
+        const totalLessons = category.lessons.length;
+        const completedLessons = category.lessons.filter(lesson => isLessonCompleted(lesson.id)).length;
+        const fullyComplete = completedLessons === totalLessons;
+        const difficulty = categoryDifficulty(category);
+        const difficultyClass = difficultyClassFromLabel(difficulty);
+
+        const badge = document.createElement("div");
+        badge.className = `track-badge-card ${fullyComplete ? "earned" : "locked"}`;
+        badge.innerHTML = `
+            <div class="track-badge-icon-wrap">
+                <div class="track-badge-icon ${fullyComplete ? "earned" : "locked"}">
+                    ${fullyComplete ? "🏅" : "◌"}
+                </div>
+            </div>
+            <div class="track-badge-name">${category.title}</div>
+            <div class="track-badge-meta">
+                <span class="difficulty-badge ${difficultyClass}">${difficulty}</span>
+                <span class="track-badge-progress">${completedLessons}/${totalLessons}</span>
+            </div>
+        `;
+
+        cardsWrap.appendChild(badge);
+    });
+}
+
+function bindOverviewButtons() {
+    const openOverviewBtn = document.getElementById("open-overview-btn");
+    const resumeTrackBtn = document.getElementById("resume-track-btn");
+    const startTrackBtn = document.getElementById("start-track-btn");
+
+    if (openOverviewBtn) {
+        openOverviewBtn.addEventListener("click", function () {
+            showTrackOverview();
+        });
+    }
+
+    if (resumeTrackBtn) {
+        resumeTrackBtn.addEventListener("click", function () {
+            if (appState.currentLessonId) {
+                loadLesson(appState.currentLessonId);
+            }
+        });
+    }
+
+    if (startTrackBtn) {
+        startTrackBtn.addEventListener("click", function () {
+            const firstTrack = curriculum[0];
+            const firstCategory = firstTrack.categories[0];
+            const firstLesson = firstCategory.lessons[0];
+            loadLesson(firstLesson.id);
+        });
+    }
+}
+
+function bindLevelsPanelToggle() {
+    const btn = document.getElementById("toggle-levels-panel-btn");
+    const panel = document.getElementById("levels-panel");
+    if (!btn || !panel) return;
+
+    btn.addEventListener("click", function () {
+        panel.classList.toggle("collapsed");
+        btn.innerText = panel.classList.contains("collapsed") ? "Expand" : "Collapse";
+    });
+}
+
+// ======================
+// INIT
+// ======================
+window.onload = function () {
+    loadProgress();
+    initializeStateDefaults();
+    applySchemaPanelWidth();
+    initSchemaResizer();
+    renderSchema();
+    renderAchievements();
+    renderCurriculumNav();
+    updateDashboard();
+    bindOverviewButtons();
+    bindLevelsPanelToggle();
+    renderTrackOverview();
+    showTrackOverview();
+};
+
+// ======================
+// GLOBALS FOR HTML
+// ======================
+window.runQuery = runQuery;
+window.checkAnswer = checkAnswer;
+window.resetQuery = resetQuery;
+window.nextLesson = nextLesson;
+window.prevLesson = prevLesson;
+window.markConceptComplete = markConceptComplete;
+window.submitScenario = submitScenario;
+window.resetScenario = resetScenario;
+window.resetAllProgress = resetAllProgress;
+window.openTableModal = openTableModal;
+window.closeTableModal = closeTableModal;
+window.showTrackOverview = showTrackOverview;
+window.showLessonWorkspace = showLessonWorkspace;
