@@ -1532,7 +1532,7 @@ function renderCurriculumNav() {
                     <span class="curriculum-category-title">${category.title}</span>
                     <div class="curriculum-category-header-meta">
                         <span class="curriculum-category-meta">${done}/${total} completed</span>
-                        ${isComplete ? `<span class="curriculum-complete-pill">Completed</span>` : ``}
+                        ${isComplete ? '<span class="curriculum-complete-pill">Completed</span>' : ''}
                     </div>
                 </div>
                 <div class="curriculum-category-arrow">›</div>
@@ -1547,6 +1547,7 @@ function renderCurriculumNav() {
 
         wrap.appendChild(header);
         list.appendChild(wrap);
+    });
 }
 
 // ======================
