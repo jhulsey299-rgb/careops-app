@@ -1519,8 +1519,6 @@ function renderCurriculumNav() {
         const wrap = document.createElement("div");
         wrap.className = "curriculum-category";
 
-        const difficulty = categoryDifficulty(category);
-        const difficultyClass = difficultyClassFromLabel(difficulty);
         const total = category.lessons.length;
         const done = category.lessons.filter(lesson => isLessonCompleted(lesson.id)).length;
         const isComplete = done === total;
@@ -1533,7 +1531,6 @@ function renderCurriculumNav() {
                 <div class="curriculum-category-main">
                     <span class="curriculum-category-title">${category.title}</span>
                     <div class="curriculum-category-header-meta">
-                        <span class="difficulty-badge ${difficultyClass}">${difficulty}</span>
                         <span class="curriculum-category-meta">${done}/${total} completed</span>
                         ${isComplete ? `<span class="curriculum-complete-pill">Completed</span>` : ``}
                     </div>
@@ -1546,6 +1543,12 @@ function renderCurriculumNav() {
             if (category.lessons.length) {
                 loadLesson(category.lessons[0].id);
             }
+        });
+
+        wrap.appendChild(header);
+        list.appendChild(wrap);
+    });
+}
         });
 
         wrap.appendChild(header);
