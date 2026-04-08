@@ -1822,14 +1822,26 @@ function renderConceptLesson(lesson) {
     document.getElementById("output").innerHTML = "";
 }
 
-function renderChallengeLesson(lesson) {
-    hideAllLessonBodies();
-    document.getElementById("challenge-content").classList.remove("hidden");
-    document.getElementById("query").value = lesson.starterQuery || "";
-    document.getElementById("feedback").innerHTML = "";
-    document.getElementById("output").innerHTML = "";
-    attempts = 0;
-    lastRunQuery = "";
+function runQuery() {
+    const lesson = getCurrentLesson();
+    if (!lesson || lesson.type !== "challenge") return;
+
+    const query = document.getElementById("query").value.trim();
+    lastRunQuery = query;
+
+    if (!query) {
+        document.getElementById("output").innerHTML = "<p>Please enter a SQL query first.</p>";
+        return;
+    }
+
+    previewSchemaFromQuery(query);
+
+    const output = document.getElementById("output");
+    output.innerHTML = `
+        <p><strong>Query executed (simulation).</strong></p>
+        <p><code>${query.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</code></p>
+        ${output.innerHTML}
+    `;
 }
 
 function renderScenarioLesson(lesson) {
