@@ -1,5 +1,6 @@
 // ======================
-// APP.JS DROP 1 OF 3
+// CAREOPS SQL ANALYST
+// APP.JS
 // ======================
 
 // ======================
@@ -115,6 +116,9 @@ const schema = {
     ]
 };
 
+// ======================
+// BUILD 20 SAMPLE ROWS
+// ======================
 function generateMockCell(tableName, columnName, rowNum) {
     const col = columnName.toLowerCase();
 
@@ -165,8 +169,8 @@ function generateMockCell(tableName, columnName, rowNum) {
         return departments[(rowNum - 1) % departments.length];
     }
 
-    if (col.includes("status")) {
-        const statuses = ["Active", "Discharged", "Scheduled", "Completed", "No Show", "Pending", "Denied", "Paid"];
+    if (col === "status") {
+        const statuses = ["Active", "Discharged", "Scheduled", "Completed", "No Show"];
         return statuses[(rowNum - 1) % statuses.length];
     }
 
@@ -231,10 +235,8 @@ function generateMockCell(tableName, columnName, rowNum) {
 function buildTwentySampleRows(table) {
     const rows = [];
 
-    for (let rowNum = 1; rowNum <= 20; rowNum++) {
-        const row = table.notableColumns.map(columnName => {
-            return generateMockCell(table.name, columnName, rowNum);
-        });
+    for (let rowNum = 1; rowNum <= 20; rowNum += 1) {
+        const row = table.notableColumns.map(columnName => generateMockCell(table.name, columnName, rowNum));
         rows.push(row);
     }
 
@@ -1396,35 +1398,34 @@ function initializeStateDefaults() {
 // ======================
 // SCHEMA RENDERING
 // ======================
+function escapeHtml(value) {
+    return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+}
+
 function buildPreviewTable(columns, rows) {
     let html = "<table class='preview-table'><tr>";
+
     columns.forEach(column => {
-        html += `<th>${column}</th>`;
+        html += `<th>${escapeHtml(column)}</th>`;
     });
+
     html += "</tr>";
 
     rows.forEach(row => {
         html += "<tr>";
         row.forEach(cell => {
-            html += `<td>${cell === null ? "NULL" : cell}</td>`;
+            html += `<td>${cell === null ? "NULL" : escapeHtml(cell)}</td>`;
         });
         html += "</tr>";
     });
 
     html += "</table>";
     return html;
-}
-
-function renderDetectedTablePreview(tableName) {
-    const table = getTableByName(tableName);
-    if (!table) return "";
-
-    return `
-        <div class="detected-table-preview">
-            <h4>${table.name}</h4>
-            ${buildPreviewTable(table.notableColumns, table.sampleRows)}
-        </div>
-    `;
 }
 
 function renderSchemaTables() {
@@ -1439,10 +1440,10 @@ function renderSchemaTables() {
         details.id = `schema-${table.name}`;
 
         details.innerHTML = `
-            <summary>${table.name}</summary>
-            <p><strong>Description:</strong> ${table.description}</p>
-            <p><strong>Keys:</strong> ${table.keyColumns.join(", ")}</p>
-            <p><strong>Columns:</strong> ${table.notableColumns.join(", ")}</p>
+            <summary>${escapeHtml(table.name)}</summary>
+            <p><strong>Description:</strong> ${escapeHtml(table.description)}</p>
+            <p><strong>Keys:</strong> ${escapeHtml(table.keyColumns.join(", "))}</p>
+            <p><strong>Columns:</strong> ${escapeHtml(table.notableColumns.join(", "))}</p>
             <div class="schema-table-actions">
                 <button class="schema-table-view-btn" onclick="openTableModal('${table.name}')">Open Table Viewer</button>
             </div>
@@ -1510,7 +1511,6 @@ function detectTablesFromSql(sql) {
 
     schema.tables.forEach(table => {
         const tableName = table.name.toLowerCase();
-
         const patterns = [
             new RegExp(`\\bfrom\\s+${tableName}\\b`, "i"),
             new RegExp(`\\bjoin\\s+${tableName}\\b`, "i"),
@@ -1525,25 +1525,6 @@ function detectTablesFromSql(sql) {
     });
 
     return [...new Set(found)];
-}
-
-function previewSchemaFromQuery(sql) {
-    const detectedTables = detectTablesFromSql(sql);
-    const output = document.getElementById("output");
-    if (!output) return;
-
-    if (detectedTables.length) {
-        highlightRelevantSchema(detectedTables);
-
-        let html = `<p><strong>Detected Tables Preview</strong></p>`;
-        detectedTables.forEach(tableName => {
-            html += renderDetectedTablePreview(tableName);
-        });
-
-        output.innerHTML = html;
-    } else {
-        output.innerHTML = "";
-    }
 }
 
 function getTableByName(name) {
@@ -1565,6 +1546,7 @@ function openTableModal(tableName) {
 
     const relationshipWrap = document.getElementById("table-modal-relationships");
     relationshipWrap.innerHTML = "";
+
     relatedRelationships(table.name).forEach(rel => {
         const chip = document.createElement("div");
         chip.className = "modal-relationship-chip";
@@ -1581,6 +1563,265 @@ function openTableModal(tableName) {
 function closeTableModal(event) {
     if (event && event.target && event.target.id !== "table-modal-overlay") return;
     document.getElementById("table-modal-overlay").classList.add("hidden");
+}
+
+// ======================
+// QUERY EXECUTION + RESULT RENDERING
+// ======================
+function parseSqlQuery(sql) {
+    const cleaned = String(sql || "").trim().replace(/;$/, "");
+    const normalized = cleaned.replace(/\s+/g, " ");
+
+    const match = normalized.match(
+        /^select\s+(.+?)\s+from\s+([a-z_][a-z0-9_]*)(?:\s+where\s+(.+?))?(?:\s+order\s+by\s+([a-z_][a-z0-9_]*)(?:\s+(asc|desc))?)?$/i
+    );
+
+    if (!match) {
+        return {
+            ok: false,
+            error: "I could not parse this query yet. Right now I support basic SELECT ... FROM ... with optional WHERE and ORDER BY."
+        };
+    }
+
+    const selectPart = match[1].trim();
+    const tableName = match[2].trim();
+    const wherePart = match[3] ? match[3].trim() : null;
+    const orderByColumn = match[4] ? match[4].trim() : null;
+    const orderDirection = match[5] ? match[5].trim().toUpperCase() : "ASC";
+
+    const columns = selectPart === "*"
+        ? ["*"]
+        : selectPart.split(",").map(col => col.trim());
+
+    return {
+        ok: true,
+        raw: cleaned,
+        columns,
+        tableName,
+        wherePart,
+        orderByColumn,
+        orderDirection
+    };
+}
+
+function buildRowObjects(table) {
+    return table.sampleRows.map(row => {
+        const obj = {};
+        table.notableColumns.forEach((col, index) => {
+            obj[col] = row[index];
+        });
+        return obj;
+    });
+}
+
+function parseWhereClause(wherePart) {
+    if (!wherePart) return null;
+
+    const match = wherePart.match(/^([a-z_][a-z0-9_]*)\s*(=|>|<|>=|<=)\s*(.+)$/i);
+    if (!match) {
+        return {
+            ok: false,
+            error: "Only simple WHERE clauses are supported right now, like insurance_type = 'Medicare' or amount > 2000."
+        };
+    }
+
+    let rawValue = match[3].trim();
+
+    if (
+        (rawValue.startsWith("'") && rawValue.endsWith("'")) ||
+        (rawValue.startsWith('"') && rawValue.endsWith('"'))
+    ) {
+        rawValue = rawValue.slice(1, -1);
+    }
+
+    const numericValue = Number(rawValue);
+    const value = Number.isNaN(numericValue) ? rawValue : numericValue;
+
+    return {
+        ok: true,
+        column: match[1].trim(),
+        operator: match[2].trim(),
+        value
+    };
+}
+
+function compareValues(left, operator, right) {
+    const leftNumber = Number(left);
+    const rightNumber = Number(right);
+
+    const bothNumeric = !Number.isNaN(leftNumber) && !Number.isNaN(rightNumber);
+    const a = bothNumeric ? leftNumber : String(left).toLowerCase();
+    const b = bothNumeric ? String(right).toLowerCase() : String(right).toLowerCase();
+
+    if (operator === "=") return a === b;
+    if (operator === ">") return a > (bothNumeric ? rightNumber : String(right).toLowerCase());
+    if (operator === "<") return a < (bothNumeric ? rightNumber : String(right).toLowerCase());
+    if (operator === ">=") return a >= (bothNumeric ? rightNumber : String(right).toLowerCase());
+    if (operator === "<=") return a <= (bothNumeric ? rightNumber : String(right).toLowerCase());
+
+    return false;
+}
+
+function executeParsedQuery(parsed) {
+    const table = getTableByName(parsed.tableName);
+    if (!table) {
+        return {
+            ok: false,
+            error: `Table "${parsed.tableName}" was not found in the schema.`
+        };
+    }
+
+    const availableColumns = table.notableColumns;
+
+    if (parsed.columns[0] !== "*") {
+        const invalidColumns = parsed.columns.filter(col => !availableColumns.includes(col));
+        if (invalidColumns.length) {
+            return {
+                ok: false,
+                error: `Unknown column(s): ${invalidColumns.join(", ")}`
+            };
+        }
+    }
+
+    const whereConfig = parseWhereClause(parsed.wherePart);
+    if (whereConfig && whereConfig.ok === false) {
+        return {
+            ok: false,
+            error: whereConfig.error
+        };
+    }
+
+    if (whereConfig && !availableColumns.includes(whereConfig.column)) {
+        return {
+            ok: false,
+            error: `Column "${whereConfig.column}" was not found in table "${table.name}".`
+        };
+    }
+
+    if (parsed.orderByColumn && !availableColumns.includes(parsed.orderByColumn)) {
+        return {
+            ok: false,
+            error: `ORDER BY column "${parsed.orderByColumn}" was not found in table "${table.name}".`
+        };
+    }
+
+    let rows = buildRowObjects(table);
+
+    if (whereConfig) {
+        rows = rows.filter(row => compareValues(row[whereConfig.column], whereConfig.operator, whereConfig.value));
+    }
+
+    if (parsed.orderByColumn) {
+        rows.sort((a, b) => {
+            const left = a[parsed.orderByColumn];
+            const right = b[parsed.orderByColumn];
+
+            const leftNumber = Number(left);
+            const rightNumber = Number(right);
+            const bothNumeric = !Number.isNaN(leftNumber) && !Number.isNaN(rightNumber);
+
+            let comparison = 0;
+
+            if (bothNumeric) {
+                comparison = leftNumber - rightNumber;
+            } else {
+                comparison = String(left).localeCompare(String(right));
+            }
+
+            return parsed.orderDirection === "DESC" ? comparison * -1 : comparison;
+        });
+    }
+
+    const selectedColumns = parsed.columns[0] === "*" ? availableColumns : parsed.columns;
+    const displayRows = rows.map(row => selectedColumns.map(col => row[col]));
+
+    return {
+        ok: true,
+        tableName: table.name,
+        columns: selectedColumns,
+        rows: displayRows
+    };
+}
+
+function buildResultTable(columns, rows) {
+    let html = "<div class='query-results-table-wrap'><table class='preview-table'><thead><tr>";
+
+    columns.forEach(column => {
+        html += `<th>${escapeHtml(column)}</th>`;
+    });
+
+    html += "</tr></thead><tbody>";
+
+    rows.forEach(row => {
+        html += "<tr>";
+        row.forEach(cell => {
+            html += `<td>${cell === null ? "NULL" : escapeHtml(cell)}</td>`;
+        });
+        html += "</tr>";
+    });
+
+    html += "</tbody></table></div>";
+    return html;
+}
+
+function explainQueryMistake(userSql, solutionSql, lesson) {
+    const user = userSql.toLowerCase();
+    const solution = solutionSql.toLowerCase();
+
+    if (!user.includes("select")) {
+        return "Your query is missing SELECT at the beginning.";
+    }
+
+    if (!user.includes("from")) {
+        return "The issue is around the middle of the query: you are missing a FROM clause.";
+    }
+
+    const expectedTableMatch = solution.match(/\bfrom\s+([a-z_][a-z0-9_]*)/i);
+    const actualTableMatch = user.match(/\bfrom\s+([a-z_][a-z0-9_]*)/i);
+
+    if (expectedTableMatch && actualTableMatch && expectedTableMatch[1] !== actualTableMatch[1]) {
+        return `The table looks wrong. You used "${actualTableMatch[1]}", but this lesson expects "${expectedTableMatch[1]}".`;
+    }
+
+    if (solution.includes("where") && !user.includes("where")) {
+        return "You are missing the WHERE clause needed for this lesson.";
+    }
+
+    if (solution.includes("order by") && !user.includes("order by")) {
+        return "You are missing the ORDER BY clause needed for this lesson.";
+    }
+
+    if (solution.includes("group by") && !user.includes("group by")) {
+        return "You are missing the GROUP BY clause needed for this lesson.";
+    }
+
+    if (solution.includes("having") && !user.includes("having")) {
+        return "You are missing the HAVING clause needed for this lesson.";
+    }
+
+    return `The structure is close, but part of the SQL does not match the requested output. Focus on: ${lesson.hint || "the exact columns, filters, and ordering requested."}`;
+}
+
+function explainCorrectAnswer(lesson) {
+    const solution = lesson.solutionQuery || "";
+
+    if (/select\s+\*\s+from/i.test(solution)) {
+        return "This works because the lesson asks for every column and every row from the requested table.";
+    }
+
+    if (/where/i.test(solution) && /order by/i.test(solution)) {
+        return "This works because it first filters to the correct rows, then sorts the results in the requested order.";
+    }
+
+    if (/where/i.test(solution)) {
+        return "This works because it pulls the correct columns and filters to the exact records the lesson asked for.";
+    }
+
+    if (/order by/i.test(solution)) {
+        return "This works because it returns the requested fields and sorts them in the required order.";
+    }
+
+    return "This works because it matches the requested table and returns exactly what the lesson asked for.";
 }
 
 // ======================
@@ -1638,9 +1879,6 @@ function initSchemaResizer() {
         saveProgress();
     });
 }
-// ======================
-// APP.JS DROP 2 OF 3
-// ======================
 
 // ======================
 // DASHBOARD / ACHIEVEMENTS
@@ -1669,7 +1907,10 @@ function updateDashboard() {
     }
 
     if (badgeCount) {
-        badgeCount.innerText = `${achievements().filter(a => a.earned).length} earned`;
+        const categoryBadgeCount = getAllCategories().filter(category =>
+            category.lessons.every(lesson => isLessonCompleted(lesson.id))
+        ).length;
+        badgeCount.innerText = `${categoryBadgeCount} category badges earned`;
     }
 
     const trackTitle = document.getElementById("track-title");
@@ -1693,7 +1934,6 @@ function renderAchievements() {
 
 // ======================
 // RIGHT PANEL CURRICULUM NAV
-// only place for tracking + navigation
 // ======================
 function renderCurriculumNav() {
     const list = document.getElementById("category-list");
@@ -1710,15 +1950,15 @@ function renderCurriculumNav() {
         const isComplete = done === total;
 
         const header = document.createElement("button");
-        header.className = "curriculum-category-header";
+        header.className = `curriculum-category-header${isComplete ? " is-complete" : ""}`;
         header.type = "button";
         header.innerHTML = `
             <div class="curriculum-category-row">
                 <div class="curriculum-category-main">
-                    <span class="curriculum-category-title">${category.title}</span>
+                    <span class="curriculum-category-title">${escapeHtml(category.title)}</span>
                     <div class="curriculum-category-header-meta">
                         <span class="curriculum-category-meta">${done}/${total} completed</span>
-                        ${isComplete ? '<span class="curriculum-complete-pill">Completed</span>' : ''}
+                        ${isComplete ? '<span class="curriculum-complete-pill">Completed</span>' : ""}
                     </div>
                 </div>
                 <div class="curriculum-category-arrow">›</div>
@@ -1768,11 +2008,11 @@ function renderLessonHeader(record) {
     categoryBadge.innerText = categoryTitle;
 
     document.getElementById("lesson-tables").innerHTML =
-        `<strong>Relevant Tables:</strong> ${(lesson.relevantTables || []).join(", ") || "—"}`;
+        `<strong>Relevant Tables:</strong> ${escapeHtml((lesson.relevantTables || []).join(", ") || "—")}`;
     document.getElementById("lesson-join-hint").innerHTML =
-        `<strong>Join Hint:</strong> ${lesson.joinHint || "—"}`;
+        `<strong>Join Hint:</strong> ${escapeHtml(lesson.joinHint || "—")}`;
     document.getElementById("lesson-sql-focus").innerHTML =
-        `<strong>SQL Focus:</strong> ${sqlFocusText(lesson.sql_focus)}`;
+        `<strong>SQL Focus:</strong> ${escapeHtml(sqlFocusText(lesson.sql_focus))}`;
 }
 
 function renderHintBox(lesson) {
@@ -1784,7 +2024,7 @@ function renderHintBox(lesson) {
     } else if (lesson.type === "scenario") {
         hintBox.innerText = "Respond to the scenario using the business context provided. Think like an analyst supporting leadership.";
     } else {
-        hintBox.innerText = "Run your query and check your answer. After two wrong tries, you'll get a targeted hint. After the third wrong try, the answer will be shown.";
+        hintBox.innerText = "Run your query and check your answer. First miss: where the query is off. Second miss: smart hint. Third miss: full answer with explanation.";
     }
 }
 
@@ -1798,10 +2038,10 @@ function renderExecutiveTakeaway(lesson) {
     }
 
     wrap.classList.remove("hidden");
-    document.getElementById("exec-metric").innerHTML = `<strong>Metric:</strong> ${lesson.executiveTakeaway.metric || "—"}`;
-    document.getElementById("exec-why").innerHTML = `<strong>Why it matters:</strong> ${lesson.executiveTakeaway.whyItMatters || "—"}`;
-    document.getElementById("exec-share").innerHTML = `<strong>What to share:</strong> ${lesson.executiveTakeaway.whatToShare || "—"}`;
-    document.getElementById("exec-action").innerHTML = `<strong>Recommended action:</strong> ${lesson.executiveTakeaway.action || "—"}`;
+    document.getElementById("exec-metric").innerHTML = `<strong>Metric:</strong> ${escapeHtml(lesson.executiveTakeaway.metric || "—")}`;
+    document.getElementById("exec-why").innerHTML = `<strong>Why it matters:</strong> ${escapeHtml(lesson.executiveTakeaway.whyItMatters || "—")}`;
+    document.getElementById("exec-share").innerHTML = `<strong>What to share:</strong> ${escapeHtml(lesson.executiveTakeaway.whatToShare || "—")}`;
+    document.getElementById("exec-action").innerHTML = `<strong>Recommended action:</strong> ${escapeHtml(lesson.executiveTakeaway.action || "—")}`;
 }
 
 function renderConceptLesson(lesson) {
@@ -1809,6 +2049,7 @@ function renderConceptLesson(lesson) {
     document.getElementById("concept-content").classList.remove("hidden");
 
     document.getElementById("concept-summary").innerText = lesson.content?.summary || "";
+
     const bullets = document.getElementById("concept-bullets");
     bullets.innerHTML = "";
     (lesson.content?.bullets || []).forEach(bullet => {
@@ -1816,32 +2057,10 @@ function renderConceptLesson(lesson) {
         li.innerText = bullet;
         bullets.appendChild(li);
     });
-    document.getElementById("concept-example").innerText = lesson.content?.hospitalExample || "";
 
+    document.getElementById("concept-example").innerText = lesson.content?.hospitalExample || "";
     document.getElementById("feedback").innerHTML = "";
     document.getElementById("output").innerHTML = "";
-}
-
-function runQuery() {
-    const lesson = getCurrentLesson();
-    if (!lesson || lesson.type !== "challenge") return;
-
-    const query = document.getElementById("query").value.trim();
-    lastRunQuery = query;
-
-    if (!query) {
-        document.getElementById("output").innerHTML = "<p>Please enter a SQL query first.</p>";
-        return;
-    }
-
-    previewSchemaFromQuery(query);
-
-    const output = document.getElementById("output");
-    output.innerHTML = `
-        <p><strong>Query executed (simulation).</strong></p>
-        <p><code>${query.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</code></p>
-        ${output.innerHTML}
-    `;
 }
 
 function renderScenarioLesson(lesson) {
@@ -1851,6 +2070,8 @@ function renderScenarioLesson(lesson) {
     document.getElementById("scenario-prompt").innerText = lesson.content?.prompt || "";
     document.getElementById("scenario-response").value = "";
     document.getElementById("scenario-feedback").innerHTML = "";
+    document.getElementById("feedback").innerHTML = "";
+    document.getElementById("output").innerHTML = "";
 }
 
 function renderChallengeLesson(lesson) {
@@ -1865,10 +2086,15 @@ function renderChallengeLesson(lesson) {
     attempts = 0;
     lastRunQuery = "";
 
-    previewSchemaFromQuery(queryBox.value);
+    highlightRelevantSchema(lesson.relevantTables || []);
 
     queryBox.oninput = function () {
-        previewSchemaFromQuery(queryBox.value);
+        const detectedTables = detectTablesFromSql(queryBox.value);
+        if (detectedTables.length) {
+            highlightRelevantSchema(detectedTables);
+        } else {
+            highlightRelevantSchema(lesson.relevantTables || []);
+        }
     };
 }
 
@@ -1911,6 +2137,7 @@ function markConceptComplete() {
     renderAchievements();
     renderCurriculumNav();
     updateDashboard();
+    renderTrackOverview();
     saveProgress();
 
     const feedback = document.getElementById("feedback");
@@ -1927,14 +2154,43 @@ function runQuery() {
     lastRunQuery = query;
 
     const output = document.getElementById("output");
+    if (!output) return;
+
     if (!query) {
         output.innerHTML = "<p>Please enter a SQL query first.</p>";
         return;
     }
 
+    const parsed = parseSqlQuery(query);
+    const detectedTables = detectTablesFromSql(query);
+
+    if (detectedTables.length) {
+        highlightRelevantSchema(detectedTables);
+    }
+
+    if (!parsed.ok) {
+        output.innerHTML = `
+            <p><strong>Query execution failed.</strong></p>
+            <p>${escapeHtml(parsed.error)}</p>
+        `;
+        return;
+    }
+
+    const result = executeParsedQuery(parsed);
+
+    if (!result.ok) {
+        output.innerHTML = `
+            <p><strong>Query execution failed.</strong></p>
+            <p>${escapeHtml(result.error)}</p>
+        `;
+        return;
+    }
+
     output.innerHTML = `
         <p><strong>Query executed (simulation).</strong></p>
-        <p><code>${query.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</code></p>
+        <p><code>${escapeHtml(query)}</code></p>
+        <p><strong>${result.rows.length}</strong> row(s) returned from <strong>${escapeHtml(result.tableName)}</strong>.</p>
+        ${buildResultTable(result.columns, result.rows)}
     `;
 }
 
@@ -1952,15 +2208,18 @@ function checkAnswer() {
     }
 
     attempts += 1;
+
     const userSql = normalizeSql(query);
     const solutionSql = normalizeSql(lesson.solutionQuery || "");
 
     if (userSql === solutionSql) {
         feedback.innerHTML = "<p style='color:#16a34a; font-weight:700;'>✅ Correct!</p>";
         markLessonComplete(lesson.id);
+
         if (attempts === 1) {
             markLessonFirstTry(lesson.id);
         }
+
         renderAchievements();
         renderCurriculumNav();
         updateDashboard();
@@ -1969,13 +2228,28 @@ function checkAnswer() {
         return;
     }
 
-    feedback.innerHTML = "<p style='color:#dc2626; font-weight:700;'>❌ Not quite.</p>";
+    const issueMessage = explainQueryMistake(userSql, solutionSql, lesson);
+
+    if (attempts === 1) {
+        feedback.innerHTML = `<p style='color:#dc2626; font-weight:700;'>❌ Not quite.</p><p>${escapeHtml(issueMessage)}</p>`;
+        hint.innerText = "Try again. Focus on the lesson objective, relevant table, and required SQL clause.";
+        return;
+    }
 
     if (attempts === 2) {
-        hint.innerText = `Hint: ${lesson.hint || "Review the requested output and relevant tables."}`;
-    } else if (attempts >= 3) {
-        hint.innerText = `Answer: ${lesson.solutionQuery || ""}`;
+        feedback.innerHTML = `<p style='color:#dc2626; font-weight:700;'>❌ Still not quite.</p><p>${escapeHtml(issueMessage)}</p>`;
+        hint.innerText = `Hint: ${lesson.hint || "Review the exact output requested and compare it to your SELECT, FROM, and filtering logic."}`;
+        return;
     }
+
+    feedback.innerHTML = `
+        <p style='color:#dc2626; font-weight:700;'>❌ Not quite.</p>
+        <p><strong>Correct answer:</strong></p>
+        <p><code>${escapeHtml(lesson.solutionQuery || "")}</code></p>
+        <p><strong>Why:</strong> ${escapeHtml(explainCorrectAnswer(lesson))}</p>
+    `;
+
+    hint.innerText = `Answer shown. ${explainCorrectAnswer(lesson)}`;
 }
 
 function resetQuery() {
@@ -1986,6 +2260,7 @@ function resetQuery() {
     document.getElementById("feedback").innerHTML = "";
     document.getElementById("output").innerHTML = "";
     attempts = 0;
+    highlightRelevantSchema(lesson.relevantTables || []);
 }
 
 function submitScenario() {
@@ -2077,10 +2352,6 @@ function resetAllProgress() {
 }
 
 // ======================
-// APP.JS DROP 3 OF 3
-// ======================
-
-// ======================
 // OVERVIEW / TRACK SCREEN
 // ======================
 function showTrackOverview() {
@@ -2143,15 +2414,16 @@ function renderTrackOverview() {
                     </div>
                 </div>
             </div>
-            <div class="track-badge-name">${category.title}</div>
+            <div class="track-badge-name">${escapeHtml(category.title)}</div>
             <div class="track-badge-meta">
-                <span class="difficulty-badge ${difficultyClass}">${difficulty}</span>
+                <span class="difficulty-badge ${difficultyClass}">${escapeHtml(difficulty)}</span>
             </div>
         `;
 
         cardsWrap.appendChild(badge);
     });
 }
+
 function bindOverviewButtons() {
     const openOverviewBtn = document.getElementById("open-overview-btn");
     const resumeTrackBtn = document.getElementById("resume-track-btn");
