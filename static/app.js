@@ -1502,6 +1502,50 @@ function highlightRelevantSchema(tables = []) {
     renderRelationships(tables);
 }
 
+function detectTablesFromSql(sql) {
+    if (!sql) return [];
+
+    const lowered = sql.toLowerCase();
+    const found = [];
+
+    schema.tables.forEach(table => {
+        const tableName = table.name.toLowerCase();
+
+        const patterns = [
+            new RegExp(`\\bfrom\\s+${tableName}\\b`, "i"),
+            new RegExp(`\\bjoin\\s+${tableName}\\b`, "i"),
+            new RegExp(`\\bupdate\\s+${tableName}\\b`, "i"),
+            new RegExp(`\\binto\\s+${tableName}\\b`, "i"),
+            new RegExp(`\\bdelete\\s+from\\s+${tableName}\\b`, "i")
+        ];
+
+        if (patterns.some(pattern => pattern.test(lowered))) {
+            found.push(table.name);
+        }
+    });
+
+    return [...new Set(found)];
+}
+
+function previewSchemaFromQuery(sql) {
+    const detectedTables = detectTablesFromSql(sql);
+    const output = document.getElementById("output");
+    if (!output) return;
+
+    if (detectedTables.length) {
+        highlightRelevantSchema(detectedTables);
+
+        let html = `<p><strong>Detected Tables Preview</strong></p>`;
+        detectedTables.forEach(tableName => {
+            html += renderDetectedTablePreview(tableName);
+        });
+
+        output.innerHTML = html;
+    } else {
+        output.innerHTML = "";
+    }
+}
+
 function getTableByName(name) {
     return schema.tables.find(table => table.name === name);
 }
