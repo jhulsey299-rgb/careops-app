@@ -1934,6 +1934,7 @@ function renderTrackOverview() {
 
         cardsWrap.appendChild(badge);
     });
+}
 function bindOverviewButtons() {
     const openOverviewBtn = document.getElementById("open-overview-btn");
     const resumeTrackBtn = document.getElementById("resume-track-btn");
