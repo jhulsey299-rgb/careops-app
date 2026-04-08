@@ -1415,6 +1415,18 @@ function buildPreviewTable(columns, rows) {
     return html;
 }
 
+function renderDetectedTablePreview(tableName) {
+    const table = getTableByName(tableName);
+    if (!table) return "";
+
+    return `
+        <div class="detected-table-preview">
+            <h4>${table.name}</h4>
+            ${buildPreviewTable(table.notableColumns, table.sampleRows)}
+        </div>
+    `;
+}
+
 function renderSchemaTables() {
     const container = document.getElementById("schema-tables");
     if (!container) return;
