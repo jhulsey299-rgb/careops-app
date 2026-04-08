@@ -115,6 +115,136 @@ const schema = {
     ]
 };
 
+function generateMockCell(tableName, columnName, rowNum) {
+    const col = columnName.toLowerCase();
+
+    if (col === "patient_id") return rowNum;
+    if (col === "provider_id") return 100 + rowNum;
+    if (col === "encounter_id") return 1000 + rowNum;
+    if (col === "appointment_id") return 2000 + rowNum;
+    if (col === "charge_id") return 3000 + rowNum;
+    if (col === "claim_id") return 4000 + rowNum;
+
+    if (col.includes("first_name")) {
+        const firstNames = ["Alice", "James", "Olivia", "Daniel", "Sophia", "Liam", "Emma", "Noah", "Ava", "Mason", "Isabella", "Elijah", "Mia", "Lucas", "Charlotte", "Henry", "Amelia", "Logan", "Harper", "Ethan"];
+        return firstNames[(rowNum - 1) % firstNames.length];
+    }
+
+    if (col.includes("last_name")) {
+        const lastNames = ["Smith", "Johnson", "Brown", "Miller", "Wilson", "Taylor", "Anderson", "Thomas", "Jackson", "White", "Harris", "Martin", "Thompson", "Garcia", "Martinez", "Robinson", "Clark", "Lewis", "Lee", "Walker"];
+        return lastNames[(rowNum - 1) % lastNames.length];
+    }
+
+    if (col.includes("provider_name")) {
+        const providerNames = [
+            "Dr. Adams", "Dr. Brooks", "Dr. Carter", "Dr. Diaz", "Dr. Evans",
+            "Dr. Foster", "Dr. Green", "Dr. Hayes", "Dr. Ibarra", "Dr. Jones",
+            "Dr. Kelly", "Dr. Lane", "Dr. Moore", "Dr. Nguyen", "Dr. Ortiz",
+            "Dr. Patel", "Dr. Quinn", "Dr. Reed", "Dr. Stone", "Dr. Turner"
+        ];
+        return providerNames[(rowNum - 1) % providerNames.length];
+    }
+
+    if (col.includes("specialty")) {
+        const specialties = [
+            "Cardiology", "Family Medicine", "Neurology", "Emergency Medicine", "Orthopedics",
+            "Oncology", "Pediatrics", "Pulmonology", "Urology", "Hospitalist"
+        ];
+        return specialties[(rowNum - 1) % specialties.length];
+    }
+
+    if (col.includes("facility")) {
+        return rowNum % 2 === 0 ? "Georgetown" : "Waccamaw";
+    }
+
+    if (col.includes("department")) {
+        const departments = [
+            "Cardiology", "ER", "Family Medicine", "Neurology", "Orthopedics",
+            "Oncology", "Pediatrics", "ICU", "Med Surg", "Observation"
+        ];
+        return departments[(rowNum - 1) % departments.length];
+    }
+
+    if (col.includes("status")) {
+        const statuses = ["Active", "Discharged", "Scheduled", "Completed", "No Show", "Pending", "Denied", "Paid"];
+        return statuses[(rowNum - 1) % statuses.length];
+    }
+
+    if (col.includes("encounter_type")) {
+        const types = ["Inpatient", "Emergency", "Outpatient", "Observation"];
+        return types[(rowNum - 1) % types.length];
+    }
+
+    if (col.includes("insurance_type")) {
+        const insurance = ["Medicare", "Commercial", "Medicaid", "Self Pay"];
+        return insurance[(rowNum - 1) % insurance.length];
+    }
+
+    if (col === "payer") {
+        const payers = ["Medicare", "Commercial", "Medicaid", "BCBS", "Aetna"];
+        return payers[(rowNum - 1) % payers.length];
+    }
+
+    if (col.includes("charge_type")) {
+        const chargeTypes = ["Facility", "Professional", "Observation", "Pharmacy", "Lab"];
+        return chargeTypes[(rowNum - 1) % chargeTypes.length];
+    }
+
+    if (col.includes("claim_status")) {
+        const claimStatuses = ["Denied", "Paid", "Pending"];
+        return claimStatuses[(rowNum - 1) % claimStatuses.length];
+    }
+
+    if (col.includes("gender")) {
+        return rowNum % 2 === 0 ? "Male" : "Female";
+    }
+
+    if (col.includes("city")) {
+        const cities = ["Myrtle Beach", "Georgetown", "Pawleys Island", "Conway", "Murrells Inlet"];
+        return cities[(rowNum - 1) % cities.length];
+    }
+
+    if (col.includes("age")) {
+        return 18 + ((rowNum * 3) % 72);
+    }
+
+    if (col.includes("risk_score")) {
+        return 30 + ((rowNum * 7) % 60);
+    }
+
+    if (col.includes("length_of_stay")) {
+        return Number((0.5 + ((rowNum * 1.17) % 7)).toFixed(1));
+    }
+
+    if (col.includes("amount") || col.includes("billed_amount")) {
+        return 250 + (rowNum * 175);
+    }
+
+    if (col.includes("date") || col.includes("discharge_date")) {
+        const day = String(((rowNum - 1) % 28) + 1).padStart(2, "0");
+        return `2026-04-${day}`;
+    }
+
+    return `${tableName}_${columnName}_${rowNum}`;
+}
+
+function buildTwentySampleRows(table) {
+    const rows = [];
+
+    for (let rowNum = 1; rowNum <= 20; rowNum++) {
+        const row = table.notableColumns.map(columnName => {
+            return generateMockCell(table.name, columnName, rowNum);
+        });
+        rows.push(row);
+    }
+
+    return rows;
+}
+
+schema.tables.forEach(table => {
+    table.sampleRows = buildTwentySampleRows(table);
+});
+
 // ======================
 // LESSON BUILDERS
 // ======================
