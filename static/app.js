@@ -2358,10 +2358,6 @@ window.onload = async function () {
     window.addEventListener("resize", applySchemaPanelWidth);
 };
 
-
-    window.addEventListener("resize", applySchemaPanelWidth);
-};
-
 // ======================
 // GLOBALS FOR HTML
 // ======================
