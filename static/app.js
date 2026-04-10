@@ -212,7 +212,7 @@ const schema = {
 // ======================
 // MOCK DATA GENERATION
 // ======================
-function generateMockCell(columnName, rowIndex) {
+function generateMockCell(tableName, columnName, rowIndex) {
   const firstNames = [
     "James", "Mary", "John", "Patricia", "Robert", "Jennifer",
     "Michael", "Linda", "William", "Elizabeth", "David", "Barbara",
@@ -230,8 +230,6 @@ function generateMockCell(columnName, rowIndex) {
     "Conway", "Pawleys Island", "Surfside Beach", "Socastee"
   ];
 
-  const states = ["SC", "NC", "GA"];
-
   const insuranceTypes = [
     "Medicare", "Medicaid", "Blue Cross", "Aetna",
     "UnitedHealthcare", "Cigna", "Self Pay"
@@ -248,17 +246,11 @@ function generateMockCell(columnName, rowIndex) {
     "Family Medicine", "ICU", "Observation"
   ];
 
-  const facilities = [
-    "TGMH", // Tidelands Georgetown Memorial Hospital
-    "TWCH"  // Tidelands Waccamaw Community Hospital
-  ];
+  const facilities = ["TGMH", "TWCH"];
 
   const encounterTypes = ["Inpatient", "Outpatient", "Emergency", "Observation"];
-
   const encounterStatuses = ["Admitted", "Discharged", "In Progress"];
-
   const claimStatuses = ["Paid", "Denied", "Pending"];
-
   const appointmentStatuses = ["Completed", "Scheduled", "No Show", "Cancelled"];
 
   const specialties = [
@@ -273,6 +265,150 @@ function generateMockCell(columnName, rowIndex) {
   ];
 
   const genders = ["Male", "Female"];
+
+  const randomItem = arr => arr[Math.floor(Math.random() * arr.length)];
+  const randomInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+  const randomDate = (start, end) =>
+    new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()))
+      .toISOString()
+      .split("T")[0];
+
+  switch (String(columnName).toLowerCase()) {
+    case "patient_id":
+      return rowIndex;
+    case "provider_id":
+      return 200 + (rowIndex % 50);
+    case "department_id":
+      return 500 + (rowIndex % 20);
+    case "encounter_id":
+      return 1000 + rowIndex;
+    case "appointment_id":
+      return 2000 + rowIndex;
+    case "charge_id":
+      return 3000 + rowIndex;
+    case "claim_id":
+      return 4000 + rowIndex;
+    case "discharge_id":
+      return 5000 + rowIndex;
+    case "readmission_id":
+      return 6000 + rowIndex;
+    case "observation_id":
+      return 7000 + rowIndex;
+
+    case "first_name":
+      return randomItem(firstNames);
+    case "last_name":
+      return randomItem(lastNames);
+    case "age":
+      return randomInt(18, 90);
+    case "gender":
+      return randomItem(genders);
+    case "insurance_type":
+      return randomItem(insuranceTypes);
+    case "risk_score":
+      return randomInt(1, 100);
+    case "city":
+      return randomItem(cities);
+
+    case "provider_name":
+      return `Dr. ${randomItem(firstNames)} ${randomItem(lastNames)}`;
+    case "specialty":
+      return randomItem(specialties);
+
+    case "department":
+    case "department_name":
+      return randomItem(departments);
+
+    case "facility":
+      return randomItem(facilities);
+
+    case "service_line":
+      return randomItem([
+        "Cardiovascular",
+        "Emergency",
+        "Primary Care",
+        "Neurosciences",
+        "Orthopedics",
+        "Oncology",
+        "Pediatrics",
+        "Critical Care"
+      ]);
+
+    case "status":
+      if (tableName === "appointments") return randomItem(appointmentStatuses);
+      return randomItem(encounterStatuses);
+
+    case "encounter_type":
+      return randomItem(encounterTypes);
+
+    case "length_of_stay":
+      return Number((Math.random() * 9 + 0.5).toFixed(1));
+
+    case "admit_date":
+      return randomDate(new Date(2023, 0, 1), new Date(2025, 11, 31));
+
+    case "discharge_date":
+      return Math.random() < 0.1
+        ? null
+        : randomDate(new Date(2023, 0, 2), new Date(2025, 11, 31));
+
+    case "date":
+      return randomDate(new Date(2024, 0, 1), new Date(2025, 11, 31));
+
+    case "amount":
+      return randomInt(100, 10000);
+
+    case "billed_amount":
+      return randomInt(500, 20000);
+
+    case "payer":
+      return randomItem(payers);
+
+    case "claim_status":
+      return randomItem(claimStatuses);
+
+    case "charge_type":
+      return randomItem([
+        "Room Charge",
+        "Pharmacy",
+        "Imaging",
+        "Lab",
+        "Procedure",
+        "Supplies"
+      ]);
+
+    case "discharge_disposition":
+      return randomItem(dischargeDispositions);
+
+    case "discharge_order_minutes":
+      return randomInt(30, 600);
+
+    case "departure_minutes":
+      return randomInt(30, 480);
+
+    case "delayed_for_transport":
+      return randomItem([0, 1]);
+
+    case "readmit_within_30_days":
+      return randomItem([0, 1]);
+
+    case "days_to_readmit":
+      return randomInt(1, 30);
+
+    case "obs_hours":
+    case "observation_hours":
+      return randomInt(1, 72);
+
+    case "converted_to_inpatient":
+      return randomItem([0, 1]);
+
+    case "code_44_flag":
+      return randomItem([0, 1]);
+
+    default:
+      return `${tableName}_${columnName}_${rowIndex}`;
+  }
+}
 
   // Helper Functions
   const randomItem = (arr) => arr[Math.floor(Math.random() * arr.length)];
