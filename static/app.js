@@ -2356,9 +2356,13 @@ window.onload = async function () {
         const banner = document.getElementById("js-error-banner");
         if (banner) {
             banner.classList.remove("hidden");
-            banner.textContent = `SQL Engine Initialization Error:\n${String(error.message || error)}`;
+            banner.textContent =
+                `SQL Engine Initialization Error:\n${String(error.message || error)}`;
         }
     }
+
+    window.addEventListener("resize", applySchemaPanelWidth);
+};
 
     window.addEventListener("resize", applySchemaPanelWidth);
 };
