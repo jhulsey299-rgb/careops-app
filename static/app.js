@@ -212,82 +212,200 @@ const schema = {
 // ======================
 // MOCK DATA GENERATION
 // ======================
-function generateMockCell(tableName, columnName, rowNum) {
-    const facilities = ["Waccamaw", "Georgetown"];
-    const departments = [
-        "Cardiology", "ER", "Family Medicine", "Neurology",
-        "Orthopedics", "Oncology", "Pediatrics", "ICU",
-        "Med Surg", "Observation"
-    ];
-    const firstNames = [
-        "Alice", "James", "Olivia", "Daniel", "Sophia",
-        "Liam", "Emma", "Noah", "Ava", "Mason"
-    ];
-    const lastNames = [
-        "Smith", "Johnson", "Brown", "Miller", "Wilson",
-        "Taylor", "Anderson", "Thomas", "Jackson", "White"
-    ];
-    const insurance = ["Medicare", "Commercial", "Medicaid", "Self Pay"];
-    const payers = ["Medicare", "Commercial", "Medicaid", "BCBS", "Aetna"];
-    const claimStatuses = ["Denied", "Paid", "Pending"];
-    const encounterTypes = ["Inpatient", "Emergency", "Outpatient", "Observation"];
+function generateMockCell(columnName, rowIndex) {
+  const firstNames = [
+    "James", "Mary", "John", "Patricia", "Robert", "Jennifer",
+    "Michael", "Linda", "William", "Elizabeth", "David", "Barbara",
+    "Richard", "Susan", "Joseph", "Jessica", "Thomas", "Sarah"
+  ];
 
-    switch (columnName) {
-        case "patient_id": return rowNum;
-        case "provider_id": return 100 + rowNum;
-        case "department_id": return 500 + rowNum;
-        case "encounter_id": return 1000 + rowNum;
-        case "appointment_id": return 2000 + rowNum;
-        case "charge_id": return 3000 + rowNum;
-        case "claim_id": return 4000 + rowNum;
-        case "discharge_id": return 5000 + rowNum;
-        case "readmission_id": return 6000 + rowNum;
-        case "observation_id": return 7000 + rowNum;
-        case "first_name": return firstNames[rowNum % firstNames.length];
-        case "last_name": return lastNames[rowNum % lastNames.length];
-        case "facility": return facilities[rowNum % facilities.length];
-        case "department":
-        case "department_name":
-            return departments[rowNum % departments.length];
-        case "insurance_type": return insurance[rowNum % insurance.length];
-        case "payer": return payers[rowNum % payers.length];
-        case "claim_status": return claimStatuses[rowNum % claimStatuses.length];
-        case "encounter_type": return encounterTypes[rowNum % encounterTypes.length];
-        case "age": return 18 + (rowNum % 70);
-        case "risk_score": return 30 + (rowNum % 60);
-        case "length_of_stay": return Number((0.5 + (rowNum % 7)).toFixed(1));
-        case "amount":
-        case "billed_amount":
-            return 250 + rowNum * 175;
-        case "delayed_for_transport": return rowNum % 4 === 0 ? 1 : 0;
-        case "readmit_within_30_days": return rowNum % 5 === 0 ? 0 : 1;
-        case "converted_to_inpatient": return rowNum % 3 === 0 ? 1 : 0;
-        case "code_44_flag": return rowNum % 6 === 0 ? 1 : 0;
-        default:
-            if (columnName.includes("date")) {
-                const day = String((rowNum % 28) + 1).padStart(2, "0");
-                return `2026-04-${day}`;
-            }
-            return `${tableName}_${columnName}_${rowNum}`;
-    }
+  const lastNames = [
+    "Smith", "Johnson", "Williams", "Brown", "Jones", "Garcia",
+    "Miller", "Davis", "Rodriguez", "Martinez", "Hernandez",
+    "Lopez", "Gonzalez", "Wilson", "Anderson", "Thomas"
+  ];
+
+  const cities = [
+    "Myrtle Beach", "Georgetown", "Murrells Inlet",
+    "Conway", "Pawleys Island", "Surfside Beach", "Socastee"
+  ];
+
+  const states = ["SC", "NC", "GA"];
+
+  const insuranceTypes = [
+    "Medicare", "Medicaid", "Blue Cross", "Aetna",
+    "UnitedHealthcare", "Cigna", "Self Pay"
+  ];
+
+  const payers = [
+    "Medicare", "Medicaid", "Blue Cross", "Aetna",
+    "UnitedHealthcare", "Cigna"
+  ];
+
+  const departments = [
+    "Emergency", "Cardiology", "Orthopedics", "Neurology",
+    "Oncology", "Pediatrics", "General Surgery",
+    "Family Medicine", "ICU", "Observation"
+  ];
+
+  const facilities = [
+    "TGMH", // Tidelands Georgetown Memorial Hospital
+    "TWCH"  // Tidelands Waccamaw Community Hospital
+  ];
+
+  const encounterTypes = ["Inpatient", "Outpatient", "Emergency", "Observation"];
+
+  const encounterStatuses = ["Admitted", "Discharged", "In Progress"];
+
+  const claimStatuses = ["Paid", "Denied", "Pending"];
+
+  const appointmentStatuses = ["Completed", "Scheduled", "No Show", "Cancelled"];
+
+  const specialties = [
+    "Family Medicine", "Cardiology", "Orthopedics",
+    "Neurology", "Emergency Medicine", "Oncology",
+    "Pediatrics", "General Surgery"
+  ];
+
+  const dischargeDispositions = [
+    "Home", "Home Health", "Skilled Nursing Facility",
+    "Rehabilitation", "Expired", "Against Medical Advice"
+  ];
+
+  const genders = ["Male", "Female"];
+
+  // Helper Functions
+  const randomItem = (arr) => arr[Math.floor(Math.random() * arr.length)];
+  const randomInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+  const randomDate = (start, end) =>
+    new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()))
+      .toISOString()
+      .split("T")[0];
+
+  const randomDateTime = (start, end) =>
+    new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()))
+      .toISOString()
+      .replace("T", " ")
+      .substring(0, 19);
+
+  // Column-Based Logic
+  switch (columnName.toLowerCase()) {
+    // IDs
+    case "patient_id":
+      return rowIndex + 1;
+    case "encounter_id":
+      return 1000 + rowIndex;
+    case "claim_id":
+      return 5000 + rowIndex;
+    case "charge_id":
+      return 8000 + rowIndex;
+    case "provider_id":
+      return 200 + (rowIndex % 50);
+    case "appointment_id":
+      return 9000 + rowIndex;
+    case "discharge_id":
+      return 7000 + rowIndex;
+    case "observation_id":
+      return 6000 + rowIndex;
+
+    // Patient Demographics
+    case "first_name":
+      return randomItem(firstNames);
+    case "last_name":
+      return randomItem(lastNames);
+    case "gender":
+      return randomItem(genders);
+    case "date_of_birth":
+    case "dob":
+      return randomDate(new Date(1940, 0, 1), new Date(2020, 0, 1));
+    case "city":
+      return randomItem(cities);
+    case "state":
+      return randomItem(states);
+    case "insurance_type":
+      return randomItem(insuranceTypes);
+
+    // Financial / Claims
+    case "payer":
+      return randomItem(payers);
+    case "billed_amount":
+      return randomInt(500, 20000);
+    case "paid_amount":
+      return randomInt(0, 18000);
+    case "amount":
+      return randomInt(100, 10000);
+    case "claim_status":
+      return randomItem(claimStatuses);
+    case "preventable_flag":
+      return randomItem([0, 1, 2]); // 1=preventable, 2=not preventable
+    case "balance":
+      return randomInt(0, 10000);
+
+    // Encounter / Clinical
+    case "facility":
+      return randomItem(facilities);
+    case "department":
+      return randomItem(departments);
+    case "encounter_type":
+      return randomItem(encounterTypes);
+    case "status":
+    case "encounter_status":
+      return randomItem(encounterStatuses);
+    case "admit_date":
+      return randomDate(new Date(2023, 0, 1), new Date(2025, 11, 31));
+    case "discharge_date":
+      // Introduce some NULLs for realism
+      return Math.random() < 0.1
+        ? null
+        : randomDate(new Date(2023, 0, 2), new Date(2025, 11, 31));
+    case "length_of_stay":
+      return randomInt(0, 10);
+    case "discharge_disposition":
+      return randomItem(dischargeDispositions);
+
+    // Provider
+    case "provider_name":
+      return `Dr. ${randomItem(firstNames)} ${randomItem(lastNames)}`;
+    case "specialty":
+      return randomItem(specialties);
+
+    // Appointment / Access
+    case "appointment_date":
+      return randomDate(new Date(2024, 0, 1), new Date(2025, 11, 31));
+    case "status_appointment":
+    case "appointment_status":
+    case "status":
+      return randomItem(appointmentStatuses);
+    case "no_show_flag":
+      return randomItem([0, 1]);
+
+    // Readmissions
+    case "readmit_within_30_days":
+      return randomItem([0, 1]);
+    case "days_to_readmit":
+      return randomInt(1, 30);
+
+    // Observation
+    case "converted_to_inpatient":
+      return randomItem([0, 1]);
+    case "code_44_flag":
+      return randomItem([0, 1]);
+    case "observation_hours":
+      return randomInt(1, 72);
+
+    // Throughput / Discharges
+    case "discharge_order_minutes":
+      return randomInt(30, 600);
+    case "departure_minutes":
+      return randomInt(30, 480);
+    case "delayed_for_transport":
+      return randomItem([0, 1]);
+
+    // Default Fallback
+    default:
+      return `Value_${rowIndex}`;
+  }
 }
-
-function buildSampleRows(table, rowCount = 80) {
-    const rows = [];
-    for (let i = 1; i <= rowCount; i++) {
-        rows.push(
-            table.notableColumns.map(col =>
-                generateMockCell(table.name, col, i)
-            )
-        );
-    }
-    return rows;
-}
-
-schema.tables.forEach(table => {
-    table.sampleRows = buildSampleRows(table);
-});
-
 // ======================
 // LESSON BUILDER FUNCTIONS
 // ======================
