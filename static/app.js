@@ -29,6 +29,12 @@ let sqlDb = null;
 let sqlEngineReady = false;
 
 // ======================
+// LESSON RUNTIME STATE
+// ======================
+let attempts = 0;
+let lastRunQuery = "";
+
+// ======================
 // SCHEMA DEFINITION
 // ======================
 const schema = {
