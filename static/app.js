@@ -2275,6 +2275,19 @@ renderChallengeLesson = function (lesson) {
         queryBox.value = savedDraft;
     }
 
+    // Remove any existing listener before adding a new one
+    queryBox.oninput = function () {
+        saveQueryDraft(lesson.id, queryBox.value);
+
+        const detectedTables = detectTablesFromSql(queryBox.value);
+        if (detectedTables.length) {
+            highlightRelevantSchema(detectedTables);
+        } else {
+            highlightRelevantSchema(lesson.relevantTables || []);
+        }
+    };
+};
+
     queryBox.addEventListener("input", function () {
         saveQueryDraft(lesson.id, queryBox.value);
     });
