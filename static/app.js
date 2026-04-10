@@ -2288,11 +2288,6 @@ renderChallengeLesson = function (lesson) {
     };
 };
 
-    queryBox.addEventListener("input", function () {
-        saveQueryDraft(lesson.id, queryBox.value);
-    });
-};
-
 // ======================
 // KEYBOARD SHORTCUTS
 // ======================
