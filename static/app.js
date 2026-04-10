@@ -376,12 +376,9 @@ const curriculum = [
     id: "track_sql_foundations_hospital",
     title: "SQL Foundations for Hospital Data",
     description:
-      "Learn SQL through realistic hospital analytics scenarios covering operations, finance, access, throughput, and executive reporting.",
+      "Learn SQL through real hospital analytics scenarios focused on operations, finance, access, throughput, and executive reporting.",
     order: 1,
     categories: [
-      // --------------------------------------------------
-      // 1. Getting Started
-      // --------------------------------------------------
       {
         id: "getting_started",
         title: "Getting Started",
@@ -390,68 +387,64 @@ const curriculum = [
           conceptLesson(
             "gs_01",
             "What Hospital Data Looks Like",
-            "Understand the core hospital tables used in analytics.",
+            "Understand the core hospital tables and how analysts think about them.",
             [],
             ["patients", "encounters", "claims", "charges"],
             "No join needed.",
-            "Hospital analytics typically begins with understanding patients, encounters, and financial data.",
+            "Hospital analytics usually starts with patients, encounters, finance, and workflow tables.",
             [
-              "Patients describe who received care.",
-              "Encounters describe clinical events.",
-              "Claims and charges represent the financial side.",
-              "Operational tables explain workflow performance."
+              "Patients describe who the person is",
+              "Encounters describe what happened clinically",
+              "Claims and charges represent the financial side",
+              "Operational tables explain why metrics move"
             ],
-            "Most healthcare KPIs originate from these foundational tables."
+            "A denial or readmission rate always originates from a defined data model."
           ),
           challengeLesson(
             "gs_02",
             "View Patients",
-            "Return all rows and columns from the patients table.",
+            "Return all rows and columns from patients.",
             ["SELECT"],
             ["patients"],
             "No join needed.",
             "SELECT * FROM patients;",
             "SELECT * FROM patients;",
-            "Use SELECT * to view the entire table."
+            "Use SELECT * FROM patients;"
           ),
           challengeLesson(
             "gs_03",
             "View Encounters",
-            "Return all rows and columns from the encounters table.",
+            "Return all rows and columns from encounters.",
             ["SELECT"],
             ["encounters"],
             "No join needed.",
             "SELECT * FROM encounters;",
             "SELECT * FROM encounters;",
-            "Use SELECT * to view the entire table."
+            "Use SELECT * FROM encounters;"
           ),
           challengeLesson(
             "gs_04",
             "View Claims",
-            "Return all rows and columns from the claims table.",
+            "Return all rows and columns from claims.",
             ["SELECT"],
             ["claims"],
             "No join needed.",
             "SELECT * FROM claims;",
             "SELECT * FROM claims;",
-            "Use SELECT * to view the entire table."
+            "Use SELECT * FROM claims;"
           ),
           scenarioLesson(
             "gs_05",
             "Choose the Right Table",
-            "Identify the correct table for a denial analysis.",
+            "Identify the correct table for a denial question.",
             ["claims", "patients"],
-            "Denial status is stored in the financial data.",
-            "Choosing the correct table is the first step in any analysis.",
+            "Think about where denial status lives.",
+            "Picking the correct source table is the first analyst skill.",
             "Where should you start if leadership asks for denied claims by payer?",
             "claims"
           )
         ]
       },
-
-      // --------------------------------------------------
-      // 2. Selecting Columns
-      // --------------------------------------------------
       {
         id: "selecting_columns",
         title: "Selecting Columns",
@@ -460,405 +453,1667 @@ const curriculum = [
           conceptLesson(
             "sc_01",
             "SELECT Basics",
-            "Return only the fields stakeholders need.",
+            "Learn to return only the fields a stakeholder needs.",
             ["SELECT"],
             ["patients", "claims", "encounters"],
             "No join needed.",
-            "Executives rarely want raw exports. Selecting only relevant columns improves clarity.",
+            "Good analysts reduce noise by selecting only the fields needed for the business question.",
             [
-              "Choose fields tied directly to the business question.",
-              "Reduce unnecessary data.",
-              "Improve readability and validation."
+              "Executives rarely want raw exports",
+              "Choose fields tied directly to the ask",
+              "Cleaner outputs are easier to validate"
             ],
-            "For denied dollars by payer, only payer and billed amount are typically needed."
+            "If someone asks for denied dollars by payer, you probably do not need every patient demographic field."
           ),
           challengeLesson(
             "sc_02",
             "Patient Core Fields",
-            "Return patient_id, first_name, and last_name.",
+            "Return patient_id, first_name, and last_name from patients.",
             ["SELECT"],
             ["patients"],
             "No join needed.",
             "SELECT patient_id, first_name, last_name FROM patients;",
             "SELECT patient_id, first_name, last_name FROM patients;",
-            "Select only the requested columns."
+            "Select only the requested three columns."
           ),
           challengeLesson(
             "sc_03",
             "Claim Financial Fields",
-            "Return claim_id, payer, and billed_amount.",
+            "Return claim_id, payer, and billed_amount from claims.",
             ["SELECT"],
             ["claims"],
             "No join needed.",
             "SELECT claim_id, payer, billed_amount FROM claims;",
             "SELECT claim_id, payer, billed_amount FROM claims;",
-            "Select only the requested columns."
+            "Only return claim_id, payer, billed_amount."
           ),
           challengeLesson(
             "sc_04",
             "Encounter Operational Fields",
-            "Return encounter_id, facility, department, and status.",
+            "Return encounter_id, facility, department, status from encounters.",
             ["SELECT"],
             ["encounters"],
             "No join needed.",
             "SELECT encounter_id, facility, department, status FROM encounters;",
             "SELECT encounter_id, facility, department, status FROM encounters;",
-            "Select only the requested columns."
+            "Return the four requested operational fields."
           ),
           scenarioLesson(
             "sc_05",
             "Executive-Focused Output",
-            "Determine which output is most appropriate for leadership.",
+            "Choose the more executive-ready answer.",
             ["claims"],
-            "Leadership prefers concise summaries.",
-            "Clear and focused outputs improve decision-making.",
-            "For a leadership denial summary, should you emphasize payer and billed_amount or include every claim field?",
-            "payer"
+            "Think audience first.",
+            "The same data question can be answered with either clutter or clarity.",
+            "For a leadership denial summary, should you emphasize payer and billed_amount or dump every claim field?",
+            "payer",
+            {
+              show: true,
+              metric: "Focused reporting output",
+              whyItMatters: "Leadership needs concise answers.",
+              whatToShare: "Keep only the fields directly tied to the business question.",
+              action: "Reduce clutter before sharing results."
+            }
           )
         ]
       },
-
-      // --------------------------------------------------
-      // 3–23. Remaining Categories
-      // --------------------------------------------------
-      // To keep this response readable while still providing a
-      // full replacement, the remaining categories follow the
-      // same structure. Each contains 5 lessons:
-      //  - 1 Concept
-      //  - 3 Challenge
-      //  - 1 Scenario
-      //
-      // These categories include:
-      // filtering_rows
-      // sorting_results
-      // strings
-      // numbers_and_calculations
-      // null_handling
-      // boolean_logic
-      // case_statements
-      // aggregations
-      // group_by
-      // having
-      // inner_joins
-      // hospital_throughput
-      // readmissions_observations
-      // readmissions_kpis
-      // observation_kpis
-      // length_of_stay_kpis
-      // denials_kpis
-      // ed_throughput_kpis
-      // appointment_access_kpis
-      // provider_performance_sql
-      // executive_summary_sql
-      //
-      // Each category mirrors the structure above and aligns
-      // with realistic hospital analytics scenarios.
-
-      // Example Template Used for Remaining Categories
-      ...[
-        {
-          id: "filtering_rows",
-          title: "Filtering Rows",
-          order: 3,
-          baseTable: "claims",
-          concept: "Filtering with WHERE",
-          metric: "Denied claims",
-          scenarioQuestion:
-            "If leadership wants only denied claims, should you filter using a WHERE clause?",
-          scenarioAnswer: "yes"
-        },
-        {
-          id: "sorting_results",
-          title: "Sorting Results",
-          order: 4,
-          baseTable: "charges",
-          concept: "Ordering with ORDER BY",
-          metric: "Highest charges",
-          scenarioQuestion:
-            "Should executive summaries typically present the highest-dollar items first?",
-          scenarioAnswer: "yes"
-        },
-        {
-          id: "strings",
-          title: "Strings",
-          order: 5,
-          baseTable: "patients",
-          concept: "Working with Text",
-          metric: "Standardized patient names",
-          scenarioQuestion:
-            "Should text fields be standardized for reporting clarity?",
-          scenarioAnswer: "yes"
-        },
-        {
-          id: "numbers_and_calculations",
-          title: "Numbers and Calculations",
-          order: 6,
-          baseTable: "claims",
-          concept: "Building Metrics",
-          metric: "Denial rate",
-          scenarioQuestion:
-            "Do executives typically prefer rates over raw counts?",
-          scenarioAnswer: "yes"
-        },
-        {
-          id: "null_handling",
-          title: "NULL Handling",
-          order: 7,
-          baseTable: "encounters",
-          concept: "Understanding NULL",
-          metric: "Missing discharge dates",
-          scenarioQuestion:
-            "Should missing data affecting KPIs be escalated?",
-          scenarioAnswer: "yes"
-        },
-        {
-          id: "boolean_logic",
-          title: "Boolean Logic",
-          order: 8,
-          baseTable: "claims",
-          concept: "Combining Conditions",
-          metric: "High-dollar denials",
-          scenarioQuestion:
-            "Should analysts prioritize high-dollar denied claims?",
-          scenarioAnswer: "yes"
-        },
-        {
-          id: "case_statements",
-          title: "CASE Statements",
-          order: 9,
-          baseTable: "charges",
-          concept: "Categorizing Data",
-          metric: "Charge buckets",
-          scenarioQuestion:
-            "Are categorized buckets easier for leadership to interpret than raw values?",
-          scenarioAnswer: "yes"
-        },
-        {
-          id: "aggregations",
-          title: "Aggregations",
-          order: 10,
-          baseTable: "encounters",
-          concept: "Summarizing Data",
-          metric: "Encounter volume",
-          scenarioQuestion:
-            "Are counts and sums the foundation of most executive dashboards?",
-          scenarioAnswer: "yes"
-        },
-        {
-          id: "group_by",
-          title: "GROUP BY",
-          order: 11,
-          baseTable: "encounters",
-          concept: "Grouped Reporting",
-          metric: "Encounters by facility",
-          scenarioQuestion:
-            "Do leaders typically prefer grouped summaries over raw data?",
-          scenarioAnswer: "yes"
-        },
-        {
-          id: "having",
-          title: "HAVING",
-          order: 12,
-          baseTable: "claims",
-          concept: "Filtering Groups",
-          metric: "Payers with multiple denials",
-          scenarioQuestion:
-            "Is HAVING used to filter aggregated results?",
-          scenarioAnswer: "yes"
-        },
-        {
-          id: "inner_joins",
-          title: "Inner Joins",
-          order: 13,
-          baseTable: "encounters",
-          concept: "Combining Tables",
-          metric: "Integrated patient context",
-          scenarioQuestion:
-            "Do most real-world healthcare analyses require joining multiple tables?",
-          scenarioAnswer: "yes"
-        },
-        {
-          id: "hospital_throughput",
-          title: "Hospital Throughput",
-          order: 14,
-          baseTable: "discharges",
-          concept: "Discharge Efficiency",
-          metric: "Discharge turnaround",
-          scenarioQuestion:
-            "Should throughput metrics be reviewed by department?",
-          scenarioAnswer: "yes"
-        },
-        {
-          id: "readmissions_observations",
-          title: "Readmissions and Observation",
-          order: 15,
-          baseTable: "readmissions",
-          concept: "Utilization Metrics",
-          metric: "30-day readmissions",
-          scenarioQuestion:
-            "Do readmissions impact both quality and reimbursement?",
-          scenarioAnswer: "yes"
-        },
-        {
-          id: "readmissions_kpis",
-          title: "Readmissions KPIs",
-          order: 16,
-          baseTable: "encounters",
-          concept: "Index Encounter Logic",
-          metric: "Standardized readmission rate",
-          scenarioQuestion:
-            "Must readmission definitions be standardized for comparison?",
-          scenarioAnswer: "yes"
-        },
-        {
-          id: "observation_kpis",
-          title: "Observation KPIs",
-          order: 17,
-          baseTable: "encounters",
-          concept: "Observation Utilization",
-          metric: "Observation LOS",
-          scenarioQuestion:
-            "Should observation thresholds be consistent across reports?",
-          scenarioAnswer: "yes"
-        },
-        {
-          id: "length_of_stay_kpis",
-          title: "Length of Stay KPIs",
-          order: 18,
-          baseTable: "encounters",
-          concept: "LOS Analysis",
-          metric: "Average LOS",
-          scenarioQuestion:
-            "Should LOS analysis include both averages and outliers?",
-          scenarioAnswer: "yes"
-        },
-        {
-          id: "denials_kpis",
-          title: "Denials KPIs",
-          order: 19,
-          baseTable: "claims",
-          concept: "Revenue Cycle Risk",
-          metric: "Denied dollars",
-          scenarioQuestion:
-            "Should denied dollars be prioritized over denial counts alone?",
-          scenarioAnswer: "yes"
-        },
-        {
-          id: "ed_throughput_kpis",
-          title: "ED Throughput KPIs",
-          order: 20,
-          baseTable: "encounters",
-          concept: "Emergency Department Flow",
-          metric: "ED LOS",
-          scenarioQuestion:
-            "Should ED throughput analysis include both volume and LOS?",
-          scenarioAnswer: "yes"
-        },
-        {
-          id: "appointment_access_kpis",
-          title: "Appointment Access KPIs",
-          order: 21,
-          baseTable: "appointments",
-          concept: "Access to Care",
-          metric: "No-show rates",
-          scenarioQuestion:
-            "Should no-show rates be analyzed by department or provider?",
-          scenarioAnswer: "yes"
-        },
-        {
-          id: "provider_performance_sql",
-          title: "Provider Performance SQL",
-          order: 22,
-          baseTable: "providers",
-          concept: "Provider-Level Reporting",
-          metric: "Provider encounter volume",
-          scenarioQuestion:
-            "Should provider performance reports be grouped by provider?",
-          scenarioAnswer: "yes"
-        },
-        {
-          id: "executive_summary_sql",
-          title: "Executive Summary SQL",
-          order: 23,
-          baseTable: "claims",
-          concept: "Executive-Ready Reporting",
-          metric: "Top financial risks",
-          scenarioQuestion:
-            "Should executive reports prioritize the highest-impact items?",
-          scenarioAnswer: "yes"
-        }
-      ].map(cat => ({
-        id: cat.id,
-        title: cat.title,
-        order: cat.order,
+      {
+        id: "filtering_rows",
+        title: "Filtering Rows",
+        order: 3,
         lessons: [
           conceptLesson(
-            `${cat.id}_01`,
-            cat.concept,
-            `Understand how SQL supports ${cat.metric.toLowerCase()}.`,
-            [],
-            [cat.baseTable],
+            "fr_01",
+            "Filtering with WHERE",
+            "Use WHERE to isolate the records that matter.",
+            ["WHERE"],
+            ["patients", "claims", "encounters", "charges"],
             "No join needed.",
-            `${cat.metric} is a key healthcare KPI used for operational and financial decision-making.`,
+            "Most healthcare questions are about a subset of rows, not the full table.",
             [
-              "Supports leadership decisions",
-              "Provides actionable insights",
-              "Highlights operational opportunities"
+              "Filter by payer",
+              "Filter by status",
+              "Filter by department",
+              "Filter by amount"
             ],
-            `SQL enables analysts to measure and monitor ${cat.metric.toLowerCase()}.`
+            "A denial analysis is usually a subset of claims, not the whole claims table."
           ),
           challengeLesson(
-            `${cat.id}_02`,
-            `Count ${cat.metric}`,
-            `Return the count of records related to ${cat.metric.toLowerCase()}.`,
-            ["COUNT"],
-            [cat.baseTable],
+            "fr_02",
+            "Medicare Patients",
+            "Return Medicare patients with patient_id, first_name, and last_name.",
+            ["WHERE"],
+            ["patients"],
             "No join needed.",
-            `SELECT COUNT(*) AS ${cat.metric
-              .toLowerCase()
-              .replace(/\s+/g, "_")}_count FROM ${cat.baseTable};`,
-            `SELECT COUNT(*) AS ${cat.metric
-              .toLowerCase()
-              .replace(/\s+/g, "_")}_count FROM ${cat.baseTable};`,
-            "Use COUNT(*) to summarize volume."
+            "SELECT patient_id, first_name, last_name FROM patients WHERE insurance_type = 'Medicare';",
+            "SELECT patient_id, first_name, last_name FROM patients WHERE insurance_type = 'Medicare';",
+            "Filter on insurance_type = 'Medicare'."
           ),
           challengeLesson(
-            `${cat.id}_03`,
-            `Average ${cat.metric}`,
-            `Return the average metric where applicable.`,
-            ["AVG"],
-            [cat.baseTable],
+            "fr_03",
+            "Denied Claims",
+            "Return denied claims with claim_id, payer, billed_amount.",
+            ["WHERE"],
+            ["claims"],
             "No join needed.",
-            `SELECT AVG(1.0) AS avg_metric FROM ${cat.baseTable};`,
-            `SELECT AVG(1.0) AS avg_metric FROM ${cat.baseTable};`,
-            "Use AVG for mean calculations."
+            "SELECT claim_id, payer, billed_amount FROM claims WHERE claim_status = 'Denied';",
+            "SELECT claim_id, payer, billed_amount FROM claims WHERE claim_status = 'Denied';",
+            "Filter claim_status = 'Denied'.",
+            {
+              show: true,
+              metric: "Denied claims inventory",
+              whyItMatters: "Denied claims represent reimbursement risk.",
+              whatToShare: "Summarize denied count and dollars at risk.",
+              action: "Escalate payer spikes and high-dollar denials."
+            }
           ),
           challengeLesson(
-            `${cat.id}_04`,
-            `Group ${cat.metric}`,
-            `Return grouped results by department.`,
-            ["GROUP BY", "COUNT"],
-            [cat.baseTable],
+            "fr_04",
+            "Cardiology Encounters",
+            "Return encounter_id, patient_id, department for Cardiology encounters.",
+            ["WHERE"],
+            ["encounters"],
             "No join needed.",
-            `SELECT department, COUNT(*) AS metric_count FROM ${cat.baseTable} GROUP BY department;`,
-            `SELECT department, COUNT(*) AS metric_count FROM ${cat.baseTable} GROUP BY department;`,
-            "Use GROUP BY to create actionable summaries."
+            "SELECT encounter_id, patient_id, department FROM encounters WHERE department = 'Cardiology';",
+            "SELECT encounter_id, patient_id, department FROM encounters WHERE department = 'Cardiology';",
+            "Filter department = 'Cardiology'."
           ),
-          scenarioLesson(
-            `${cat.id}_05`,
-            `${cat.metric} Scenario`,
-            `Recognize how ${cat.metric.toLowerCase()} supports decision-making.`,
-            [cat.baseTable],
-            "Consider leadership actionability.",
-            `${cat.metric} is most useful when it informs a decision.`,
-            cat.scenarioQuestion,
-            cat.scenarioAnswer
+          challengeLesson(
+            "fr_05",
+            "High-Dollar Charges",
+            "Return charge_id, payer, amount for charges over 2000.",
+            ["WHERE"],
+            ["charges"],
+            "No join needed.",
+            "SELECT charge_id, payer, amount FROM charges WHERE amount > 2000;",
+            "SELECT charge_id, payer, amount FROM charges WHERE amount > 2000;",
+            "Use amount > 2000."
           )
         ]
-      }))
+      },
+      {
+        id: "sorting_results",
+        title: "Sorting Results",
+        order: 4,
+        lessons: [
+          conceptLesson(
+            "sr_01",
+            "Ordering Results",
+            "Use ORDER BY to rank and structure results for review.",
+            ["ORDER BY"],
+            ["charges", "patients", "encounters"],
+            "No join needed.",
+            "Sorting helps surface what matters first.",
+            [
+              "Descending is useful for biggest risks",
+              "Ascending is useful for names and timelines",
+              "You can sort by more than one field"
+            ],
+            "Executives often want the highest-dollar risk first, not an unsorted dump.",
+            {
+              show: true,
+              metric: "Priority ranking",
+              whyItMatters: "Sorting identifies top risks and opportunities quickly.",
+              whatToShare: "Use ranked outputs instead of unsorted detail.",
+              action: "Lead with highest-impact items."
+            }
+          ),
+          challengeLesson(
+            "sr_02",
+            "Sort Charges Descending",
+            "Return charge_id, payer, amount ordered highest to lowest amount.",
+            ["ORDER BY"],
+            ["charges"],
+            "No join needed.",
+            "SELECT charge_id, payer, amount FROM charges ORDER BY amount DESC;",
+            "SELECT charge_id, payer, amount FROM charges ORDER BY amount DESC;",
+            "Use ORDER BY amount DESC."
+          ),
+          challengeLesson(
+            "sr_03",
+            "Sort Patients by Last Name",
+            "Return all patients ordered by last_name.",
+            ["ORDER BY"],
+            ["patients"],
+            "No join needed.",
+            "SELECT * FROM patients ORDER BY last_name;",
+            "SELECT * FROM patients ORDER BY last_name;",
+            "Use ORDER BY last_name."
+          ),
+          challengeLesson(
+            "sr_04",
+            "Sort Encounters by Facility and Department",
+            "Return all encounters ordered by facility, then department.",
+            ["ORDER BY"],
+            ["encounters"],
+            "No join needed.",
+            "SELECT * FROM encounters ORDER BY facility, department;",
+            "SELECT * FROM encounters ORDER BY facility, department;",
+            "Use ORDER BY facility, department."
+          ),
+          scenarioLesson(
+            "sr_05",
+            "Top Items for Executives",
+            "Recognize when ranked results are better than full detail.",
+            ["charges", "claims"],
+            "Think ranking by impact.",
+            "Sorted output helps leadership focus on the biggest issues first.",
+            "Should a leadership summary show the full unsorted file or highest-dollar items first?",
+            "highest",
+            {
+              show: true,
+              metric: "Top-ranked opportunities",
+              whyItMatters: "Leadership time is limited.",
+              whatToShare: "Use top items or highest-impact outputs in summaries.",
+              action: "Sort by impact before sharing upward."
+            }
+          )
+        ]
+      },
+      {
+        id: "strings",
+        title: "Strings",
+        order: 5,
+        lessons: [
+          conceptLesson(
+            "st_01",
+            "Working with Text",
+            "Use string functions to clean and present text values.",
+            ["concatenation", "UPPER", "LOWER", "TRIM"],
+            ["patients", "claims"],
+            "No join needed.",
+            "String logic helps create readable and standardized outputs.",
+            [
+              "Build display names",
+              "Standardize payer text",
+              "Clean unwanted spacing"
+            ],
+            "Many reports need one polished display field instead of several raw fields."
+          ),
+          challengeLesson(
+            "st_02",
+            "Build Patient Full Name",
+            "Return a full_name field from patients.",
+            ["concatenation"],
+            ["patients"],
+            "No join needed.",
+            "SELECT first_name || ' ' || last_name AS full_name FROM patients;",
+            "SELECT first_name || ' ' || last_name AS full_name FROM patients;",
+            "Concatenate first_name and last_name with a space."
+          ),
+          challengeLesson(
+            "st_03",
+            "Standardize Payer Labels",
+            "Return payer names in uppercase.",
+            ["UPPER"],
+            ["claims"],
+            "No join needed.",
+            "SELECT UPPER(payer) AS payer_standardized FROM claims;",
+            "SELECT UPPER(payer) AS payer_standardized FROM claims;",
+            "Use UPPER(payer)."
+          ),
+          challengeLesson(
+            "st_04",
+            "Lowercase City Names",
+            "Return city values in lowercase.",
+            ["LOWER"],
+            ["patients"],
+            "No join needed.",
+            "SELECT LOWER(city) AS city_lower FROM patients;",
+            "SELECT LOWER(city) AS city_lower FROM patients;",
+            "Use LOWER(city)."
+          ),
+          challengeLesson(
+            "st_05",
+            "Trim Payer Text",
+            "Return payer values with TRIM applied.",
+            ["TRIM"],
+            ["claims"],
+            "No join needed.",
+            "SELECT TRIM(payer) AS payer_trimmed FROM claims;",
+            "SELECT TRIM(payer) AS payer_trimmed FROM claims;",
+            "Use TRIM(payer)."
+          )
+        ]
+      },
+      {
+        id: "numbers_and_calculations",
+        title: "Numbers and Calculations",
+        order: 6,
+        lessons: [
+          conceptLesson(
+            "nm_01",
+            "Raw Data vs Metrics",
+            "Understand why leaders prefer metrics over raw lists.",
+            ["ROUND", "AVG", "CASE", "COUNT"],
+            ["claims", "encounters", "charges"],
+            "No join needed.",
+            "Analysts turn raw rows into rates and summary metrics leaders can act on.",
+            [
+              "Percent denied",
+              "Average LOS",
+              "Average charge",
+              "Remaining balance logic"
+            ],
+            "A denial rate tells a clearer story than a raw list of claims.",
+            {
+              show: true,
+              metric: "Executive-friendly metrics",
+              whyItMatters: "Leaders need directionally meaningful summaries.",
+              whatToShare: "Translate rows into rates, averages, and dollar impact.",
+              action: "Pick the KPI that best answers the question."
+            }
+          ),
+          challengeLesson(
+            "nm_02",
+            "Calculate Denial Rate",
+            "Return the percent of claims that are denied.",
+            ["CASE", "COUNT", "ROUND"],
+            ["claims"],
+            "No join needed.",
+            "SELECT ROUND(100.0 * SUM(CASE WHEN claim_status = 'Denied' THEN 1 ELSE 0 END) / COUNT(*), 2) AS denial_rate FROM claims;",
+            "SELECT ROUND(100.0 * SUM(CASE WHEN claim_status = 'Denied' THEN 1 ELSE 0 END) / COUNT(*), 2) AS denial_rate FROM claims;",
+            "Use CASE inside an aggregate, divide by COUNT(*), then ROUND."
+          ),
+          challengeLesson(
+            "nm_03",
+            "Calculate Average LOS",
+            "Return average length_of_stay.",
+            ["AVG", "ROUND"],
+            ["encounters"],
+            "No join needed.",
+            "SELECT ROUND(AVG(length_of_stay), 2) AS avg_los FROM encounters;",
+            "SELECT ROUND(AVG(length_of_stay), 2) AS avg_los FROM encounters;",
+            "Use AVG(length_of_stay) and ROUND."
+          ),
+          challengeLesson(
+            "nm_04",
+            "Calculate Average Charge",
+            "Return average amount from charges.",
+            ["AVG", "ROUND"],
+            ["charges"],
+            "No join needed.",
+            "SELECT ROUND(AVG(amount), 2) AS avg_charge FROM charges;",
+            "SELECT ROUND(AVG(amount), 2) AS avg_charge FROM charges;",
+            "Use AVG(amount) and ROUND."
+          ),
+          challengeLesson(
+            "nm_05",
+            "Estimate Remaining Balance",
+            "Return claim_id and billed_amount minus 1000 as remaining_balance.",
+            ["arithmetic"],
+            ["claims"],
+            "No join needed.",
+            "SELECT claim_id, billed_amount - 1000 AS remaining_balance FROM claims;",
+            "SELECT claim_id, billed_amount - 1000 AS remaining_balance FROM claims;",
+            "Subtract 1000 from billed_amount and alias it."
+          )
+        ]
+      },
+      {
+        id: "null_handling",
+        title: "NULL Handling",
+        order: 7,
+        lessons: [
+          conceptLesson(
+            "nh_01",
+            "Understanding NULL",
+            "Understand how missing values affect analysis.",
+            ["IS NULL", "IS NOT NULL", "COALESCE"],
+            ["encounters", "claims"],
+            "No join needed.",
+            "NULL means data is missing or unavailable and can distort reporting if ignored.",
+            [
+              "NULL is not zero",
+              "NULL is not blank text",
+              "Missing data can distort summary logic"
+            ],
+            "Missing discharge_date values can distort throughput and LOS analysis."
+          ),
+          challengeLesson(
+            "nh_02",
+            "Find Missing Discharge Dates",
+            "Return encounter_id and patient_id where discharge_date is null.",
+            ["IS NULL"],
+            ["encounters"],
+            "No join needed.",
+            "SELECT encounter_id, patient_id FROM encounters WHERE discharge_date IS NULL;",
+            "SELECT encounter_id, patient_id FROM encounters WHERE discharge_date IS NULL;",
+            "Use WHERE discharge_date IS NULL."
+          ),
+          challengeLesson(
+            "nh_03",
+            "Find Non-Null Discharge Dates",
+            "Return encounter_id where discharge_date is not null.",
+            ["IS NOT NULL"],
+            ["encounters"],
+            "No join needed.",
+            "SELECT encounter_id FROM encounters WHERE discharge_date IS NOT NULL;",
+            "SELECT encounter_id FROM encounters WHERE discharge_date IS NOT NULL;",
+            "Use WHERE discharge_date IS NOT NULL."
+          ),
+          challengeLesson(
+            "nh_04",
+            "Replace Null Discharge Dates",
+            "Use COALESCE to replace null discharge_date with Still Admitted.",
+            ["COALESCE"],
+            ["encounters"],
+            "No join needed.",
+            "SELECT encounter_id, COALESCE(discharge_date, 'Still Admitted') AS discharge_status FROM encounters;",
+            "SELECT encounter_id, COALESCE(discharge_date, 'Still Admitted') AS discharge_status FROM encounters;",
+            "Use COALESCE(discharge_date, 'Still Admitted')."
+          ),
+          scenarioLesson(
+            "nh_05",
+            "Data Quality Scenario",
+            "Decide whether missing data should be escalated.",
+            ["encounters"],
+            "Think about business impact.",
+            "Not every missing field matters equally, but some directly affect KPIs.",
+            "If discharge_date is missing for many inpatient encounters, should that be escalated for LOS reporting accuracy?",
+            "yes",
+            {
+              show: true,
+              metric: "Data quality risk",
+              whyItMatters: "Missing data can directly distort executive reporting.",
+              whatToShare: "Escalate data quality issues when they affect trusted KPIs.",
+              action: "Tie data quality escalation to business impact."
+            }
+          )
+        ]
+      },
+      {
+        id: "boolean_logic",
+        title: "Boolean Logic",
+        order: 8,
+        lessons: [
+          conceptLesson(
+            "bl_01",
+            "Combining Conditions",
+            "Use AND, OR, and NOT to define meaningful populations.",
+            ["AND", "OR", "NOT"],
+            ["claims", "encounters", "patients"],
+            "No join needed.",
+            "Boolean logic helps analysts define the exact population that matters.",
+            [
+              "AND narrows",
+              "OR broadens",
+              "NOT excludes"
+            ],
+            "High-dollar denied claims are more actionable than all denied claims together."
+          ),
+          challengeLesson(
+            "bl_02",
+            "High-Priority Denials",
+            "Return denied claims over 2000 billed dollars.",
+            ["AND"],
+            ["claims"],
+            "No join needed.",
+            "SELECT claim_id, payer, billed_amount FROM claims WHERE claim_status = 'Denied' AND billed_amount > 2000;",
+            "SELECT claim_id, payer, billed_amount FROM claims WHERE claim_status = 'Denied' AND billed_amount > 2000;",
+            "Use AND to combine claim_status and billed_amount filters.",
+            {
+              show: true,
+              metric: "High-priority denied claims",
+              whyItMatters: "Not all denials carry the same financial importance.",
+              whatToShare: "Separate high-dollar denials from overall denial volume.",
+              action: "Prioritize analyst review on the largest risks."
+            }
+          ),
+          challengeLesson(
+            "bl_03",
+            "ER or Observation Encounters",
+            "Return encounter_id and encounter_type for Emergency or Observation encounters.",
+            ["OR"],
+            ["encounters"],
+            "No join needed.",
+            "SELECT encounter_id, encounter_type FROM encounters WHERE encounter_type = 'Emergency' OR encounter_type = 'Observation';",
+            "SELECT encounter_id, encounter_type FROM encounters WHERE encounter_type = 'Emergency' OR encounter_type = 'Observation';",
+            "Use OR between Emergency and Observation."
+          ),
+          challengeLesson(
+            "bl_04",
+            "Not Discharged Encounters",
+            "Return encounter_id and status where status is not Discharged.",
+            ["NOT"],
+            ["encounters"],
+            "No join needed.",
+            "SELECT encounter_id, status FROM encounters WHERE NOT status = 'Discharged';",
+            "SELECT encounter_id, status FROM encounters WHERE NOT status = 'Discharged';",
+            "Use NOT with status = 'Discharged'."
+          ),
+          challengeLesson(
+            "bl_05",
+            "Medicare or Medicaid Patients",
+            "Return patient_id and insurance_type for Medicare or Medicaid patients.",
+            ["OR"],
+            ["patients"],
+            "No join needed.",
+            "SELECT patient_id, insurance_type FROM patients WHERE insurance_type = 'Medicare' OR insurance_type = 'Medicaid';",
+            "SELECT patient_id, insurance_type FROM patients WHERE insurance_type = 'Medicare' OR insurance_type = 'Medicaid';",
+            "Use OR between Medicare and Medicaid."
+          )
+        ]
+      },
+      {
+        id: "case_statements",
+        title: "CASE Statements",
+        order: 9,
+        lessons: [
+          conceptLesson(
+            "cs_01",
+            "Categorizing Data with CASE",
+            "Use CASE to turn raw values into business buckets.",
+            ["CASE"],
+            ["charges", "encounters", "claims"],
+            "No join needed.",
+            "CASE statements turn raw values into categories that leaders can interpret faster.",
+            [
+              "High / Medium / Low",
+              "Open / Closed",
+              "Short / Long"
+            ],
+            "Leadership usually understands categories faster than noisy raw transactional detail.",
+            {
+              show: true,
+              metric: "Categorized business summaries",
+              whyItMatters: "Leadership prefers grouped insights over raw values.",
+              whatToShare: "Use categories to simplify complex patterns.",
+              action: "Turn raw detail into interpretable segments."
+            }
+          ),
+          challengeLesson(
+            "cs_02",
+            "Bucket Charges by Size",
+            "Return charge_id and a charge_bucket field.",
+            ["CASE"],
+            ["charges"],
+            "No join needed.",
+            "SELECT charge_id, CASE WHEN amount >= 3000 THEN 'High' WHEN amount >= 1000 THEN 'Medium' ELSE 'Low' END AS charge_bucket FROM charges;",
+            "SELECT charge_id, CASE WHEN amount >= 3000 THEN 'High' WHEN amount >= 1000 THEN 'Medium' ELSE 'Low' END AS charge_bucket FROM charges;",
+            "Use CASE with High, Medium, and Low thresholds."
+          ),
+          challengeLesson(
+            "cs_03",
+            "Group Claim Statuses",
+            "Return claim_id and a status_group of Open or Closed.",
+            ["CASE"],
+            ["claims"],
+            "No join needed.",
+            "SELECT claim_id, CASE WHEN claim_status = 'Pending' THEN 'Open' ELSE 'Closed' END AS status_group FROM claims;",
+            "SELECT claim_id, CASE WHEN claim_status = 'Pending' THEN 'Open' ELSE 'Closed' END AS status_group FROM claims;",
+            "Map Pending to Open and everything else to Closed."
+          ),
+          challengeLesson(
+            "cs_04",
+            "Bucket Length of Stay",
+            "Return encounter_id and a los_bucket of Long or Short.",
+            ["CASE"],
+            ["encounters"],
+            "No join needed.",
+            "SELECT encounter_id, CASE WHEN length_of_stay >= 3 THEN 'Long' ELSE 'Short' END AS los_bucket FROM encounters;",
+            "SELECT encounter_id, CASE WHEN length_of_stay >= 3 THEN 'Long' ELSE 'Short' END AS los_bucket FROM encounters;",
+            "Use CASE on length_of_stay."
+          ),
+          scenarioLesson(
+            "cs_05",
+            "CASE for Executive Use",
+            "Recognize why CASE helps leadership communication.",
+            ["charges", "encounters"],
+            "Think readability first.",
+            "CASE makes reporting more interpretable for non-technical audiences.",
+            "Would leadership usually understand raw decimals faster, or categorized buckets like Long and Short?",
+            "buckets",
+            {
+              show: true,
+              metric: "Executive-friendly categorization",
+              whyItMatters: "Categories are easier to discuss than raw distributions.",
+              whatToShare: "Use buckets when raw values are too noisy.",
+              action: "Apply CASE when clarity matters more than precision."
+            }
+          )
+        ]
+      },
+      {
+        id: "aggregations",
+        title: "Aggregations",
+        order: 10,
+        lessons: [
+          conceptLesson(
+            "ag_01",
+            "Summarizing Data with COUNT, SUM, and AVG",
+            "Understand the building blocks of KPIs and dashboards.",
+            ["COUNT", "SUM", "AVG"],
+            ["encounters", "claims", "charges"],
+            "No join needed.",
+            "Aggregation functions are the core of most dashboards and executive reporting.",
+            [
+              "COUNT = volume",
+              "SUM = dollars",
+              "AVG = typical burden or rate"
+            ],
+            "Executive dashboards often use encounter counts, total charges, and average LOS.",
+            {
+              show: true,
+              metric: "KPI building blocks",
+              whyItMatters: "Most executive summaries are built from counts, sums, and averages.",
+              whatToShare: "Translate row-level data into interpretable metrics.",
+              action: "Use the summary statistic that best answers the question."
+            }
+          ),
+          challengeLesson(
+            "ag_02",
+            "Calculate Total Charges",
+            "Return total charge dollars.",
+            ["SUM"],
+            ["charges"],
+            "No join needed.",
+            "SELECT SUM(amount) AS total_amount FROM charges;",
+            "SELECT SUM(amount) AS total_amount FROM charges;",
+            "Use SUM(amount)."
+          ),
+          challengeLesson(
+            "ag_03",
+            "Count Total Encounters",
+            "Return total encounter volume.",
+            ["COUNT"],
+            ["encounters"],
+            "No join needed.",
+            "SELECT COUNT(*) AS total_encounters FROM encounters;",
+            "SELECT COUNT(*) AS total_encounters FROM encounters;",
+            "Use COUNT(*) from encounters."
+          ),
+          challengeLesson(
+            "ag_04",
+            "Average Billed Amount",
+            "Return average billed_amount.",
+            ["AVG"],
+            ["claims"],
+            "No join needed.",
+            "SELECT AVG(billed_amount) AS avg_billed_amount FROM claims;",
+            "SELECT AVG(billed_amount) AS avg_billed_amount FROM claims;",
+            "Use AVG(billed_amount)."
+          ),
+          challengeLesson(
+            "ag_05",
+            "Count Total Claims",
+            "Return total claim count.",
+            ["COUNT"],
+            ["claims"],
+            "No join needed.",
+            "SELECT COUNT(*) AS total_claims FROM claims;",
+            "SELECT COUNT(*) AS total_claims FROM claims;",
+            "Use COUNT(*) from claims."
+          )
+        ]
+      },
+      {
+        id: "group_by",
+        title: "GROUP BY",
+        order: 11,
+        lessons: [
+          conceptLesson(
+            "gb_01",
+            "From Rows to Summaries",
+            "Understand how GROUP BY creates grouped reporting views.",
+            ["GROUP BY"],
+            ["encounters", "claims", "charges"],
+            "No join needed.",
+            "GROUP BY turns row-level data into grouped performance summaries.",
+            [
+              "By facility",
+              "By payer",
+              "By department",
+              "By provider"
+            ],
+            "Leadership often wants comparisons across units rather than raw rows.",
+            {
+              show: true,
+              metric: "Grouped performance view",
+              whyItMatters: "Leaders compare units, not row-level detail.",
+              whatToShare: "Use grouped summaries to show who is driving volume or risk.",
+              action: "Organize results by the unit leadership can act on."
+            }
+          ),
+          challengeLesson(
+            "gb_02",
+            "Count Encounters by Facility",
+            "Return facility and encounter_count.",
+            ["GROUP BY", "COUNT"],
+            ["encounters"],
+            "No join needed.",
+            "SELECT facility, COUNT(*) AS encounter_count FROM encounters GROUP BY facility;",
+            "SELECT facility, COUNT(*) AS encounter_count FROM encounters GROUP BY facility;",
+            "Group by facility and count rows."
+          ),
+          challengeLesson(
+            "gb_03",
+            "Denied Claims by Payer",
+            "Return payer and denied_claim_count.",
+            ["WHERE", "GROUP BY", "COUNT"],
+            ["claims"],
+            "No join needed.",
+            "SELECT payer, COUNT(*) AS denied_claim_count FROM claims WHERE claim_status = 'Denied' GROUP BY payer;",
+            "SELECT payer, COUNT(*) AS denied_claim_count FROM claims WHERE claim_status = 'Denied' GROUP BY payer;",
+            "Filter denied claims, then group by payer."
+          ),
+          challengeLesson(
+            "gb_04",
+            "Charges by Payer",
+            "Return payer and total_amount.",
+            ["GROUP BY", "SUM"],
+            ["charges"],
+            "No join needed.",
+            "SELECT payer, SUM(amount) AS total_amount FROM charges GROUP BY payer;",
+            "SELECT payer, SUM(amount) AS total_amount FROM charges GROUP BY payer;",
+            "Group by payer and sum amount."
+          ),
+          challengeLesson(
+            "gb_05",
+            "Encounters by Department",
+            "Return department and encounter_count.",
+            ["GROUP BY", "COUNT"],
+            ["encounters"],
+            "No join needed.",
+            "SELECT department, COUNT(*) AS encounter_count FROM encounters GROUP BY department;",
+            "SELECT department, COUNT(*) AS encounter_count FROM encounters GROUP BY department;",
+            "Group by department."
+          )
+        ]
+      },
+      {
+        id: "having",
+        title: "HAVING",
+        order: 12,
+        lessons: [
+          conceptLesson(
+            "hv_01",
+            "Filtering Groups with HAVING",
+            "Use HAVING to find exceptions after grouping.",
+            ["HAVING"],
+            ["claims", "encounters", "charges"],
+            "No join needed.",
+            "HAVING filters grouped results after aggregation.",
+            [
+              "WHERE filters rows",
+              "HAVING filters groups"
+            ],
+            "Use HAVING to isolate only the groups that exceed a threshold.",
+            {
+              show: true,
+              metric: "Outlier detection",
+              whyItMatters: "Leadership often cares about exceptions more than normal performance.",
+              whatToShare: "Present only material outliers when the goal is action.",
+              action: "Use HAVING to reduce noise."
+            }
+          ),
+          challengeLesson(
+            "hv_02",
+            "Payers with Multiple Denials",
+            "Return payers with more than one denied claim.",
+            ["WHERE", "GROUP BY", "HAVING"],
+            ["claims"],
+            "No join needed.",
+            "SELECT payer, COUNT(*) AS denied_count FROM claims WHERE claim_status = 'Denied' GROUP BY payer HAVING COUNT(*) > 1;",
+            "SELECT payer, COUNT(*) AS denied_count FROM claims WHERE claim_status = 'Denied' GROUP BY payer HAVING COUNT(*) > 1;",
+            "Use HAVING COUNT(*) > 1."
+          ),
+          challengeLesson(
+            "hv_03",
+            "Departments with Multiple Encounters",
+            "Return departments with more than one encounter.",
+            ["GROUP BY", "HAVING"],
+            ["encounters"],
+            "No join needed.",
+            "SELECT department, COUNT(*) AS encounter_count FROM encounters GROUP BY department HAVING COUNT(*) > 1;",
+            "SELECT department, COUNT(*) AS encounter_count FROM encounters GROUP BY department HAVING COUNT(*) > 1;",
+            "Use HAVING COUNT(*) > 1 after grouping."
+          ),
+          challengeLesson(
+            "hv_04",
+            "Payers with High Total Charges",
+            "Return payers whose total charges exceed 2000.",
+            ["GROUP BY", "HAVING", "SUM"],
+            ["charges"],
+            "No join needed.",
+            "SELECT payer, SUM(amount) AS total_amount FROM charges GROUP BY payer HAVING SUM(amount) > 2000;",
+            "SELECT payer, SUM(amount) AS total_amount FROM charges GROUP BY payer HAVING SUM(amount) > 2000;",
+            "Use HAVING SUM(amount) > 2000."
+          ),
+          scenarioLesson(
+            "hv_05",
+            "Outlier-Focused Leadership Review",
+            "Recognize why HAVING helps reduce clutter.",
+            ["claims", "charges"],
+            "Think exceptions, not everything.",
+            "HAVING helps isolate only the categories leadership really needs to discuss.",
+            "If leaders only want groups above a meaningful threshold, should you use HAVING after grouping?",
+            "yes",
+            {
+              show: true,
+              metric: "Threshold-based review",
+              whyItMatters: "Leadership time is limited.",
+              whatToShare: "Use HAVING to show only above-threshold groups.",
+              action: "Filter to material exceptions before review."
+            }
+          )
+        ]
+      },
+      {
+        id: "inner_joins",
+        title: "Inner Joins",
+        order: 13,
+        lessons: [
+          conceptLesson(
+            "ij_01",
+            "Why Joins Matter",
+            "Understand why most real analysis requires more than one table.",
+            ["JOIN"],
+            ["patients", "encounters", "claims", "charges", "providers"],
+            "Relationships matter: patient_id, encounter_id, provider_id, and department_id are common join paths.",
+            "Real insight usually comes from combining related tables.",
+            [
+              "Patients + encounters = who had which visit",
+              "Claims + patients = payer and patient context",
+              "Encounters + providers = provider-level operational views",
+              "Encounters + departments = service line reporting"
+            ],
+            "To explain denied dollars by department or provider, you need joined data.",
+            {
+              show: true,
+              metric: "Integrated business story",
+              whyItMatters: "Executives need context, not isolated facts.",
+              whatToShare: "Joined data explains not only what happened, but where and to whom.",
+              action: "Use joins when one table gives an incomplete answer."
+            }
+          ),
+          challengeLesson(
+            "ij_02",
+            "Join Encounters to Patients",
+            "Return encounter_id, first_name, and last_name.",
+            ["JOIN"],
+            ["encounters", "patients"],
+            "encounters.patient_id = patients.patient_id",
+            "SELECT e.encounter_id, p.first_name, p.last_name FROM encounters e JOIN patients p ON e.patient_id = p.patient_id;",
+            "SELECT e.encounter_id, p.first_name, p.last_name FROM encounters e JOIN patients p ON e.patient_id = p.patient_id;",
+            "Join encounters to patients on patient_id."
+          ),
+          challengeLesson(
+            "ij_03",
+            "Join Claims to Patients",
+            "Return claim_id, first_name, and insurance_type.",
+            ["JOIN"],
+            ["claims", "patients"],
+            "claims.patient_id = patients.patient_id",
+            "SELECT c.claim_id, p.first_name, p.insurance_type FROM claims c JOIN patients p ON c.patient_id = p.patient_id;",
+            "SELECT c.claim_id, p.first_name, p.insurance_type FROM claims c JOIN patients p ON c.patient_id = p.patient_id;",
+            "Join claims to patients on patient_id."
+          ),
+          challengeLesson(
+            "ij_04",
+            "Join Encounters to Providers",
+            "Return encounter_id, provider_name, and specialty.",
+            ["JOIN"],
+            ["encounters", "providers"],
+            "encounters.provider_id = providers.provider_id",
+            "SELECT e.encounter_id, p.provider_name, p.specialty FROM encounters e JOIN providers p ON e.provider_id = p.provider_id;",
+            "SELECT e.encounter_id, p.provider_name, p.specialty FROM encounters e JOIN providers p ON e.provider_id = p.provider_id;",
+            "Join encounters to providers on provider_id."
+          ),
+          challengeLesson(
+            "ij_05",
+            "Join Claims to Encounter Department",
+            "Return claim_id, department, and billed_amount.",
+            ["JOIN"],
+            ["claims", "encounters"],
+            "claims.encounter_id = encounters.encounter_id",
+            "SELECT c.claim_id, e.department, c.billed_amount FROM claims c JOIN encounters e ON c.encounter_id = e.encounter_id;",
+            "SELECT c.claim_id, e.department, c.billed_amount FROM claims c JOIN encounters e ON c.encounter_id = e.encounter_id;",
+            "Join claims to encounters on encounter_id."
+          )
+        ]
+      },
+      {
+        id: "hospital_throughput",
+        title: "Hospital Throughput",
+        order: 14,
+        lessons: [
+          conceptLesson(
+            "ht_01",
+            "What Throughput Metrics Measure",
+            "Understand discharge speed, departure lag, and delayed discharge concepts.",
+            ["AVG", "WHERE", "GROUP BY"],
+            ["discharges", "encounters"],
+            "Most throughput questions start with discharges joined to encounters only if you need more context.",
+            "Throughput measures how efficiently patients move through the system after care decisions are made.",
+            [
+              "Discharge order to departure time is a common operational KPI",
+              "Delay flags help isolate preventable barriers",
+              "Department-level views help managers act"
+            ],
+            "A discharge delay problem is not just clinical. It often reflects transport, staffing, or workflow issues.",
+            {
+              show: true,
+              metric: "Discharge turnaround",
+              whyItMatters: "Long discharge lag ties up beds and hurts patient flow.",
+              whatToShare: "Average minutes, high-delay departments, and common delay flags.",
+              action: "Escalate units with persistent extended discharge timing."
+            }
+          ),
+          challengeLesson(
+            "ht_02",
+            "Average Discharge Order Minutes",
+            "Return average discharge_order_minutes from discharges.",
+            ["AVG"],
+            ["discharges"],
+            "No join needed.",
+            "SELECT AVG(discharge_order_minutes) AS avg_discharge_order_minutes FROM discharges;",
+            "SELECT AVG(discharge_order_minutes) AS avg_discharge_order_minutes FROM discharges;",
+            "Use AVG(discharge_order_minutes)."
+          ),
+          challengeLesson(
+            "ht_03",
+            "Delayed for Transport Cases",
+            "Return discharge_id, encounter_id, and department where delayed_for_transport = 1.",
+            ["WHERE"],
+            ["discharges"],
+            "No join needed.",
+            "SELECT discharge_id, encounter_id, department FROM discharges WHERE delayed_for_transport = 1;",
+            "SELECT discharge_id, encounter_id, department FROM discharges WHERE delayed_for_transport = 1;",
+            "Filter delayed_for_transport = 1."
+          ),
+          challengeLesson(
+            "ht_04",
+            "Average Departure Minutes by Department",
+            "Return department and average departure_minutes by department.",
+            ["GROUP BY", "AVG"],
+            ["discharges"],
+            "No join needed.",
+            "SELECT department, AVG(departure_minutes) AS avg_departure_minutes FROM discharges GROUP BY department;",
+            "SELECT department, AVG(departure_minutes) AS avg_departure_minutes FROM discharges GROUP BY department;",
+            "Group by department and average departure_minutes."
+          ),
+          scenarioLesson(
+            "ht_05",
+            "Operational Escalation Scenario",
+            "Choose the right direction when throughput worsens.",
+            ["discharges"],
+            "Think manager-level actionability.",
+            "Operations leaders need department-specific lag visibility, not just system averages.",
+            "If discharge lag worsens, should you show only a hospital total or break it out by department?",
+            "department"
+          )
+        ]
+      },
+      {
+        id: "readmissions_observations",
+        title: "Readmissions and Observation",
+        order: 15,
+        lessons: [
+          conceptLesson(
+            "ro_01",
+            "Why Readmissions and Observation Matter",
+            "Understand how readmissions and observation metrics support hospital operations and finance.",
+            ["COUNT", "AVG", "GROUP BY", "WHERE"],
+            ["readmissions", "observations"],
+            "These topics are usually analyzed separately, then combined into broader utilization stories.",
+            "Readmissions and observation stays help explain utilization, avoidable returns, and reimbursement-sensitive activity.",
+            [
+              "Thirty-day readmission is a classic hospital performance metric",
+              "Observation conversion rates reveal utilization patterns",
+              "Code 44 activity can signal documentation or status management issues"
+            ],
+            "A hospital can look financially stable but still have avoidable utilization friction hidden in readmission and observation trends.",
+            {
+              show: true,
+              metric: "Utilization quality indicators",
+              whyItMatters: "These measures affect both operations and reimbursement.",
+              whatToShare: "Readmit volume, days to readmit, obs hours, and inpatient conversion patterns.",
+              action: "Investigate spikes by department or facility."
+            }
+          ),
+          challengeLesson(
+            "ro_02",
+            "Count 30-Day Readmissions",
+            "Return the count of rows where readmit_within_30_days = 1.",
+            ["COUNT", "WHERE"],
+            ["readmissions"],
+            "No join needed.",
+            "SELECT COUNT(*) AS readmit_count FROM readmissions WHERE readmit_within_30_days = 1;",
+            "SELECT COUNT(*) AS readmit_count FROM readmissions WHERE readmit_within_30_days = 1;",
+            "Filter readmit_within_30_days = 1 and count rows."
+          ),
+          challengeLesson(
+            "ro_03",
+            "Average Days to Readmit",
+            "Return average days_to_readmit for readmissions within 30 days.",
+            ["AVG", "WHERE"],
+            ["readmissions"],
+            "No join needed.",
+            "SELECT AVG(days_to_readmit) AS avg_days_to_readmit FROM readmissions WHERE readmit_within_30_days = 1;",
+            "SELECT AVG(days_to_readmit) AS avg_days_to_readmit FROM readmissions WHERE readmit_within_30_days = 1;",
+            "Filter to readmit_within_30_days = 1, then average days_to_readmit."
+          ),
+          challengeLesson(
+            "ro_04",
+            "Observation Conversions by Facility",
+            "Return facility and count of converted observation encounters by facility.",
+            ["WHERE", "GROUP BY", "COUNT"],
+            ["observations"],
+            "No join needed.",
+            "SELECT facility, COUNT(*) AS converted_obs_count FROM observations WHERE converted_to_inpatient = 1 GROUP BY facility;",
+            "SELECT facility, COUNT(*) AS converted_obs_count FROM observations WHERE converted_to_inpatient = 1 GROUP BY facility;",
+            "Filter converted_to_inpatient = 1 and group by facility."
+          ),
+          challengeLesson(
+            "ro_05",
+            "Code 44 Cases",
+            "Return observation_id, encounter_id, and facility where code_44_flag = 1.",
+            ["WHERE"],
+            ["observations"],
+            "No join needed.",
+            "SELECT observation_id, encounter_id, facility FROM observations WHERE code_44_flag = 1;",
+            "SELECT observation_id, encounter_id, facility FROM observations WHERE code_44_flag = 1;",
+            "Filter code_44_flag = 1."
+          )
+        ]
+      },
+      {
+        id: "readmissions_kpis",
+        title: "Readmissions KPIs",
+        order: 16,
+        lessons: [
+          conceptLesson(
+            "rd_01",
+            "How Readmissions Logic Works",
+            "Understand the business logic behind readmissions reporting.",
+            ["JOIN", "WHERE", "DATE", "CASE"],
+            ["encounters", "patients"],
+            "Readmissions logic compares an index encounter to a later encounter for the same patient.",
+            "Readmissions reporting depends on defining the index discharge, the readmission window, and the exclusions that belong in the metric.",
+            [
+              "A readmission metric starts with a qualifying index encounter",
+              "The later visit must occur within the defined time window",
+              "Metric definitions matter as much as SQL logic"
+            ],
+            "Leadership uses readmissions metrics to understand avoidable utilization, discharge quality, and opportunity by service line or facility.",
+            {
+              show: true,
+              metric: "30-day readmission performance",
+              whyItMatters: "Readmissions affect quality, cost, and leadership perception of care transitions.",
+              whatToShare: "Be explicit about the index definition, time window, and exclusions.",
+              action: "Validate metric logic before socializing trends."
+            }
+          ),
+          challengeLesson(
+            "rd_02",
+            "Index Discharges",
+            "Return discharged inpatient encounters.",
+            ["WHERE", "SELECT"],
+            ["encounters"],
+            "No join needed.",
+            "SELECT encounter_id, patient_id, discharge_date FROM encounters WHERE encounter_type = 'Inpatient' AND discharge_date IS NOT NULL;",
+            "SELECT encounter_id, patient_id, discharge_date FROM encounters WHERE encounter_type = 'Inpatient' AND discharge_date IS NOT NULL;",
+            "Filter to inpatient encounters with a discharge date."
+          ),
+          challengeLesson(
+            "rd_03",
+            "Potential Readmission Population",
+            "Return patients with more than one encounter.",
+            ["GROUP BY", "COUNT", "HAVING"],
+            ["encounters"],
+            "No join needed.",
+            "SELECT patient_id, COUNT(*) AS encounter_count FROM encounters GROUP BY patient_id HAVING COUNT(*) > 1;",
+            "SELECT patient_id, COUNT(*) AS encounter_count FROM encounters GROUP BY patient_id HAVING COUNT(*) > 1;",
+            "Group by patient_id and keep only those with more than one encounter."
+          ),
+          challengeLesson(
+            "rd_04",
+            "Encounter Timeline by Patient",
+            "Return patient encounters ordered by patient and discharge_date.",
+            ["ORDER BY", "SELECT"],
+            ["encounters"],
+            "No join needed.",
+            "SELECT patient_id, encounter_id, discharge_date FROM encounters ORDER BY patient_id, discharge_date;",
+            "SELECT patient_id, encounter_id, discharge_date FROM encounters ORDER BY patient_id, discharge_date;",
+            "Sort first by patient, then by discharge_date."
+          ),
+          scenarioLesson(
+            "rd_05",
+            "Readmission Definition Scenario",
+            "Recognize why metric definitions must be standardized.",
+            ["encounters"],
+            "Think denominator and exclusions.",
+            "A readmission number is only useful if everyone agrees on what counts as an index event and what counts as a return.",
+            "If one team uses all discharges and another excludes observation stays, can those readmission rates be compared as the same KPI?",
+            "no",
+            {
+              show: true,
+              metric: "Readmission governance",
+              whyItMatters: "Different inclusion logic produces different rates and undermines trust.",
+              whatToShare: "Document the denominator before discussing performance.",
+              action: "Standardize the measure specification before executive review."
+            }
+          )
+        ]
+      },
+      {
+        id: "observation_kpis",
+        title: "Observation KPIs",
+        order: 17,
+        lessons: [
+          conceptLesson(
+            "ob_01",
+            "Observation Reporting Basics",
+            "Understand how observation metrics differ from inpatient reporting.",
+            ["WHERE", "CASE", "AVG", "GROUP BY"],
+            ["encounters"],
+            "Observation metrics usually begin with encounter_type = 'Observation'.",
+            "Observation reporting often focuses on LOS by hours or days, conversions, and patients who remain in observation beyond target thresholds.",
+            [
+              "Observation is a distinct operational workflow",
+              "LOS thresholds often drive review",
+              "Observation reporting frequently supports throughput and utilization management"
+            ],
+            "Leadership may care about prolonged observation stays, conversion patterns, and department ownership.",
+            {
+              show: true,
+              metric: "Observation utilization",
+              whyItMatters: "Observation volume and prolonged stays affect flow, capacity, and revenue interpretation.",
+              whatToShare: "Summarize observation counts, average LOS, and long-stay exceptions.",
+              action: "Use consistent thresholds for observation review."
+            }
+          ),
+          challengeLesson(
+            "ob_02",
+            "Observation Encounters",
+            "Return all observation encounters.",
+            ["WHERE"],
+            ["encounters"],
+            "No join needed.",
+            "SELECT encounter_id, patient_id, department, length_of_stay FROM encounters WHERE encounter_type = 'Observation';",
+            "SELECT encounter_id, patient_id, department, length_of_stay FROM encounters WHERE encounter_type = 'Observation';",
+            "Filter encounter_type = 'Observation'."
+          ),
+          challengeLesson(
+            "ob_03",
+            "Average Observation LOS",
+            "Return average LOS for observation encounters.",
+            ["WHERE", "AVG", "ROUND"],
+            ["encounters"],
+            "No join needed.",
+            "SELECT ROUND(AVG(length_of_stay), 2) AS avg_observation_los FROM encounters WHERE encounter_type = 'Observation';",
+            "SELECT ROUND(AVG(length_of_stay), 2) AS avg_observation_los FROM encounters WHERE encounter_type = 'Observation';",
+            "Filter to observation, then average LOS."
+          ),
+          challengeLesson(
+            "ob_04",
+            "Long Observation Stays",
+            "Return observation encounters with LOS over 2.",
+            ["WHERE"],
+            ["encounters"],
+            "No join needed.",
+            "SELECT encounter_id, patient_id, length_of_stay FROM encounters WHERE encounter_type = 'Observation' AND length_of_stay > 2;",
+            "SELECT encounter_id, patient_id, length_of_stay FROM encounters WHERE encounter_type = 'Observation' AND length_of_stay > 2;",
+            "Filter to observation and LOS > 2."
+          ),
+          scenarioLesson(
+            "ob_05",
+            "Observation Threshold Scenario",
+            "Recognize why long-stay thresholds need consistency.",
+            ["encounters"],
+            "Think operational definition.",
+            "Threshold reporting only works when everyone agrees on the cutoff that triggers review.",
+            "If one report uses >24 hours and another uses >48 hours, are they describing the same prolonged observation KPI?",
+            "no",
+            {
+              show: true,
+              metric: "Threshold-based observation review",
+              whyItMatters: "Different cutoffs will produce very different exception counts.",
+              whatToShare: "Define the long-stay threshold up front.",
+              action: "Lock threshold logic before leadership distribution."
+            }
+          )
+        ]
+      },
+      {
+        id: "length_of_stay_kpis",
+        title: "Length of Stay KPIs",
+        order: 18,
+        lessons: [
+          conceptLesson(
+            "ls_01",
+            "Length of Stay as an Operational KPI",
+            "Understand how LOS helps explain utilization and throughput.",
+            ["AVG", "GROUP BY", "CASE", "ORDER BY"],
+            ["encounters"],
+            "LOS is usually summarized by department, facility, service line, or encounter type.",
+            "Length of stay can reveal throughput challenges, discharge barriers, and variation across operational units.",
+            [
+              "Average LOS summarizes typical duration",
+              "Outlier LOS highlights exceptions",
+              "Grouped LOS views help leaders focus on where variation is occurring"
+            ],
+            "Leadership often wants average LOS plus a view of units with longer-than-expected stays.",
+            {
+              show: true,
+              metric: "Length of stay performance",
+              whyItMatters: "LOS affects capacity, patient flow, staffing pressure, and cost.",
+              whatToShare: "Summarize average LOS and identify areas with elevated stay duration.",
+              action: "Pair LOS summaries with ranked exception views."
+            }
+          ),
+          challengeLesson(
+            "ls_02",
+            "Average LOS by Facility",
+            "Return facility and average LOS.",
+            ["GROUP BY", "AVG", "ROUND"],
+            ["encounters"],
+            "No join needed.",
+            "SELECT facility, ROUND(AVG(length_of_stay), 2) AS avg_los FROM encounters GROUP BY facility;",
+            "SELECT facility, ROUND(AVG(length_of_stay), 2) AS avg_los FROM encounters GROUP BY facility;",
+            "Group by facility and average LOS."
+          ),
+          challengeLesson(
+            "ls_03",
+            "Longest Stay Encounters",
+            "Return encounters ordered by LOS descending.",
+            ["ORDER BY"],
+            ["encounters"],
+            "No join needed.",
+            "SELECT encounter_id, patient_id, department, length_of_stay FROM encounters ORDER BY length_of_stay DESC;",
+            "SELECT encounter_id, patient_id, department, length_of_stay FROM encounters ORDER BY length_of_stay DESC;",
+            "Sort LOS from longest to shortest."
+          ),
+          challengeLesson(
+            "ls_04",
+            "LOS Buckets by Encounter",
+            "Return encounter_id and a LOS bucket of Long or Short.",
+            ["CASE"],
+            ["encounters"],
+            "No join needed.",
+            "SELECT encounter_id, CASE WHEN length_of_stay >= 3 THEN 'Long' ELSE 'Short' END AS los_bucket FROM encounters;",
+            "SELECT encounter_id, CASE WHEN length_of_stay >= 3 THEN 'Long' ELSE 'Short' END AS los_bucket FROM encounters;",
+            "Use CASE on length_of_stay."
+          ),
+          scenarioLesson(
+            "ls_05",
+            "LOS Interpretation Scenario",
+            "Recognize why average LOS alone is not always enough.",
+            ["encounters"],
+            "Think variation and outliers.",
+            "An average can hide whether the issue is broad or driven by a few very long stays.",
+            "If average LOS is high, should you usually also look at the longest individual stays or unit-level variation?",
+            "yes",
+            {
+              show: true,
+              metric: "LOS interpretation depth",
+              whyItMatters: "A single average can hide operational root causes.",
+              whatToShare: "Pair average LOS with ranked outliers or grouped comparisons.",
+              action: "Do not stop at the mean."
+            }
+          )
+        ]
+      },
+      {
+        id: "denials_kpis",
+        title: "Denials KPIs",
+        order: 19,
+        lessons: [
+          conceptLesson(
+            "dn_01",
+            "Denials as Financial and Operational Signals",
+            "Understand how denials reporting supports revenue cycle action.",
+            ["WHERE", "GROUP BY", "SUM", "COUNT", "ORDER BY"],
+            ["claims"],
+            "Denials logic usually starts with claim_status = 'Denied'.",
+            "Denials reporting can be framed by count, dollars, payer, department, or claim category depending on the leadership question.",
+            [
+              "Count shows volume",
+              "Billed dollars show financial impact",
+              "Grouped payer views help target action"
+            ],
+            "A payer with fewer denials can still be the biggest financial problem if the denied dollars are much larger.",
+            {
+              show: true,
+              metric: "Denial count and dollars at risk",
+              whyItMatters: "Denials directly affect reimbursement and cash flow.",
+              whatToShare: "Show both count and dollar impact, not just one.",
+              action: "Prioritize high-dollar denial categories first."
+            }
+          ),
+          challengeLesson(
+            "dn_02",
+            "Denied Claim Count",
+            "Return total count of denied claims.",
+            ["WHERE", "COUNT"],
+            ["claims"],
+            "No join needed.",
+            "SELECT COUNT(*) AS denied_claim_count FROM claims WHERE claim_status = 'Denied';",
+            "SELECT COUNT(*) AS denied_claim_count FROM claims WHERE claim_status = 'Denied';",
+            "Filter claim_status to Denied and count rows."
+          ),
+          challengeLesson(
+            "dn_03",
+            "Denied Dollars Total",
+            "Return total billed amount for denied claims.",
+            ["WHERE", "SUM"],
+            ["claims"],
+            "No join needed.",
+            "SELECT SUM(billed_amount) AS denied_dollars FROM claims WHERE claim_status = 'Denied';",
+            "SELECT SUM(billed_amount) AS denied_dollars FROM claims WHERE claim_status = 'Denied';",
+            "Filter denied claims and sum billed_amount."
+          ),
+          challengeLesson(
+            "dn_04",
+            "Denied Claims by Payer Ranked",
+            "Return payer and denied dollars ordered highest to lowest.",
+            ["WHERE", "GROUP BY", "SUM", "ORDER BY"],
+            ["claims"],
+            "No join needed.",
+            "SELECT payer, SUM(billed_amount) AS denied_dollars FROM claims WHERE claim_status = 'Denied' GROUP BY payer ORDER BY denied_dollars DESC;",
+            "SELECT payer, SUM(billed_amount) AS denied_dollars FROM claims WHERE claim_status = 'Denied' GROUP BY payer ORDER BY denied_dollars DESC;",
+            "Filter denied, group by payer, sum billed_amount, and sort descending."
+          ),
+          scenarioLesson(
+            "dn_05",
+            "Denial Prioritization Scenario",
+            "Recognize why denied dollars matter along with denied volume.",
+            ["claims"],
+            "Think financial impact, not just counts.",
+            "The biggest operational focus is not always the category with the most rows.",
+            "If one payer has fewer denials but far more denied dollars, should leadership still prioritize that payer for review?",
+            "yes",
+            {
+              show: true,
+              metric: "High-impact denial prioritization",
+              whyItMatters: "Dollar exposure can outweigh raw volume.",
+              whatToShare: "Separate count-based and dollar-based prioritization.",
+              action: "Escalate high-dollar denial risk even when volume is smaller."
+            }
+          )
+        ]
+      },
+      {
+        id: "ed_throughput_kpis",
+        title: "ED Throughput KPIs",
+        order: 20,
+        lessons: [
+          conceptLesson(
+            "ed_01",
+            "ED Throughput Framing",
+            "Understand how SQL supports emergency department throughput review.",
+            ["WHERE", "GROUP BY", "COUNT", "AVG"],
+            ["encounters"],
+            "Emergency department reporting often starts with encounter_type = 'Emergency' or department = 'ER'.",
+            "ED throughput views typically focus on volume, LOS, boarding proxies, and timing distribution by facility or department.",
+            [
+              "ED volume is a starting point",
+              "ED LOS highlights operational burden",
+              "Grouped views help compare performance across sites or times"
+            ],
+            "Leadership often wants to know both how much volume exists and where throughput pressure may be building.",
+            {
+              show: true,
+              metric: "ED throughput visibility",
+              whyItMatters: "ED pressure affects patient experience, flow, and hospital operations.",
+              whatToShare: "Summarize ED volume, average LOS, and top exception areas.",
+              action: "Use grouped comparisons to focus operational response."
+            }
+          ),
+          challengeLesson(
+            "ed_02",
+            "Emergency Encounter Count",
+            "Return total count of emergency encounters.",
+            ["WHERE", "COUNT"],
+            ["encounters"],
+            "No join needed.",
+            "SELECT COUNT(*) AS emergency_encounter_count FROM encounters WHERE encounter_type = 'Emergency';",
+            "SELECT COUNT(*) AS emergency_encounter_count FROM encounters WHERE encounter_type = 'Emergency';",
+            "Filter encounter_type = 'Emergency' and count rows."
+          ),
+          challengeLesson(
+            "ed_03",
+            "Average ED LOS",
+            "Return average LOS for emergency encounters.",
+            ["WHERE", "AVG", "ROUND"],
+            ["encounters"],
+            "No join needed.",
+            "SELECT ROUND(AVG(length_of_stay), 2) AS avg_ed_los FROM encounters WHERE encounter_type = 'Emergency';",
+            "SELECT ROUND(AVG(length_of_stay), 2) AS avg_ed_los FROM encounters WHERE encounter_type = 'Emergency';",
+            "Filter emergency encounters and average LOS."
+          ),
+          challengeLesson(
+            "ed_04",
+            "ED Volume by Facility",
+            "Return facility and emergency encounter count.",
+            ["WHERE", "GROUP BY", "COUNT"],
+            ["encounters"],
+            "No join needed.",
+            "SELECT facility, COUNT(*) AS emergency_encounter_count FROM encounters WHERE encounter_type = 'Emergency' GROUP BY facility;",
+            "SELECT facility, COUNT(*) AS emergency_encounter_count FROM encounters WHERE encounter_type = 'Emergency' GROUP BY facility;",
+            "Filter emergency encounters, then group by facility."
+          ),
+          scenarioLesson(
+            "ed_05",
+            "Throughput Scenario",
+            "Recognize why ED throughput needs both volume and duration views.",
+            ["encounters"],
+            "Think volume plus time burden.",
+            "A department can have high volume, long stays, or both, and each pattern suggests a different operational problem.",
+            "If ED encounters are rising, should leadership usually also look at LOS instead of only raw volume?",
+            "yes",
+            {
+              show: true,
+              metric: "ED throughput interpretation",
+              whyItMatters: "Volume alone does not explain operational strain.",
+              whatToShare: "Pair encounter counts with stay duration metrics.",
+              action: "Use both load and time burden in ED reviews."
+            }
+          )
+        ]
+      },
+      {
+        id: "appointment_access_kpis",
+        title: "Appointment Access KPIs",
+        order: 21,
+        lessons: [
+          conceptLesson(
+            "aa_01",
+            "Access and Scheduling Logic",
+            "Understand how appointment data supports access reporting.",
+            ["WHERE", "GROUP BY", "COUNT", "CASE"],
+            ["appointments"],
+            "Scheduling reporting often centers on status, department, provider, and date.",
+            "Access reporting helps leaders understand completed visits, no-shows, scheduled demand, and possible scheduling gaps.",
+            [
+              "Appointment status is central to access reporting",
+              "No-shows often matter by department or provider",
+              "Grouped volume helps identify operational pressure points"
+            ],
+            "Access KPIs often become the first signal that downstream throughput or clinic utilization issues are developing.",
+            {
+              show: true,
+              metric: "Access and scheduling performance",
+              whyItMatters: "Appointment completion and no-show patterns affect access, continuity, and revenue.",
+              whatToShare: "Summarize completed, scheduled, and no-show activity by the unit leaders can influence.",
+              action: "Escalate recurring no-show concentration by area."
+            }
+          ),
+          challengeLesson(
+            "aa_02",
+            "Completed Appointments Count",
+            "Return count of completed appointments.",
+            ["WHERE", "COUNT"],
+            ["appointments"],
+            "No join needed.",
+            "SELECT COUNT(*) AS completed_appointment_count FROM appointments WHERE status = 'Completed';",
+            "SELECT COUNT(*) AS completed_appointment_count FROM appointments WHERE status = 'Completed';",
+            "Filter status = 'Completed' and count rows."
+          ),
+          challengeLesson(
+            "aa_03",
+            "No-Shows by Department",
+            "Return department and no-show count.",
+            ["WHERE", "GROUP BY", "COUNT"],
+            ["appointments"],
+            "No join needed.",
+            "SELECT department, COUNT(*) AS no_show_count FROM appointments WHERE status = 'No Show' GROUP BY department;",
+            "SELECT department, COUNT(*) AS no_show_count FROM appointments WHERE status = 'No Show' GROUP BY department;",
+            "Filter No Show and group by department."
+          ),
+          challengeLesson(
+            "aa_04",
+            "Appointments by Status",
+            "Return status and appointment count.",
+            ["GROUP BY", "COUNT"],
+            ["appointments"],
+            "No join needed.",
+            "SELECT status, COUNT(*) AS appointment_count FROM appointments GROUP BY status;",
+            "SELECT status, COUNT(*) AS appointment_count FROM appointments GROUP BY status;",
+            "Group by status and count appointments."
+          ),
+          scenarioLesson(
+            "aa_05",
+            "Access Review Scenario",
+            "Recognize why no-shows should usually be grouped, not only totaled.",
+            ["appointments"],
+            "Think actionability by unit.",
+            "A system-wide total may confirm a problem, but grouped views show where to intervene.",
+            "If no-shows are high, should leadership usually also want to know which departments or providers drive them?",
+            "yes",
+            {
+              show: true,
+              metric: "Actionable no-show reporting",
+              whyItMatters: "Grouped views reveal where intervention can actually occur.",
+              whatToShare: "Move from overall totals to department or provider detail.",
+              action: "Always tie access issues to an accountable unit."
+            }
+          )
+        ]
+      },
+      {
+        id: "provider_performance_sql",
+        title: "Provider Performance SQL",
+        order: 22,
+        lessons: [
+          conceptLesson(
+            "pp_01",
+            "Provider-Level Reporting Basics",
+            "Understand how provider performance views are constructed from encounter and appointment data.",
+            ["JOIN", "GROUP BY", "COUNT", "AVG"],
+            ["providers", "encounters", "appointments"],
+            "Provider reporting usually joins provider dimension data to activity tables.",
+            "Provider-level SQL can support views of volume, specialty comparisons, access patterns, and operational burden.",
+            [
+              "Join providers to activity",
+              "Group by provider_name or specialty",
+              "Be careful not to mix provider and department questions"
+            ],
+            "Leaders often want to compare providers, but the reporting unit must match the actual question being asked.",
+            {
+              show: true,
+              metric: "Provider activity visibility",
+              whyItMatters: "Provider-level views support staffing, access, and performance review.",
+              whatToShare: "Use provider grouping only when the business question is truly provider-specific.",
+              action: "Align the reporting grain to the decision-maker."
+            }
+          ),
+          challengeLesson(
+            "pp_02",
+            "Encounters by Provider",
+            "Return provider_name and encounter count.",
+            ["JOIN", "GROUP BY", "COUNT"],
+            ["providers", "encounters"],
+            "encounters.provider_id = providers.provider_id",
+            "SELECT p.provider_name, COUNT(*) AS encounter_count FROM encounters e JOIN providers p ON e.provider_id = p.provider_id GROUP BY p.provider_name;",
+            "SELECT p.provider_name, COUNT(*) AS encounter_count FROM encounters e JOIN providers p ON e.provider_id = p.provider_id GROUP BY p.provider_name;",
+            "Join encounters to providers and group by provider_name."
+          ),
+          challengeLesson(
+            "pp_03",
+            "Appointments by Provider",
+            "Return provider_name and appointment count.",
+            ["JOIN", "GROUP BY", "COUNT"],
+            ["providers", "appointments"],
+            "appointments.provider_id = providers.provider_id",
+            "SELECT p.provider_name, COUNT(*) AS appointment_count FROM appointments a JOIN providers p ON a.provider_id = p.provider_id GROUP BY p.provider_name;",
+            "SELECT p.provider_name, COUNT(*) AS appointment_count FROM appointments a JOIN providers p ON a.provider_id = p.provider_id GROUP BY p.provider_name;",
+            "Join appointments to providers and group by provider_name."
+          ),
+          challengeLesson(
+            "pp_04",
+            "Average LOS by Provider",
+            "Return provider_name and average LOS.",
+            ["JOIN", "GROUP BY", "AVG", "ROUND"],
+            ["providers", "encounters"],
+            "encounters.provider_id = providers.provider_id",
+            "SELECT p.provider_name, ROUND(AVG(e.length_of_stay), 2) AS avg_los FROM encounters e JOIN providers p ON e.provider_id = p.provider_id GROUP BY p.provider_name;",
+            "SELECT p.provider_name, ROUND(AVG(e.length_of_stay), 2) AS avg_los FROM encounters e JOIN providers p ON e.provider_id = p.provider_id GROUP BY p.provider_name;",
+            "Join encounters to providers, group by provider_name, and average LOS."
+          ),
+          scenarioLesson(
+            "pp_05",
+            "Provider Grain Scenario",
+            "Recognize why reporting grain matters.",
+            ["providers", "encounters", "appointments"],
+            "Think accountability and business question.",
+            "A report can be technically correct but still wrong for the decision if the grain does not match the question.",
+            "If leadership asks about provider performance, should you usually group by provider rather than only by department?",
+            "yes",
+            {
+              show: true,
+              metric: "Correct reporting grain",
+              whyItMatters: "Wrong grouping hides the accountable unit.",
+              whatToShare: "Match provider questions with provider-level output.",
+              action: "Confirm the grain before building the metric."
+            }
+          )
+        ]
+      },
+      {
+        id: "executive_summary_sql",
+        title: "Executive Summary SQL",
+        order: 23,
+        lessons: [
+          conceptLesson(
+            "ex_01",
+            "What Makes SQL Executive-Ready",
+            "Understand how to shape technical results for leadership use.",
+            ["GROUP BY", "ORDER BY", "SUM", "COUNT", "AVG", "CASE"],
+            ["claims", "charges", "encounters", "appointments"],
+            "Choose the metric and grouping that leadership can act on.",
+            "Executive-ready SQL is not just correct. It is concise, prioritized, and tied to a business decision.",
+            [
+              "Use grouped summaries instead of raw row dumps",
+              "Rank outputs when leaders need prioritization",
+              "Translate technical output into operational meaning"
+            ],
+            "A good analyst does not just return data. They frame what matters, why it matters, and what action should follow.",
+            {
+              show: true,
+              metric: "Executive-facing summary quality",
+              whyItMatters: "Leaders need interpretable, prioritized information rather than raw extracts.",
+              whatToShare: "Provide grouped results, ranking, and business framing.",
+              action: "Always ask what decision the SQL is meant to support."
+            }
+          ),
+          challengeLesson(
+            "ex_02",
+            "Top Payers by Charges",
+            "Return payer and total charges ordered highest to lowest.",
+            ["GROUP BY", "SUM", "ORDER BY"],
+            ["charges"],
+            "No join needed.",
+            "SELECT payer, SUM(amount) AS total_amount FROM charges GROUP BY payer ORDER BY total_amount DESC;",
+            "SELECT payer, SUM(amount) AS total_amount FROM charges GROUP BY payer ORDER BY total_amount DESC;",
+            "Group by payer, sum amount, then sort descending."
+          ),
+          challengeLesson(
+            "ex_03",
+            "Top Departments by Encounters",
+            "Return department and encounter count ordered highest to lowest.",
+            ["GROUP BY", "COUNT", "ORDER BY"],
+            ["encounters"],
+            "No join needed.",
+            "SELECT department, COUNT(*) AS encounter_count FROM encounters GROUP BY department ORDER BY encounter_count DESC;",
+            "SELECT department, COUNT(*) AS encounter_count FROM encounters GROUP BY department ORDER BY encounter_count DESC;",
+            "Group by department, count rows, and sort descending."
+          ),
+          challengeLesson(
+            "ex_04",
+            "Denied Dollars by Payer",
+            "Return payer and denied dollars ordered highest to lowest.",
+            ["WHERE", "GROUP BY", "SUM", "ORDER BY"],
+            ["claims"],
+            "No join needed.",
+            "SELECT payer, SUM(billed_amount) AS denied_dollars FROM claims WHERE claim_status = 'Denied' GROUP BY payer ORDER BY denied_dollars DESC;",
+            "SELECT payer, SUM(billed_amount) AS denied_dollars FROM claims WHERE claim_status = 'Denied' GROUP BY payer ORDER BY denied_dollars DESC;",
+            "Filter denied claims, group by payer, sum billed_amount, and rank descending."
+          ),
+          scenarioLesson(
+            "ex_05",
+            "Leadership Summary Scenario",
+            "Recognize what should be surfaced first for executives.",
+            ["claims", "charges", "encounters"],
+            "Think actionability and priority.",
+            "Leadership usually needs the most material issues first, not an undifferentiated export.",
+            "If you are briefing executives, should you usually rank the biggest issues first instead of showing an unsorted full dataset?",
+            "yes",
+            {
+              show: true,
+              metric: "Executive prioritization",
+              whyItMatters: "Ranking focuses attention on what most needs action.",
+              whatToShare: "Lead with the biggest risks, opportunities, or exceptions.",
+              action: "Sort by impact before presenting upward."
+            }
+          )
+        ]
+      }
     ]
   }
 ];
+
 
 // ======================
 // HELPER FUNCTIONS
