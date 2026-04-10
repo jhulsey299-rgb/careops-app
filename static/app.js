@@ -1263,6 +1263,46 @@ function filterRelevantRelationships(relevantTables) {
 }
 
 // ======================
+// LESSON STATE HELPERS
+// ======================
+function getLessonRecordById(lessonId) {
+    return getAllLessons().find(item => item.lesson.id === lessonId) || null;
+}
+
+function getCurrentLessonRecord() {
+    return getLessonRecordById(appState.currentLessonId);
+}
+
+function getCurrentLesson() {
+    const record = getCurrentLessonRecord();
+    return record ? record.lesson : null;
+}
+
+function isLessonCompleted(lessonId) {
+    return appState.completedLessonIds.includes(lessonId);
+}
+
+function markLessonComplete(lessonId) {
+    if (!appState.completedLessonIds.includes(lessonId)) {
+        appState.completedLessonIds.push(lessonId);
+    }
+}
+
+function markLessonFirstTry(lessonId) {
+    if (!appState.firstTryLessonIds.includes(lessonId)) {
+        appState.firstTryLessonIds.push(lessonId);
+    }
+}
+
+function totalLessonCount() {
+    return getAllLessons().length;
+}
+
+function completedLessonCount() {
+    return appState.completedLessonIds.length;
+}
+
+// ======================
 // SCHEMA RENDERING
 // ======================
 function renderSchemaTables() {
