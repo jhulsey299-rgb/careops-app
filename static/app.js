@@ -453,7 +453,7 @@ const curriculum = [
 // HELPER FUNCTIONS
 // ======================
 function getTrack() {
-    return curriculum.find(t => t.id === appState.currentTrackId);
+    return curriculum.find(t => t.id === appState.currentTrackId) || curriculum[0];
 }
 
 function getAllCategories() {
