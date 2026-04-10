@@ -2275,7 +2275,6 @@ renderChallengeLesson = function (lesson) {
         queryBox.value = savedDraft;
     }
 
-    // Remove any existing listener before adding a new one
     queryBox.oninput = function () {
         saveQueryDraft(lesson.id, queryBox.value);
 
