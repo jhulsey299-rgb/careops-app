@@ -483,10 +483,6 @@ function loadProgress() {
 // ======================
 // INITIALIZATION
 // ======================
-window.onload = function () {
-    loadProgress();
-    console.log("CareOps SQL Analyst - Track 1 Part 1 initialized.");
-};
 
 // ======================
 // PART 2 OF 4
