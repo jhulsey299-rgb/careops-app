@@ -35,7 +35,7 @@
         </section>
     </aside>
 
-    <div id="schema-resizer"></div>
+    <div id="schema-resizer" aria-hidden="true"></div>
 
     <main class="main-content">
         <section class="hero-banner">
@@ -50,7 +50,7 @@
             <div class="dashboard-card">
                 <h3>Progress</h3>
                 <p id="progress-text">0 / 0 lessons completed</p>
-                <div class="progress-bar-wrap">
+                <div class="progress-bar-wrap" aria-hidden="true">
                     <div id="progress-bar"></div>
                 </div>
             </div>
@@ -67,7 +67,7 @@
         </section>
 
         <div class="dashboard-actions">
-            <button onclick="resetAllProgress()">Reset Progress</button>
+            <button type="button" onclick="resetAllProgress()">Reset Progress</button>
         </div>
 
         <section class="badges-section">
@@ -107,8 +107,8 @@
 
                         <div class="track-overview-card">
                             <h3>Your Progress</h3>
-                            <p id="track-overview-progress-text">0 of 65 lessons completed</p>
-                            <div class="progress-bar-wrap">
+                            <p id="track-overview-progress-text">0 of 0 lessons completed</p>
+                            <div class="progress-bar-wrap" aria-hidden="true">
                                 <div id="track-overview-progress-bar"></div>
                             </div>
                             <div class="button-row track-overview-actions">
@@ -127,7 +127,7 @@
                     </div>
                 </section>
 
-                <section id="lesson-workspace">
+                <section id="lesson-workspace" class="hidden">
                     <div id="lesson-header-card" class="mission-box">
                         <div class="mission-meta-row">
                             <span id="current-lesson-type-badge" class="lesson-type-badge lesson-type-concept">Concept</span>
@@ -167,7 +167,7 @@
                         </div>
 
                         <div class="button-row">
-                            <button onclick="markConceptComplete()">Mark Complete</button>
+                            <button type="button" onclick="markConceptComplete()">Mark Complete</button>
                         </div>
                     </div>
 
@@ -178,16 +178,16 @@
                         </div>
 
                         <label for="query" class="query-label">Write your SQL query:</label>
-                        <textarea id="query" rows="8" cols="80"></textarea>
+                        <textarea id="query" rows="8" cols="80" spellcheck="false" autocomplete="off" autocapitalize="off"></textarea>
 
                         <div class="button-row">
-                            <button onclick="runQuery()">Run Query</button>
-                            <button onclick="checkAnswer()">Check Answer</button>
-                            <button onclick="resetQuery()">Reset Query</button>
+                            <button type="button" onclick="runQuery()">Run Query</button>
+                            <button type="button" onclick="checkAnswer()">Check Answer</button>
+                            <button type="button" onclick="resetQuery()">Reset Query</button>
                         </div>
 
-                        <div id="feedback"></div>
-                        <div id="output"></div>
+                        <div id="feedback" aria-live="polite"></div>
+                        <div id="output" aria-live="polite"></div>
                     </div>
 
                     <div id="scenario-content" class="query-section hidden">
@@ -210,11 +210,11 @@
                         <textarea id="scenario-response" rows="6" cols="80"></textarea>
 
                         <div class="button-row">
-                            <button onclick="submitScenario()">Submit Scenario</button>
-                            <button onclick="resetScenario()">Reset Response</button>
+                            <button type="button" onclick="submitScenario()">Submit Scenario</button>
+                            <button type="button" onclick="resetScenario()">Reset Response</button>
                         </div>
 
-                        <div id="scenario-feedback"></div>
+                        <div id="scenario-feedback" aria-live="polite"></div>
                     </div>
 
                     <div id="executive-takeaway" class="badges-section hidden">
@@ -228,8 +228,8 @@
                     </div>
 
                     <div id="lesson-navigation" class="button-row lesson-nav-row">
-                        <button onclick="prevLesson()">Previous Lesson</button>
-                        <button onclick="nextLesson()">Next Lesson</button>
+                        <button type="button" onclick="prevLesson()">Previous Lesson</button>
+                        <button type="button" onclick="nextLesson()">Next Lesson</button>
                     </div>
                 </section>
             </section>
@@ -241,7 +241,15 @@
                             <h3 id="track-title">SQL Foundations for Hospital Data</h3>
                             <p id="track-description">Curriculum, difficulty, and completion tracking.</p>
                         </div>
-                        <button type="button" id="toggle-levels-panel-btn" class="panel-toggle-btn">Collapse</button>
+                        <button
+                            type="button"
+                            id="toggle-levels-panel-btn"
+                            class="panel-toggle-btn"
+                            aria-controls="levels-panel"
+                            aria-expanded="true"
+                        >
+                            Collapse
+                        </button>
                     </div>
                 </div>
 
@@ -253,12 +261,21 @@
             </aside>
         </div>
 
-        <div id="js-error-banner" class="js-error-banner hidden"></div>
+        <div id="js-error-banner" class="js-error-banner hidden" aria-live="assertive"></div>
     </main>
 </div>
 
-<div id="table-modal-overlay" class="table-modal-overlay hidden" onclick="closeTableModal(event)">
-    <div class="table-modal" role="dialog" aria-modal="true" aria-labelledby="table-modal-title">
+<div
+    id="table-modal-overlay"
+    class="table-modal-overlay hidden"
+    onclick="closeTableModal(event)"
+>
+    <div
+        class="table-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="table-modal-title"
+    >
         <div class="table-modal-header">
             <div>
                 <div class="table-modal-kicker">Table Viewer</div>
