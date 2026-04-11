@@ -3311,16 +3311,23 @@ function renderSchemaTables() {
         details.className = "schema-card";
         details.id = `schema-${table.name}`;
 
-        details.innerHTML = `
-            <summary>${escapeHtml(table.name)}</summary>
-            <p><strong>Description:</strong> ${escapeHtml(table.description)}</p>
-            <p><strong>Keys:</strong> ${escapeHtml(table.keyColumns.join(", "))}</p>
-            <p><strong>Columns:</strong> ${escapeHtml(table.notableColumns.join(", "))}</p>
-            <div class="schema-table-actions">
-                <button class="schema-table-view-btn" onclick="openTableModal('${table.name}')">Open Table Viewer</button>
-            </div>
-            ${buildPreviewTable(table.notableColumns, table.sampleRows.slice(0, 12))}
-        `;
+       details.innerHTML = `
+    <summary>${escapeHtml(table.name)}</summary>
+    <div class="schema-card-body">
+        <p><strong>Description:</strong> ${escapeHtml(table.description)}</p>
+        <p><strong>Keys:</strong> ${escapeHtml(table.keyColumns.join(", "))}</p>
+        <p><strong>Columns:</strong> ${escapeHtml(table.notableColumns.join(", "))}</p>
+        <div class="schema-table-actions">
+            <button
+                type="button"
+                class="schema-table-view-btn"
+                onclick="openTableModal('${table.name}')"
+            >
+                Open Table Viewer
+            </button>
+        </div>
+    </div>
+`;
 
         container.appendChild(details);
     });
