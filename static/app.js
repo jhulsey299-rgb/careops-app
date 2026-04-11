@@ -237,7 +237,7 @@ function generateMockCell(tableName, columnName, rowIndex) {
 
   const payers = [
     "Medicare", "Medicaid", "Blue Cross", "Aetna",
-    "UnitedHealthcare", "Cigna"
+    "UnitedHealthcare", "Cigna", "Self Pay"
   ];
 
   const departments = [
@@ -275,48 +275,65 @@ function generateMockCell(tableName, columnName, rowIndex) {
 
   switch (String(columnName).toLowerCase()) {
     case "patient_id":
-      return rowIndex;
+      return Number(rowIndex);
+
     case "provider_id":
-      return 200 + (rowIndex % 50);
+      return 200 + rowIndex;
+
     case "department_id":
-      return 500 + (rowIndex % 20);
+      return 500 + rowIndex;
+
     case "encounter_id":
       return 1000 + rowIndex;
+
     case "appointment_id":
       return 2000 + rowIndex;
+
     case "charge_id":
       return 3000 + rowIndex;
+
     case "claim_id":
       return 4000 + rowIndex;
+
     case "discharge_id":
       return 5000 + rowIndex;
+
     case "readmission_id":
       return 6000 + rowIndex;
+
     case "observation_id":
       return 7000 + rowIndex;
 
     case "index_encounter_id":
       return 1000 + rowIndex;
+
     case "readmit_encounter_id":
-      return 1000 + ((rowIndex % 80) + 1);
+      return 1000 + (((rowIndex + 7) % 80) + 1);
 
     case "first_name":
       return randomItem(firstNames);
+
     case "last_name":
       return randomItem(lastNames);
+
     case "age":
       return randomInt(18, 90);
+
     case "gender":
       return randomItem(genders);
+
     case "insurance_type":
       return randomItem(insuranceTypes);
+
     case "risk_score":
       return randomInt(1, 100);
+
     case "city":
       return randomItem(cities);
 
     case "provider_name":
       return `Dr. ${randomItem(firstNames)} ${randomItem(lastNames)}`;
+
     case "specialty":
       return randomItem(specialties);
 
@@ -415,21 +432,181 @@ function generateMockCell(tableName, columnName, rowIndex) {
   }
 }
 
-function buildSampleRows(table, rowCount = 80) {
-  const rows = [];
-  for (let i = 1; i <= rowCount; i += 1) {
-    rows.push(
-      table.notableColumns.map(columnName =>
-        generateMockCell(table.name, columnName, i)
-      )
-    );
-  }
-  return rows;
+function rowToArray(table, rowObject) {
+  return table.notableColumns.map(col => rowObject[col] ?? null);
 }
 
-schema.tables.forEach(table => {
-  table.sampleRows = buildSampleRows(table);
-});
+function generateRelationalSampleRows() {
+  const rowCount = 80;
+
+  const patientsTable = schema.tables.find(t => t.name === "patients");
+  const providersTable = schema.tables.find(t => t.name === "providers");
+  const departmentsTable = schema.tables.find(t => t.name === "departments");
+  const encountersTable = schema.tables.find(t => t.name === "encounters");
+  const appointmentsTable = schema.tables.find(t => t.name === "appointments");
+  const chargesTable = schema.tables.find(t => t.name === "charges");
+  const claimsTable = schema.tables.find(t => t.name === "claims");
+  const dischargesTable = schema.tables.find(t => t.name === "discharges");
+  const readmissionsTable = schema.tables.find(t => t.name === "readmissions");
+  const observationsTable = schema.tables.find(t => t.name === "observations");
+
+  const patients = [];
+  const providers = [];
+  const departments = [];
+  const encounters = [];
+  const appointments = [];
+  const charges = [];
+  const claims = [];
+  const discharges = [];
+  const readmissions = [];
+  const observations = [];
+
+  for (let i = 1; i <= rowCount; i += 1) {
+    patients.push({
+      patient_id: i,
+      first_name: generateMockCell("patients", "first_name", i),
+      last_name: generateMockCell("patients", "last_name", i),
+      age: generateMockCell("patients", "age", i),
+      gender: generateMockCell("patients", "gender", i),
+      insurance_type: generateMockCell("patients", "insurance_type", i),
+      risk_score: generateMockCell("patients", "risk_score", i),
+      city: generateMockCell("patients", "city", i)
+    });
+  }
+
+  for (let i = 1; i <= 40; i += 1) {
+    providers.push({
+      provider_id: 200 + i,
+      provider_name: generateMockCell("providers", "provider_name", i),
+      specialty: generateMockCell("providers", "specialty", i),
+      facility: generateMockCell("providers", "facility", i)
+    });
+  }
+
+  for (let i = 1; i <= 20; i += 1) {
+    departments.push({
+      department_id: 500 + i,
+      department_name: generateMockCell("departments", "department_name", i),
+      facility: generateMockCell("departments", "facility", i),
+      service_line: generateMockCell("departments", "service_line", i)
+    });
+  }
+
+  for (let i = 1; i <= rowCount; i += 1) {
+    const patient = patients[(i - 1) % patients.length];
+    const provider = providers[(i - 1) % providers.length];
+    const dept = departments[(i - 1) % departments.length];
+
+    encounters.push({
+      encounter_id: 1000 + i,
+      patient_id: patient.patient_id,
+      provider_id: provider.provider_id,
+      department_id: dept.department_id,
+      facility: dept.facility,
+      department: dept.department_name,
+      status: generateMockCell("encounters", "status", i),
+      encounter_type: generateMockCell("encounters", "encounter_type", i),
+      length_of_stay: generateMockCell("encounters", "length_of_stay", i),
+      admit_date: generateMockCell("encounters", "admit_date", i),
+      discharge_date: generateMockCell("encounters", "discharge_date", i)
+    });
+  }
+
+  for (let i = 1; i <= rowCount; i += 1) {
+    const patient = patients[(i - 1) % patients.length];
+    const provider = providers[(i - 1) % providers.length];
+    const dept = departments[(i - 1) % departments.length];
+
+    appointments.push({
+      appointment_id: 2000 + i,
+      patient_id: patient.patient_id,
+      provider_id: provider.provider_id,
+      department_id: dept.department_id,
+      facility: dept.facility,
+      department: dept.department_name,
+      status: generateMockCell("appointments", "status", i),
+      date: generateMockCell("appointments", "date", i)
+    });
+  }
+
+  for (let i = 1; i <= rowCount; i += 1) {
+    const encounter = encounters[i - 1];
+    const patient = patients.find(p => p.patient_id === encounter.patient_id);
+
+    charges.push({
+      charge_id: 3000 + i,
+      patient_id: patient.patient_id,
+      encounter_id: encounter.encounter_id,
+      amount: generateMockCell("charges", "amount", i),
+      payer: patient.insurance_type === "Self Pay"
+        ? "Self Pay"
+        : generateMockCell("charges", "payer", i),
+      charge_type: generateMockCell("charges", "charge_type", i)
+    });
+
+    claims.push({
+      claim_id: 4000 + i,
+      patient_id: patient.patient_id,
+      encounter_id: encounter.encounter_id,
+      payer: patient.insurance_type === "Self Pay"
+        ? "Self Pay"
+        : generateMockCell("claims", "payer", i),
+      claim_status: generateMockCell("claims", "claim_status", i),
+      billed_amount: generateMockCell("claims", "billed_amount", i)
+    });
+
+    discharges.push({
+      discharge_id: 5000 + i,
+      encounter_id: encounter.encounter_id,
+      patient_id: patient.patient_id,
+      facility: encounter.facility,
+      department: encounter.department,
+      discharge_disposition: generateMockCell("discharges", "discharge_disposition", i),
+      discharge_order_minutes: generateMockCell("discharges", "discharge_order_minutes", i),
+      departure_minutes: generateMockCell("discharges", "departure_minutes", i),
+      delayed_for_transport: generateMockCell("discharges", "delayed_for_transport", i)
+    });
+
+    observations.push({
+      observation_id: 7000 + i,
+      encounter_id: encounter.encounter_id,
+      patient_id: patient.patient_id,
+      facility: encounter.facility,
+      department: encounter.department,
+      obs_hours: generateMockCell("observations", "obs_hours", i),
+      converted_to_inpatient: generateMockCell("observations", "converted_to_inpatient", i),
+      code_44_flag: generateMockCell("observations", "code_44_flag", i)
+    });
+  }
+
+  for (let i = 1; i <= rowCount; i += 1) {
+    const indexEncounter = encounters[i - 1];
+    const readmitEncounter = encounters[(i + 6) % encounters.length];
+
+    readmissions.push({
+      readmission_id: 6000 + i,
+      index_encounter_id: indexEncounter.encounter_id,
+      readmit_encounter_id: readmitEncounter.encounter_id,
+      patient_id: indexEncounter.patient_id,
+      facility: indexEncounter.facility,
+      readmit_within_30_days: generateMockCell("readmissions", "readmit_within_30_days", i),
+      days_to_readmit: generateMockCell("readmissions", "days_to_readmit", i)
+    });
+  }
+
+  patientsTable.sampleRows = patients.map(row => rowToArray(patientsTable, row));
+  providersTable.sampleRows = providers.map(row => rowToArray(providersTable, row));
+  departmentsTable.sampleRows = departments.map(row => rowToArray(departmentsTable, row));
+  encountersTable.sampleRows = encounters.map(row => rowToArray(encountersTable, row));
+  appointmentsTable.sampleRows = appointments.map(row => rowToArray(appointmentsTable, row));
+  chargesTable.sampleRows = charges.map(row => rowToArray(chargesTable, row));
+  claimsTable.sampleRows = claims.map(row => rowToArray(claimsTable, row));
+  dischargesTable.sampleRows = discharges.map(row => rowToArray(dischargesTable, row));
+  readmissionsTable.sampleRows = readmissions.map(row => rowToArray(readmissionsTable, row));
+  observationsTable.sampleRows = observations.map(row => rowToArray(observationsTable, row));
+}
+
+generateRelationalSampleRows();
 
 // ======================
 // LESSON BUILDER FUNCTIONS
