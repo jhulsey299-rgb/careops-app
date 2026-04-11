@@ -295,6 +295,11 @@ function generateMockCell(tableName, columnName, rowIndex) {
     case "observation_id":
       return 7000 + rowIndex;
 
+    case "index_encounter_id":
+      return 1000 + rowIndex;
+    case "readmit_encounter_id":
+      return 1000 + ((rowIndex % 80) + 1);
+
     case "first_name":
       return randomItem(firstNames);
     case "last_name":
@@ -335,8 +340,9 @@ function generateMockCell(tableName, columnName, rowIndex) {
       ]);
 
     case "status":
-      if (tableName === "appointments") return randomItem(appointmentStatuses);
-      return randomItem(encounterStatuses);
+      return tableName === "appointments"
+        ? randomItem(appointmentStatuses)
+        : randomItem(encounterStatuses);
 
     case "encounter_type":
       return randomItem(encounterTypes);
@@ -396,7 +402,6 @@ function generateMockCell(tableName, columnName, rowIndex) {
       return randomInt(1, 30);
 
     case "obs_hours":
-    case "observation_hours":
       return randomInt(1, 72);
 
     case "converted_to_inpatient":
@@ -409,6 +414,22 @@ function generateMockCell(tableName, columnName, rowIndex) {
       return `${tableName}_${columnName}_${rowIndex}`;
   }
 }
+
+function buildSampleRows(table, rowCount = 80) {
+  const rows = [];
+  for (let i = 1; i <= rowCount; i += 1) {
+    rows.push(
+      table.notableColumns.map(columnName =>
+        generateMockCell(table.name, columnName, i)
+      )
+    );
+  }
+  return rows;
+}
+
+schema.tables.forEach(table => {
+  table.sampleRows = buildSampleRows(table);
+});
 
 // ======================
 // LESSON BUILDER FUNCTIONS
