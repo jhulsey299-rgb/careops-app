@@ -835,6 +835,10 @@ body.resizing-schema #schema-resizer::before {
     padding-right: 2px;
 }
 
+.curriculum-category {
+    width: 100%;
+}
+
 .curriculum-category-header {
     width: 100%;
     border: 1px solid #e5e7eb;
@@ -1129,6 +1133,7 @@ body.resizing-schema #schema-resizer::before {
     color: var(--primary-dark);
 }
 
+/* Tables */
 .preview-table,
 .table-modal-preview table {
     width: 100%;
