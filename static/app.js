@@ -580,19 +580,28 @@ function generateRelationalSampleRows() {
   }
 
   for (let i = 1; i <= rowCount; i += 1) {
-    const indexEncounter = encounters[i - 1];
-    const readmitEncounter = encounters[(i + 6) % encounters.length];
+  const indexEncounter = encounters[i - 1];
 
-    readmissions.push({
-      readmission_id: 6000 + i,
-      index_encounter_id: indexEncounter.encounter_id,
-      readmit_encounter_id: readmitEncounter.encounter_id,
-      patient_id: indexEncounter.patient_id,
-      facility: indexEncounter.facility,
-      readmit_within_30_days: generateMockCell("readmissions", "readmit_within_30_days", i),
-      days_to_readmit: generateMockCell("readmissions", "days_to_readmit", i)
-    });
-  }
+  const samePatientEncounters = encounters.filter(
+    e => e.patient_id === indexEncounter.patient_id && e.encounter_id !== indexEncounter.encounter_id
+  );
+
+  const readmitEncounter =
+    samePatientEncounters.length > 0
+      ? samePatientEncounters[0]
+      : indexEncounter;
+
+  readmissions.push({
+    readmission_id: 6000 + i,
+    index_encounter_id: indexEncounter.encounter_id,
+    readmit_encounter_id: readmitEncounter.encounter_id,
+    patient_id: indexEncounter.patient_id,
+    facility: indexEncounter.facility,
+    readmit_within_30_days: generateMockCell("readmissions", "readmit_within_30_days", i),
+    days_to_readmit: generateMockCell("readmissions", "days_to_readmit", i)
+  });
+}
+
 
   patientsTable.sampleRows = patients.map(row => rowToArray(patientsTable, row));
   providersTable.sampleRows = providers.map(row => rowToArray(providersTable, row));
