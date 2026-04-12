@@ -3211,40 +3211,49 @@ function formatLessonType(type) {
 }
 
 function categoryDifficulty(category) {
-    const order = [
+    const easyIds = [
         "getting_started",
         "selecting_columns",
         "filtering_rows",
         "sorting_results",
         "strings",
         "numbers_and_calculations",
+        "join_strategy",
+        "left_joins_missing_data",
+        "date_filters_reporting_periods"
+    ];
+
+    const intermediateIds = [
         "null_handling",
         "boolean_logic",
         "case_statements",
         "aggregations",
         "group_by",
         "having",
+        "conditional_aggregation",
+        "distinct_counts_and_grain",
+        "subqueries"
+    ];
+
+    const hardIds = [
         "inner_joins",
         "hospital_throughput",
         "readmissions_observations",
         "readmissions_kpis",
         "observation_kpis",
         "length_of_stay_kpis",
-        "denials_kpis",
-        "ed_throughput_kpis",
-        "appointment_access_kpis",
-        "provider_performance_sql",
-        "executive_summary_sql"
+        "ctes",
+        "window_functions",
+        "readmissions_build_logic",
+        "observation_and_throughput_logic",
+        "revenue_cycle_denials_analysis"
     ];
 
-    const idx = order.indexOf(category.id);
-
-    if (idx <= 5) return "Easy";
-    if (idx <= 12) return "Intermediate";
-    if (idx <= 19) return "Hard";
+    if (easyIds.includes(category.id)) return "Easy";
+    if (intermediateIds.includes(category.id)) return "Intermediate";
+    if (hardIds.includes(category.id)) return "Hard";
     return "Advanced";
 }
-
 // ======================
 // SCHEMA LOOKUP HELPERS
 // ======================
