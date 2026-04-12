@@ -2549,6 +2549,61 @@ curriculum.push({
       ]
     },
 
+       // ============================================================
+  // TRACK 2: INTERMEDIATE SQL FOR HOSPITAL ANALYTICS
+  // ============================================================
+  {
+    id: "track_sql_intermediate_hospital",
+    title: "Intermediate SQL for Hospital Analytics",
+    description:
+      "Advance beyond SQL basics with realistic hospital analytics problems involving joins, date logic, conditional aggregation, distinct counts, subqueries, CTEs, window functions, readmissions, throughput, denials, and executive-ready summaries.",
+    order: 2,
+    categories: [
+      {
+        id: "join_strategy",
+        title: "Join Strategy",
+        order: 1,
+        lessons: [
+          conceptLesson(
+            "t2_js_01",
+            "Understanding Data Grain",
+            "Understand why encounter-level, patient-level, and provider-level reporting require different grains.",
+            ["JOIN", "GROUP BY"],
+            ["patients", "encounters", "providers", "departments"],
+            "Start with the table that matches the reporting grain, then join outward for attributes.",
+            "Data grain is the level each row represents. Choosing the wrong grain causes duplicates, incorrect counts, and misleading metrics.",
+            [
+              "Encounter grain means one row per visit",
+              "Patient grain means one row per person",
+              "Provider grain means one row per provider summary",
+              "Joining at the wrong grain can inflate counts"
+            ],
+            "If leadership asks for encounter volume by provider, encounter rows should stay the base grain while provider data is joined in."
+          ),
+          challengeLesson(
+            "t2_js_02",
+            "Join Encounters to Patients",
+            "Return encounter_id, first_name, last_name, and insurance_type.",
+            ["JOIN"],
+            ["encounters", "patients"],
+            "encounters.patient_id = patients.patient_id",
+            "SELECT e.encounter_id, p.first_name, p.last_name, p.insurance_type FROM encounters e JOIN patients p ON e.patient_id = p.patient_id;",
+            "SELECT e.encounter_id, p.first_name, p.last_name, p.insurance_type FROM encounters e JOIN patients p ON e.patient_id = p.patient_id;",
+            "Join encounters to patients on patient_id."
+          ),
+          scenarioLesson(
+            "t2_js_03",
+            "Choosing the Correct Base Table",
+            "Recognize which table should drive an encounter-volume analysis.",
+            ["encounters", "patients", "providers"],
+            "Think about what one row should represent.",
+            "Many SQL errors happen before the query even starts, when the wrong table is chosen as the base.",
+            "If you need visit counts by provider, should encounters usually be the base table rather than providers?",
+            "yes"
+          )
+        ]
+      }
+
     {
       id: "left_joins_missing_data",
       title: "Left Joins and Missing Data",
