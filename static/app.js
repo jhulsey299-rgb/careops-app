@@ -2441,7 +2441,15 @@ const curriculum = [
       }
     ]
   }
+    const curriculum = [
+    {
+        id: "track_sql_foundations_hospitals",
+    }
 ];
+
+curriculum push({
+    // FULL TRACK 2 OBJECT HERE
+});
 
 
 // ======================
