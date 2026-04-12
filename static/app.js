@@ -695,12 +695,15 @@ function scenarioLesson(
         executiveTakeaway
     };
 }
-
-// ============================================
-// SQL Foundations for Hospital Data Curriculum
-// ============================================
+// ===============================
+// SQL CURRICULUM FOR HOSPITAL ANALYTICS
+// Tracks 1 and 2 - Ready to Paste
+// ===============================
 
 const curriculum = [
+  // ============================================================
+  // TRACK 1: SQL FOUNDATIONS FOR HOSPITAL DATA
+  // ============================================================
   {
     id: "track_sql_foundations_hospital",
     title: "SQL Foundations for Hospital Data",
@@ -708,6 +711,9 @@ const curriculum = [
       "Learn SQL through real hospital analytics scenarios focused on operations, finance, access, throughput, and executive reporting.",
     order: 1,
     categories: [
+      // --------------------------------------------------------
+      // 1. GETTING STARTED
+      // --------------------------------------------------------
       {
         id: "getting_started",
         title: "Getting Started",
@@ -774,6 +780,10 @@ const curriculum = [
           )
         ]
       },
+
+        // --------------------------------------------------------
+      // 2. SELECTING COLUMNS
+      // --------------------------------------------------------
       {
         id: "selecting_columns",
         title: "Selecting Columns",
@@ -835,17 +845,11 @@ const curriculum = [
             "Think audience first.",
             "The same data question can be answered with either clutter or clarity.",
             "For a leadership denial summary, should you emphasize payer and billed_amount or dump every claim field?",
-            "payer",
-            {
-              show: true,
-              metric: "Focused reporting output",
-              whyItMatters: "Leadership needs concise answers.",
-              whatToShare: "Keep only the fields directly tied to the business question.",
-              action: "Reduce clutter before sharing results."
-            }
+            "payer"
           )
         ]
       },
+        
       {
         id: "filtering_rows",
         title: "Filtering Rows",
