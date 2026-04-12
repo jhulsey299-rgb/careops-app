@@ -701,9 +701,6 @@ function scenarioLesson(
 // ===============================
 
 const curriculum = [
-  // ============================================================
-  // TRACK 1: SQL FOUNDATIONS FOR HOSPITAL DATA
-  // ============================================================
   {
     id: "track_sql_foundations_hospital",
     title: "SQL Foundations for Hospital Data",
@@ -781,7 +778,7 @@ const curriculum = [
         ]
       },
 
-        // --------------------------------------------------------
+      // --------------------------------------------------------
       // 2. SELECTING COLUMNS
       // --------------------------------------------------------
       {
@@ -845,11 +842,21 @@ const curriculum = [
             "Think audience first.",
             "The same data question can be answered with either clutter or clarity.",
             "For a leadership denial summary, should you emphasize payer and billed_amount or dump every claim field?",
-            "payer"
+            "payer",
+            {
+              show: true,
+              metric: "Focused reporting output",
+              whyItMatters: "Leadership needs concise answers.",
+              whatToShare: "Keep only the fields directly tied to the business question.",
+              action: "Reduce clutter before sharing results."
+            }
           )
         ]
       },
-        
+
+      // --------------------------------------------------------
+      // 3. FILTERING ROWS
+      // --------------------------------------------------------
       {
         id: "filtering_rows",
         title: "Filtering Rows",
@@ -924,6 +931,10 @@ const curriculum = [
           )
         ]
       },
+
+      // --------------------------------------------------------
+      // 4. SORTING RESULTS
+      // --------------------------------------------------------
       {
         id: "sorting_results",
         title: "Sorting Results",
@@ -1003,6 +1014,10 @@ const curriculum = [
           )
         ]
       },
+
+      // --------------------------------------------------------
+      // 5. STRINGS
+      // --------------------------------------------------------
       {
         id: "strings",
         title: "Strings",
@@ -1069,6 +1084,10 @@ const curriculum = [
           )
         ]
       },
+
+      // --------------------------------------------------------
+      // 6. NUMBERS AND CALCULATIONS
+      // --------------------------------------------------------
       {
         id: "numbers_and_calculations",
         title: "Numbers and Calculations",
@@ -1143,6 +1162,9 @@ const curriculum = [
           )
         ]
       },
+      // --------------------------------------------------------
+      // 7. NULL HANDLING
+      // --------------------------------------------------------
       {
         id: "null_handling",
         title: "NULL Handling",
@@ -1215,6 +1237,10 @@ const curriculum = [
           )
         ]
       },
+
+      // --------------------------------------------------------
+      // 8. BOOLEAN LOGIC
+      // --------------------------------------------------------
       {
         id: "boolean_logic",
         title: "Boolean Logic",
@@ -1288,6 +1314,10 @@ const curriculum = [
           )
         ]
       },
+
+      // --------------------------------------------------------
+      // 9. CASE STATEMENTS
+      // --------------------------------------------------------
       {
         id: "case_statements",
         title: "CASE Statements",
@@ -1367,6 +1397,10 @@ const curriculum = [
           )
         ]
       },
+
+      // --------------------------------------------------------
+      // 10. AGGREGATIONS
+      // --------------------------------------------------------
       {
         id: "aggregations",
         title: "Aggregations",
@@ -1440,6 +1474,10 @@ const curriculum = [
           )
         ]
       },
+
+      // --------------------------------------------------------
+      // 11. GROUP BY
+      // --------------------------------------------------------
       {
         id: "group_by",
         title: "GROUP BY",
@@ -1514,6 +1552,10 @@ const curriculum = [
           )
         ]
       },
+
+      // --------------------------------------------------------
+      // 12. HAVING
+      // --------------------------------------------------------
       {
         id: "having",
         title: "HAVING",
@@ -1592,6 +1634,10 @@ const curriculum = [
           )
         ]
       },
+
+      // --------------------------------------------------------
+      // 13. INNER JOINS
+      // --------------------------------------------------------
       {
         id: "inner_joins",
         title: "Inner Joins",
@@ -1666,6 +1712,10 @@ const curriculum = [
           )
         ]
       },
+
+      // --------------------------------------------------------
+      // 14. HOSPITAL THROUGHPUT
+      // --------------------------------------------------------
       {
         id: "hospital_throughput",
         title: "Hospital Throughput",
@@ -1738,6 +1788,10 @@ const curriculum = [
           )
         ]
       },
+
+      // --------------------------------------------------------
+      // 15. READMISSIONS AND OBSERVATION
+      // --------------------------------------------------------
       {
         id: "readmissions_observations",
         title: "Readmissions and Observation",
@@ -1811,6 +1865,10 @@ const curriculum = [
           )
         ]
       },
+
+      // --------------------------------------------------------
+      // 16. READMISSIONS KPIS
+      // --------------------------------------------------------
       {
         id: "readmissions_kpis",
         title: "Readmissions KPIs",
@@ -1890,6 +1948,10 @@ const curriculum = [
           )
         ]
       },
+
+      // --------------------------------------------------------
+      // 17. OBSERVATION KPIS
+      // --------------------------------------------------------
       {
         id: "observation_kpis",
         title: "Observation KPIs",
@@ -1969,6 +2031,10 @@ const curriculum = [
           )
         ]
       },
+
+      // --------------------------------------------------------
+      // 18. LENGTH OF STAY KPIS
+      // --------------------------------------------------------
       {
         id: "length_of_stay_kpis",
         title: "Length of Stay KPIs",
@@ -2048,6 +2114,7 @@ const curriculum = [
           )
         ]
       },
+
       {
         id: "denials_kpis",
         title: "Denials KPIs",
@@ -2443,8 +2510,6 @@ const curriculum = [
           )
         ]
       }
-    ]
-  }
    const curriculum = [
   {
     id: "track_sql_foundations_hospital",
