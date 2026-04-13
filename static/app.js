@@ -3523,7 +3523,6 @@ const curriculum = [
   }
 ];
 
-Categories 24–35 and lessons 116–175. Paste this block into app.js after Track 2.
 curriculum.push({
   id: "track_sql_advanced_hospital",
   title: "Advanced SQL for Hospital Decision Support",
@@ -4476,12 +4475,13 @@ scenarioLesson(
               whyItMatters: "A table alone rarely tells leadership what to do next.",
               whatToShare: "State what stands out, why it matters, and where action should start.",
               action: "Do not stop at returning the query output."
-            }
-          )
-        ]
-      }
+}
+        )
+      ]
+    }
   ]
-});
+  }
+];
 
 
 // ======================
