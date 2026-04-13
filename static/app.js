@@ -2507,10 +2507,6 @@ const curriculum = [
               whatToShare: "Lead with the biggest risks, opportunities, or exceptions.",
               action: "Sort by impact before presenting upward."
             }
-          )
-        ]
-      }
-    ]
   },
        // ============================================================
   // TRACK 2: INTERMEDIATE SQL FOR HOSPITAL ANALYTICS
