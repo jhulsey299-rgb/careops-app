@@ -3527,7 +3527,6 @@ const curriculum = [
   }
 ];
 
-Categories 24–35 and lessons 116–175. Paste this block into app.js after Track 2.
 curriculum.push({
   id: "track_sql_advanced_hospital",
   title: "Advanced SQL for Hospital Decision Support",
