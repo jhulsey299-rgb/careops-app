@@ -63,7 +63,10 @@
     --transition: 0.2s ease;
 }
 
-* {
+/* ================= Global Reset ================= */
+*,
+*::before,
+*::after {
     box-sizing: border-box;
 }
 
@@ -75,12 +78,21 @@ body {
     background: linear-gradient(180deg, var(--bg) 0%, var(--bg-soft) 100%);
     color: var(--text);
     font-family: "Inter", sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 
 body {
     padding: 20px;
 }
 
+/* Prevent layout overflow */
+img {
+    max-width: 100%;
+    height: auto;
+}
+
+/* ================= Typography ================= */
 h1,
 h2,
 h3,
@@ -88,6 +100,7 @@ h4 {
     margin-top: 0;
     color: var(--text);
     letter-spacing: -0.02em;
+    line-height: 1.25;
 }
 
 h1 {
@@ -143,6 +156,7 @@ code {
     border-radius: 6px;
 }
 
+/* ================= Buttons ================= */
 button {
     appearance: none;
     border: 1px solid transparent;
@@ -163,6 +177,11 @@ button {
     box-shadow: var(--shadow-sm);
     position: relative;
     overflow: hidden;
+}
+
+button:focus-visible {
+    outline: 3px solid rgba(37, 99, 235, 0.4);
+    outline-offset: 2px;
 }
 
 button::after {
@@ -201,6 +220,7 @@ button:disabled {
     transform: none;
 }
 
+/* ================= Textarea ================= */
 textarea {
     width: 100%;
     min-height: 220px;
@@ -232,11 +252,12 @@ textarea:focus {
     background: #fcfdff;
 }
 
+/* ================= Utility ================= */
 .hidden {
     display: none !important;
 }
 
-/* Layout */
+/* ================= Layout ================= */
 .app-shell {
     display: grid;
     grid-template-columns: 320px 14px 1fr;
@@ -263,7 +284,7 @@ textarea:focus {
     max-width: 100%;
 }
 
-/* Shared cards */
+/* ================= Shared Card Surface ================= */
 .schema-section,
 .dashboard-card,
 .badges-section,
@@ -281,7 +302,7 @@ textarea:focus {
     box-shadow: var(--shadow-sm);
 }
 
-/* Left panel */
+/* ================= Left Schema Panel ================= */
 .schema-panel {
     width: 320px;
     min-width: 260px;
@@ -358,7 +379,7 @@ body.resizing-schema #schema-resizer::before {
     color: var(--text-faint);
 }
 
-/* Hero */
+/* ================= Hero ================= */
 .hero-banner {
     background: linear-gradient(135deg, #0f172a 0%, #1d4ed8 50%, #60a5fa 100%);
     color: white;
@@ -415,7 +436,7 @@ body.resizing-schema #schema-resizer::before {
     opacity: 0.95;
 }
 
-/* Dashboard */
+/* ================= Dashboard ================= */
 .top-dashboard {
     display: grid;
     grid-template-columns: repeat(3, minmax(220px, 1fr));
@@ -507,7 +528,7 @@ body.resizing-schema #schema-resizer::before {
     }
 }
 
-/* Achievements */
+/* ================= Achievements / Badges ================= */
 .badges-section {
     padding: 18px;
     margin-bottom: 22px;
@@ -557,7 +578,7 @@ body.resizing-schema #schema-resizer::before {
     color: #94a3b8;
 }
 
-/* Track overview */
+/* ================= Track Overview ================= */
 .track-overview-panel {
     padding: 24px;
     margin-bottom: 18px;
@@ -607,7 +628,7 @@ body.resizing-schema #schema-resizer::before {
     margin-top: 16px;
 }
 
-/* Badge cards */
+/* ================= Track Badge Cards ================= */
 .track-badge-card {
     display: flex;
     flex-direction: column;
@@ -717,7 +738,7 @@ body.resizing-schema #schema-resizer::before {
     margin-top: 4px;
 }
 
-/* Right panel */
+/* ================= Right Panel ================= */
 .levels-panel {
     width: 290px;
     min-width: 290px;
@@ -835,6 +856,7 @@ body.resizing-schema #schema-resizer::before {
     padding-right: 2px;
 }
 
+/* ================= Curriculum Category ================= */
 .curriculum-category {
     width: 100%;
 }
@@ -919,7 +941,81 @@ body.resizing-schema #schema-resizer::before {
     color: #166534;
 }
 
-/* Lesson workspace */
+/* ================= Lesson List Buttons ================= */
+.lesson-item {
+    width: 100%;
+}
+
+.lesson-button {
+    width: 100%;
+    text-align: left;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    color: var(--text);
+    padding: 10px 12px;
+    border-radius: 12px;
+    box-shadow: none;
+}
+
+.lesson-button:hover {
+    background: #f8fbff;
+    border-color: #bfdbfe;
+    color: var(--text);
+    transform: none;
+    box-shadow: none;
+}
+
+.lesson-button.is-active {
+    border-color: #60a5fa;
+    background: #eff6ff;
+}
+
+.lesson-button.is-complete {
+    border-color: #86efac;
+    background: #f0fdf4;
+}
+
+.lesson-button-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 6px;
+}
+
+.lesson-button-title {
+    font-size: 0.85rem;
+    font-weight: 700;
+    line-height: 1.3;
+}
+
+.lesson-button-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+}
+
+.lesson-status-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    padding: 4px 8px;
+    font-size: 0.68rem;
+    font-weight: 700;
+    border: 1px solid #cbd5e1;
+    background: #f8fafc;
+    color: #64748b;
+}
+
+.lesson-status-pill.complete {
+    border-color: #86efac;
+    background: #dcfce7;
+    color: #166534;
+}
+
+/* ================= Lesson Workspace ================= */
 .mission-box {
     padding: 22px 22px 18px;
     margin-bottom: 18px;
@@ -1044,12 +1140,24 @@ body.resizing-schema #schema-resizer::before {
     display: none;
 }
 
+#feedback.success,
+#scenario-feedback.success {
+    border-left-color: #22c55e;
+    background: #f0fdf4;
+}
+
+#feedback.error,
+#scenario-feedback.error {
+    border-left-color: #ef4444;
+    background: #fef2f2;
+}
+
 .query-results-table-wrap {
     overflow-x: auto;
     margin-top: 12px;
 }
 
-/* Hint */
+/* ================= Hint Box ================= */
 .hint-box {
     background: linear-gradient(135deg, #fff7ed 0%, #fffbeb 100%);
     border: 1px solid #fed7aa;
@@ -1061,7 +1169,7 @@ body.resizing-schema #schema-resizer::before {
     font-size: 0.92rem;
 }
 
-/* Schema cards */
+/* ================= Schema Cards ================= */
 .schema-card,
 .relationship-item {
     border: 1px solid var(--border);
@@ -1133,7 +1241,7 @@ body.resizing-schema #schema-resizer::before {
     color: var(--primary-dark);
 }
 
-/* Tables */
+/* ================= Tables ================= */
 .preview-table,
 .table-modal-preview table {
     width: 100%;
@@ -1161,7 +1269,7 @@ body.resizing-schema #schema-resizer::before {
     font-weight: 700;
 }
 
-/* Pills */
+/* ================= Pills ================= */
 .difficulty-badge,
 .lesson-type-badge {
     flex-shrink: 0;
@@ -1219,7 +1327,7 @@ body.resizing-schema #schema-resizer::before {
     color: var(--scenario-text);
 }
 
-/* JS errors */
+/* ================= JS Error Banner ================= */
 .js-error-banner {
     margin-top: 16px;
     padding: 14px;
@@ -1231,7 +1339,7 @@ body.resizing-schema #schema-resizer::before {
     white-space: pre-wrap;
 }
 
-/* Modal */
+/* ================= Modal ================= */
 .table-modal-overlay {
     position: fixed;
     inset: 0;
@@ -1318,7 +1426,15 @@ body.resizing-schema #schema-resizer::before {
     margin-bottom: 8px;
 }
 
-/* Scrollbars */
+/* ================= Scrollbars ================= */
+.schema-panel,
+.levels-list,
+.table-modal,
+.query-results-table-wrap {
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 transparent;
+}
+
 .schema-panel::-webkit-scrollbar,
 .levels-list::-webkit-scrollbar,
 .table-modal::-webkit-scrollbar,
@@ -1344,7 +1460,20 @@ body.resizing-schema #schema-resizer::before {
     background: transparent;
 }
 
-/* Responsive */
+/* ================= Backdrop Filter Fallback ================= */
+@supports not (backdrop-filter: blur(10px)) {
+    .schema-panel,
+    .dashboard-card,
+    .badges-section,
+    .levels-panel,
+    .track-overview-panel,
+    .mission-box,
+    .query-section {
+        background: var(--panel-solid);
+    }
+}
+
+/* ================= Responsive ================= */
 @media (max-width: 1500px) {
     .track-overview-grid {
         grid-template-columns: 1fr;
@@ -1430,15 +1559,359 @@ body.resizing-schema #schema-resizer::before {
 }
 
 @media (max-width: 900px) {
-    .track-overview-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .track-category-cards {
+    .track-overview-grid,
+    .track-category-cards,
+    .table-modal-meta {
         grid-template-columns: 1fr;
     }
 
     .hero-banner {
         padding: 22px 20px 20px;
+    }
+}
+
+Get Outlook for iOS
+From: Josh Hulsey <jhulsey@tidelandshealth.org>
+Sent: Sunday, April 12, 2026 8:52:01 PM
+To: Josh Hulsey <jhulsey@tidelandshealth.org>
+Subject:
+ 
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap');
+
+:root {
+    --bg: #f8fafc;
+    --bg-soft: #eef4fb;
+    --panel: rgba(255, 255, 255, 0.94);
+    --panel-solid: #ffffff;
+    --panel-soft: #f8fbff;
+
+    --border: #dbe2ea;
+    --border-strong: #cbd5e1;
+
+    --text: #0f172a;
+    --text-soft: #475569;
+    --text-faint: #64748b;
+
+    --primary: #2563eb;
+    --primary-dark: #1d4ed8;
+    --primary-soft: #dbeafe;
+
+    --success: #16a34a;
+    --success-soft: #dcfce7;
+
+    --danger: #dc2626;
+    --danger-soft: #fee2e2;
+
+    --easy-bg: #ecfdf5;
+    --easy-border: #86efac;
+    --easy-text: #166534;
+
+    --intermediate-bg: #eff6ff;
+    --intermediate-border: #93c5fd;
+    --intermediate-text: #1d4ed8;
+
+    --hard-bg: #fff7ed;
+    --hard-border: #fdba74;
+    --hard-text: #c2410c;
+
+    --advanced-bg: #f5f3ff;
+    --advanced-border: #c4b5fd;
+    --advanced-text: #6d28d9;
+
+    --concept-bg: #eef6ff;
+    --concept-border: #bfdbfe;
+    --concept-text: #1d4ed8;
+
+    --challenge-bg: #f0fdf4;
+    --challenge-border: #86efac;
+    --challenge-text: #166534;
+
+    --scenario-bg: #fff7ed;
+    --scenario-border: #fdba74;
+    --scenario-text: #c2410c;
+
+    --shadow-sm: 0 2px 8px rgba(15, 23, 42, 0.05);
+    --shadow-md: 0 10px 24px rgba(15, 23, 42, 0.08);
+    --shadow-lg: 0 18px 40px rgba(15, 23, 42, 0.14);
+
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 18px;
+
+    --transition: 0.2s ease;
+}
+
+/* ================= Global Reset ================= */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    margin: 0;
+    padding: 0;
+    min-height: 100%;
+    background: linear-gradient(180deg, var(--bg) 0%, var(--bg-soft) 100%);
+    color: var(--text);
+    font-family: "Inter", sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+    padding: 20px;
+}
+
+/* Prevent layout overflow */
+img {
+    max-width: 100%;
+    height: auto;
+}
+
+/* ================= Typography ================= */
+h1,
+h2,
+h3,
+h4 {
+    margin-top: 0;
+    color: var(--text);
+    letter-spacing: -0.02em;
+    line-height: 1.25;
+}
+
+h1 {
+    font-size: 2.15rem;
+    font-weight: 700;
+    margin-bottom: 10px;
+}
+
+h2 {
+    font-size: 1.4rem;
+    font-weight: 700;
+}
+
+h3 {
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin-bottom: 10px;
+}
+
+h4 {
+    font-size: 0.95rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+p {
+    color: var(--text-soft);
+    line-height: 1.55;
+    margin: 8px 0;
+}
+
+strong {
+    color: var(--text);
+}
+
+ul {
+    margin: 0;
+    padding-left: 22px;
+}
+
+li {
+    color: var(--text-soft);
+    margin: 6px 0;
+    line-height: 1.5;
+}
+
+code {
+    font-family: "Fira Code", monospace;
+    font-size: 0.9rem;
+    background: #f8fafc;
+    color: var(--primary-dark);
+    padding: 2px 6px;
+    border-radius: 6px;
+}
+
+/* ================= Buttons ================= */
+button {
+    appearance: none;
+    border: 1px solid transparent;
+    background: var(--primary);
+    color: white;
+    font-family: "Inter", sans-serif;
+    font-weight: 600;
+    font-size: 0.95rem;
+    border-radius: 10px;
+    padding: 10px 16px;
+    cursor: pointer;
+    transition:
+        transform var(--transition),
+        box-shadow var(--transition),
+        background var(--transition),
+        border-color var(--transition),
+        color var(--transition);
+    box-shadow: var(--shadow-sm);
+    position: relative;
+    overflow: hidden;
+}
+
+button:focus-visible {
+    outline: 3px solid rgba(37, 99, 235, 0.4);
+    outline-offset: 2px;
+}
+
+button::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0) 0%,
+        rgba(255, 255, 255, 0.18) 50%,
+        rgba(255, 255, 255, 0) 100%
+    );
+    transform: translateX(-120%);
+    transition: transform 0.5s ease;
+}
+
+button:hover {
+    background: var(--primary-dark);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+
+button:hover::after {
+    transform: translateX(120%);
+}
+
+button:active {
+    transform: translateY(0);
+}
+
+button:disabled {
+    background: #cbd5e1;
+    color: white;
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+}
+
+/* ================= Textarea ================= */
+textarea {
+    width: 100%;
+    min-height: 220px;
+    resize: vertical;
+    border: 1px solid var(--border-strong);
+    border-radius: 14px;
+    background: #ffffff;
+    color: var(--text);
+    padding: 16px 18px;
+    font-size: 0.96rem;
+    line-height: 1.55;
+    box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.04);
+    transition:
+        border-color var(--transition),
+        box-shadow var(--transition),
+        background var(--transition);
+    font-family: "Fira Code", monospace;
+    background-image: linear-gradient(
+        180deg,
+        rgba(248, 250, 252, 0.8),
+        rgba(255, 255, 255, 1)
+    );
+}
+
+textarea:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+    background: #fcfdff;
+}
+
+/* ================= Utility ================= */
+.hidden {
+    display: none !important;
+}
+
+/* ================= Scrollbars ================= */
+.schema-panel,
+.levels-list,
+.table-modal,
+.query-results-table-wrap {
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 transparent;
+}
+
+.schema-panel::-webkit-scrollbar,
+.levels-list::-webkit-scrollbar,
+.table-modal::-webkit-scrollbar,
+.query-results-table-wrap::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+.schema-panel::-webkit-scrollbar-thumb,
+.levels-list::-webkit-scrollbar-thumb,
+.table-modal::-webkit-scrollbar-thumb,
+.query-results-table-wrap::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 999px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+}
+
+.schema-panel::-webkit-scrollbar-track,
+.levels-list::-webkit-scrollbar-track,
+.table-modal::-webkit-scrollbar-track,
+.query-results-table-wrap::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+/* ================= Backdrop Filter Fallback ================= */
+@supports not (backdrop-filter: blur(10px)) {
+    .schema-panel,
+    .dashboard-card,
+    .badges-section,
+    .levels-panel,
+    .track-overview-panel,
+    .mission-box,
+    .query-section {
+        background: var(--panel-solid);
+    }
+}
+
+/* ================= Responsive ================= */
+@media (max-width: 980px) {
+    .app-shell {
+        grid-template-columns: 1fr;
+        gap: 18px;
+    }
+
+    .schema-panel {
+        width: 100% !important;
+        max-height: none;
+        position: static;
+    }
+
+    .main-content {
+        padding-left: 0;
+    }
+
+    body {
+        padding: 14px;
+    }
+}
+
+@media (max-width: 900px) {
+    .hero-banner {
+        padding: 22px 20px 20px;
+    }
+
+    .track-overview-grid,
+    .track-category-cards,
+    .table-modal-meta {
+        grid-template-columns: 1fr;
     }
 }
