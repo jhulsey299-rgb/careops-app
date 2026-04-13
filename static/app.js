@@ -8,7 +8,7 @@
 // ======================
 // STORAGE KEY
 // ======================
-const STORAGE_KEY = "careops_curriculum_full_175_v1";
+const STORAGE_KEY = "careops_curriculum_full_175_v2_difficulty_badges";
 
 // ======================
 // APPLICATION STATE
@@ -33,6 +33,7 @@ let sqlEngineReady = false;
 // ======================
 let attempts = 0;
 let lastRunQuery = "";
+let activeDifficultyFilter = null;
 
 // ======================
 // SCHEMA DEFINITION
@@ -4274,6 +4275,75 @@ function categoryDifficulty(category) {
     if (hardIds.includes(category.id)) return "Hard";
     return "Advanced";
 }
+
+function getVisibleCategories() {
+    const categories = getVisibleCategories();
+    if (!activeDifficultyFilter) return categories;
+    return categories.filter(category => categoryDifficulty(category) === activeDifficultyFilter);
+}
+
+function getDifficultyBadgeConfig(label) {
+    if (label === "Easy") {
+        return {
+            label: "Easy",
+            color: "#16a34a",
+            soft: "#dcfce7",
+            border: "#86efac",
+            text: "#166534",
+            emoji: "🟢"
+        };
+    }
+    if (label === "Intermediate") {
+        return {
+            label: "Intermediate",
+            color: "#eab308",
+            soft: "#fef9c3",
+            border: "#fde047",
+            text: "#854d0e",
+            emoji: "🟡"
+        };
+    }
+    if (label === "Hard") {
+        return {
+            label: "Hard",
+            color: "#f97316",
+            soft: "#ffedd5",
+            border: "#fdba74",
+            text: "#9a3412",
+            emoji: "🟠"
+        };
+    }
+    return {
+        label: "Advanced",
+        color: "#dc2626",
+        soft: "#fee2e2",
+        border: "#fca5a5",
+        text: "#991b1b",
+        emoji: "🔴"
+    };
+}
+
+function difficultyBadgeProgress(label) {
+    const categories = getAllCategories().filter(category => categoryDifficulty(category) === label);
+    const lessons = categories.flatMap(category => category.lessons);
+    const completed = lessons.filter(lesson => isLessonCompleted(lesson.id)).length;
+    const total = lessons.length;
+    const percent = total ? Math.round((completed / total) * 100) : 0;
+    return { categories, lessons, completed, total, percent };
+}
+
+function setDifficultyFilter(label) {
+    activeDifficultyFilter = activeDifficultyFilter === label ? null : label;
+    showTrackOverview();
+    renderAchievements();
+    renderCurriculumNav();
+    renderTrackOverview();
+
+    const list = document.getElementById("category-list");
+    if (list) {
+        list.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+}
 // ======================
 // SCHEMA LOOKUP HELPERS
 // ======================
@@ -4541,7 +4611,7 @@ function updateDashboard() {
     }
 
     if (badgeCount) {
-        badgeCount.innerText = `${categoryBadgeCount()} category badges earned · ${masteryCount()} mastered`;
+        badgeCount.innerText = activeDifficultyFilter ? `${activeDifficultyFilter} view active · ${masteryCount()} mastered` : `4 difficulty badges · ${masteryCount()} mastered`;
     }
 
     if (trackTitle) trackTitle.innerText = track.title;
@@ -4554,13 +4624,83 @@ function renderAchievements() {
     const container = document.getElementById("badges-container");
     if (!container) return;
 
+    const levels = ["Easy", "Intermediate", "Hard", "Advanced"];
     container.innerHTML = "";
+    container.style.display = "grid";
+    container.style.gridTemplateColumns = "repeat(2, minmax(0, 1fr))";
+    container.style.gap = "16px";
+    container.style.alignItems = "stretch";
 
-    achievements().forEach(achievement => {
-        const chip = document.createElement("div");
-        chip.className = achievement.earned ? "badge-chip" : "badge-chip locked";
-        chip.innerText = `${achievement.emoji} ${achievement.label}`;
-        container.appendChild(chip);
+    levels.forEach(label => {
+        const config = getDifficultyBadgeConfig(label);
+        const progress = difficultyBadgeProgress(label);
+        const selected = activeDifficultyFilter === label;
+
+        const card = document.createElement("button");
+        card.type = "button";
+        card.className = "difficulty-progress-card";
+        card.style.width = "100%";
+        card.style.textAlign = "left";
+        card.style.padding = "18px";
+        card.style.borderRadius = "18px";
+        card.style.border = `2px solid ${selected ? config.color : config.border}`;
+        card.style.background = selected
+            ? `linear-gradient(135deg, ${config.soft} 0%, #ffffff 100%)`
+            : "#ffffff";
+        card.style.color = "#0f172a";
+        card.style.boxShadow = selected
+            ? "0 14px 28px rgba(15, 23, 42, 0.12)"
+            : "0 6px 16px rgba(15, 23, 42, 0.08)";
+        card.style.display = "flex";
+        card.style.alignItems = "center";
+        card.style.gap = "16px";
+        card.style.minHeight = "140px";
+        card.style.transform = "none";
+        card.style.overflow = "hidden";
+        card.onclick = function () {
+            setDifficultyFilter(label);
+        };
+
+        const ring = document.createElement("div");
+        ring.style.width = "86px";
+        ring.style.height = "86px";
+        ring.style.borderRadius = "50%";
+        ring.style.flexShrink = "0";
+        ring.style.display = "flex";
+        ring.style.alignItems = "center";
+        ring.style.justifyContent = "center";
+        ring.style.background = `conic-gradient(${config.color} ${progress.percent}%, #e2e8f0 0)`;
+        ring.style.padding = "6px";
+
+        const inner = document.createElement("div");
+        inner.style.width = "100%";
+        inner.style.height = "100%";
+        inner.style.borderRadius = "50%";
+        inner.style.background = "#ffffff";
+        inner.style.display = "flex";
+        inner.style.flexDirection = "column";
+        inner.style.alignItems = "center";
+        inner.style.justifyContent = "center";
+        inner.innerHTML = `
+            <div style="font-size:1.1rem;font-weight:800;color:${config.text};line-height:1;">${progress.percent}%</div>
+            <div style="font-size:0.8rem;margin-top:4px;">${config.emoji}</div>
+        `;
+        ring.appendChild(inner);
+
+        const meta = document.createElement("div");
+        meta.style.minWidth = "0";
+        meta.innerHTML = `
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px;">
+                <span style="display:inline-flex;align-items:center;justify-content:center;padding:5px 10px;border-radius:999px;background:${config.soft};border:1px solid ${config.border};color:${config.text};font-size:0.76rem;font-weight:800;">${label}</span>
+                ${selected ? `<span style="display:inline-flex;align-items:center;justify-content:center;padding:5px 10px;border-radius:999px;background:#eff6ff;border:1px solid #93c5fd;color:#1d4ed8;font-size:0.72rem;font-weight:800;">Filtered</span>` : ""}
+            </div>
+            <div style="font-size:1rem;font-weight:800;color:#0f172a;margin-bottom:4px;">${progress.completed} of ${progress.total} lessons completed</div>
+            <div style="font-size:0.84rem;color:#475569;">${progress.categories.length} curriculum categories · Click to ${selected ? "show all categories" : "open this difficulty"}</div>
+        `;
+
+        card.appendChild(ring);
+        card.appendChild(meta);
+        container.appendChild(card);
     });
 }
 
@@ -4573,7 +4713,13 @@ function renderCurriculumNav() {
 
     list.innerHTML = "";
 
-    getAllCategories().forEach(category => {
+    const visibleCategories = getVisibleCategories();
+    if (!visibleCategories.length) {
+        list.innerHTML = `<div style="padding:16px;border:1px dashed #cbd5e1;border-radius:14px;background:#f8fafc;color:#475569;">No curriculum categories match the current difficulty filter.</div>`;
+        return;
+    }
+
+    visibleCategories.forEach(category => {
         const wrap = document.createElement("div");
         wrap.className = "curriculum-category";
 
@@ -4848,7 +4994,7 @@ function showLessonWorkspace() {
 
 function renderTrackOverview() {
     const track = getTrack();
-    const categories = getAllCategories();
+    const categories = getVisibleCategories();
     const completed = completedLessonCount();
     const total = totalLessonCount();
 
@@ -4860,9 +5006,9 @@ function renderTrackOverview() {
     const cardsWrap = document.getElementById("track-category-cards");
 
     if (trackLabelEl) trackLabelEl.innerText = track.title;
-    if (titleEl) titleEl.innerText = track.title;
-    if (descEl) descEl.innerText = `${track.description} ${masteryCount()} lesson(s) mastered.`;
-    if (progressTextEl) progressTextEl.innerText = `${completed} of ${total} lessons completed`;
+    if (titleEl) titleEl.innerText = activeDifficultyFilter ? `${track.title} · ${activeDifficultyFilter}` : track.title;
+    if (descEl) descEl.innerText = activeDifficultyFilter ? `Showing only ${activeDifficultyFilter.toLowerCase()} curriculum. ${track.description} ${masteryCount()} lesson(s) mastered.` : `${track.description} ${masteryCount()} lesson(s) mastered.`;
+    if (progressTextEl) progressTextEl.innerText = activeDifficultyFilter ? `${categories.reduce((sum, category) => sum + category.lessons.filter(lesson => isLessonCompleted(lesson.id)).length, 0)} of ${categories.reduce((sum, category) => sum + category.lessons.length, 0)} lessons completed in ${activeDifficultyFilter}` : `${completed} of ${total} lessons completed`;
 
     if (progressBarEl) {
         progressBarEl.style.width = `${total ? (completed / total) * 100 : 0}%`;
@@ -4870,6 +5016,11 @@ function renderTrackOverview() {
 
     if (!cardsWrap) return;
     cardsWrap.innerHTML = "";
+
+    if (!categories.length) {
+        cardsWrap.innerHTML = `<div style="grid-column:1 / -1;padding:18px;border:1px dashed #cbd5e1;border-radius:16px;background:#f8fafc;color:#475569;">No curriculum categories are available for the current difficulty filter.</div>`;
+        return;
+    }
 
     categories.forEach(category => {
         const totalLessons = category.lessons.length;
@@ -4880,8 +5031,13 @@ function renderTrackOverview() {
         const difficultyClass = difficultyClassFromLabel(difficulty);
         const completionPercent = totalLessons ? (completedLessons / totalLessons) * 100 : 0;
 
-        const badge = document.createElement("div");
+        const badge = document.createElement("button");
+        badge.type = "button";
         badge.className = `track-badge-card ${fullyComplete ? "earned" : "locked"}`;
+        badge.onclick = function () {
+            activeDifficultyFilter = categoryDifficulty(category);
+            loadLesson(category.lessons[0].id);
+        };
         badge.innerHTML = `
             <div class="track-badge-icon-wrap">
                 <div class="track-badge-ring ${fullyComplete ? "earned" : ""}" style="--badge-progress:${completionPercent}%;">
@@ -4913,6 +5069,7 @@ function bindOverviewButtons() {
 
     if (openOverviewBtn) {
         openOverviewBtn.addEventListener("click", function () {
+            activeDifficultyFilter = null;
             showTrackOverview();
         });
     }
