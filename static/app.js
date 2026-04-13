@@ -1,4 +1,3 @@
-CareOps SQL Analyst - Corrected Full app.js
 // ======================
 // CAREOPS SQL ANALYST
 // TRACK 1 FULL BUILD
