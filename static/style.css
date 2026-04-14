@@ -414,6 +414,31 @@ body.resizing-schema #schema-resizer::before {
     z-index: 1;
     max-width: 760px;
 }
+/* ================= CAREOPS Branding ================= */
+.hero-title {
+    font-size: 2.6rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    margin-bottom: 6px;
+    color: #ffffff;
+    text-transform: uppercase;
+}
+
+.hero-tagline {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: #e0ecff;
+    margin: 4px 0 12px;
+    max-width: 720px;
+    line-height: 1.5;
+}
+
+.hero-description {
+    font-size: 1rem;
+    color: rgba(255, 255, 255, 0.95);
+    max-width: 760px;
+    line-height: 1.6;
+}
 
 .hero-copy p {
     max-width: 760px;
