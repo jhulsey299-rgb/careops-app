@@ -1,3 +1,4 @@
+CareOps SQL Analyst - Full app.js with Achievement Updates
 // ======================
 // CAREOPS SQL ANALYST
 // TRACK 1 FULL BUILD
@@ -4049,24 +4050,37 @@ function achievements() {
     const completed = completedLessonCount();
     const firstTry = appState.firstTryLessonIds.length;
     const mastered = masteryCount();
+    const catComplete = categoryId => {
+        const category = getAllCategories().find(item => item.id === categoryId);
+        return !!category && category.lessons.every(lesson => isLessonCompleted(lesson.id));
+    };
 
     return [
-        { label: "First Lesson", earned: completed >= 1, emoji: "🎯" },
-        { label: "3 Lessons Completed", earned: completed >= 3, emoji: "📘" },
-        { label: "5 Lessons Completed", earned: completed >= 5, emoji: "📚" },
-        { label: "10 Lessons Completed", earned: completed >= 10, emoji: "🚀" },
-        { label: "15 Lessons Completed", earned: completed >= 15, emoji: "🏥" },
-        { label: "25 Lessons Completed", earned: completed >= 25, emoji: "📊" },
-        { label: "50 Lessons Completed", earned: completed >= 50, emoji: "🏆" },
-        { label: "100 Lessons Completed", earned: completed >= 100, emoji: "🔥" },
-        { label: "3 First-Try Wins", earned: firstTry >= 3, emoji: "⚡" },
-        { label: "10 First-Try Wins", earned: firstTry >= 10, emoji: "💡" },
-        { label: "5 Mastered Lessons", earned: mastered >= 5, emoji: "🧠" },
-        { label: "15 Mastered Lessons", earned: mastered >= 15, emoji: "🥇" },
-        { label: "30 Mastered Lessons", earned: mastered >= 30, emoji: "👑" }
+        { label: "First Step", earned: completed >= 1, emoji: "🚀" },
+        { label: "Getting the Hang of It", earned: completed >= 5, emoji: "📘" },
+        { label: "On a Roll", earned: completed >= 10, emoji: "🔥" },
+        { label: "Quarter Century", earned: completed >= 25, emoji: "🏅" },
+        { label: "Halfway Hero", earned: completed >= 50, emoji: "🥈" },
+        { label: "Century Club", earned: completed >= 100, emoji: "💯" },
+
+        { label: "First-Try Flash", earned: firstTry >= 3, emoji: "⚡" },
+        { label: "Precision Pro", earned: firstTry >= 10, emoji: "🎯" },
+        { label: "Mastermind", earned: mastered >= 5, emoji: "🧠" },
+        { label: "Master of Masters", earned: mastered >= 25, emoji: "👑" },
+
+        { label: "Join Genius", earned: catComplete("inner_joins"), emoji: "🔗" },
+        { label: "Aggregate King", earned: catComplete("aggregations"), emoji: "👑" },
+        { label: "Filter Fanatic", earned: catComplete("filtering_rows"), emoji: "🎯" },
+        { label: "Grouping Guru", earned: catComplete("group_by"), emoji: "📊" },
+        { label: "CASE Commander", earned: catComplete("case_statements"), emoji: "🧩" },
+        { label: "Null Navigator", earned: catComplete("null_handling"), emoji: "🧭" },
+
+        { label: "Throughput Thinker", earned: catComplete("hospital_throughput"), emoji: "🏥" },
+        { label: "Readmission Ranger", earned: catComplete("readmissions_kpis"), emoji: "🔁" },
+        { label: "Financial Fixer", earned: catComplete("denials_kpis"), emoji: "💰" },
+        { label: "Executive Whisperer", earned: catComplete("executive_summary_sql"), emoji: "🗣️" }
     ];
 }
-
 function categoryBadgeCount() {
     return getAllCategories().filter(category =>
         category.lessons.every(lesson => isLessonCompleted(lesson.id))
