@@ -3534,6 +3534,10 @@ function initializeBranding() {
         taglineEl.textContent = CAREOPS_BRANDING.tagline;
     }
 }
+// Initialize application when DOM is ready
+document.addEventListener("DOMContentLoaded", () => {
+    initializeBranding();
+});
 // ======================
 // PART 2 OF 4
 // SQL ENGINE, RESULT HELPERS, GRADING ENGINE
