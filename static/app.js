@@ -3518,7 +3518,16 @@ function normalizeAppState() {
 // ======================
 const CAREOPS_BRANDING = {
     title: "CAREOPS",
-    tagline: "Clinical Analytics for Revenue, Efficiency, and Operational Performance Solutions"
+    tagline: "Clinical Analytics for Revenue, Efficiency, and Operational Performance Solutions",
+    acronym: {
+        C: "Clinical",
+        A: "Analytics",
+        R: "Revenue",
+        E: "Efficiency",
+        O: "Operational",
+        P: "Performance",
+        S: "Solutions"
+    }
 };
 
 // Function to inject branding into the hero banner
