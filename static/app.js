@@ -8,13 +8,13 @@
 // ======================
 // STORAGE KEY
 // ======================
-const STORAGE_KEY = "careops_curriculum_full_175_v2_difficulty_badges";
+const STORAGE_KEY = "careops_curriculum_track1_full_v1";
 
 // ======================
 // APPLICATION STATE
 // ======================
 let appState = {
-    currentTrackId: "track_sql_master_curriculum_hospital",
+    currentTrackId: "track_sql_foundations_hospital",
     currentCategoryId: null,
     currentLessonId: null,
     completedLessonIds: [],
@@ -34,6 +34,8 @@ let sqlEngineReady = false;
 let attempts = 0;
 let lastRunQuery = "";
 let activeDifficultyFilter = null;
+
+const DIFFICULTY_LEVELS = ["Foundations", "Core", "Applied", "Advanced", "Expert"];
 
 // ======================
 // SCHEMA DEFINITION
@@ -703,10 +705,10 @@ function scenarioLesson(
 
 const curriculum = [
   {
-    id: "track_sql_master_curriculum_hospital",
-    title: "CareOps SQL Analyst Full Curriculum",
+    id: "track_sql_foundations_hospital",
+    title: "SQL Foundations for Hospital Data",
     description:
-      "A complete SQL learning path for hospital analytics covering foundations, intermediate analysis, and advanced decision support.",
+      "Learn SQL through real hospital analytics scenarios focused on operations, finance, access, throughput, and executive reporting.",
     order: 1,
     categories: [
       // --------------------------------------------------------
@@ -2510,8 +2512,1033 @@ const curriculum = [
             }
           )
         ]
+      }
+    ]
+  },
+       // ============================================================
+  // TRACK 2: INTERMEDIATE SQL FOR HOSPITAL ANALYTICS
+  // ============================================================
+  {
+    id: "track_sql_intermediate_hospital",
+    title: "Intermediate SQL for Hospital Analytics",
+    description:
+      "Advance beyond SQL basics with realistic hospital analytics problems involving joins, date logic, conditional aggregation, distinct counts, subqueries, CTEs, window functions, readmissions, throughput, denials, and executive-ready summaries.",
+    order: 2,
+    categories: [
+      {
+        id: "join_strategy",
+        title: "Join Strategy",
+        order: 1,
+        lessons: [
+          conceptLesson(
+            "t2_js_01",
+            "Understanding Data Grain",
+            "Understand why encounter-level, patient-level, and provider-level reporting require different grains.",
+            ["JOIN", "GROUP BY"],
+            ["patients", "encounters", "providers", "departments"],
+            "Start with the table that matches the reporting grain, then join outward for attributes.",
+            "Data grain is the level each row represents. Choosing the wrong grain causes duplicates, incorrect counts, and misleading metrics.",
+            [
+              "Encounter grain means one row per visit",
+              "Patient grain means one row per person",
+              "Provider grain means one row per provider summary",
+              "Joining at the wrong grain can inflate counts"
+            ],
+            "If leadership asks for encounter volume by provider, encounter rows should stay the base grain while provider data is joined in."
+          ),
+          challengeLesson(
+            "t2_js_02",
+            "Join Encounters to Patients",
+            "Return encounter_id, first_name, last_name, and insurance_type.",
+            ["JOIN"],
+            ["encounters", "patients"],
+            "encounters.patient_id = patients.patient_id",
+            "SELECT e.encounter_id, p.first_name, p.last_name, p.insurance_type FROM encounters e JOIN patients p ON e.patient_id = p.patient_id;",
+            "SELECT e.encounter_id, p.first_name, p.last_name, p.insurance_type FROM encounters e JOIN patients p ON e.patient_id = p.patient_id;",
+            "Join encounters to patients on patient_id."
+          ),
+          scenarioLesson(
+            "t2_js_03",
+            "Choosing the Correct Base Table",
+            "Recognize which table should drive an encounter-volume analysis.",
+            ["encounters", "patients", "providers"],
+            "Think about what one row should represent.",
+            "Many SQL errors happen before the query even starts, when the wrong table is chosen as the base.",
+            "If you need visit counts by provider, should encounters usually be the base table rather than providers?",
+            "yes"
+          )
+        ]
       },
 
+    {
+      id: "left_joins_missing_data",
+      title: "Left Joins and Missing Data",
+      order: 2,
+      lessons: [
+        conceptLesson(
+          "t2_lj_01",
+          "INNER JOIN vs LEFT JOIN",
+          "Understand when unmatched rows should be preserved.",
+          ["LEFT JOIN", "IS NULL"],
+          ["patients", "encounters", "appointments"],
+          "Use LEFT JOIN when the left table defines the full population you want to preserve.",
+          "LEFT JOIN keeps all rows from the left table even when no match exists in the joined table.",
+          [
+            "INNER JOIN keeps only matched rows",
+            "LEFT JOIN preserves the full left-side denominator",
+            "NULLs after a LEFT JOIN often indicate missing activity",
+            "LEFT JOIN is critical for access and gap analyses"
+          ],
+          "If you want all patients, including those without appointments, patients should stay on the left side.",
+          {
+            show: true,
+            metric: "Denominator preservation",
+            whyItMatters: "Dropping unmatched rows can hide access gaps.",
+            whatToShare: "Clarify whether unmatched records were included or excluded.",
+            action: "Use LEFT JOIN when missing activity is itself the finding."
+          }
+        ),
+        challengeLesson(
+          "t2_lj_02",
+          "Patients Without Encounters",
+          "Return patient_id, first_name, and last_name for patients with no encounter.",
+          ["LEFT JOIN", "WHERE", "IS NULL"],
+          ["patients", "encounters"],
+          "patients.patient_id = encounters.patient_id",
+          "SELECT p.patient_id, p.first_name, p.last_name FROM patients p LEFT JOIN encounters e ON p.patient_id = e.patient_id WHERE e.encounter_id IS NULL;",
+          "SELECT p.patient_id, p.first_name, p.last_name FROM patients p LEFT JOIN encounters e ON p.patient_id = e.patient_id WHERE e.encounter_id IS NULL;",
+          "LEFT JOIN encounters to patients, then keep only rows where encounter_id is NULL."
+        ),
+        scenarioLesson(
+          "t2_lj_03",
+          "Finding Missing Activity",
+          "Recognize why LEFT JOIN is useful for identifying gaps.",
+          ["patients", "appointments"],
+          "Think preserved population first.",
+          "Gap analyses are about who or what did not have activity, so matched rows alone are not enough.",
+          "If leadership wants to know which departments had no appointments, should unmatched rows be preserved with a LEFT JOIN?",
+          "yes",
+          {
+            show: true,
+            metric: "Access gap visibility",
+            whyItMatters: "Missing activity can be operationally important.",
+            whatToShare: "Include units with zero activity when that absence matters.",
+            action: "Use preserved-population logic for gap analysis."
+          }
+        ),
+        challengeLesson(
+          "t2_lj_04",
+          "Departments Without Appointments",
+          "Return department_name for departments with no matching appointments.",
+          ["LEFT JOIN", "IS NULL"],
+          ["departments", "appointments"],
+          "departments.department_id = appointments.department_id",
+          "SELECT d.department_name FROM departments d LEFT JOIN appointments a ON d.department_id = a.department_id WHERE a.appointment_id IS NULL;",
+          "SELECT d.department_name FROM departments d LEFT JOIN appointments a ON d.department_id = a.department_id WHERE a.appointment_id IS NULL;",
+          "LEFT JOIN appointments to departments and filter where appointment_id is NULL."
+        ),
+        scenarioLesson(
+          "t2_lj_05",
+          "Preserving the Denominator",
+          "Recognize why LEFT JOIN supports accurate denominators.",
+          ["patients", "encounters"],
+          "Think total eligible population.",
+          "Some KPIs depend on the full eligible population, not just those with activity.",
+          "If your denominator is all patients, should an INNER JOIN to encounters usually be avoided because it removes patients with no visits?",
+          "yes",
+          {
+            show: true,
+            metric: "Trusted denominator logic",
+            whyItMatters: "The wrong join type can quietly shrink the denominator.",
+            whatToShare: "Document what population is being preserved in the query.",
+            action: "Check denominator logic before discussing rates."
+          }
+        )
+      ]
+    },
+
+    {
+      id: "date_filters_reporting_periods",
+      title: "Date Filters and Reporting Periods",
+      order: 3,
+      lessons: [
+        conceptLesson(
+          "t2_dt_01",
+          "Filtering by Reporting Period",
+          "Understand how date filters define the reporting window.",
+          ["WHERE", "BETWEEN", "strftime"],
+          ["encounters", "appointments"],
+          "Use admit_date, discharge_date, or date depending on the business question.",
+          "Time-based reporting depends on explicitly choosing the date field and reporting window that match the metric definition.",
+          [
+            "Different date fields answer different questions",
+            "Monthly reporting should use a clearly defined time column",
+            "The reporting period should be explicit and reproducible",
+            "Trend summaries depend on consistent date logic"
+          ],
+          "A discharge-based metric should not accidentally be filtered on admit_date if leadership expects discharge month reporting.",
+          {
+            show: true,
+            metric: "Reporting period consistency",
+            whyItMatters: "Mismatched date logic changes the meaning of the metric.",
+            whatToShare: "State which date field defines the reporting period.",
+            action: "Lock the date logic before trending results."
+          }
+        ),
+        challengeLesson(
+          "t2_dt_02",
+          "Admissions in 2025",
+          "Return encounter_id, patient_id, and admit_date for encounters admitted in 2025.",
+          ["WHERE"],
+          ["encounters"],
+          "No join needed.",
+          "SELECT encounter_id, patient_id, admit_date FROM encounters WHERE admit_date BETWEEN '2025-01-01' AND '2025-12-31';",
+          "SELECT encounter_id, patient_id, admit_date FROM encounters WHERE admit_date BETWEEN '2025-01-01' AND '2025-12-31';",
+          "Filter admit_date between 2025-01-01 and 2025-12-31."
+        ),
+        scenarioLesson(
+          "t2_dt_03",
+          "Choosing the Right Date Field",
+          "Recognize why date-field selection changes the story.",
+          ["encounters"],
+          "Think event timing.",
+          "The same table may have multiple time columns, and each one reflects a different operational milestone.",
+          "If the question is discharges by month, should discharge_date usually define the month instead of admit_date?",
+          "yes",
+          {
+            show: true,
+            metric: "Correct time attribution",
+            whyItMatters: "Wrong date fields misplace volume into the wrong periods.",
+            whatToShare: "Tie the date field to the event leadership is asking about.",
+            action: "Validate the time anchor before distribution."
+          }
+        ),
+        challengeLesson(
+          "t2_dt_04",
+          "Encounter Count by Admit Month",
+          "Return admit_month and encounter_count.",
+          ["GROUP BY", "COUNT", "strftime"],
+          ["encounters"],
+          "No join needed.",
+          "SELECT strftime('%Y-%m', admit_date) AS admit_month, COUNT(*) AS encounter_count FROM encounters GROUP BY strftime('%Y-%m', admit_date) ORDER BY admit_month;",
+          "SELECT strftime('%Y-%m', admit_date) AS admit_month, COUNT(*) AS encounter_count FROM encounters GROUP BY strftime('%Y-%m', admit_date) ORDER BY admit_month;",
+          "Use strftime('%Y-%m', admit_date), group by it, and count rows."
+        ),
+        scenarioLesson(
+          "t2_dt_05",
+          "Trend Interpretation",
+          "Recognize why consistent period logic matters for trends.",
+          ["encounters"],
+          "Think apples-to-apples comparison.",
+          "Trend lines only mean something when each period is built using the same logic and same date anchor.",
+          "If monthly comparisons use different date fields across reports, can those trends become misleading?",
+          "yes",
+          {
+            show: true,
+            metric: "Reliable trending",
+            whyItMatters: "Inconsistent period logic makes trends untrustworthy.",
+            whatToShare: "Keep monthly logic consistent across all periods.",
+            action: "Standardize period definitions before presenting trends."
+          }
+        )
+      ]
+    },
+
+    {
+      id: "conditional_aggregation",
+      title: "Conditional Aggregation",
+      order: 4,
+      lessons: [
+        conceptLesson(
+          "t2_ca_01",
+          "Building KPIs with Conditional Aggregation",
+          "Use CASE inside aggregates to build multi-part metrics in one query.",
+          ["CASE", "SUM", "COUNT"],
+          ["encounters", "claims", "appointments"],
+          "Conditional aggregation lets one grouped query calculate multiple business measures.",
+          "Conditional aggregation is one of the most useful SQL patterns for dashboards because it turns categories into KPI columns.",
+          [
+            "CASE inside SUM can count condition-specific rows",
+            "One query can produce several related KPIs",
+            "This pattern is common in dashboards",
+            "It reduces the need for multiple separate queries"
+          ],
+          "A single access query can report completed, cancelled, and no-show appointment counts side by side.",
+          {
+            show: true,
+            metric: "Multi-KPI summary construction",
+            whyItMatters: "Leadership often wants several related metrics together.",
+            whatToShare: "Group once, then create multiple KPI columns with CASE.",
+            action: "Use conditional aggregation to simplify dashboard logic."
+          }
+        ),
+        challengeLesson(
+          "t2_ca_02",
+          "Appointment Status Counts",
+          "Return completed_count and no_show_count from appointments.",
+          ["CASE", "SUM"],
+          ["appointments"],
+          "No join needed.",
+          "SELECT SUM(CASE WHEN status = 'Completed' THEN 1 ELSE 0 END) AS completed_count, SUM(CASE WHEN status = 'No Show' THEN 1 ELSE 0 END) AS no_show_count FROM appointments;",
+          "SELECT SUM(CASE WHEN status = 'Completed' THEN 1 ELSE 0 END) AS completed_count, SUM(CASE WHEN status = 'No Show' THEN 1 ELSE 0 END) AS no_show_count FROM appointments;",
+          "Use CASE inside SUM for both Completed and No Show."
+        ),
+        scenarioLesson(
+          "t2_ca_03",
+          "Multi-Metric Reporting",
+          "Recognize why leaders prefer several KPI columns in one grouped result.",
+          ["appointments", "claims"],
+          "Think concise summary table.",
+          "Decision-makers often prefer one grouped view with several metrics rather than several separate outputs they must mentally combine.",
+          "If leadership wants completed visits and no-shows by department in one table, is conditional aggregation usually a strong approach?",
+          "yes",
+          {
+            show: true,
+            metric: "Compact KPI reporting",
+            whyItMatters: "One grouped table is easier to interpret than multiple disconnected queries.",
+            whatToShare: "Show related KPIs side by side when they support the same decision.",
+            action: "Use CASE-based metrics in grouped summaries."
+          }
+        ),
+        challengeLesson(
+          "t2_ca_04",
+          "Encounter Type Counts by Facility",
+          "Return facility, inpatient_count, and emergency_count.",
+          ["GROUP BY", "CASE", "SUM"],
+          ["encounters"],
+          "No join needed.",
+          "SELECT facility, SUM(CASE WHEN encounter_type = 'Inpatient' THEN 1 ELSE 0 END) AS inpatient_count, SUM(CASE WHEN encounter_type = 'Emergency' THEN 1 ELSE 0 END) AS emergency_count FROM encounters GROUP BY facility;",
+          "SELECT facility, SUM(CASE WHEN encounter_type = 'Inpatient' THEN 1 ELSE 0 END) AS inpatient_count, SUM(CASE WHEN encounter_type = 'Emergency' THEN 1 ELSE 0 END) AS emergency_count FROM encounters GROUP BY facility;",
+          "Group by facility and use CASE inside SUM for each encounter type."
+        ),
+        scenarioLesson(
+          "t2_ca_05",
+          "Operational Interpretation",
+          "Recognize why segmented counts are more useful than one total.",
+          ["encounters"],
+          "Think operational meaning.",
+          "A single total may confirm volume, but segmented KPI columns explain what kinds of volume are driving the result.",
+          "If one facility has the same total encounters as another but a much higher emergency_count, does the segmented view provide more operational insight than the total alone?",
+          "yes",
+          {
+            show: true,
+            metric: "Segmented activity mix",
+            whyItMatters: "Composition often matters as much as total volume.",
+            whatToShare: "Pair totals with component breakdowns.",
+            action: "Use conditional categories to reveal what is driving the metric."
+          }
+        )
+      ]
+    },
+
+    {
+      id: "distinct_counts_and_grain",
+      title: "Distinct Counts and Data Grain",
+      order: 5,
+      lessons: [
+        conceptLesson(
+          "t2_dc_01",
+          "COUNT vs COUNT DISTINCT",
+          "Understand when counting rows is different from counting unique entities.",
+          ["COUNT", "COUNT DISTINCT"],
+          ["encounters", "patients", "appointments"],
+          "Use COUNT(*) for row volume and COUNT(DISTINCT ...) for unique entities.",
+          "Distinct counting prevents one entity from being counted multiple times when it appears across many rows.",
+          [
+            "Encounter count is not the same as patient count",
+            "One patient can have many encounters",
+            "Distinct counts are often needed for denominators",
+            "Wrong counting methods can inflate utilization"
+          ],
+          "A clinic with 100 visits may only have 60 unique patients, and those two numbers answer different questions.",
+          {
+            show: true,
+            metric: "Unique population measurement",
+            whyItMatters: "Volume and unique reach are not the same thing.",
+            whatToShare: "Specify whether the metric counts visits or people.",
+            action: "Choose DISTINCT when unique entities matter."
+          }
+        ),
+        challengeLesson(
+          "t2_dc_02",
+          "Unique Patients by Department",
+          "Return department and unique_patient_count.",
+          ["GROUP BY", "COUNT DISTINCT"],
+          ["encounters"],
+          "No join needed.",
+          "SELECT department, COUNT(DISTINCT patient_id) AS unique_patient_count FROM encounters GROUP BY department;",
+          "SELECT department, COUNT(DISTINCT patient_id) AS unique_patient_count FROM encounters GROUP BY department;",
+          "Group by department and count distinct patient_id."
+        ),
+        scenarioLesson(
+          "t2_dc_03",
+          "Visits vs Patients",
+          "Recognize why visit volume and unique patients answer different questions.",
+          ["encounters"],
+          "Think rows versus people.",
+          "A high visit count can be driven by repeat utilizers, while a high unique-patient count reflects broader reach.",
+          "If leadership asks how many individual patients were seen, should COUNT(DISTINCT patient_id) usually be preferred over COUNT(*)?",
+          "yes",
+          {
+            show: true,
+            metric: "Unique reach",
+            whyItMatters: "Leaders often need to know whether volume reflects many people or repeat visits.",
+            whatToShare: "Separate unique patients from total encounters.",
+            action: "State clearly whether the output is visit-based or person-based."
+          }
+        ),
+        challengeLesson(
+          "t2_dc_04",
+          "Unique Patients by Facility",
+          "Return facility and unique_patient_count.",
+          ["GROUP BY", "COUNT DISTINCT"],
+          ["encounters"],
+          "No join needed.",
+          "SELECT facility, COUNT(DISTINCT patient_id) AS unique_patient_count FROM encounters GROUP BY facility;",
+          "SELECT facility, COUNT(DISTINCT patient_id) AS unique_patient_count FROM encounters GROUP BY facility;",
+          "Group by facility and count distinct patient_id."
+        ),
+        scenarioLesson(
+          "t2_dc_05",
+          "High Utilizer Interpretation",
+          "Recognize when the gap between total encounters and unique patients suggests repeat utilization.",
+          ["encounters"],
+          "Think repeated visits.",
+          "When encounter counts are much higher than unique patient counts, repeat utilization is likely contributing to the difference.",
+          "If a department has many more encounters than unique patients, could that indicate repeat utilization by the same patients?",
+          "yes",
+          {
+            show: true,
+            metric: "Repeat-utilization signal",
+            whyItMatters: "Repeat activity can indicate chronic demand or care coordination issues.",
+            whatToShare: "Compare total encounters against distinct patients.",
+            action: "Investigate areas with large gaps between rows and unique people."
+          }
+        )
+      ]
+    },
+
+    {
+      id: "subqueries",
+      title: "Subqueries",
+      order: 6,
+      lessons: [
+        conceptLesson(
+          "t2_sq_01",
+          "Using Subqueries for Comparison Logic",
+          "Understand how subqueries support comparisons against averages, thresholds, and filtered populations.",
+          ["SUBQUERY", "AVG", "WHERE"],
+          ["encounters", "claims", "charges"],
+          "Subqueries are useful when the filter depends on a value calculated from the data itself.",
+          "A subquery can calculate a comparison value first, then let the outer query filter against it.",
+          [
+            "Subqueries can appear in WHERE or SELECT logic",
+            "They are useful for average comparisons",
+            "They help define dynamic thresholds",
+            "They can keep complex logic readable"
+          ],
+          "To find encounters above average LOS, you first need the average LOS value, which a subquery can calculate.",
+          {
+            show: true,
+            metric: "Dynamic benchmark logic",
+            whyItMatters: "Some filters depend on the dataset rather than a fixed number.",
+            whatToShare: "Explain the benchmark used for comparison.",
+            action: "Use subqueries when thresholds come from the data."
+          }
+        ),
+        challengeLesson(
+          "t2_sq_02",
+          "Encounters Above Average LOS",
+          "Return encounter_id and length_of_stay for encounters above the overall average LOS.",
+          ["SUBQUERY", "AVG", "WHERE"],
+          ["encounters"],
+          "No join needed.",
+          "SELECT encounter_id, length_of_stay FROM encounters WHERE length_of_stay > (SELECT AVG(length_of_stay) FROM encounters);",
+          "SELECT encounter_id, length_of_stay FROM encounters WHERE length_of_stay > (SELECT AVG(length_of_stay) FROM encounters);",
+          "Use a subquery to get AVG(length_of_stay) from encounters."
+        ),
+        scenarioLesson(
+          "t2_sq_03",
+          "Benchmark Comparison",
+          "Recognize when a subquery is useful for comparing rows to a system benchmark.",
+          ["encounters", "claims"],
+          "Think compare-to-average.",
+          "Subqueries are especially helpful when you want rows that exceed an average or other derived benchmark.",
+          "If you need departments whose average LOS exceeds the system-wide average LOS, is subquery logic a reasonable approach?",
+          "yes",
+          {
+            show: true,
+            metric: "Benchmark-based exception detection",
+            whyItMatters: "Operational review often focuses on performance relative to a benchmark.",
+            whatToShare: "Describe whether the comparison is against system average, target, or peer rate.",
+            action: "Use data-derived benchmarks when fixed thresholds are not enough."
+          }
+        ),
+        challengeLesson(
+          "t2_sq_04",
+          "Charges Above Average Amount",
+          "Return charge_id and amount for charges above the average charge amount.",
+          ["SUBQUERY", "AVG"],
+          ["charges"],
+          "No join needed.",
+          "SELECT charge_id, amount FROM charges WHERE amount > (SELECT AVG(amount) FROM charges);",
+          "SELECT charge_id, amount FROM charges WHERE amount > (SELECT AVG(amount) FROM charges);",
+          "Use a subquery with AVG(amount)."
+        ),
+        scenarioLesson(
+          "t2_sq_05",
+          "Executive Interpretation of Benchmarks",
+          "Recognize why benchmark-based exceptions are more actionable than raw lists.",
+          ["charges", "encounters"],
+          "Think what exceeds normal.",
+          "Executives often care less about the full list and more about which rows or groups exceed a meaningful benchmark.",
+          "If only above-average outliers matter for review, does a benchmark-based filter make the output more actionable?",
+          "yes",
+          {
+            show: true,
+            metric: "Actionable exception filtering",
+            whyItMatters: "Leadership review improves when the output is narrowed to what stands out.",
+            whatToShare: "Highlight what exceeds the benchmark instead of everything.",
+            action: "Use comparison logic to isolate meaningful exceptions."
+          }
+        )
+      ]
+    },
+
+    {
+      id: "ctes",
+      title: "Common Table Expressions",
+      order: 7,
+      lessons: [
+        conceptLesson(
+          "t2_cte_01",
+          "Why CTEs Improve Complex SQL",
+          "Use CTEs to break complex logic into readable steps.",
+          ["WITH", "CTE"],
+          ["encounters", "claims", "appointments"],
+          "CTEs let you define intermediate datasets before the final query.",
+          "Common Table Expressions improve readability, maintainability, and validation by splitting complex SQL into named steps.",
+          [
+            "CTEs create named temporary result sets",
+            "They make long SQL easier to debug",
+            "They help isolate denominator and numerator logic",
+            "They improve readability for future analysts"
+          ],
+          "A readmissions metric is much easier to validate when index encounters and return encounters are defined in separate named steps.",
+          {
+            show: true,
+            metric: "Readable analytic logic",
+            whyItMatters: "Complex metrics are easier to trust when their pieces are visible.",
+            whatToShare: "Organize multi-step logic into named intermediate sets.",
+            action: "Use CTEs when one long query becomes hard to reason about."
+          }
+        ),
+        challengeLesson(
+          "t2_cte_02",
+          "CTE for Discharged Encounters",
+          "Use a CTE called discharged_encounters to return encounter_id, patient_id, and discharge_date for encounters with a non-null discharge_date.",
+          ["WITH", "CTE", "IS NOT NULL"],
+          ["encounters"],
+          "Define the filtered encounter set first, then select from it.",
+          "WITH discharged_encounters AS (SELECT encounter_id, patient_id, discharge_date FROM encounters WHERE discharge_date IS NOT NULL) SELECT encounter_id, patient_id, discharge_date FROM discharged_encounters;",
+          "WITH discharged_encounters AS (SELECT encounter_id, patient_id, discharge_date FROM encounters WHERE discharge_date IS NOT NULL) SELECT encounter_id, patient_id, discharge_date FROM discharged_encounters;",
+          "Use WITH discharged_encounters AS (...) and then select from it."
+        ),
+        scenarioLesson(
+          "t2_cte_03",
+          "Readable Multi-Step Logic",
+          "Recognize why a CTE can be better than one long nested query.",
+          ["encounters", "claims"],
+          "Think modular logic.",
+          "When a metric has multiple steps, readability is often just as important as technical correctness.",
+          "If a query has a denominator step, a numerator step, and then a final rate calculation, can CTEs make that logic easier to validate?",
+          "yes",
+          {
+            show: true,
+            metric: "Transparent metric construction",
+            whyItMatters: "Named steps make validation and review easier.",
+            whatToShare: "Separate population-building from final calculation logic.",
+            action: "Use CTEs for multi-step KPIs."
+          }
+        ),
+        challengeLesson(
+          "t2_cte_04",
+          "CTE with Grouped Output",
+          "Use a CTE called denied_claims to return payer and denied_count from denied claims.",
+          ["WITH", "GROUP BY", "COUNT", "WHERE"],
+          ["claims"],
+          "Define denied_claims first, then aggregate from it.",
+          "WITH denied_claims AS (SELECT * FROM claims WHERE claim_status = 'Denied') SELECT payer, COUNT(*) AS denied_count FROM denied_claims GROUP BY payer;",
+          "WITH denied_claims AS (SELECT * FROM claims WHERE claim_status = 'Denied') SELECT payer, COUNT(*) AS denied_count FROM denied_claims GROUP BY payer;",
+          "Build a denied_claims CTE first, then group by payer."
+        ),
+        scenarioLesson(
+          "t2_cte_05",
+          "Executive Confidence in Logic",
+          "Recognize why transparent SQL design helps executive trust.",
+          ["claims", "encounters"],
+          "Think explainability.",
+          "Even when leaders never see the SQL, explainable logic improves the analyst's ability to defend and validate the metric.",
+          "If a KPI is likely to be questioned, can CTE-based stepwise logic make it easier to explain and defend?",
+          "yes",
+          {
+            show: true,
+            metric: "Defensible metric design",
+            whyItMatters: "Transparent logic is easier to audit and explain.",
+            whatToShare: "Be ready to describe the metric in steps, not just with one final number.",
+            action: "Use readable SQL for high-visibility metrics."
+          }
+        )
+      ]
+    },
+
+    {
+      id: "window_functions",
+      title: "Window Functions",
+      order: 8,
+      lessons: [
+        conceptLesson(
+          "t2_wf_01",
+          "Introduction to Window Functions",
+          "Understand how window functions calculate row-level analytics without collapsing rows.",
+          ["ROW_NUMBER", "RANK", "OVER", "PARTITION BY", "ORDER BY"],
+          ["encounters", "providers"],
+          "Window functions keep detail rows while adding rankings, sequence numbers, or cumulative values.",
+          "Window functions are powerful because they add context to each row without forcing a grouped summary.",
+          [
+            "ROW_NUMBER creates sequence within a partition",
+            "RANK compares rows within a partition",
+            "Window functions do not collapse rows like GROUP BY",
+            "They are useful for ranking and timeline logic"
+          ],
+          "If you want the first encounter per patient, ROW_NUMBER can label each encounter in order within each patient group.",
+          {
+            show: true,
+            metric: "Row-level analytic context",
+            whyItMatters: "Some questions require both row detail and comparative context.",
+            whatToShare: "Use rankings and sequence logic when grouped summaries are not enough.",
+            action: "Apply window functions for ordering within groups."
+          }
+        ),
+        challengeLesson(
+          "t2_wf_02",
+          "Encounter Sequence by Patient",
+          "Return patient_id, encounter_id, discharge_date, and encounter_sequence using ROW_NUMBER over patient_id ordered by discharge_date.",
+          ["ROW_NUMBER", "OVER", "PARTITION BY", "ORDER BY"],
+          ["encounters"],
+          "Partition by patient_id and order by discharge_date.",
+          "SELECT patient_id, encounter_id, discharge_date, ROW_NUMBER() OVER (PARTITION BY patient_id ORDER BY discharge_date) AS encounter_sequence FROM encounters;",
+          "SELECT patient_id, encounter_id, discharge_date, ROW_NUMBER() OVER (PARTITION BY patient_id ORDER BY discharge_date) AS encounter_sequence FROM encounters;",
+          "Use ROW_NUMBER() OVER (PARTITION BY patient_id ORDER BY discharge_date)."
+        ),
+        scenarioLesson(
+          "t2_wf_03",
+          "First Encounter Logic",
+          "Recognize why window functions help identify first or latest events.",
+          ["encounters"],
+          "Think sequence within patient.",
+          "Questions about first, latest, or top rows within a category are strong candidates for window functions.",
+          "If you need the first encounter for each patient, is ROW_NUMBER usually more appropriate than a simple GROUP BY alone?",
+          "yes",
+          {
+            show: true,
+            metric: "First-event identification",
+            whyItMatters: "Operational timelines often require event sequencing, not just counts.",
+            whatToShare: "Use sequence logic when the question is about order, not just totals.",
+            action: "Choose window functions for first/latest-row logic."
+          }
+        ),
+        challengeLesson(
+          "t2_wf_04",
+          "Rank Providers by Encounter Volume",
+          "Return provider_id, encounter_count, and provider_rank ranked by encounter_count descending.",
+          ["RANK", "COUNT", "GROUP BY", "OVER", "ORDER BY"],
+          ["encounters"],
+          "Aggregate provider encounter counts first, then rank them.",
+          "SELECT provider_id, encounter_count, RANK() OVER (ORDER BY encounter_count DESC) AS provider_rank FROM (SELECT provider_id, COUNT(*) AS encounter_count FROM encounters GROUP BY provider_id);",
+          "SELECT provider_id, encounter_count, RANK() OVER (ORDER BY encounter_count DESC) AS provider_rank FROM (SELECT provider_id, COUNT(*) AS encounter_count FROM encounters GROUP BY provider_id);",
+          "Count encounters by provider in a subquery, then apply RANK() over encounter_count DESC."
+        ),
+        scenarioLesson(
+          "t2_wf_05",
+          "Ranking Interpretation",
+          "Recognize why rankings can be more useful than raw sorted lists.",
+          ["encounters", "providers"],
+          "Think comparative position.",
+          "Rankings show not just order, but relative position, which often makes discussion easier for leadership.",
+          "If leaders want to know the top providers by volume, can a ranked output be easier to discuss than a raw unsorted list?",
+          "yes",
+          {
+            show: true,
+            metric: "Comparative standing",
+            whyItMatters: "Rankings clarify position and priority.",
+            whatToShare: "Use ranks when leadership needs a relative ordering.",
+            action: "Convert sorted outputs into ranked summaries when useful."
+          }
+        )
+      ]
+    },
+
+    {
+      id: "readmissions_build_logic",
+      title: "Readmissions Build Logic",
+      order: 9,
+      lessons: [
+        conceptLesson(
+          "t2_rd_01",
+          "Readmissions Logic Foundations",
+          "Understand how a readmissions metric links an index encounter to a later return encounter.",
+          ["JOIN", "WHERE", "DATE LOGIC"],
+          ["encounters", "readmissions"],
+          "Readmissions metrics depend on qualifying index events and a later return within the defined window.",
+          "A readmissions metric is only meaningful when the index population, return window, and exclusions are clearly specified.",
+          [
+            "The index event must be defined",
+            "The return event must occur after the index event",
+            "The time window matters",
+            "Specification consistency matters as much as SQL"
+          ],
+          "A 30-day readmission rate changes immediately if one analyst includes observation discharges and another does not.",
+          {
+            show: true,
+            metric: "Readmission measure specification",
+            whyItMatters: "Metric definitions drive the trustworthiness of the rate.",
+            whatToShare: "Document the index definition and return window before sharing the rate.",
+            action: "Validate specification before trend interpretation."
+          }
+        ),
+        challengeLesson(
+          "t2_rd_02",
+          "Qualifying Index Encounters",
+          "Return encounter_id, patient_id, and discharge_date for inpatient encounters with a non-null discharge_date.",
+          ["WHERE"],
+          ["encounters"],
+          "No join needed.",
+          "SELECT encounter_id, patient_id, discharge_date FROM encounters WHERE encounter_type = 'Inpatient' AND discharge_date IS NOT NULL;",
+          "SELECT encounter_id, patient_id, discharge_date FROM encounters WHERE encounter_type = 'Inpatient' AND discharge_date IS NOT NULL;",
+          "Filter to encounter_type = 'Inpatient' and discharge_date IS NOT NULL."
+        ),
+        scenarioLesson(
+          "t2_rd_03",
+          "Readmission Governance",
+          "Recognize why inconsistent denominator logic breaks comparability.",
+          ["encounters"],
+          "Think consistent specification.",
+          "Even perfectly written SQL produces untrustworthy rates if the business definition is not standardized.",
+          "If one report excludes observation stays from the index denominator and another includes them, are the readmission rates directly comparable?",
+          "no",
+          {
+            show: true,
+            metric: "Readmission comparability",
+            whyItMatters: "Different denominators produce different rates.",
+            whatToShare: "Standardize what counts as an eligible index event.",
+            action: "Do not compare rates built from different specifications."
+          }
+        ),
+        challengeLesson(
+          "t2_rd_04",
+          "Count 30-Day Readmission Flags by Facility",
+          "Return facility and readmit_count for rows where readmit_within_30_days = 1.",
+          ["WHERE", "GROUP BY", "COUNT"],
+          ["readmissions"],
+          "No join needed.",
+          "SELECT facility, COUNT(*) AS readmit_count FROM readmissions WHERE readmit_within_30_days = 1 GROUP BY facility;",
+          "SELECT facility, COUNT(*) AS readmit_count FROM readmissions WHERE readmit_within_30_days = 1 GROUP BY facility;",
+          "Filter readmit_within_30_days = 1, then group by facility."
+        ),
+        scenarioLesson(
+          "t2_rd_05",
+          "Operational Interpretation of Readmissions",
+          "Recognize why readmission counts alone are not enough without denominator context.",
+          ["readmissions", "encounters"],
+          "Think rate, not just volume.",
+          "Facilities with higher discharge volume may naturally have more readmission counts, so counts alone can be misleading.",
+          "If one facility has more readmissions but also far more discharges, should leadership usually want a readmission rate instead of count alone?",
+          "yes",
+          {
+            show: true,
+            metric: "Rate-based readmission review",
+            whyItMatters: "Counts do not account for underlying discharge volume.",
+            whatToShare: "Pair readmission counts with denominator-based rates.",
+            action: "Avoid interpreting counts without context."
+          }
+        )
+      ]
+    },
+
+    {
+      id: "observation_and_throughput_logic",
+      title: "Observation and Throughput Logic",
+      order: 10,
+      lessons: [
+        conceptLesson(
+          "t2_ot_01",
+          "Observation and Throughput Reporting",
+          "Understand how observation and discharge workflow metrics reflect operational efficiency.",
+          ["AVG", "WHERE", "GROUP BY"],
+          ["observations", "discharges", "encounters"],
+          "Observation and throughput metrics often focus on hours, delays, and conversion patterns.",
+          "Throughput metrics explain how efficiently patients move through the hospital, while observation metrics explain status management and prolonged stays.",
+          [
+            "Observation hours reflect utilization burden",
+            "Discharge timing reflects operational friction",
+            "Department and facility rollups support manager action",
+            "Threshold-based exceptions are common"
+          ],
+          "A prolonged observation stay may indicate throughput bottlenecks, status issues, or downstream discharge barriers.",
+          {
+            show: true,
+            metric: "Throughput and status efficiency",
+            whyItMatters: "These measures affect flow, capacity, and patient experience.",
+            whatToShare: "Highlight long stays, delayed departures, and conversion patterns.",
+            action: "Investigate units with persistent delay patterns."
+          }
+        ),
+        challengeLesson(
+          "t2_ot_02",
+          "Average Observation Hours by Facility",
+          "Return facility and avg_obs_hours.",
+          ["GROUP BY", "AVG"],
+          ["observations"],
+          "No join needed.",
+          "SELECT facility, AVG(obs_hours) AS avg_obs_hours FROM observations GROUP BY facility;",
+          "SELECT facility, AVG(obs_hours) AS avg_obs_hours FROM observations GROUP BY facility;",
+          "Group by facility and average obs_hours."
+        ),
+        scenarioLesson(
+          "t2_ot_03",
+          "Observation Review Scenario",
+          "Recognize why average observation hours should be paired with long-stay exceptions.",
+          ["observations"],
+          "Think mean plus outliers.",
+          "An average can hide whether the issue is widespread or driven by a smaller number of very long stays.",
+          "If average observation hours rise, should you usually also look at long observation cases rather than stopping at the average alone?",
+          "yes",
+          {
+            show: true,
+            metric: "Observation exception review",
+            whyItMatters: "Averages alone can hide operational outliers.",
+            whatToShare: "Pair average duration with long-stay exception counts.",
+            action: "Do not stop at the average."
+          }
+        ),
+        challengeLesson(
+          "t2_ot_04",
+          "Discharge Delays Over 240 Minutes",
+          "Return discharge_id, department, and departure_minutes for discharges where departure_minutes > 240.",
+          ["WHERE"],
+          ["discharges"],
+          "No join needed.",
+          "SELECT discharge_id, department, departure_minutes FROM discharges WHERE departure_minutes > 240;",
+          "SELECT discharge_id, department, departure_minutes FROM discharges WHERE departure_minutes > 240;",
+          "Filter departure_minutes > 240."
+        ),
+        scenarioLesson(
+          "t2_ot_05",
+          "Department-Level Throughput Action",
+          "Recognize why throughput problems should usually be broken out by department.",
+          ["discharges"],
+          "Think manager actionability.",
+          "A hospital total confirms the problem exists, but department-level results show where leaders can intervene.",
+          "If discharge delays over 240 minutes are increasing, should leadership usually want the result broken out by department?",
+          "yes",
+          {
+            show: true,
+            metric: "Department throughput accountability",
+            whyItMatters: "Operational action happens at the unit level.",
+            whatToShare: "Move from hospital totals to department-specific exception views.",
+            action: "Tie throughput problems to accountable areas."
+          }
+        )
+      ]
+    },
+
+    {
+      id: "revenue_cycle_denials_analysis",
+      title: "Revenue Cycle and Denials Analysis",
+      order: 11,
+      lessons: [
+        conceptLesson(
+          "t2_dn_01",
+          "Denials as a Revenue Cycle KPI",
+          "Understand why denials should be analyzed by both count and dollars.",
+          ["WHERE", "GROUP BY", "SUM", "COUNT"],
+          ["claims"],
+          "Denials can be measured as volume, dollar exposure, or both.",
+          "A denial analysis should usually separate denial count from denied dollars because the largest financial issue is not always the largest volume issue.",
+          [
+            "Count shows operational workload",
+            "Denied dollars show financial impact",
+            "Payer grouping helps focus action",
+            "High-dollar denials may deserve priority even at lower volume"
+          ],
+          "A payer with fewer denied claims can still be the biggest problem if its denied dollars are much higher than everyone else's.",
+          {
+            show: true,
+            metric: "Denial count and dollar exposure",
+            whyItMatters: "Revenue cycle action depends on both workload and financial impact.",
+            whatToShare: "Present both denial count and denied dollars.",
+            action: "Prioritize high-dollar categories first."
+          }
+        ),
+        challengeLesson(
+          "t2_dn_02",
+          "Denied Claims by Payer",
+          "Return payer and denied_claim_count.",
+          ["WHERE", "GROUP BY", "COUNT"],
+          ["claims"],
+          "No join needed.",
+          "SELECT payer, COUNT(*) AS denied_claim_count FROM claims WHERE claim_status = 'Denied' GROUP BY payer;",
+          "SELECT payer, COUNT(*) AS denied_claim_count FROM claims WHERE claim_status = 'Denied' GROUP BY payer;",
+          "Filter denied claims, then group by payer."
+        ),
+        scenarioLesson(
+          "t2_dn_03",
+          "Count vs Dollars Scenario",
+          "Recognize why a payer with fewer denials can still be the higher priority issue.",
+          ["claims"],
+          "Think financial impact.",
+          "Operational focus should not be driven by count alone when dollar exposure differs meaningfully.",
+          "If Payer A has fewer denied claims than Payer B but much higher denied dollars, should leadership still consider Payer A a priority?",
+          "yes",
+          {
+            show: true,
+            metric: "High-impact denial prioritization",
+            whyItMatters: "Dollar risk can outweigh raw volume.",
+            whatToShare: "Separate count-based and dollar-based prioritization.",
+            action: "Escalate high-dollar denial categories."
+          }
+        ),
+        challengeLesson(
+          "t2_dn_04",
+          "Denied Dollars by Payer",
+          "Return payer and denied_dollars ordered highest to lowest.",
+          ["WHERE", "GROUP BY", "SUM", "ORDER BY"],
+          ["claims"],
+          "No join needed.",
+          "SELECT payer, SUM(billed_amount) AS denied_dollars FROM claims WHERE claim_status = 'Denied' GROUP BY payer ORDER BY denied_dollars DESC;",
+          "SELECT payer, SUM(billed_amount) AS denied_dollars FROM claims WHERE claim_status = 'Denied' GROUP BY payer ORDER BY denied_dollars DESC;",
+          "Filter denied claims, sum billed_amount by payer, and order descending."
+        ),
+        scenarioLesson(
+          "t2_dn_05",
+          "Executive Denials Summary",
+          "Recognize what leaders should usually see first in a denials review.",
+          ["claims"],
+          "Think ranked material issues.",
+          "Leaders usually need the biggest financial risks first, not an undifferentiated file of all denied claims.",
+          "If you are preparing a denials briefing for executives, should you usually rank denied dollars by payer instead of showing raw claim detail first?",
+          "yes",
+          {
+            show: true,
+            metric: "Executive denial prioritization",
+            whyItMatters: "Ranking focuses attention on the biggest financial issues.",
+            whatToShare: "Lead with the highest-dollar denial categories.",
+            action: "Sort by impact before presenting upward."
+          }
+        )
+      ]
+    },
+
+    {
+      id: "executive_rollups_and_framing",
+      title: "Executive Rollups and Analyst Framing",
+      order: 12,
+      lessons: [
+        conceptLesson(
+          "t2_ex_01",
+          "What Makes an Intermediate Query Executive-Ready",
+          "Understand how to turn technically correct output into decision-support reporting.",
+          ["GROUP BY", "ORDER BY", "CASE", "SUM", "COUNT", "AVG"],
+          ["encounters", "claims", "charges", "appointments"],
+          "Use the grouping and metric that aligns to the decision-maker's level of action.",
+          "Executive-ready SQL is concise, prioritized, and tied to a business question. It does not stop at correctness.",
+          [
+            "Group by the accountable unit",
+            "Use rates, counts, or dollars appropriately",
+            "Rank results when priority matters",
+            "Translate raw output into business meaning"
+          ],
+          "A good executive summary shows where the issue is, how big it is, and what likely needs attention next.",
+          {
+            show: true,
+            metric: "Executive-ready analytic output",
+            whyItMatters: "Leaders need prioritized, interpretable information.",
+            whatToShare: "Summarize what matters, why it matters, and where action should happen.",
+            action: "Design SQL around the decision it supports."
+          }
+        ),
+        challengeLesson(
+          "t2_ex_02",
+          "Executive Summary of Encounters by Department",
+          "Return department and encounter_count ordered highest to lowest.",
+          ["GROUP BY", "COUNT", "ORDER BY"],
+          ["encounters"],
+          "No join needed.",
+          "SELECT department, COUNT(*) AS encounter_count FROM encounters GROUP BY department ORDER BY encounter_count DESC;",
+          "SELECT department, COUNT(*) AS encounter_count FROM encounters GROUP BY department ORDER BY encounter_count DESC;",
+          "Group by department, count rows, and sort descending."
+        ),
+        scenarioLesson(
+          "t2_ex_03",
+          "Actionability Scenario",
+          "Recognize why grouped and ranked summaries are more useful than raw detail for executives.",
+          ["encounters", "claims"],
+          "Think decision support.",
+          "Executives usually need to know which areas deserve attention first rather than reading through raw detail extracts.",
+          "If leadership is short on time, is a ranked grouped summary usually more useful than a full raw export?",
+          "yes",
+          {
+            show: true,
+            metric: "Leadership-focused summary design",
+            whyItMatters: "Decision-makers need signal, not noise.",
+            whatToShare: "Use grouped and ranked results for quick prioritization.",
+            action: "Reduce clutter before sharing upward."
+          }
+        ),
+        challengeLesson(
+          "t2_ex_04",
+          "Executive Summary of No-Shows by Department",
+          "Return department and no_show_count ordered highest to lowest.",
+          ["WHERE", "GROUP BY", "COUNT", "ORDER BY"],
+          ["appointments"],
+          "No join needed.",
+          "SELECT department, COUNT(*) AS no_show_count FROM appointments WHERE status = 'No Show' GROUP BY department ORDER BY no_show_count DESC;",
+          "SELECT department, COUNT(*) AS no_show_count FROM appointments WHERE status = 'No Show' GROUP BY department ORDER BY no_show_count DESC;",
+          "Filter to No Show, then group by department and order descending."
+        ),
+        scenarioLesson(
+          "t2_ex_05",
+          "Analyst Framing Scenario",
+          "Recognize that analysts should frame the result, not just return data.",
+          ["appointments", "claims", "encounters"],
+          "Think insight plus implication.",
+          "An analyst adds value by connecting the result to operational meaning and likely next steps, not just by producing the dataset.",
+          "If one department clearly leads in no-shows, should the analyst usually frame that as a department-level access opportunity instead of just handing over the table?",
+          "yes",
+          {
+            show: true,
+            metric: "Analyst framing quality",
+            whyItMatters: "Data becomes useful when tied to implication and action.",
+            whatToShare: "State what stands out and what it likely means.",
+            action: "Do not stop at returning the table."
+          }
+        )
+      ]
+    }
+  ]
+  }
+  ,
+  // ============================================================
+  // TRACK 3: ADVANCED SQL FOR HOSPITAL DECISION SUPPORT
+  // ============================================================
+  {
+    id: "track_sql_advanced_hospital",
+    title: "Advanced SQL for Hospital Decision Support",
+    description:
+      "Apply advanced SQL to complex hospital analytics involving benchmark design, patient flow, root cause analysis, KPI validation, and executive-ready decision support.",
+    order: 3,
+    categories: [
       {
         id: "advanced_join_logic",
         title: "Advanced Join Logic",
@@ -3496,57 +4523,15 @@ function loadProgress() {
     try {
         const parsed = JSON.parse(saved);
         appState = { ...appState, ...parsed };
-        normalizeAppState();
     } catch (error) {
         console.warn("Failed to load progress:", error);
-    }
-}
-
-
-function normalizeAppState() {
-    const validTrackIds = new Set(curriculum.map(track => track.id));
-    if (!validTrackIds.has(appState.currentTrackId)) {
-        appState.currentTrackId = curriculum[0].id;
     }
 }
 
 // ======================
 // INITIALIZATION
 // ======================
-// ======================
-// CAREOPS BRANDING
-// ======================
-const CAREOPS_BRANDING = {
-    title: "CAREOPS",
-    tagline: "Clinical Analytics for Revenue, Efficiency, and Operational Performance Solutions",
-    acronym: {
-        C: "Clinical",
-        A: "Analytics",
-        R: "Revenue",
-        E: "Efficiency",
-        O: "Operational",
-        P: "Performance",
-        S: "Solutions"
-    }
-};
 
-// Function to inject branding into the hero banner
-function initializeBranding() {
-    const titleEl = document.getElementById("careops-title");
-    const taglineEl = document.getElementById("careops-tagline");
-
-    if (titleEl) {
-        titleEl.textContent = CAREOPS_BRANDING.title;
-    }
-
-    if (taglineEl) {
-        taglineEl.textContent = CAREOPS_BRANDING.tagline;
-    }
-}
-// Initialize application when DOM is ready
-document.addEventListener("DOMContentLoaded", () => {
-    initializeBranding();
-});
 // ======================
 // PART 2 OF 4
 // SQL ENGINE, RESULT HELPERS, GRADING ENGINE
@@ -4082,37 +5067,24 @@ function achievements() {
     const completed = completedLessonCount();
     const firstTry = appState.firstTryLessonIds.length;
     const mastered = masteryCount();
-    const catComplete = categoryId => {
-        const category = getAllCategories().find(item => item.id === categoryId);
-        return !!category && category.lessons.every(lesson => isLessonCompleted(lesson.id));
-    };
 
     return [
-        { label: "First Step", earned: completed >= 1, emoji: "🚀" },
-        { label: "Getting the Hang of It", earned: completed >= 5, emoji: "📘" },
-        { label: "On a Roll", earned: completed >= 10, emoji: "🔥" },
-        { label: "Quarter Century", earned: completed >= 25, emoji: "🏅" },
-        { label: "Halfway Hero", earned: completed >= 50, emoji: "🥈" },
-        { label: "Century Club", earned: completed >= 100, emoji: "💯" },
-
-        { label: "First-Try Flash", earned: firstTry >= 3, emoji: "⚡" },
-        { label: "Precision Pro", earned: firstTry >= 10, emoji: "🎯" },
-        { label: "Mastermind", earned: mastered >= 5, emoji: "🧠" },
-        { label: "Master of Masters", earned: mastered >= 25, emoji: "👑" },
-
-        { label: "Join Genius", earned: catComplete("inner_joins"), emoji: "🔗" },
-        { label: "Aggregate King", earned: catComplete("aggregations"), emoji: "👑" },
-        { label: "Filter Fanatic", earned: catComplete("filtering_rows"), emoji: "🎯" },
-        { label: "Grouping Guru", earned: catComplete("group_by"), emoji: "📊" },
-        { label: "CASE Commander", earned: catComplete("case_statements"), emoji: "🧩" },
-        { label: "Null Navigator", earned: catComplete("null_handling"), emoji: "🧭" },
-
-        { label: "Throughput Thinker", earned: catComplete("hospital_throughput"), emoji: "🏥" },
-        { label: "Readmission Ranger", earned: catComplete("readmissions_kpis"), emoji: "🔁" },
-        { label: "Financial Fixer", earned: catComplete("denials_kpis"), emoji: "💰" },
-        { label: "Executive Whisperer", earned: catComplete("executive_summary_sql"), emoji: "🗣️" }
+        { label: "First Lesson", earned: completed >= 1, emoji: "🎯" },
+        { label: "3 Lessons Completed", earned: completed >= 3, emoji: "📘" },
+        { label: "5 Lessons Completed", earned: completed >= 5, emoji: "📚" },
+        { label: "10 Lessons Completed", earned: completed >= 10, emoji: "🚀" },
+        { label: "15 Lessons Completed", earned: completed >= 15, emoji: "🏥" },
+        { label: "25 Lessons Completed", earned: completed >= 25, emoji: "📊" },
+        { label: "50 Lessons Completed", earned: completed >= 50, emoji: "🏆" },
+        { label: "100 Lessons Completed", earned: completed >= 100, emoji: "🔥" },
+        { label: "3 First-Try Wins", earned: firstTry >= 3, emoji: "⚡" },
+        { label: "10 First-Try Wins", earned: firstTry >= 10, emoji: "💡" },
+        { label: "5 Mastered Lessons", earned: mastered >= 5, emoji: "🧠" },
+        { label: "15 Mastered Lessons", earned: mastered >= 15, emoji: "🥇" },
+        { label: "30 Mastered Lessons", earned: mastered >= 30, emoji: "👑" }
     ];
 }
+
 function categoryBadgeCount() {
     return getAllCategories().filter(category =>
         category.lessons.every(lesson => isLessonCompleted(lesson.id))
@@ -4262,10 +5234,11 @@ function sqlFocusText(sqlFocus) {
 }
 
 function difficultyClassFromLabel(label) {
-    if (label === "Easy") return "difficulty-easy";
-    if (label === "Intermediate") return "difficulty-intermediate";
-    if (label === "Hard") return "difficulty-hard";
-    return "difficulty-advanced";
+    if (label === "Foundations") return "difficulty-foundations";
+    if (label === "Core") return "difficulty-core";
+    if (label === "Applied") return "difficulty-applied";
+    if (label === "Advanced") return "difficulty-advanced";
+    return "difficulty-expert";
 }
 
 function lessonTypeClass(type) {
@@ -4278,48 +5251,62 @@ function formatLessonType(type) {
 }
 
 function categoryDifficulty(category) {
-    const easyIds = [
+    const foundationsIds = [
         "getting_started",
         "selecting_columns",
         "filtering_rows",
         "sorting_results",
         "strings",
         "numbers_and_calculations",
-        "join_strategy",
-        "left_joins_missing_data",
-        "date_filters_reporting_periods"
+        "null_handling"
     ];
 
-    const intermediateIds = [
-        "null_handling",
+    const coreIds = [
         "boolean_logic",
         "case_statements",
         "aggregations",
         "group_by",
         "having",
-        "conditional_aggregation",
-        "distinct_counts_and_grain",
-        "subqueries"
+        "inner_joins",
+        "join_strategy"
     ];
 
-    const hardIds = [
-        "inner_joins",
+    const appliedIds = [
+        "left_joins_missing_data",
+        "date_filters_reporting_periods",
         "hospital_throughput",
         "readmissions_observations",
         "readmissions_kpis",
         "observation_kpis",
-        "length_of_stay_kpis",
+        "length_of_stay_kpis"
+    ];
+
+    const advancedIds = [
+        "denials_kpis",
+        "ed_throughput_kpis",
+        "appointment_access_kpis",
+        "conditional_aggregation",
+        "distinct_counts_and_grain",
+        "subqueries",
+        "executive_summary_sql"
+    ];
+
+    const expertIds = [
+        "provider_performance_sql",
         "ctes",
         "window_functions",
         "readmissions_build_logic",
         "observation_and_throughput_logic",
-        "revenue_cycle_denials_analysis"
+        "revenue_cycle_denials_analysis",
+        "executive_rollups_and_framing"
     ];
 
-    if (easyIds.includes(category.id)) return "Easy";
-    if (intermediateIds.includes(category.id)) return "Intermediate";
-    if (hardIds.includes(category.id)) return "Hard";
-    return "Advanced";
+    if (foundationsIds.includes(category.id)) return "Foundations";
+    if (coreIds.includes(category.id)) return "Core";
+    if (appliedIds.includes(category.id)) return "Applied";
+    if (advancedIds.includes(category.id)) return "Advanced";
+    if (expertIds.includes(category.id)) return "Expert";
+    return "Core";
 }
 
 function getVisibleCategories() {
@@ -4329,69 +5316,30 @@ function getVisibleCategories() {
 }
 
 function getDifficultyBadgeConfig(label) {
-    if (label === "Easy") {
-        return {
-            label: "Easy",
-            color: "#16a34a",
-            soft: "#dcfce7",
-            border: "#86efac",
-            text: "#166534",
-            emoji: "🟢"
-        };
-    }
-    if (label === "Intermediate") {
-        return {
-            label: "Intermediate",
-            color: "#eab308",
-            soft: "#fef9c3",
-            border: "#fde047",
-            text: "#854d0e",
-            emoji: "🟡"
-        };
-    }
-    if (label === "Hard") {
-        return {
-            label: "Hard",
-            color: "#f97316",
-            soft: "#ffedd5",
-            border: "#fdba74",
-            text: "#9a3412",
-            emoji: "🟠"
-        };
-    }
-    return {
-        label: "Advanced",
-        color: "#dc2626",
-        soft: "#fee2e2",
-        border: "#fca5a5",
-        text: "#991b1b",
-        emoji: "🔴"
-    };
+    if (label === "Foundations") return { label: "Foundations", color: "#16a34a", soft: "#dcfce7", border: "#86efac", text: "#166534", emoji: "🟢" };
+    if (label === "Core") return { label: "Core", color: "#2563eb", soft: "#dbeafe", border: "#93c5fd", text: "#1d4ed8", emoji: "🔵" };
+    if (label === "Applied") return { label: "Applied", color: "#f59e0b", soft: "#fef3c7", border: "#fcd34d", text: "#b45309", emoji: "🟠" };
+    if (label === "Advanced") return { label: "Advanced", color: "#dc2626", soft: "#fee2e2", border: "#fca5a5", text: "#991b1b", emoji: "🔴" };
+    return { label: "Expert", color: "#7c3aed", soft: "#ede9fe", border: "#c4b5fd", text: "#6d28d9", emoji: "🟣" };
 }
 
 function difficultyBadgeProgress(label) {
     const categories = getAllCategories().filter(category => categoryDifficulty(category) === label);
-    const lessons = categories.flatMap(category => category.lessons);
-    const completed = lessons.filter(lesson => isLessonCompleted(lesson.id)).length;
-    const total = lessons.length;
-    const percent = total ? Math.round((completed / total) * 100) : 0;
-    return { categories, lessons, completed, total, percent };
+    const totalCategories = categories.length;
+    const completedCategories = categories.filter(category => category.lessons.every(lesson => isLessonCompleted(lesson.id))).length;
+    const totalLessons = categories.reduce((sum, category) => sum + category.lessons.length, 0);
+    const completedLessons = categories.reduce((sum, category) => sum + category.lessons.filter(lesson => isLessonCompleted(lesson.id)).length, 0);
+    const percent = totalLessons ? Math.round((completedLessons / totalLessons) * 100) : 0;
+    return { totalCategories, completedCategories, totalLessons, completedLessons, percent };
 }
 
 function setDifficultyFilter(label) {
     activeDifficultyFilter = activeDifficultyFilter === label ? null : label;
+    renderTrackOverview();
     renderCurriculumNav();
     updateDashboard();
-    renderTrackOverview();
-    showTrackOverview();
-
-    const list = document.getElementById("category-list");
-    if (list) {
-        list.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
-
-    saveProgress();
 }
+
 // ======================
 // SCHEMA LOOKUP HELPERS
 // ======================
@@ -4659,9 +5607,7 @@ function updateDashboard() {
     }
 
     if (badgeCount) {
-        badgeCount.innerText = activeDifficultyFilter
-            ? `${activeDifficultyFilter} filter active · ${masteryCount()} mastered`
-            : `4 difficulty badges · ${masteryCount()} mastered`;
+        badgeCount.innerText = activeDifficultyFilter ? `${activeDifficultyFilter} filter active · ${masteryCount()} mastered` : `5 learning levels · ${masteryCount()} mastered`;
     }
 
     if (trackTitle) trackTitle.innerText = track.title;
@@ -4675,10 +5621,6 @@ function renderAchievements() {
     if (!container) return;
 
     container.innerHTML = "";
-    container.style.display = "";
-    container.style.gridTemplateColumns = "";
-    container.style.gap = "";
-    container.style.alignItems = "";
 
     achievements().forEach(achievement => {
         const chip = document.createElement("div");
@@ -4699,7 +5641,7 @@ function renderCurriculumNav() {
 
     const visibleCategories = getVisibleCategories();
     if (!visibleCategories.length) {
-        list.innerHTML = `<div style="padding:16px;border:1px dashed #cbd5e1;border-radius:14px;background:#f8fafc;color:#475569;">No curriculum categories match the current difficulty filter.</div>`;
+        list.innerHTML = `<div style="padding:16px;border:1px dashed #cbd5e1;border-radius:14px;background:#f8fafc;color:#475569;">No curriculum categories match the current learning level filter.</div>`;
         return;
     }
 
@@ -4789,7 +5731,7 @@ function renderLessonHeader(record) {
     }
 
     if (categoryBadge) {
-        categoryBadge.className = "difficulty-badge difficulty-intermediate";
+        categoryBadge.className = `difficulty-badge ${difficultyClassFromLabel(categoryDifficulty({ id: categoryId }))}`;
         categoryBadge.innerText = categoryTitle;
     }
 
@@ -4909,7 +5851,6 @@ function renderChallengeLesson(lesson) {
 
     attempts = 0;
     lastRunQuery = "";
-    activeDifficultyFilter = null;
 
     highlightRelevantSchema(lesson.relevantTables || []);
 
@@ -4992,9 +5933,7 @@ function renderTrackOverview() {
 
     if (trackLabelEl) trackLabelEl.innerText = track.title;
     if (titleEl) {
-        titleEl.innerText = activeDifficultyFilter
-            ? `${track.title} · ${activeDifficultyFilter}`
-            : track.title;
+        titleEl.innerText = activeDifficultyFilter ? `${track.title} · ${activeDifficultyFilter}` : track.title;
     }
     if (descEl) {
         descEl.innerText = activeDifficultyFilter
@@ -5022,9 +5961,7 @@ function renderTrackOverview() {
     cardsWrap.style.gridTemplateColumns = "repeat(2, minmax(0, 1fr))";
     cardsWrap.style.gap = "18px";
 
-    const levels = ["Easy", "Intermediate", "Hard", "Advanced"];
-
-    levels.forEach(label => {
+    DIFFICULTY_LEVELS.forEach(label => {
         const config = getDifficultyBadgeConfig(label);
         const progress = difficultyBadgeProgress(label);
         const selected = activeDifficultyFilter === label;
@@ -5037,19 +5974,14 @@ function renderTrackOverview() {
         card.style.padding = "20px";
         card.style.borderRadius = "18px";
         card.style.border = `2px solid ${selected ? config.color : config.border}`;
-        card.style.background = selected
-            ? `linear-gradient(135deg, ${config.soft} 0%, #ffffff 100%)`
-            : "#ffffff";
+        card.style.background = selected ? `linear-gradient(135deg, ${config.soft} 0%, #ffffff 100%)` : "#ffffff";
         card.style.color = "#0f172a";
-        card.style.boxShadow = selected
-            ? "0 16px 30px rgba(15, 23, 42, 0.12)"
-            : "0 8px 18px rgba(15, 23, 42, 0.08)";
+        card.style.boxShadow = selected ? "0 16px 30px rgba(15, 23, 42, 0.12)" : "0 8px 18px rgba(15, 23, 42, 0.08)";
         card.style.display = "flex";
         card.style.alignItems = "center";
         card.style.gap = "18px";
-        card.style.minHeight = "150px";
+        card.style.minHeight = "154px";
         card.style.transform = "none";
-        card.style.overflow = "hidden";
         card.onclick = function () {
             setDifficultyFilter(label);
         };
@@ -5075,21 +6007,21 @@ function renderTrackOverview() {
         inner.style.alignItems = "center";
         inner.style.justifyContent = "center";
         inner.innerHTML = `
-            <div style="font-size:1.15rem;font-weight:800;color:${config.text};line-height:1;">${progress.percent}%</div>
-            <div style="width:10px;height:10px;border-radius:999px;background:${config.color};margin-top:8px;"></div>
+            <div style="font-size:1.1rem;font-weight:800;color:${config.text};line-height:1;">${progress.percent}%</div>
+            <div style="font-size:0.8rem;margin-top:4px;">${config.emoji}</div>
         `;
         ring.appendChild(inner);
 
         const meta = document.createElement("div");
         meta.style.minWidth = "0";
-        meta.style.flex = "1";
         meta.innerHTML = `
             <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px;">
-                <span style="display:inline-flex;align-items:center;justify-content:center;padding:5px 10px;border-radius:999px;background:${config.soft};border:1px solid ${config.border};color:${config.text};font-size:0.76rem;font-weight:800;">${label}</span>
-                ${selected ? `<span style="display:inline-flex;align-items:center;justify-content:center;padding:5px 10px;border-radius:999px;background:#eff6ff;border:1px solid #93c5fd;color:#1d4ed8;font-size:0.72rem;font-weight:800;">Filtered</span>` : ""}
+                <span class="difficulty-badge ${difficultyClassFromLabel(label)}">${escapeHtml(label)}</span>
+                ${selected ? '<span style="font-size:0.72rem;font-weight:700;color:#475569;">Filter active</span>' : ''}
             </div>
-            <div style="font-size:1rem;font-weight:800;color:#0f172a;margin-bottom:4px;">${progress.completed} of ${progress.total} lessons completed</div>
-            <div style="font-size:0.84rem;color:#475569;">${progress.categories.length} curriculum categories · Click to ${selected ? "show all categories" : "open this difficulty"}</div>
+            <div style="font-size:1rem;font-weight:800;color:#0f172a;line-height:1.25;">${progress.completedCategories}/${progress.totalCategories} curriculum complete</div>
+            <div style="font-size:0.9rem;color:#475569;margin-top:6px;line-height:1.4;">${progress.completedLessons}/${progress.totalLessons} lessons completed</div>
+            <div style="font-size:0.82rem;color:#64748b;margin-top:8px;line-height:1.4;">Click to ${selected ? 'clear this filter' : 'view this learning level'}</div>
         `;
 
         card.appendChild(ring);
@@ -5123,6 +6055,7 @@ function bindOverviewButtons() {
 
     if (startTrackBtn) {
         startTrackBtn.addEventListener("click", function () {
+            activeDifficultyFilter = null;
             const firstTrack = curriculum[0];
             const firstCategory = firstTrack.categories[0];
             const firstLesson = firstCategory.lessons[0];
@@ -5565,7 +6498,6 @@ document.addEventListener("keydown", function (event) {
 // ======================
 window.onload = async function () {
     loadProgress();
-normalizeAppState();
     initializeStateDefaults();
     applySchemaPanelWidth();
     initSchemaResizer();
