@@ -3513,7 +3513,27 @@ function normalizeAppState() {
 // ======================
 // INITIALIZATION
 // ======================
+// ======================
+// CAREOPS BRANDING
+// ======================
+const CAREOPS_BRANDING = {
+    title: "CAREOPS",
+    tagline: "Clinical Analytics for Revenue, Efficiency, and Operational Performance Solutions"
+};
 
+// Function to inject branding into the hero banner
+function initializeBranding() {
+    const titleEl = document.getElementById("careops-title");
+    const taglineEl = document.getElementById("careops-tagline");
+
+    if (titleEl) {
+        titleEl.textContent = CAREOPS_BRANDING.title;
+    }
+
+    if (taglineEl) {
+        taglineEl.textContent = CAREOPS_BRANDING.tagline;
+    }
+}
 // ======================
 // PART 2 OF 4
 // SQL ENGINE, RESULT HELPERS, GRADING ENGINE
