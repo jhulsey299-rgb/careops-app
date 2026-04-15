@@ -6013,37 +6013,92 @@ function submitScenario() {
   const lesson = getCurrentLesson();
   const box = document.getElementById("scenario-response");
   const feedback = document.getElementById("scenario-feedback");
+
   if (!lesson || lesson.type !== "scenario" || !box || !feedback) return;
+
+  attempts += 1;
 
   const rawAnswer = box.value.trim();
   const answer = rawAnswer.toLowerCase();
+
+  if (!rawAnswer) {
+    setFeedbackState(feedback, "error", "Please enter a response before submitting.");
+    return;
+  }
+
   const expectedKeywords = lesson.content.expectedKeywords || [];
   const minLength = lesson.content.minLength || 80;
-  const minimumKeywordMatches = lesson.content.minimumKeywordMatches || Math.min(2, expectedKeywords.length);
-  const matchedKeywords = expectedKeywords.filter(k => answer.includes(String(k).toLowerCase()));
-  const missingKeywords = expectedKeywords.filter(k => !answer.includes(String(k).toLowerCase()));
+  const minimumKeywordMatches =
+    lesson.content.minimumKeywordMatches || Math.min(2, expectedKeywords.length);
 
-  const passed = rawAnswer.length >= minLength && matchedKeywords.length >= minimumKeywordMatches;
-  const grade = passed
-    ? { score: matchedKeywords.length >= expectedKeywords.length ? 100 : 92, tier: matchedKeywords.length >= expectedKeywords.length ? "Perfect" : "Strong" }
-    : { score: 55, tier: "Developing" };
+  const matchedKeywords = expectedKeywords.filter(k =>
+    answer.includes(String(k).toLowerCase())
+  );
+  const missingKeywords = expectedKeywords.filter(k =>
+    !answer.includes(String(k).toLowerCase())
+  );
 
-  updateLessonStatsOnGrade(lesson.id, grade, passed);
+  const passed =
+    rawAnswer.length >= minLength &&
+    matchedKeywords.length >= minimumKeywordMatches;
+
+  const partial =
+    !passed &&
+    rawAnswer.length >= Math.max(50, Math.floor(minLength * 0.6)) &&
+    matchedKeywords.length >= 1;
 
   if (passed) {
-    markLessonCompleted(lesson.id, attempts === 0);
-    feedback.className = "success";
-    feedback.innerText = `Correct. ${lesson.content.feedbackGuide || "You covered the right data source, the SQL approach, and the business risk."}`;
+    const perfect = matchedKeywords.length >= expectedKeywords.length;
+    const grade = perfect
+      ? { score: 100, tier: "Perfect" }
+      : { score: 92, tier: "Strong" };
+
+    updateLessonStatsOnGrade(lesson.id, grade, true);
+    markLessonCompleted(lesson.id, attempts === 1);
+
+    setFeedbackState(
+      feedback,
+      "success",
+      `Correct — ${lesson.content.feedbackGuide || "You covered the right business context, likely data source, and practical action."}`
+    );
+
     saveProgress();
-    renderAll();
-  } else {
+    refreshLessonChrome();
+    return;
+  }
+
+  if (partial) {
+    updateLessonStatsOnGrade(lesson.id, { score: 72, tier: "Partial" }, false);
+
     const missingText = missingKeywords.length
       ? `Missing ideas to mention: ${missingKeywords.slice(0, 4).join(", ")}.`
-      : "";
-    feedback.className = "error";
-    feedback.innerText = `Not there yet. Build out the response with a specific table, a simple SQL query, and the business consequence of getting the grain wrong. ${missingText}`.trim();
+      : "Add more specificity to the response.";
+
+    setFeedbackState(
+      feedback,
+      "warning",
+      `Partially correct — you are on the right track, but the response needs more specificity. ${missingText}`
+    );
+
     saveProgress();
+    refreshLessonChrome();
+    return;
   }
+
+  updateLessonStatsOnGrade(lesson.id, { score: 55, tier: "Developing" }, false);
+
+  const missingText = missingKeywords.length
+    ? `Missing ideas to mention: ${missingKeywords.slice(0, 4).join(", ")}.`
+    : "";
+
+  setFeedbackState(
+    feedback,
+    "error",
+    `Not correct yet. Build the response around the likely table or data source, the business meaning, and one practical action. ${missingText}`.trim()
+  );
+
+  saveProgress();
+  refreshLessonChrome();
 }
 
 function resetScenario() {
