@@ -5913,7 +5913,7 @@ function gradePass() {
   if (attempts === 1) return { score: 92, tier: "Strong" };
   return { score: 82, tier: "Passing" };
 }
-unction refreshLessonChrome() {
+function refreshLessonChrome() {
   applySchemaPanelWidth();
   renderSchema();
   renderAchievements();
