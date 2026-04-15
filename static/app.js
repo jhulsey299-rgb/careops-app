@@ -5568,6 +5568,7 @@ function showOverview() {
   const workspace = document.getElementById("lesson-workspace");
   if (overview) overview.classList.remove("hidden");
   if (workspace) workspace.classList.add("hidden");
+  syncChallengeUi();
 }
 
 function renderLesson() {
@@ -5618,6 +5619,9 @@ function renderLesson() {
     query.value = lesson.starterQuery || "";
     document.getElementById("feedback").innerText = "";
     document.getElementById("output").innerHTML = "";
+    attempts = 0;
+    lastRunQuery = "";
+    syncChallengeUi();
   }
 
   if (lesson.type === "scenario") {
@@ -5650,6 +5654,7 @@ function renderAll() {
   } else {
     showOverview();
   }
+  syncChallengeUi();
 }
 
 function generateMockData() {
@@ -5903,13 +5908,11 @@ function runQuery() {
 
     if (passed) {
       markLessonCompleted(lesson.id, attempts === 0);
-
       setFeedbackState(
         feedback,
         "success",
         "Correct — your query returned the expected result."
       );
-
       saveProgress();
       refreshLessonChrome();
       return;
@@ -5962,11 +5965,6 @@ function normalizeResult(result) {
   });
 }
 
-function gradePass() {
-  if (attempts === 0) return { score: 100, tier: "Perfect" };
-  if (attempts === 1) return { score: 92, tier: "Strong" };
-  return { score: 82, tier: "Passing" };
-}
 function refreshLessonChrome() {
   applySchemaPanelWidth();
   renderSchema();
@@ -5974,6 +5972,7 @@ function refreshLessonChrome() {
   updateDashboard();
   renderCurriculumNav();
   renderTrackCategoryCards();
+  syncChallengeUi();
 }
 
 function setFeedbackState(element, state, message) {
@@ -5982,9 +5981,31 @@ function setFeedbackState(element, state, message) {
   if (state) element.classList.add(state);
   element.innerText = message;
 }
+
+function syncChallengeUi() {
+  const hintBox = document.getElementById("level-hint");
+  if (hintBox) {
+    const schemaSection = hintBox.closest(".schema-section");
+    if (schemaSection) {
+      schemaSection.style.display = "none";
+    } else {
+      hintBox.style.display = "none";
+    }
+  }
+
+  document.querySelectorAll("button").forEach(button => {
+    const label = (button.innerText || button.textContent || "").trim().toLowerCase();
+    const onclickValue = (button.getAttribute("onclick") || "").toLowerCase();
+    if (label === "check answer" || onclickValue.includes("checkanswer")) {
+      button.style.display = "none";
+    }
+  });
+}
+
 function checkAnswer() {
   runQuery();
 }
+
 function resetQuery() {
   const queryBox = document.getElementById("query");
   const feedback = document.getElementById("feedback");
@@ -6214,4 +6235,3 @@ document.addEventListener("DOMContentLoaded", async function () {
   await initDatabase();
   renderAll();
 });
-
