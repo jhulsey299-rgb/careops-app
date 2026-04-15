@@ -5869,7 +5869,21 @@ function gradePass() {
   if (attempts === 1) return { score: 92, tier: "Strong" };
   return { score: 82, tier: "Passing" };
 }
+unction refreshLessonChrome() {
+  applySchemaPanelWidth();
+  renderSchema();
+  renderAchievements();
+  updateDashboard();
+  renderCurriculumNav();
+  renderTrackCategoryCards();
+}
 
+function setFeedbackState(element, state, message) {
+  if (!element) return;
+  element.classList.remove("success", "error", "warning");
+  if (state) element.classList.add(state);
+  element.innerText = message;
+}
 function checkAnswer() {
   const lesson = getCurrentLesson();
   const feedback = document.getElementById("feedback");
