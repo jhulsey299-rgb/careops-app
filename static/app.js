@@ -5406,18 +5406,25 @@ function getVisibleCategories() {
 function renderTrackCategoryCards() {
   const container = document.getElementById("track-category-cards");
   if (!container) return;
+
   container.innerHTML = "";
-  LEARNING_LEVELS.forEach(level => {
+  container.style.display = "grid";
+  container.style.gridTemplateColumns = "repeat(3, minmax(220px, 1fr))";
+  container.style.gap = "18px";
+
+  const cards = LEARNING_LEVELS.map(level => {
     const track = curriculum.find(item => item.id === level.trackId);
     const totalCategories = track.categories.length;
     const doneCategories = track.categories.filter(categoryComplete).length;
     const totalLessons = track.categories.flatMap(c => c.lessons).length;
     const doneLessons = track.categories.flatMap(c => c.lessons).filter(lesson => isLessonCompleted(lesson.id)).length;
     const percent = totalLessons ? Math.round((doneLessons / totalLessons) * 100) : 0;
+
     const card = document.createElement("button");
     card.type = "button";
     card.className = "track-badge-card level-card" + (appState.currentTrackId === track.id ? " active" : "");
     card.style.borderColor = level.color;
+
     card.innerHTML = `
       <div class="track-badge-icon-wrap">
         <div class="track-badge-ring" style="--badge-progress: ${percent}%; background: conic-gradient(${level.color} ${percent}%, #e2e8f0 0);">
@@ -5428,6 +5435,7 @@ function renderTrackCategoryCards() {
       <div class="track-badge-stats">${doneCategories} / ${totalCategories} curriculum complete<br>${doneLessons} / ${totalLessons} lessons completed</div>
       <div class="track-badge-helper">Click to view this learning level</div>
     `;
+
     card.addEventListener("click", () => {
       appState.currentTrackId = track.id;
       appState.currentCategoryId = track.categories[0]?.id || null;
@@ -5437,8 +5445,29 @@ function renderTrackCategoryCards() {
       saveProgress();
       renderAll();
     });
-    container.appendChild(card);
+
+    return card;
   });
+
+  cards.slice(0, 3).forEach(card => container.appendChild(card));
+
+  if (cards.length > 3) {
+    const bottomRow = document.createElement("div");
+    bottomRow.style.gridColumn = "1 / -1";
+    bottomRow.style.display = "flex";
+    bottomRow.style.justifyContent = "center";
+    bottomRow.style.gap = "18px";
+    bottomRow.style.flexWrap = "wrap";
+
+    cards.slice(3).forEach(card => {
+      card.style.width = "calc((100% - 36px) / 3)";
+      card.style.maxWidth = "340px";
+      card.style.minWidth = "220px";
+      bottomRow.appendChild(card);
+    });
+
+    container.appendChild(bottomRow);
+  }
 }
 
 function renderCurriculumNav() {
