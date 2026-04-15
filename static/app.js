@@ -18,18 +18,6 @@ let attempts = 0;
 let lastRunQuery = "";
 let activeDifficultyFilter = null;
 
-function escapeHtml(value) {
-  if (value === null || value === undefined) return "";
-  return String(value)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-}
-
-
-
 const LEARNING_LEVELS = [
   { label: "Foundations", key: "foundations", color: "#22c55e", trackId: "track_foundations" },
   { label: "Core", key: "core", color: "#2563eb", trackId: "track_core" },
@@ -233,6 +221,8 @@ const curriculum = [
             "id": "l_006",
             "title": "Introduction to SQL Syntax",
             "objective": "Use a basic SELECT statement to inspect a table and return the exact columns requested.",
+
+            "challengeCriteria": "From the patients table, return exactly these four columns: patient_id, first_name, last_name, and insurance_type. Limit the result to the first 5 rows so you can inspect the table structure without returning the full dataset.",
             "sql_focus": [
               "SELECT",
               "FROM",
@@ -245,6 +235,12 @@ const curriculum = [
             "starterQuery": "SELECT patient_id, first_name, last_name, insurance_type\nFROM patients\nLIMIT 5;",
             "solutionQuery": "SELECT patient_id, first_name, last_name, insurance_type\nFROM patients\nLIMIT 5;",
             "hint": "Use SELECT to list four columns from patients, then use LIMIT 5 to inspect the first few rows.",
+
+            "smartHint": "Use patients as the only table. Select patient_id, first_name, last_name, and insurance_type in that order, then add LIMIT 5.",
+
+            "thirdHint": "You do not need a WHERE clause or a JOIN. The expected pattern is SELECT column1, column2, column3, column4 FROM patients LIMIT 5;",
+
+            "explanation": "This answer is correct because the lesson asks you to inspect one table, not combine tables. It returns the exact four requested columns from patients and limits the result to 5 rows for quick inspection.",
             "executiveTakeaway": {
               "show": false
             }
@@ -288,6 +284,8 @@ const curriculum = [
             "id": "l_008",
             "title": "Selecting All Columns with SELECT *",
             "objective": "Retrieve complete datasets from a table.",
+
+            "challengeCriteria": "Return every column and every row from the patients table using SELECT *. This lesson is specifically about learning when SELECT * returns the full structure of a single table.",
             "sql_focus": [
               "SELECT",
               "WHERE",
@@ -301,6 +299,12 @@ const curriculum = [
             "starterQuery": "SELECT * FROM patients;",
             "solutionQuery": "SELECT * FROM patients;",
             "hint": "Use SELECT * FROM patients;",
+
+            "smartHint": "Use the patients table only. Do not list columns manually for this lesson—use the asterisk.",
+
+            "thirdHint": "The correct pattern is SELECT * FROM patients; with no WHERE clause, no JOIN, and no LIMIT.",
+
+            "explanation": "This answer is correct because SELECT * returns the full dataset from the table. In this lesson, the goal is to understand what the complete patients table looks like before narrowing queries.",
             "executiveTakeaway": {
               "show": true,
               "metric": "Selecting All Columns with SELECT *",
@@ -314,6 +318,8 @@ const curriculum = [
             "id": "l_009",
             "title": "Selecting Specific Columns",
             "objective": "Extract only relevant fields for analysis.",
+
+            "challengeCriteria": "Return only these three columns from the patients table: patient_id, first_name, and last_name. Do not return any other columns.",
             "sql_focus": [
               "SELECT",
               "WHERE",
@@ -327,6 +333,12 @@ const curriculum = [
             "starterQuery": "SELECT patient_id, first_name, last_name FROM patients;",
             "solutionQuery": "SELECT patient_id, first_name, last_name FROM patients;",
             "hint": "Select three columns from patients.",
+
+            "smartHint": "List the three requested columns after SELECT and use patients in the FROM clause.",
+
+            "thirdHint": "The structure should be SELECT patient_id, first_name, last_name FROM patients;",
+
+            "explanation": "This answer is correct because it pulls only the three requested fields from patients. It teaches how selecting specific columns reduces noise and keeps the output focused on the business question.",
             "executiveTakeaway": {
               "show": true,
               "metric": "Selecting Specific Columns",
@@ -340,6 +352,8 @@ const curriculum = [
             "id": "l_010",
             "title": "Using Column Aliases",
             "objective": "Improve readability of query results.",
+
+            "challengeCriteria": "Return patient_id and first_name from the patients table, but rename patient_id to id and first_name to fname using column aliases.",
             "sql_focus": [
               "SELECT",
               "WHERE",
@@ -353,6 +367,12 @@ const curriculum = [
             "starterQuery": "SELECT patient_id AS id, first_name AS fname FROM patients;",
             "solutionQuery": "SELECT patient_id AS id, first_name AS fname FROM patients;",
             "hint": "Use AS to rename selected columns.",
+
+            "smartHint": "Use AS to rename each selected field after the original column name.",
+
+            "thirdHint": "The expected pattern is SELECT patient_id AS id, first_name AS fname FROM patients;",
+
+            "explanation": "This answer is correct because it selects the requested columns and uses aliases to make the output labels easier to read. Aliases are useful when preparing a clean report for analysts or leaders.",
             "executiveTakeaway": {
               "show": true,
               "metric": "Using Column Aliases",
@@ -366,6 +386,8 @@ const curriculum = [
             "id": "l_011",
             "title": "Removing Duplicates with DISTINCT",
             "objective": "Identify unique values in healthcare datasets.",
+
+            "challengeCriteria": "Return each unique insurance_type value from the patients table one time only. This lesson is about removing duplicates from a single column.",
             "sql_focus": [
               "SELECT",
               "WHERE",
@@ -379,6 +401,12 @@ const curriculum = [
             "starterQuery": "SELECT DISTINCT insurance_type FROM patients;",
             "solutionQuery": "SELECT DISTINCT insurance_type FROM patients;",
             "hint": "Use DISTINCT on insurance_type.",
+
+            "smartHint": "Use DISTINCT directly after SELECT and before insurance_type.",
+
+            "thirdHint": "The expected query is SELECT DISTINCT insurance_type FROM patients;",
+
+            "explanation": "This answer is correct because DISTINCT removes duplicate insurance_type values and returns only the unique payer categories present in patients.",
             "executiveTakeaway": {
               "show": true,
               "metric": "Removing Duplicates with DISTINCT",
@@ -392,6 +420,8 @@ const curriculum = [
             "id": "l_012",
             "title": "Limiting Results with LIMIT/TOP",
             "objective": "Restrict the number of rows returned.",
+
+            "challengeCriteria": "Return all columns from the encounters table, but limit the result to 10 rows so you can preview a small sample instead of the full table.",
             "sql_focus": [
               "SELECT",
               "WHERE",
@@ -405,6 +435,12 @@ const curriculum = [
             "starterQuery": "SELECT * FROM encounters LIMIT 10;",
             "solutionQuery": "SELECT * FROM encounters LIMIT 10;",
             "hint": "Use LIMIT to restrict rows.",
+
+            "smartHint": "Use encounters as the base table and add LIMIT 10 at the end.",
+
+            "thirdHint": "The pattern should be SELECT * FROM encounters LIMIT 10;",
+
+            "explanation": "This answer is correct because it previews the encounters table without returning the full dataset. LIMIT is useful when validating table contents before building larger queries.",
             "executiveTakeaway": {
               "show": true,
               "metric": "Limiting Results with LIMIT/TOP",
@@ -418,6 +454,8 @@ const curriculum = [
             "id": "l_013",
             "title": "Sorting Results with ORDER BY",
             "objective": "Organize data for better interpretation.",
+
+            "challengeCriteria": "Return all columns from the encounters table and sort the results by admit_date in descending order so the most recent admissions appear first.",
             "sql_focus": [
               "SELECT",
               "WHERE",
@@ -431,6 +469,12 @@ const curriculum = [
             "starterQuery": "SELECT * FROM encounters ORDER BY admit_date DESC;",
             "solutionQuery": "SELECT * FROM encounters ORDER BY admit_date DESC;",
             "hint": "Sort by admit_date descending.",
+
+            "smartHint": "Use ORDER BY admit_date DESC after selecting from encounters.",
+
+            "thirdHint": "The expected structure is SELECT * FROM encounters ORDER BY admit_date DESC;",
+
+            "explanation": "This answer is correct because it sorts encounters from most recent to oldest admission date. ORDER BY helps analysts review data in a meaningful sequence.",
             "executiveTakeaway": {
               "show": true,
               "metric": "Sorting Results with ORDER BY",
@@ -444,6 +488,8 @@ const curriculum = [
             "id": "l_014",
             "title": "Combining SELECT Features",
             "objective": "Construct queries using multiple clauses.",
+
+            "challengeCriteria": "Return the first 5 unique department names from the encounters table in alphabetical order. Use DISTINCT to avoid duplicates, ORDER BY to sort, and LIMIT to cap the output.",
             "sql_focus": [
               "SELECT",
               "WHERE",
@@ -457,6 +503,12 @@ const curriculum = [
             "starterQuery": "SELECT DISTINCT department FROM encounters ORDER BY department LIMIT 5;",
             "solutionQuery": "SELECT DISTINCT department FROM encounters ORDER BY department LIMIT 5;",
             "hint": "Combine DISTINCT, ORDER BY, and LIMIT.",
+
+            "smartHint": "Select DISTINCT department, sort by department, and limit to 5 rows.",
+
+            "thirdHint": "The expected pattern is SELECT DISTINCT department FROM encounters ORDER BY department LIMIT 5;",
+
+            "explanation": "This answer is correct because it combines three core SQL features: DISTINCT removes duplicates, ORDER BY sorts alphabetically, and LIMIT restricts the output to 5 rows.",
             "executiveTakeaway": {
               "show": true,
               "metric": "Combining SELECT Features",
@@ -477,6 +529,8 @@ const curriculum = [
             "id": "l_015",
             "title": "Filtering with WHERE",
             "objective": "Retrieve records that meet specific criteria.",
+
+            "challengeCriteria": "Use the encounters table to return only rows where status equals 'Discharged'. Do not join to any other table for this lesson.",
             "sql_focus": [
               "SELECT",
               "WHERE",
@@ -490,6 +544,12 @@ const curriculum = [
             "starterQuery": "SELECT * FROM encounters WHERE status = 'Discharged';",
             "solutionQuery": "SELECT * FROM encounters WHERE status = 'Discharged';",
             "hint": "Filter encounters by status.",
+
+            "smartHint": "Start with encounters, then use WHERE status = 'Discharged'.",
+
+            "thirdHint": "The expected query is SELECT * FROM encounters WHERE status = 'Discharged';",
+
+            "explanation": "This answer is correct because it filters encounters down to only discharged visits. WHERE is used when you need records that meet a specific condition.",
             "executiveTakeaway": {
               "show": true,
               "metric": "Filtering with WHERE",
@@ -503,6 +563,8 @@ const curriculum = [
             "id": "l_016",
             "title": "Comparison Operators",
             "objective": "Apply conditional logic to filter healthcare data.",
+
+            "challengeCriteria": "Use the charges table to return only rows where amount is greater than 1000. This lesson is about comparison operators such as >, <, >=, and <=.",
             "sql_focus": [
               "SELECT",
               "WHERE",
@@ -516,6 +578,12 @@ const curriculum = [
             "starterQuery": "SELECT * FROM charges WHERE amount > 1000;",
             "solutionQuery": "SELECT * FROM charges WHERE amount > 1000;",
             "hint": "Use a comparison operator on amount.",
+
+            "smartHint": "Filter charges using WHERE amount > 1000.",
+
+            "thirdHint": "The expected pattern is SELECT * FROM charges WHERE amount > 1000;",
+
+            "explanation": "This answer is correct because it uses a comparison operator to restrict the result to higher-dollar charges. Comparison logic is foundational for identifying thresholds and exceptions.",
             "executiveTakeaway": {
               "show": true,
               "metric": "Comparison Operators",
@@ -529,6 +597,8 @@ const curriculum = [
             "id": "l_017",
             "title": "Logical Operators",
             "objective": "Combine multiple filtering conditions.",
+
+            "challengeCriteria": "Use the patients table to return only rows where age is 65 or older and insurance_type is Medicare. You must combine both conditions in the same WHERE clause.",
             "sql_focus": [
               "SELECT",
               "WHERE",
@@ -542,6 +612,12 @@ const curriculum = [
             "starterQuery": "SELECT * FROM patients WHERE age >= 65 AND insurance_type = 'Medicare';",
             "solutionQuery": "SELECT * FROM patients WHERE age >= 65 AND insurance_type = 'Medicare';",
             "hint": "Use AND or OR to combine filters.",
+
+            "smartHint": "Use AND to connect age >= 65 with insurance_type = 'Medicare'.",
+
+            "thirdHint": "The expected query is SELECT * FROM patients WHERE age >= 65 AND insurance_type = 'Medicare';",
+
+            "explanation": "This answer is correct because it combines two filters in one query. Logical operators let you narrow the result to the exact business population you want.",
             "executiveTakeaway": {
               "show": true,
               "metric": "Logical Operators",
@@ -555,6 +631,8 @@ const curriculum = [
             "id": "l_018",
             "title": "Using BETWEEN for Range Filtering",
             "objective": "Analyze metrics within defined ranges.",
+
+            "challengeCriteria": "Use the encounters table to return only rows where length_of_stay is between 2 and 5 days, inclusive.",
             "sql_focus": [
               "SELECT",
               "WHERE",
@@ -568,6 +646,12 @@ const curriculum = [
             "starterQuery": "SELECT * FROM encounters WHERE length_of_stay BETWEEN 2 AND 5;",
             "solutionQuery": "SELECT * FROM encounters WHERE length_of_stay BETWEEN 2 AND 5;",
             "hint": "Use BETWEEN on length_of_stay.",
+
+            "smartHint": "Use BETWEEN 2 AND 5 on length_of_stay.",
+
+            "thirdHint": "The expected query is SELECT * FROM encounters WHERE length_of_stay BETWEEN 2 AND 5;",
+
+            "explanation": "This answer is correct because BETWEEN is designed for inclusive range filtering. It is often used when identifying patients or encounters within a defined threshold.",
             "executiveTakeaway": {
               "show": true,
               "metric": "Using BETWEEN for Range Filtering",
@@ -581,6 +665,8 @@ const curriculum = [
             "id": "l_019",
             "title": "Using IN for Multiple Values",
             "objective": "Filter datasets by multiple categories.",
+
+            "challengeCriteria": "Use the claims table to return only rows where payer is either Medicare or Medicaid. This lesson is about filtering for more than one allowed value.",
             "sql_focus": [
               "SELECT",
               "WHERE",
@@ -594,6 +680,12 @@ const curriculum = [
             "starterQuery": "SELECT * FROM claims WHERE payer IN ('Medicare','Medicaid');",
             "solutionQuery": "SELECT * FROM claims WHERE payer IN ('Medicare','Medicaid');",
             "hint": "Use IN with payer values.",
+
+            "smartHint": "Use WHERE payer IN ('Medicare','Medicaid').",
+
+            "thirdHint": "The expected query is SELECT * FROM claims WHERE payer IN ('Medicare','Medicaid');",
+
+            "explanation": "This answer is correct because IN is the cleanest way to filter a column for multiple accepted values without writing repeated OR conditions.",
             "executiveTakeaway": {
               "show": true,
               "metric": "Using IN for Multiple Values",
@@ -607,6 +699,8 @@ const curriculum = [
             "id": "l_020",
             "title": "Handling Missing Data with IS NULL",
             "objective": "Identify incomplete healthcare records.",
+
+            "challengeCriteria": "Use the patients table to return only rows where city is missing. This lesson is about identifying null values correctly.",
             "sql_focus": [
               "SELECT",
               "WHERE",
@@ -620,6 +714,12 @@ const curriculum = [
             "starterQuery": "SELECT * FROM patients WHERE city IS NULL;",
             "solutionQuery": "SELECT * FROM patients WHERE city IS NULL;",
             "hint": "Use IS NULL on a nullable field.",
+
+            "smartHint": "Use IS NULL rather than = NULL.",
+
+            "thirdHint": "The expected query is SELECT * FROM patients WHERE city IS NULL;",
+
+            "explanation": "This answer is correct because SQL uses IS NULL to detect missing values. This is important when auditing data quality or incomplete records.",
             "executiveTakeaway": {
               "show": true,
               "metric": "Handling Missing Data with IS NULL",
@@ -633,6 +733,8 @@ const curriculum = [
             "id": "l_021",
             "title": "Pattern Matching with LIKE",
             "objective": "Search for text patterns in patient or provider data.",
+
+            "challengeCriteria": "Use the providers table to return only rows where provider_name starts with the letter A. This lesson is about pattern matching with LIKE and wildcards.",
             "sql_focus": [
               "SELECT",
               "WHERE",
@@ -646,6 +748,12 @@ const curriculum = [
             "starterQuery": "SELECT * FROM providers WHERE provider_name LIKE 'A%';",
             "solutionQuery": "SELECT * FROM providers WHERE provider_name LIKE 'A%';",
             "hint": "Use LIKE with a wildcard.",
+
+            "smartHint": "Use LIKE with the pattern 'A%'.",
+
+            "thirdHint": "The expected query is SELECT * FROM providers WHERE provider_name LIKE 'A%';",
+
+            "explanation": "This answer is correct because LIKE supports text pattern searches. The A% pattern returns provider names that begin with A.",
             "executiveTakeaway": {
               "show": true,
               "metric": "Pattern Matching with LIKE",
@@ -696,6 +804,8 @@ const curriculum = [
             "id": "l_023",
             "title": "Working with Numeric Calculations",
             "objective": "Perform arithmetic operations within queries.",
+
+            "challengeCriteria": "From the charges table, return charge_id, amount, and a new calculated column called adjusted_amount that multiplies amount by 1.05.",
             "sql_focus": [
               "SELECT",
               "WHERE",
@@ -709,6 +819,12 @@ const curriculum = [
             "starterQuery": "SELECT charge_id, amount, amount * 1.05 AS adjusted_amount FROM charges;",
             "solutionQuery": "SELECT charge_id, amount, amount * 1.05 AS adjusted_amount FROM charges;",
             "hint": "Create a derived numeric column.",
+
+            "smartHint": "Select charge_id and amount, then create amount * 1.05 AS adjusted_amount.",
+
+            "thirdHint": "The expected query is SELECT charge_id, amount, amount * 1.05 AS adjusted_amount FROM charges;",
+
+            "explanation": "This answer is correct because it demonstrates arithmetic inside a SELECT statement and creates a derived numeric column with an alias.",
             "executiveTakeaway": {
               "show": true,
               "metric": "Working with Numeric Calculations",
@@ -722,6 +838,8 @@ const curriculum = [
             "id": "l_024",
             "title": "String Manipulation Functions",
             "objective": "Format and clean textual healthcare data.",
+
+            "challengeCriteria": "From the patients table, return the last_name column in uppercase and rename the result last_name_upper.",
             "sql_focus": [
               "SELECT",
               "WHERE",
@@ -735,6 +853,12 @@ const curriculum = [
             "starterQuery": "SELECT UPPER(last_name) AS last_name_upper FROM patients;",
             "solutionQuery": "SELECT UPPER(last_name) AS last_name_upper FROM patients;",
             "hint": "Use a string function like UPPER.",
+
+            "smartHint": "Use the UPPER() function around last_name and alias the result.",
+
+            "thirdHint": "The expected query is SELECT UPPER(last_name) AS last_name_upper FROM patients;",
+
+            "explanation": "This answer is correct because it uses a string function to standardize text formatting, which is helpful when cleaning or comparing names.",
             "executiveTakeaway": {
               "show": true,
               "metric": "String Manipulation Functions",
@@ -748,6 +872,8 @@ const curriculum = [
             "id": "l_025",
             "title": "Date and Time Functions",
             "objective": "Analyze time-based healthcare events.",
+
+            "challengeCriteria": "From the encounters table, return encounter_id and a new column called los_days that calculates the difference between discharge_date and admit_date in days using SQLite syntax.",
             "sql_focus": [
               "SELECT",
               "WHERE",
@@ -761,6 +887,12 @@ const curriculum = [
             "starterQuery": "SELECT encounter_id, julianday(discharge_date) - julianday(admit_date) AS los_days FROM encounters;",
             "solutionQuery": "SELECT encounter_id, julianday(discharge_date) - julianday(admit_date) AS los_days FROM encounters;",
             "hint": "Calculate date difference in SQLite syntax.",
+
+            "smartHint": "Use julianday(discharge_date) - julianday(admit_date) and alias it los_days.",
+
+            "thirdHint": "The expected query is SELECT encounter_id, julianday(discharge_date) - julianday(admit_date) AS los_days FROM encounters;",
+
+            "explanation": "This answer is correct because it calculates a date difference in SQLite and labels the result clearly. Date functions are essential for operational measures like LOS.",
             "executiveTakeaway": {
               "show": true,
               "metric": "Date and Time Functions",
@@ -774,6 +906,8 @@ const curriculum = [
             "id": "l_026",
             "title": "Using CAST and CONVERT",
             "objective": "Transform data types for accurate analysis.",
+
+            "challengeCriteria": "From the patients table, return patient_id and a new column called age_text that casts age to text.",
             "sql_focus": [
               "SELECT",
               "WHERE",
@@ -787,6 +921,12 @@ const curriculum = [
             "starterQuery": "SELECT patient_id, CAST(age AS TEXT) AS age_text FROM patients;",
             "solutionQuery": "SELECT patient_id, CAST(age AS TEXT) AS age_text FROM patients;",
             "hint": "Use CAST on age.",
+
+            "smartHint": "Use CAST(age AS TEXT) AS age_text.",
+
+            "thirdHint": "The expected query is SELECT patient_id, CAST(age AS TEXT) AS age_text FROM patients;",
+
+            "explanation": "This answer is correct because it transforms age from its numeric type into text using CAST, which is useful when formatting or combining fields.",
             "executiveTakeaway": {
               "show": true,
               "metric": "Using CAST and CONVERT",
@@ -800,6 +940,8 @@ const curriculum = [
             "id": "l_027",
             "title": "Conditional Logic with CASE Statements",
             "objective": "Create derived categorical fields.",
+
+            "challengeCriteria": "From the patients table, return patient_id and a derived column called age_group that labels patients age 65 or older as Senior and everyone else as Adult.",
             "sql_focus": [
               "SELECT",
               "WHERE",
@@ -813,6 +955,12 @@ const curriculum = [
             "starterQuery": "SELECT patient_id, CASE WHEN age >= 65 THEN 'Senior' ELSE 'Adult' END AS age_group FROM patients;",
             "solutionQuery": "SELECT patient_id, CASE WHEN age >= 65 THEN 'Senior' ELSE 'Adult' END AS age_group FROM patients;",
             "hint": "Use CASE to create a grouped label.",
+
+            "smartHint": "Use CASE WHEN age >= 65 THEN 'Senior' ELSE 'Adult' END AS age_group.",
+
+            "thirdHint": "The expected query is SELECT patient_id, CASE WHEN age >= 65 THEN 'Senior' ELSE 'Adult' END AS age_group FROM patients;",
+
+            "explanation": "This answer is correct because CASE lets you create business-friendly categories directly in SQL from existing numeric fields.",
             "executiveTakeaway": {
               "show": true,
               "metric": "Conditional Logic with CASE Statements",
@@ -826,6 +974,8 @@ const curriculum = [
             "id": "l_028",
             "title": "Creating Derived Columns",
             "objective": "Build new analytical fields from existing data.",
+
+            "challengeCriteria": "From the encounters table, return encounter_id and a new column called los_hours that converts length_of_stay from days to hours by multiplying by 24.",
             "sql_focus": [
               "SELECT",
               "WHERE",
@@ -839,6 +989,12 @@ const curriculum = [
             "starterQuery": "SELECT encounter_id, length_of_stay * 24 AS los_hours FROM encounters;",
             "solutionQuery": "SELECT encounter_id, length_of_stay * 24 AS los_hours FROM encounters;",
             "hint": "Create a new derived metric.",
+
+            "smartHint": "Multiply length_of_stay by 24 and alias the result los_hours.",
+
+            "thirdHint": "The expected query is SELECT encounter_id, length_of_stay * 24 AS los_hours FROM encounters;",
+
+            "explanation": "This answer is correct because it creates a derived operational metric from an existing field. Derived columns help translate raw data into more useful business measures.",
             "executiveTakeaway": {
               "show": true,
               "metric": "Creating Derived Columns",
@@ -5302,16 +5458,106 @@ function achievements() {
   ];
 }
 
+let achievementTooltipEl = null;
+
+function ensureAchievementTooltipStyles() {
+  if (document.getElementById("achievement-tooltip-style")) return;
+  const style = document.createElement("style");
+  style.id = "achievement-tooltip-style";
+  style.textContent = `
+    .achievement-tooltip {
+      position: fixed;
+      z-index: 99999;
+      max-width: 280px;
+      background: rgba(15, 23, 42, 0.96);
+      color: #ffffff;
+      padding: 10px 12px;
+      border-radius: 10px;
+      font-size: 0.82rem;
+      line-height: 1.35;
+      box-shadow: 0 12px 28px rgba(15, 23, 42, 0.25);
+      pointer-events: none;
+      opacity: 0;
+      transform: translateY(4px);
+      transition: opacity 0.12s ease, transform 0.12s ease;
+      white-space: normal;
+    }
+    .achievement-tooltip.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .badge-chip {
+      position: relative;
+      cursor: help;
+    }
+  `;
+  document.head.appendChild(style);
+}
+
+function ensureAchievementTooltip() {
+  ensureAchievementTooltipStyles();
+  if (achievementTooltipEl && document.body.contains(achievementTooltipEl)) return achievementTooltipEl;
+  achievementTooltipEl = document.createElement("div");
+  achievementTooltipEl.className = "achievement-tooltip";
+  achievementTooltipEl.setAttribute("role", "tooltip");
+  document.body.appendChild(achievementTooltipEl);
+  return achievementTooltipEl;
+}
+
+function positionAchievementTooltip(event) {
+  const tooltip = ensureAchievementTooltip();
+  const offset = 14;
+  const rect = tooltip.getBoundingClientRect();
+  let left = event.clientX + offset;
+  let top = event.clientY + offset;
+
+  if (left + rect.width > window.innerWidth - 12) {
+    left = Math.max(12, window.innerWidth - rect.width - 12);
+  }
+  if (top + rect.height > window.innerHeight - 12) {
+    top = Math.max(12, event.clientY - rect.height - offset);
+  }
+
+  tooltip.style.left = left + "px";
+  tooltip.style.top = top + "px";
+}
+
+function showAchievementTooltip(event, text) {
+  if (!text) return;
+  const tooltip = ensureAchievementTooltip();
+  tooltip.textContent = text;
+  tooltip.classList.add("visible");
+  positionAchievementTooltip(event);
+}
+
+function hideAchievementTooltip() {
+  if (!achievementTooltipEl) return;
+  achievementTooltipEl.classList.remove("visible");
+}
+
+function attachAchievementTooltip(node, text) {
+  if (!node || !text) return;
+  node.dataset.unlockDescription = text;
+  node.addEventListener("mouseenter", event => showAchievementTooltip(event, text));
+  node.addEventListener("mousemove", event => positionAchievementTooltip(event));
+  node.addEventListener("mouseleave", hideAchievementTooltip);
+  node.addEventListener("blur", hideAchievementTooltip);
+  node.addEventListener("focus", event => showAchievementTooltip(event, text));
+}
+
 function renderAchievements() {
   const container = document.getElementById("badges-container");
   if (!container) return;
+  ensureAchievementTooltipStyles();
   container.innerHTML = "";
   achievements().forEach(achievement => {
     const chip = document.createElement("div");
     chip.className = achievement.earned ? "badge-chip" : "badge-chip locked";
     chip.innerText = `${achievement.emoji} ${achievement.label}`;
-    chip.title = achievement.description || "";
+    chip.setAttribute("tabindex", "0");
     chip.setAttribute("aria-label", `${achievement.label}: ${achievement.description || ""}`);
+    chip.dataset.unlockDescription = achievement.description || "";
+    attachAchievementTooltip(chip, achievement.description || "");
     container.appendChild(chip);
   });
 }
@@ -5394,156 +5640,6 @@ function renderSchema() {
   }
 }
 
-
-
-// ======================
-// FOUNDATIONS CONTENT PATCHES
-// ======================
-(function applyFoundationsLessonEnhancements() {
-  const track = curriculum.find(t => t.id === "track_foundations");
-  if (!track) return;
-
-  const updates = {
-    l_006: {
-      challengeCriteria: "Return the first 5 rows from the patients table and include exactly these columns: patient_id, first_name, last_name, and insurance_type.",
-      hint: "Start with the patients table and select the four requested columns.",
-      smartHint: "Your query should use SELECT patient_id, first_name, last_name, insurance_type FROM patients LIMIT 5.",
-      thirdHint: "You do not need a JOIN or WHERE clause. This lesson is about basic SELECT, FROM, and LIMIT syntax.",
-      explanation: "This answer is correct because it pulls the exact four requested columns from the patients table and limits the output to 5 rows for quick inspection."
-    },
-    l_008: {
-      challengeCriteria: "Return every column and every row from the patients table using SELECT *.",
-      hint: "Use SELECT * with the patients table.",
-      smartHint: "The table name is patients and no filter is needed.",
-      thirdHint: "This lesson is specifically testing SELECT * FROM patients;",
-      explanation: "This answer is correct because SELECT * returns all columns from the patients table."
-    },
-    l_009: {
-      challengeCriteria: "Return only these three columns from the patients table: patient_id, first_name, and last_name.",
-      hint: "List the exact columns requested after SELECT.",
-      smartHint: "Do not use SELECT *. Use patient_id, first_name, and last_name only.",
-      thirdHint: "The answer should come from the patients table with no filter or limit required.",
-      explanation: "This answer is correct because it returns only the requested patient identifier and name fields."
-    },
-    l_010: {
-      challengeCriteria: "Return patient_id and first_name from the patients table, but rename them as id and fname.",
-      hint: "Use AS to rename each selected column.",
-      smartHint: "patient_id should become id and first_name should become fname.",
-      thirdHint: "The query should select from patients and use column aliases with AS.",
-      explanation: "This answer is correct because it selects the requested fields and renames them for readability using SQL aliases."
-    },
-    l_011: {
-      challengeCriteria: "Return a distinct list of insurance_type values from the patients table so each insurance type appears only once.",
-      hint: "Use DISTINCT on insurance_type.",
-      smartHint: "You only need one column: insurance_type.",
-      thirdHint: "The goal is to remove duplicates, not return full patient rows.",
-      explanation: "This answer is correct because DISTINCT returns each insurance type only once."
-    },
-    l_012: {
-      challengeCriteria: "Return all columns from the encounters table, but limit the output to 10 rows.",
-      hint: "Use LIMIT 10 after selecting from encounters.",
-      smartHint: "This lesson is testing row restriction, so the query should end with LIMIT 10.",
-      thirdHint: "No filter is required. You just need SELECT * FROM encounters LIMIT 10;",
-      explanation: "This answer is correct because it returns encounter rows and restricts the output to 10 records."
-    },
-    l_013: {
-      challengeCriteria: "Return all columns from the encounters table and sort the results by admit_date from newest to oldest.",
-      hint: "Use ORDER BY admit_date DESC.",
-      smartHint: "DESC will put the most recent admit_date values first.",
-      thirdHint: "The base table is encounters and the sort column is admit_date.",
-      explanation: "This answer is correct because it orders encounters by admit_date in descending order."
-    },
-    l_014: {
-      challengeCriteria: "Return a distinct list of department values from encounters, sort them alphabetically, and show only the first 5 rows.",
-      hint: "You need DISTINCT, ORDER BY, and LIMIT together.",
-      smartHint: "Start with SELECT DISTINCT department FROM encounters.",
-      thirdHint: "After selecting the distinct departments, sort by department and limit to 5 rows.",
-      explanation: "This answer is correct because it combines DISTINCT, ORDER BY, and LIMIT to produce a clean, short alphabetical department list."
-    },
-    l_015: {
-      challengeCriteria: "Use the encounters table to return only the rows where status is 'Discharged'. The result should show discharged encounters only.",
-      hint: "Filter encounters using WHERE status = 'Discharged'.",
-      smartHint: "The base table is encounters and the filter column is status.",
-      thirdHint: "You do not need a JOIN. Use SELECT * FROM encounters WHERE status = 'Discharged';",
-      explanation: "This answer is correct because it filters the encounters table to only discharged records."
-    },
-    l_016: {
-      challengeCriteria: "Use the charges table to return only rows where amount is greater than 1000.",
-      hint: "Use a comparison operator on the amount field.",
-      smartHint: "The filter condition should be amount > 1000.",
-      thirdHint: "The base table is charges and the lesson is about comparison operators.",
-      explanation: "This answer is correct because it filters charges to only amounts above 1000."
-    },
-    l_017: {
-      challengeCriteria: "Use the patients table to return only rows where age is 65 or older and insurance_type is Medicare.",
-      hint: "Combine two conditions with AND.",
-      smartHint: "Your query needs both age >= 65 and insurance_type = 'Medicare'.",
-      thirdHint: "This lesson is testing multiple conditions in one WHERE clause.",
-      explanation: "This answer is correct because it uses AND to return only Medicare patients age 65 or older."
-    },
-    l_018: {
-      challengeCriteria: "Use the encounters table to return only rows where length_of_stay is between 2 and 5, inclusive.",
-      hint: "Use BETWEEN on length_of_stay.",
-      smartHint: "The range is 2 to 5 and the table is encounters.",
-      thirdHint: "BETWEEN 2 AND 5 includes both boundary values.",
-      explanation: "This answer is correct because it filters encounters to the requested length-of-stay range."
-    },
-    l_019: {
-      challengeCriteria: "Use the claims table to return only rows where payer is either Medicare or Medicaid.",
-      hint: "Use IN with two payer values.",
-      smartHint: "The values inside IN should be 'Medicare' and 'Medicaid'.",
-      thirdHint: "This lesson is about using IN instead of writing multiple OR conditions.",
-      explanation: "This answer is correct because it filters claims to the two requested payer categories using IN."
-    },
-    l_020: {
-      challengeCriteria: "Use the patients table to return only rows where city is missing.",
-      hint: "Use IS NULL on the city field.",
-      smartHint: "Do not use = NULL. SQL null checks use IS NULL.",
-      thirdHint: "The base table is patients and the nullable field is city.",
-      explanation: "This answer is correct because IS NULL correctly identifies patient rows with missing city values."
-    },
-    l_021: {
-      challengeCriteria: "Use the providers table to return only rows where provider_name begins with the letter A.",
-      hint: "Use LIKE with a wildcard.",
-      smartHint: "The pattern should be 'A%'.",
-      thirdHint: "This lesson is about text pattern matching, so use provider_name LIKE 'A%'.",
-      explanation: "This answer is correct because LIKE 'A%' returns provider names that start with A."
-    }
-  };
-
-  track.categories.forEach(category => {
-    category.lessons.forEach(lesson => {
-      if (updates[lesson.id]) {
-        Object.assign(lesson, updates[lesson.id]);
-      }
-      if (lesson.kind === "challenge" || lesson.kind === "scenario") {
-        lesson.type = lesson.kind;
-      } else if (lesson.kind === "concept") {
-        lesson.type = lesson.kind;
-      }
-      if (lesson.kind === "concept") {
-        lesson.content = lesson.content || {
-          summary: lesson.summary || "",
-          bullets: lesson.bullets || [],
-          example: lesson.example || ""
-        };
-      }
-      if (lesson.kind === "scenario") {
-        lesson.content = lesson.content || {
-          summary: lesson.summary || "",
-          prompt: lesson.prompt || "",
-          expectedKeywords: lesson.expectedKeywords || [],
-          minLength: lesson.minLength || 120,
-          minimumKeywordMatches: lesson.minimumKeywordMatches || 3,
-          feedbackGuide: lesson.feedbackGuide || ""
-        };
-      }
-      if (lesson.executiveTakeaway && category.id !== "intro_healthcare_analytics") {
-        lesson.executiveTakeaway.show = false;
-      }
-    });
-  });
-})();
 
 function levelForTrack(trackId) {
   return LEARNING_LEVELS.find(level => level.trackId === trackId);
@@ -5738,13 +5834,12 @@ function renderLesson() {
   const lesson = getCurrentLesson();
   if (!lesson) return;
   showLessonWorkspace();
-
   document.getElementById("track-title-display").innerText = getCurrentCategory()?.title || "Category";
   document.getElementById("lesson-title").innerText = lesson.title;
   document.getElementById("lesson-objective").innerText = lesson.objective;
-  document.getElementById("lesson-tables").innerHTML = `<strong>Relevant Tables:</strong> ${escapeHtml((lesson.relevantTables || []).join(", ") || "—")}`;
-  document.getElementById("lesson-join-hint").innerHTML = `<strong>Join Hint:</strong> ${escapeHtml(lesson.joinHint || "—")}`;
-  document.getElementById("lesson-sql-focus").innerHTML = `<strong>SQL Focus:</strong> ${escapeHtml(((lesson.sql_focus || []).join(", ")) || "—")}`;
+  document.getElementById("lesson-tables").innerHTML = `<strong>Relevant Tables:</strong> ${lesson.relevantTables.join(", ") || "—"}`;
+  document.getElementById("lesson-join-hint").innerHTML = `<strong>Join Hint:</strong> ${lesson.joinHint || "—"}`;
+  document.getElementById("lesson-sql-focus").innerHTML = `<strong>SQL Focus:</strong> ${(lesson.sql_focus || []).join(", ") || "—"}`;
 
   const typeBadge = document.getElementById("current-lesson-type-badge");
   const catBadge = document.getElementById("current-category-badge");
@@ -5764,78 +5859,41 @@ function renderLesson() {
     if (el) el.classList.add("hidden");
   });
 
-  const hintWrap = document.getElementById("level-hint");
-  if (hintWrap && hintWrap.closest(".schema-section")) {
-    hintWrap.closest(".schema-section").style.display = "none";
-  }
-
   if (lesson.type === "concept") {
     document.getElementById("concept-content").classList.remove("hidden");
-    document.getElementById("concept-summary").innerText = lesson.content?.summary || lesson.summary || "";
+    document.getElementById("concept-summary").innerText = lesson.content.summary;
     const bullets = document.getElementById("concept-bullets");
     bullets.innerHTML = "";
-    ((lesson.content?.bullets) || lesson.bullets || []).forEach(item => {
+    (lesson.content.bullets || []).forEach(item => {
       const li = document.createElement("li");
       li.innerText = item;
       bullets.appendChild(li);
     });
-    document.getElementById("concept-example").innerText = lesson.content?.example || lesson.content?.hospitalExample || lesson.example || "";
+    document.getElementById("concept-example").innerText = lesson.content.example || "";
   }
 
   if (lesson.type === "challenge") {
-    const challengeContent = document.getElementById("challenge-content");
-    challengeContent.classList.remove("hidden");
-
-    let criteriaBox = document.getElementById("challenge-criteria");
-    if (!criteriaBox) {
-      criteriaBox = document.createElement("div");
-      criteriaBox.id = "challenge-criteria";
-      criteriaBox.className = "concept-card";
-      const firstLabel = challengeContent.querySelector(".query-label");
-      if (firstLabel && firstLabel.parentNode) {
-        challengeContent.insertBefore(criteriaBox, firstLabel);
-      } else {
-        challengeContent.insertBefore(criteriaBox, challengeContent.firstChild);
-      }
-    }
-
-    criteriaBox.innerHTML = `
-      <h4>Your Task</h4>
-      <p>${escapeHtml(lesson.challengeCriteria || lesson.objective || "")}</p>
-    `;
-
+    document.getElementById("challenge-content").classList.remove("hidden");
     const query = document.getElementById("query");
-    if (query) query.value = lesson.starterQuery || "";
-    const feedback = document.getElementById("feedback");
-    if (feedback) {
-      feedback.innerText = "";
-      feedback.classList.remove("success","error","warning");
-    }
-    const output = document.getElementById("output");
-    if (output) output.innerHTML = "";
-
-    document.querySelectorAll("#challenge-content button").forEach(btn => {
-      if ((btn.innerText || "").trim().toLowerCase() === "check answer") {
-        btn.style.display = "none";
-      }
-    });
+    query.value = lesson.starterQuery || "";
+    document.getElementById("feedback").innerText = "";
+    document.getElementById("output").innerHTML = "";
   }
 
   if (lesson.type === "scenario") {
     document.getElementById("scenario-content").classList.remove("hidden");
-    document.getElementById("scenario-summary").innerText = lesson.content?.summary || lesson.summary || "";
-    document.getElementById("scenario-prompt").innerText = lesson.content?.prompt || lesson.prompt || "";
+    document.getElementById("scenario-summary").innerText = lesson.content.summary || "";
+    document.getElementById("scenario-prompt").innerText = lesson.content.prompt || "";
     document.getElementById("scenario-response").value = "";
     document.getElementById("scenario-feedback").innerText = "";
-    document.getElementById("scenario-feedback").classList.remove("success","error","warning");
   }
 
   if (shouldShowExecutiveTakeaway(lesson)) {
     document.getElementById("executive-takeaway").classList.remove("hidden");
-    document.getElementById("exec-metric").innerHTML = `<strong>Metric:</strong> ${escapeHtml(lesson.executiveTakeaway.metric || "—")}`;
-    document.getElementById("exec-why").innerHTML = `<strong>Why it matters:</strong> ${escapeHtml(lesson.executiveTakeaway.whyItMatters || "—")}`;
-    document.getElementById("exec-share").innerHTML = `<strong>What to share:</strong> ${escapeHtml(lesson.executiveTakeaway.whatToShare || "—")}`;
-    document.getElementById("exec-action").innerHTML = `<strong>Recommended action:</strong> ${escapeHtml(lesson.executiveTakeaway.action || "—")}`;
+    document.getElementById("exec-metric").innerHTML = `<strong>Metric:</strong> ${lesson.executiveTakeaway.metric}`;
+    document.getElementById("exec-why").innerHTML = `<strong>Why it matters:</strong> ${lesson.executiveTakeaway.whyItMatters}`;
+    document.getElementById("exec-share").innerHTML = `<strong>What to share:</strong> ${lesson.executiveTakeaway.whatToShare}`;
+    document.getElementById("exec-action").innerHTML = `<strong>Recommended action:</strong> ${lesson.executiveTakeaway.action}`;
   }
 }
 
@@ -6105,8 +6163,13 @@ function runQuery() {
 
     if (passed) {
       markLessonCompleted(lesson.id, attempts === 0);
-      setFeedbackState(feedback, "success", "Correct - your query returned the expected result.");
-      attempts = 0;
+
+      setFeedbackState(
+        feedback,
+        "success",
+        "Correct — your query returned the expected result."
+      );
+
       saveProgress();
       refreshLessonChrome();
       return;
@@ -6114,9 +6177,18 @@ function runQuery() {
 
     attempts += 1;
 
-    const hintOne = lesson.hint || "Start with the correct table and make sure you are selecting the required fields.";
-    const hintTwo = lesson.smartHint || lesson.secondHint || "Double-check the exact columns, filters, joins, or grouping needed to match the lesson objective.";
-    const hintThree = lesson.thirdHint || "Compare your result to the requested output and make sure the table, fields, and condition are all correct.";
+    const hintOne =
+      lesson.hint ||
+      "Start with the correct table and make sure you are selecting the required fields.";
+
+    const hintTwo =
+      lesson.smartHint ||
+      lesson.secondHint ||
+      "Double-check the exact columns, filters, joins, or grouping needed to match the lesson objective.";
+
+    const hintThree =
+      lesson.thirdHint ||
+      "Compare your result to what the lesson is asking for. Make sure the grain of the data is correct and that you are not missing a required field or condition.";
 
     if (attempts === 1) {
       setFeedbackState(feedback, "warning", `Not correct yet. Hint 1: ${hintOne}`);
@@ -6125,17 +6197,14 @@ function runQuery() {
     } else if (attempts === 3) {
       setFeedbackState(feedback, "warning", `Still not correct. Hint 3: ${hintThree}`);
     } else {
-      const explanation = lesson.explanation || "This answer is correct because it uses the correct table, returns the requested fields, and applies the required filter or logic for the lesson objective.";
+      const explanation =
+        lesson.explanation ||
+        "This answer is correct because it uses the right table, selects the required fields, and returns the expected result for the lesson objective.";
+
       setFeedbackState(
         feedback,
         "error",
-        `You have used all 3 attempts.
-
-Correct Answer:
-${lesson.solutionQuery}
-
-Explanation:
-${explanation}`
+        `You have used all 3 attempts.\n\nCorrect Answer:\n${lesson.solutionQuery}\n\nExplanation:\n${explanation}`
       );
     }
 
@@ -6145,6 +6214,33 @@ ${explanation}`
     if (output) output.innerHTML = "";
     setFeedbackState(feedback, "error", getExecutionErrorMessage(error));
   }
+}
+function normalizeResult(result) {
+  return JSON.stringify({
+    columns: result.columns,
+    values: result.values
+  });
+}
+
+function gradePass() {
+  if (attempts === 0) return { score: 100, tier: "Perfect" };
+  if (attempts === 1) return { score: 92, tier: "Strong" };
+  return { score: 82, tier: "Passing" };
+}
+function refreshLessonChrome() {
+  applySchemaPanelWidth();
+  renderSchema();
+  renderAchievements();
+  updateDashboard();
+  renderCurriculumNav();
+  renderTrackCategoryCards();
+}
+
+function setFeedbackState(element, state, message) {
+  if (!element) return;
+  element.classList.remove("success", "error", "warning");
+  if (state) element.classList.add(state);
+  element.innerText = message;
 }
 function checkAnswer() {
   runQuery();
@@ -6377,4 +6473,6 @@ document.addEventListener("DOMContentLoaded", async function () {
   initSchemaResizer();
   await initDatabase();
   renderAll();
+  window.addEventListener("scroll", hideAchievementTooltip, true);
+  window.addEventListener("resize", hideAchievementTooltip);
 });
