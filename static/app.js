@@ -5986,9 +5986,19 @@ function checkAnswer() {
   runQuery();
 }
 function resetQuery() {
-  const lesson = getCurrentLesson();
   const queryBox = document.getElementById("query");
-  if (lesson && lesson.type === "challenge" && queryBox) queryBox.value = lesson.starterQuery || "";
+  const feedback = document.getElementById("feedback");
+  const output = document.getElementById("output");
+
+  if (queryBox) queryBox.value = "";
+  if (feedback) {
+    feedback.classList.remove("success", "error", "warning");
+    feedback.innerText = "";
+  }
+  if (output) output.innerHTML = "";
+
+  attempts = 0;
+  lastRunQuery = "";
 }
 
 function submitScenario() {
