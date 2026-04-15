@@ -24,25 +24,21 @@
     --danger: #dc2626;
     --danger-soft: #fee2e2;
 
-    --foundations-bg: #ecfdf5;
-    --foundations-border: #86efac;
-    --foundations-text: #166534;
+    --easy-bg: #ecfdf5;
+    --easy-border: #86efac;
+    --easy-text: #166534;
 
-    --core-bg: #eff6ff;
-    --core-border: #93c5fd;
-    --core-text: #1d4ed8;
+    --intermediate-bg: #eff6ff;
+    --intermediate-border: #93c5fd;
+    --intermediate-text: #1d4ed8;
 
-    --applied-bg: #fff7ed;
-    --applied-border: #fdba74;
-    --applied-text: #c2410c;
+    --hard-bg: #fff7ed;
+    --hard-border: #fdba74;
+    --hard-text: #c2410c;
 
-    --advanced-bg: #fee2e2;
-    --advanced-border: #fca5a5;
-    --advanced-text: #991b1b;
-
-    --expert-bg: #f5f3ff;
-    --expert-border: #c4b5fd;
-    --expert-text: #6d28d9;
+    --advanced-bg: #f5f3ff;
+    --advanced-border: #c4b5fd;
+    --advanced-text: #6d28d9;
 
     --concept-bg: #eef6ff;
     --concept-border: #bfdbfe;
@@ -413,32 +409,6 @@ body.resizing-schema #schema-resizer::before {
     max-width: 760px;
 }
 
-/* ================= CAREOPS Branding ================= */
-.hero-title {
-    font-size: 2.6rem;
-    font-weight: 800;
-    letter-spacing: 0.08em;
-    margin-bottom: 6px;
-    color: #ffffff;
-    text-transform: uppercase;
-}
-
-.hero-tagline {
-    font-size: 1.05rem;
-    font-weight: 600;
-    color: #e0ecff;
-    margin: 4px 0 12px;
-    max-width: 720px;
-    line-height: 1.5;
-}
-
-.hero-description {
-    font-size: 1rem;
-    color: rgba(255, 255, 255, 0.95);
-    max-width: 760px;
-    line-height: 1.6;
-}
-
 .hero-copy p {
     max-width: 760px;
 }
@@ -653,7 +623,7 @@ body.resizing-schema #schema-resizer::before {
 
 .track-category-cards {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
     gap: 18px;
     margin-top: 16px;
 }
@@ -1315,34 +1285,28 @@ body.resizing-schema #schema-resizer::before {
     text-transform: none;
 }
 
-.difficulty-foundations {
-    background: var(--foundations-bg);
-    border-color: var(--foundations-border);
-    color: var(--foundations-text);
+.difficulty-easy {
+    background: var(--easy-bg);
+    border-color: var(--easy-border);
+    color: var(--easy-text);
 }
 
-.difficulty-core {
-    background: var(--core-bg);
-    border-color: var(--core-border);
-    color: var(--core-text);
+.difficulty-intermediate {
+    background: var(--intermediate-bg);
+    border-color: var(--intermediate-border);
+    color: var(--intermediate-text);
 }
 
-.difficulty-applied {
-    background: var(--applied-bg);
-    border-color: var(--applied-border);
-    color: var(--applied-text);
+.difficulty-hard {
+    background: var(--hard-bg);
+    border-color: var(--hard-border);
+    color: var(--hard-text);
 }
 
 .difficulty-advanced {
     background: var(--advanced-bg);
     border-color: var(--advanced-border);
     color: var(--advanced-text);
-}
-
-.difficulty-expert {
-    background: var(--expert-bg);
-    border-color: var(--expert-border);
-    color: var(--expert-text);
 }
 
 .lesson-type-concept {
@@ -1638,25 +1602,21 @@ Subject:
     --danger: #dc2626;
     --danger-soft: #fee2e2;
 
-    --foundations-bg: #ecfdf5;
-    --foundations-border: #86efac;
-    --foundations-text: #166534;
+    --easy-bg: #ecfdf5;
+    --easy-border: #86efac;
+    --easy-text: #166534;
 
-    --core-bg: #eff6ff;
-    --core-border: #93c5fd;
-    --core-text: #1d4ed8;
+    --intermediate-bg: #eff6ff;
+    --intermediate-border: #93c5fd;
+    --intermediate-text: #1d4ed8;
 
-    --applied-bg: #fff7ed;
-    --applied-border: #fdba74;
-    --applied-text: #c2410c;
+    --hard-bg: #fff7ed;
+    --hard-border: #fdba74;
+    --hard-text: #c2410c;
 
-    --advanced-bg: #fee2e2;
-    --advanced-border: #fca5a5;
-    --advanced-text: #991b1b;
-
-    --expert-bg: #f5f3ff;
-    --expert-border: #c4b5fd;
-    --expert-text: #6d28d9;
+    --advanced-bg: #f5f3ff;
+    --advanced-border: #c4b5fd;
+    --advanced-text: #6d28d9;
 
     --concept-bg: #eef6ff;
     --concept-border: #bfdbfe;
@@ -1955,3 +1915,85 @@ textarea:focus {
         grid-template-columns: 1fr;
     }
 }
+
+/* ================= Five Learning Levels ================= */
+.difficulty-foundations {
+    background: #ecfdf5;
+    border-color: #86efac;
+    color: #166534;
+}
+
+.difficulty-core {
+    background: #eff6ff;
+    border-color: #93c5fd;
+    color: #1d4ed8;
+}
+
+.difficulty-applied {
+    background: #fff7ed;
+    border-color: #fdba74;
+    color: #c2410c;
+}
+
+.difficulty-advanced {
+    background: #fef2f2;
+    border-color: #fca5a5;
+    color: #b91c1c;
+}
+
+.difficulty-expert {
+    background: #f5f3ff;
+    border-color: #c4b5fd;
+    color: #6d28d9;
+}
+
+.track-category-cards {
+    grid-template-columns: repeat(2, minmax(260px, 1fr));
+}
+
+.track-badge-card.level-card {
+    min-height: 250px;
+    border: 2px solid var(--border);
+    cursor: pointer;
+    justify-content: flex-start;
+    padding-top: 22px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.track-badge-card.level-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.track-badge-card.level-card.active {
+    box-shadow: 0 18px 36px rgba(15, 23, 42, 0.12);
+    transform: translateY(-2px);
+}
+
+.track-badge-card.level-card .level-icon {
+    font-size: 1.2rem;
+    font-weight: 800;
+    border: 2px solid var(--border);
+    background: #ffffff;
+}
+
+.track-badge-card.level-card .track-badge-stats {
+    margin-top: 10px;
+    text-align: center;
+    font-size: 0.9rem;
+    color: #475569;
+    line-height: 1.7;
+}
+
+.track-badge-card.level-card .track-badge-helper {
+    font-size: 0.8rem;
+    color: #64748b;
+    margin-top: 4px;
+}
+
+@media (max-width: 900px) {
+    .track-category-cards {
+        grid-template-columns: 1fr;
+    }
+}
+
