@@ -284,6 +284,12 @@ textarea:focus {
     max-width: 100%;
 }
 
+#feedback.warning,
+#scenario-feedback.warning {
+    border-left-color: #f59e0b;
+    background: #fff7ed;
+}
+
 /* ================= Shared Card Surface ================= */
 .schema-section,
 .dashboard-card,
