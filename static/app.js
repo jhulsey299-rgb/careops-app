@@ -5932,30 +5932,74 @@ function checkAnswer() {
   const lesson = getCurrentLesson();
   const feedback = document.getElementById("feedback");
   const queryBox = document.getElementById("query");
-  if (!lesson || lesson.type !== "challenge" || !queryBox) return;
+
+  if (!lesson || lesson.type !== "challenge" || !queryBox || !feedback) return;
+
   attempts += 1;
   const query = queryBox.value.trim();
+
+  if (!query) {
+    setFeedbackState(feedback, "error", "Please enter a query before checking your answer.");
+    return;
+  }
+
   try {
     const userResult = queryToResult(query);
     const solutionResult = queryToResult(lesson.solutionQuery);
+
     const passed = normalizeResult(userResult) === normalizeResult(solutionResult);
+    const mentionsRelevantTable =
+      (lesson.relevantTables || []).length === 0 ||
+      (lesson.relevantTables || []).some(table =>
+        query.toLowerCase().includes(String(table).toLowerCase())
+      );
+
     if (passed) {
       const grade = gradePass();
       updateLessonStatsOnGrade(lesson.id, grade, true);
       markLessonCompleted(lesson.id, attempts === 1);
-      feedback.className = "success";
-      feedback.innerText = `Correct. Score: ${grade.score} · Tier: ${grade.tier}`;
+
+      setFeedbackState(
+        feedback,
+        "success",
+        `Correct — your query returned the expected result. Score: ${grade.score} · Tier: ${grade.tier}`
+      );
+
+      if (!mentionsRelevantTable) {
+        feedback.innerText += "\n\nNote: the result was correct, but make sure you are using the intended table pattern for the lesson.";
+      }
+
       saveProgress();
-      renderAll();
-    } else {
-      updateLessonStatsOnGrade(lesson.id, { score: 45, tier: "Developing" }, false);
-      feedback.className = "error";
-      feedback.innerText = attempts >= 3 ? `Not quite. Suggested answer:\n${lesson.solutionQuery}` : `Not quite yet. Hint: ${lesson.hint}`;
-      saveProgress();
+      refreshLessonChrome();
+      return;
     }
+
+    const looksClose =
+      query.length >= 20 &&
+      mentionsRelevantTable;
+
+    updateLessonStatsOnGrade(lesson.id, { score: looksClose ? 65 : 45, tier: looksClose ? "Close" : "Developing" }, false);
+
+    if (looksClose) {
+      const missingText =
+        attempts >= 3
+          ? `Close, but not correct yet.\n\nSuggested answer:\n${lesson.solutionQuery}`
+          : `Close, but not correct yet. Hint: ${lesson.hint}`;
+
+      setFeedbackState(feedback, "warning", missingText);
+    } else {
+      const missingText =
+        attempts >= 3
+          ? `Incorrect.\n\nSuggested answer:\n${lesson.solutionQuery}`
+          : `Incorrect. Focus on the correct table, filter, join, or grouping logic.\nHint: ${lesson.hint}`;
+
+      setFeedbackState(feedback, "error", missingText);
+    }
+
+    saveProgress();
+    refreshLessonChrome();
   } catch (error) {
-    feedback.className = "error";
-    feedback.innerText = getExecutionErrorMessage(error);
+    setFeedbackState(feedback, "error", getExecutionErrorMessage(error));
   }
 }
 
