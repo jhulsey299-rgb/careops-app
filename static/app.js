@@ -6194,11 +6194,12 @@ function closeTableModal(event) {
 
 function initUiActions() {
   const openOverviewBtn = document.getElementById("open-overview-btn");
-  if (openOverviewBtn) openOverviewBtn.onclick = () => {
-    appState.currentView = "overview";
-    showOverview();
-    renderAll();
-  };
+ if (openOverviewBtn) openOverviewBtn.onclick = () => {
+  appState.currentView = "overview";
+  attempts = 0;
+  showOverview();
+  renderAll();
+};
   const toggleBtn = document.getElementById("toggle-levels-panel-btn");
   const panel = document.getElementById("levels-panel");
   if (toggleBtn && panel) {
