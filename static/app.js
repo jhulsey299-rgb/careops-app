@@ -5505,6 +5505,20 @@ function achievements() {
     { label: "Executive Whisperer", earned: catComplete("executive_communication_and_insights"), emoji: "🗣️", description: "Unlock by completing every lesson in Executive Communication and Insights." }
   ];
 }
+/**
+ * Escapes HTML characters to prevent rendering issues and XSS vulnerabilities.
+ * This function ensures that dynamic content such as lesson text, hints,
+ * and achievement descriptions are safely displayed in the UI.
+ */
+function escapeHtml(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
 
 function renderAchievements() {
   const container = document.getElementById("badges-container");
