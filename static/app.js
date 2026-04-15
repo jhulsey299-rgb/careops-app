@@ -5329,32 +5329,46 @@ function updateDashboard() {
 function renderSchema() {
   const tablesWrap = document.getElementById("schema-tables");
   const relationshipsWrap = document.getElementById("schema-relationships");
-  const activeLesson = getCurrentLesson();
-  const relevantTables = new Set((activeLesson?.relevantTables || []).map(name => String(name).toLowerCase()));
+
+  const activeLesson = appState.currentView === "lesson" ? getCurrentLesson() : null;
+  const relevantTables = new Set(
+    (activeLesson?.relevantTables || []).map(name => String(name).toLowerCase())
+  );
+
   if (tablesWrap) {
     tablesWrap.innerHTML = "";
+
     schema.tables.forEach(table => {
       const details = document.createElement("details");
       details.className = "schema-card";
-      details.open = relevantTables.has(String(table.name).toLowerCase());
+      details.open =
+        appState.currentView === "lesson" &&
+        relevantTables.size > 0 &&
+        relevantTables.has(String(table.name).toLowerCase());
+
       const summary = document.createElement("summary");
       summary.textContent = table.name;
       details.appendChild(summary);
+
       const p = document.createElement("p");
       p.innerHTML = `<strong>Description:</strong> ${table.description}<br><strong>Columns:</strong> ${table.notableColumns.join(", ")}`;
       details.appendChild(p);
+
       const actions = document.createElement("div");
       actions.className = "schema-table-actions";
+
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "schema-table-view-btn";
       btn.textContent = "Open Table Viewer";
       btn.addEventListener("click", () => openTableModal(table.name));
+
       actions.appendChild(btn);
       details.appendChild(actions);
       tablesWrap.appendChild(details);
     });
   }
+
   if (relationshipsWrap) {
     relationshipsWrap.innerHTML = "";
     schema.relationships.forEach(item => {
@@ -5365,6 +5379,7 @@ function renderSchema() {
     });
   }
 }
+
 
 function levelForTrack(trackId) {
   return LEARNING_LEVELS.find(level => level.trackId === trackId);
