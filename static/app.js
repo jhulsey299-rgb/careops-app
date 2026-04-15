@@ -1,4246 +1,1646 @@
-// ======================
-// CAREOPS SQL ANALYST
-// TRACK 1 FULL BUILD
-// PART 1 OF 4
-// STATE, SCHEMA, MOCK DATA, AND CURRICULUM FOUNDATION
-// ======================
+const STORAGE_KEY = "careops_curriculum_master_v2";
 
-// ======================
-// STORAGE KEY
-// ======================
-const STORAGE_KEY = "careops_curriculum_track1_full_v1";
-
-// ======================
-// APPLICATION STATE
-// ======================
 let appState = {
-    currentTrackId: "track_sql_master_curriculum_hospital",
-    currentCategoryId: null,
-    currentLessonId: null,
-    completedLessonIds: [],
-    firstTryLessonIds: [],
-    schemaPanelWidth: 320,
-    lessonStats: {}
+  currentTrackId: "track_foundations",
+  currentCategoryId: null,
+  currentLessonId: null,
+  completedLessonIds: [],
+  firstTryLessonIds: [],
+  schemaPanelWidth: 320,
+  lessonStats: {}
 };
 
-// SQL Engine Globals (initialized in later parts)
 let SQL = null;
 let sqlDb = null;
 let sqlEngineReady = false;
-
-// ======================
-// LESSON RUNTIME STATE
-// ======================
 let attempts = 0;
 let lastRunQuery = "";
-
 let activeDifficultyFilter = null;
 
 const LEARNING_LEVELS = [
-    {
-        label: "Foundations",
-        key: "foundations",
-        color: "#22c55e",
-        categoryIds: [
-            "getting_started",
-            "selecting_columns",
-            "filtering_rows",
-            "sorting_results",
-            "strings",
-            "numbers_and_calculations",
-            "null_handling"
-        ]
-    },
-    {
-        label: "Core",
-        key: "core",
-        color: "#2563eb",
-        categoryIds: [
-            "boolean_logic",
-            "case_statements",
-            "aggregations",
-            "group_by",
-            "having",
-            "inner_joins",
-            "join_strategy"
-        ]
-    },
-    {
-        label: "Applied",
-        key: "applied",
-        color: "#f59e0b",
-        categoryIds: [
-            "hospital_throughput",
-            "readmissions_observations",
-            "readmissions_kpis",
-            "observation_kpis",
-            "length_of_stay_kpis",
-            "denials_kpis",
-            "ed_throughput_kpis"
-        ]
-    },
-    {
-        label: "Advanced",
-        key: "advanced",
-        color: "#ef4444",
-        categoryIds: [
-            "appointment_access_kpis",
-            "provider_performance_sql",
-            "executive_summary_sql",
-            "left_joins_missing_data",
-            "date_filters_reporting_periods",
-            "conditional_aggregation",
-            "distinct_counts_and_grain"
-        ]
-    },
-    {
-        label: "Expert",
-        key: "expert",
-        color: "#7c3aed",
-        categoryIds: [
-            "subqueries",
-            "ctes",
-            "window_functions",
-            "readmissions_build_logic",
-            "observation_and_throughput_logic",
-            "revenue_cycle_denials_analysis",
-            "executive_rollups_and_framing"
-        ]
-    }
+  { label: "Foundations", key: "foundations", color: "#22c55e", trackId: "track_foundations" },
+  { label: "Core", key: "core", color: "#2563eb", trackId: "track_core" },
+  { label: "Applied", key: "applied", color: "#f59e0b", trackId: "track_applied" },
+  { label: "Advanced", key: "advanced", color: "#ef4444", trackId: "track_advanced" },
+  { label: "Expert", key: "expert", color: "#7c3aed", trackId: "track_expert" }
 ];
 
-
-// ======================
-// SCHEMA DEFINITION
-// ======================
 const schema = {
-    tables: [
-        {
-            name: "patients",
-            description: "Patient demographic, insurance, and risk information.",
-            keyColumns: ["patient_id"],
-            notableColumns: [
-                "patient_id",
-                "first_name",
-                "last_name",
-                "age",
-                "gender",
-                "insurance_type",
-                "risk_score",
-                "city"
-            ],
-            sampleRows: []
-        },
-        {
-            name: "providers",
-            description: "Provider names, specialties, and facility assignments.",
-            keyColumns: ["provider_id"],
-            notableColumns: [
-                "provider_id",
-                "provider_name",
-                "specialty",
-                "facility"
-            ],
-            sampleRows: []
-        },
-        {
-            name: "departments",
-            description: "Hospital and clinic departments by facility and service line.",
-            keyColumns: ["department_id"],
-            notableColumns: [
-                "department_id",
-                "department_name",
-                "facility",
-                "service_line"
-            ],
-            sampleRows: []
-        },
-        {
-            name: "encounters",
-            description: "Patient encounters tied to providers and departments.",
-            keyColumns: ["encounter_id"],
-            notableColumns: [
-                "encounter_id",
-                "patient_id",
-                "provider_id",
-                "department_id",
-                "facility",
-                "department",
-                "status",
-                "encounter_type",
-                "length_of_stay",
-                "admit_date",
-                "discharge_date"
-            ],
-            sampleRows: []
-        },
-        {
-            name: "appointments",
-            description: "Scheduled appointments tied to patients and providers.",
-            keyColumns: ["appointment_id"],
-            notableColumns: [
-                "appointment_id",
-                "patient_id",
-                "provider_id",
-                "department_id",
-                "facility",
-                "department",
-                "status",
-                "date"
-            ],
-            sampleRows: []
-        },
-        {
-            name: "charges",
-            description: "Financial charges tied to patients and encounters.",
-            keyColumns: ["charge_id"],
-            notableColumns: [
-                "charge_id",
-                "patient_id",
-                "encounter_id",
-                "amount",
-                "payer",
-                "charge_type"
-            ],
-            sampleRows: []
-        },
-        {
-            name: "claims",
-            description: "Claims tied to patients and encounters.",
-            keyColumns: ["claim_id"],
-            notableColumns: [
-                "claim_id",
-                "patient_id",
-                "encounter_id",
-                "payer",
-                "claim_status",
-                "billed_amount"
-            ],
-            sampleRows: []
-        },
-        {
-            name: "discharges",
-            description: "Discharge workflow details including delays and disposition.",
-            keyColumns: ["discharge_id"],
-            notableColumns: [
-                "discharge_id",
-                "encounter_id",
-                "patient_id",
-                "facility",
-                "department",
-                "discharge_disposition",
-                "discharge_order_minutes",
-                "departure_minutes",
-                "delayed_for_transport"
-            ],
-            sampleRows: []
-        },
-        {
-            name: "readmissions",
-            description: "Thirty-day readmission tracking.",
-            keyColumns: ["readmission_id"],
-            notableColumns: [
-                "readmission_id",
-                "index_encounter_id",
-                "readmit_encounter_id",
-                "patient_id",
-                "facility",
-                "readmit_within_30_days",
-                "days_to_readmit"
-            ],
-            sampleRows: []
-        },
-        {
-            name: "observations",
-            description: "Observation stays and conversion details.",
-            keyColumns: ["observation_id"],
-            notableColumns: [
-                "observation_id",
-                "encounter_id",
-                "patient_id",
-                "facility",
-                "department",
-                "obs_hours",
-                "converted_to_inpatient",
-                "code_44_flag"
-            ],
-            sampleRows: []
-        }
-    ],
-    relationships: [
-        "patients.patient_id = encounters.patient_id",
-        "patients.patient_id = appointments.patient_id",
-        "patients.patient_id = charges.patient_id",
-        "patients.patient_id = claims.patient_id",
-        "providers.provider_id = encounters.provider_id",
-        "providers.provider_id = appointments.provider_id",
-        "departments.department_id = encounters.department_id",
-        "departments.department_id = appointments.department_id",
-        "encounters.encounter_id = charges.encounter_id",
-        "encounters.encounter_id = claims.encounter_id",
-        "encounters.encounter_id = discharges.encounter_id",
-        "encounters.encounter_id = observations.encounter_id",
-        "encounters.encounter_id = readmissions.index_encounter_id",
-        "encounters.encounter_id = readmissions.readmit_encounter_id"
-    ]
+  tables: [
+    { name: "patients", description: "Patient demographic, insurance, and risk information.", keyColumns: ["patient_id"], notableColumns: ["patient_id","first_name","last_name","age","gender","insurance_type","risk_score","city"], sampleRows: [] },
+    { name: "providers", description: "Provider names, specialties, and facility assignments.", keyColumns: ["provider_id"], notableColumns: ["provider_id","provider_name","specialty","facility"], sampleRows: [] },
+    { name: "departments", description: "Hospital and clinic departments by facility and service line.", keyColumns: ["department_id"], notableColumns: ["department_id","department_name","facility","service_line"], sampleRows: [] },
+    { name: "encounters", description: "Patient encounters tied to providers and departments.", keyColumns: ["encounter_id"], notableColumns: ["encounter_id","patient_id","provider_id","department_id","facility","department","status","encounter_type","length_of_stay","admit_date","discharge_date"], sampleRows: [] },
+    { name: "appointments", description: "Scheduled appointments tied to patients and providers.", keyColumns: ["appointment_id"], notableColumns: ["appointment_id","patient_id","provider_id","department_id","facility","department","status","date"], sampleRows: [] },
+    { name: "charges", description: "Financial charges tied to patients and encounters.", keyColumns: ["charge_id"], notableColumns: ["charge_id","patient_id","encounter_id","amount","payer","charge_type"], sampleRows: [] },
+    { name: "claims", description: "Claims tied to patients and encounters.", keyColumns: ["claim_id"], notableColumns: ["claim_id","patient_id","encounter_id","payer","claim_status","billed_amount"], sampleRows: [] },
+    { name: "discharges", description: "Discharge workflow details including delays and disposition.", keyColumns: ["discharge_id"], notableColumns: ["discharge_id","encounter_id","patient_id","facility","department","discharge_disposition","discharge_order_minutes","departure_minutes","delayed_for_transport"], sampleRows: [] },
+    { name: "readmissions", description: "Thirty-day readmission tracking.", keyColumns: ["readmission_id"], notableColumns: ["readmission_id","index_encounter_id","readmit_encounter_id","patient_id","facility","readmit_within_30_days","days_to_readmit"], sampleRows: [] },
+    { name: "observations", description: "Observation stays and conversion details.", keyColumns: ["observation_id"], notableColumns: ["observation_id","encounter_id","patient_id","facility","department","obs_hours","converted_to_inpatient","code_44_flag"], sampleRows: [] }
+  ],
+  relationships: [
+    "patients.patient_id = encounters.patient_id",
+    "patients.patient_id = appointments.patient_id",
+    "patients.patient_id = charges.patient_id",
+    "patients.patient_id = claims.patient_id",
+    "encounters.provider_id = providers.provider_id",
+    "encounters.department_id = departments.department_id",
+    "appointments.provider_id = providers.provider_id",
+    "appointments.department_id = departments.department_id",
+    "charges.encounter_id = encounters.encounter_id",
+    "claims.encounter_id = encounters.encounter_id",
+    "discharges.encounter_id = encounters.encounter_id",
+    "readmissions.patient_id = patients.patient_id",
+    "observations.encounter_id = encounters.encounter_id"
+  ]
 };
-
-// ======================
-// MOCK DATA GENERATION
-// ======================
-function generateMockCell(tableName, columnName, rowIndex) {
-  const firstNames = [
-    "James", "Mary", "John", "Patricia", "Robert", "Jennifer",
-    "Michael", "Linda", "William", "Elizabeth", "David", "Barbara",
-    "Richard", "Susan", "Joseph", "Jessica", "Thomas", "Sarah"
-  ];
-
-  const lastNames = [
-    "Smith", "Johnson", "Williams", "Brown", "Jones", "Garcia",
-    "Miller", "Davis", "Rodriguez", "Martinez", "Hernandez",
-    "Lopez", "Gonzalez", "Wilson", "Anderson", "Thomas"
-  ];
-
-  const cities = [
-    "Myrtle Beach", "Georgetown", "Murrells Inlet",
-    "Conway", "Pawleys Island", "Surfside Beach", "Socastee"
-  ];
-
-  const insuranceTypes = [
-    "Medicare", "Medicaid", "Blue Cross", "Aetna",
-    "UnitedHealthcare", "Cigna", "Self Pay"
-  ];
-
-  const payers = [
-    "Medicare", "Medicaid", "Blue Cross", "Aetna",
-    "UnitedHealthcare", "Cigna", "Self Pay"
-  ];
-
-  const departments = [
-    "Emergency", "Cardiology", "Orthopedics", "Neurology",
-    "Oncology", "Pediatrics", "General Surgery",
-    "Family Medicine", "ICU", "Observation"
-  ];
-
-  const facilities = ["TGMH", "TWCH"];
-
-  const encounterTypes = ["Inpatient", "Outpatient", "Emergency", "Observation"];
-  const encounterStatuses = ["Admitted", "Discharged", "In Progress"];
-  const claimStatuses = ["Paid", "Denied", "Pending"];
-  const appointmentStatuses = ["Completed", "Scheduled", "No Show", "Cancelled"];
-
-  const specialties = [
-    "Family Medicine", "Cardiology", "Orthopedics",
-    "Neurology", "Emergency Medicine", "Oncology",
-    "Pediatrics", "General Surgery"
-  ];
-
-  const dischargeDispositions = [
-    "Home", "Home Health", "Skilled Nursing Facility",
-    "Rehabilitation", "Expired", "Against Medical Advice"
-  ];
-
-  const genders = ["Male", "Female"];
-
-  const randomItem = arr => arr[Math.floor(Math.random() * arr.length)];
-  const randomInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
-  const randomDate = (start, end) =>
-    new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()))
-      .toISOString()
-      .split("T")[0];
-
-  switch (String(columnName).toLowerCase()) {
-    case "patient_id":
-      return Number(rowIndex);
-
-    case "provider_id":
-      return 200 + rowIndex;
-
-    case "department_id":
-      return 500 + rowIndex;
-
-    case "encounter_id":
-      return 1000 + rowIndex;
-
-    case "appointment_id":
-      return 2000 + rowIndex;
-
-    case "charge_id":
-      return 3000 + rowIndex;
-
-    case "claim_id":
-      return 4000 + rowIndex;
-
-    case "discharge_id":
-      return 5000 + rowIndex;
-
-    case "readmission_id":
-      return 6000 + rowIndex;
-
-    case "observation_id":
-      return 7000 + rowIndex;
-
-    case "index_encounter_id":
-      return 1000 + rowIndex;
-
-    case "readmit_encounter_id":
-      return 1000 + (((rowIndex + 7) % 80) + 1);
-
-    case "first_name":
-      return randomItem(firstNames);
-
-    case "last_name":
-      return randomItem(lastNames);
-
-    case "age":
-      return randomInt(18, 90);
-
-    case "gender":
-      return randomItem(genders);
-
-    case "insurance_type":
-      return randomItem(insuranceTypes);
-
-    case "risk_score":
-      return randomInt(1, 100);
-
-    case "city":
-      return randomItem(cities);
-
-    case "provider_name":
-      return `Dr. ${randomItem(firstNames)} ${randomItem(lastNames)}`;
-
-    case "specialty":
-      return randomItem(specialties);
-
-    case "department":
-    case "department_name":
-      return randomItem(departments);
-
-    case "facility":
-      return randomItem(facilities);
-
-    case "service_line":
-      return randomItem([
-        "Cardiovascular",
-        "Emergency",
-        "Primary Care",
-        "Neurosciences",
-        "Orthopedics",
-        "Oncology",
-        "Pediatrics",
-        "Critical Care"
-      ]);
-
-    case "status":
-      return tableName === "appointments"
-        ? randomItem(appointmentStatuses)
-        : randomItem(encounterStatuses);
-
-    case "encounter_type":
-      return randomItem(encounterTypes);
-
-    case "length_of_stay":
-      return Number((Math.random() * 9 + 0.5).toFixed(1));
-
-    case "admit_date":
-      return randomDate(new Date(2023, 0, 1), new Date(2025, 11, 31));
-
-    case "discharge_date":
-      return Math.random() < 0.1
-        ? null
-        : randomDate(new Date(2023, 0, 2), new Date(2025, 11, 31));
-
-    case "date":
-      return randomDate(new Date(2024, 0, 1), new Date(2025, 11, 31));
-
-    case "amount":
-      return randomInt(100, 10000);
-
-    case "billed_amount":
-      return randomInt(500, 20000);
-
-    case "payer":
-      return randomItem(payers);
-
-    case "claim_status":
-      return randomItem(claimStatuses);
-
-    case "charge_type":
-      return randomItem([
-        "Room Charge",
-        "Pharmacy",
-        "Imaging",
-        "Lab",
-        "Procedure",
-        "Supplies"
-      ]);
-
-    case "discharge_disposition":
-      return randomItem(dischargeDispositions);
-
-    case "discharge_order_minutes":
-      return randomInt(30, 600);
-
-    case "departure_minutes":
-      return randomInt(30, 480);
-
-    case "delayed_for_transport":
-      return randomItem([0, 1]);
-
-    case "readmit_within_30_days":
-      return randomItem([0, 1]);
-
-    case "days_to_readmit":
-      return randomInt(1, 30);
-
-    case "obs_hours":
-      return randomInt(1, 72);
-
-    case "converted_to_inpatient":
-      return randomItem([0, 1]);
-
-    case "code_44_flag":
-      return randomItem([0, 1]);
-
-    default:
-      return `${tableName}_${columnName}_${rowIndex}`;
-  }
-}
-
-function rowToArray(table, rowObject) {
-  return table.notableColumns.map(col => rowObject[col] ?? null);
-}
-
-function generateRelationalSampleRows() {
-  const rowCount = 80;
-
-  const patientsTable = schema.tables.find(t => t.name === "patients");
-  const providersTable = schema.tables.find(t => t.name === "providers");
-  const departmentsTable = schema.tables.find(t => t.name === "departments");
-  const encountersTable = schema.tables.find(t => t.name === "encounters");
-  const appointmentsTable = schema.tables.find(t => t.name === "appointments");
-  const chargesTable = schema.tables.find(t => t.name === "charges");
-  const claimsTable = schema.tables.find(t => t.name === "claims");
-  const dischargesTable = schema.tables.find(t => t.name === "discharges");
-  const readmissionsTable = schema.tables.find(t => t.name === "readmissions");
-  const observationsTable = schema.tables.find(t => t.name === "observations");
-
-  const patients = [];
-  const providers = [];
-  const departments = [];
-  const encounters = [];
-  const appointments = [];
-  const charges = [];
-  const claims = [];
-  const discharges = [];
-  const readmissions = [];
-  const observations = [];
-
-  for (let i = 1; i <= rowCount; i += 1) {
-    patients.push({
-      patient_id: i,
-      first_name: generateMockCell("patients", "first_name", i),
-      last_name: generateMockCell("patients", "last_name", i),
-      age: generateMockCell("patients", "age", i),
-      gender: generateMockCell("patients", "gender", i),
-      insurance_type: generateMockCell("patients", "insurance_type", i),
-      risk_score: generateMockCell("patients", "risk_score", i),
-      city: generateMockCell("patients", "city", i)
-    });
-  }
-
-  for (let i = 1; i <= 40; i += 1) {
-    providers.push({
-      provider_id: 200 + i,
-      provider_name: generateMockCell("providers", "provider_name", i),
-      specialty: generateMockCell("providers", "specialty", i),
-      facility: generateMockCell("providers", "facility", i)
-    });
-  }
-
-  for (let i = 1; i <= 20; i += 1) {
-    departments.push({
-      department_id: 500 + i,
-      department_name: generateMockCell("departments", "department_name", i),
-      facility: generateMockCell("departments", "facility", i),
-      service_line: generateMockCell("departments", "service_line", i)
-    });
-  }
-
-  for (let i = 1; i <= rowCount; i += 1) {
-    const patient = patients[(i - 1) % patients.length];
-    const provider = providers[(i - 1) % providers.length];
-    const dept = departments[(i - 1) % departments.length];
-
-    encounters.push({
-      encounter_id: 1000 + i,
-      patient_id: patient.patient_id,
-      provider_id: provider.provider_id,
-      department_id: dept.department_id,
-      facility: dept.facility,
-      department: dept.department_name,
-      status: generateMockCell("encounters", "status", i),
-      encounter_type: generateMockCell("encounters", "encounter_type", i),
-      length_of_stay: generateMockCell("encounters", "length_of_stay", i),
-      admit_date: generateMockCell("encounters", "admit_date", i),
-      discharge_date: generateMockCell("encounters", "discharge_date", i)
-    });
-  }
-
-  for (let i = 1; i <= rowCount; i += 1) {
-    const patient = patients[(i - 1) % patients.length];
-    const provider = providers[(i - 1) % providers.length];
-    const dept = departments[(i - 1) % departments.length];
-
-    appointments.push({
-      appointment_id: 2000 + i,
-      patient_id: patient.patient_id,
-      provider_id: provider.provider_id,
-      department_id: dept.department_id,
-      facility: dept.facility,
-      department: dept.department_name,
-      status: generateMockCell("appointments", "status", i),
-      date: generateMockCell("appointments", "date", i)
-    });
-  }
-
-  for (let i = 1; i <= rowCount; i += 1) {
-    const encounter = encounters[i - 1];
-    const patient = patients.find(p => p.patient_id === encounter.patient_id);
-
-    charges.push({
-      charge_id: 3000 + i,
-      patient_id: patient.patient_id,
-      encounter_id: encounter.encounter_id,
-      amount: generateMockCell("charges", "amount", i),
-      payer: patient.insurance_type === "Self Pay"
-        ? "Self Pay"
-        : generateMockCell("charges", "payer", i),
-      charge_type: generateMockCell("charges", "charge_type", i)
-    });
-
-    claims.push({
-      claim_id: 4000 + i,
-      patient_id: patient.patient_id,
-      encounter_id: encounter.encounter_id,
-      payer: patient.insurance_type === "Self Pay"
-        ? "Self Pay"
-        : generateMockCell("claims", "payer", i),
-      claim_status: generateMockCell("claims", "claim_status", i),
-      billed_amount: generateMockCell("claims", "billed_amount", i)
-    });
-
-    discharges.push({
-      discharge_id: 5000 + i,
-      encounter_id: encounter.encounter_id,
-      patient_id: patient.patient_id,
-      facility: encounter.facility,
-      department: encounter.department,
-      discharge_disposition: generateMockCell("discharges", "discharge_disposition", i),
-      discharge_order_minutes: generateMockCell("discharges", "discharge_order_minutes", i),
-      departure_minutes: generateMockCell("discharges", "departure_minutes", i),
-      delayed_for_transport: generateMockCell("discharges", "delayed_for_transport", i)
-    });
-
-    observations.push({
-      observation_id: 7000 + i,
-      encounter_id: encounter.encounter_id,
-      patient_id: patient.patient_id,
-      facility: encounter.facility,
-      department: encounter.department,
-      obs_hours: generateMockCell("observations", "obs_hours", i),
-      converted_to_inpatient: generateMockCell("observations", "converted_to_inpatient", i),
-      code_44_flag: generateMockCell("observations", "code_44_flag", i)
-    });
-  }
-
-  for (let i = 1; i <= rowCount; i += 1) {
-  const indexEncounter = encounters[i - 1];
-
-  const samePatientEncounters = encounters.filter(
-    e => e.patient_id === indexEncounter.patient_id && e.encounter_id !== indexEncounter.encounter_id
-  );
-
-  const readmitEncounter =
-    samePatientEncounters.length > 0
-      ? samePatientEncounters[0]
-      : indexEncounter;
-
-  readmissions.push({
-    readmission_id: 6000 + i,
-    index_encounter_id: indexEncounter.encounter_id,
-    readmit_encounter_id: readmitEncounter.encounter_id,
-    patient_id: indexEncounter.patient_id,
-    facility: indexEncounter.facility,
-    readmit_within_30_days: generateMockCell("readmissions", "readmit_within_30_days", i),
-    days_to_readmit: generateMockCell("readmissions", "days_to_readmit", i)
-  });
-}
-
-
-  patientsTable.sampleRows = patients.map(row => rowToArray(patientsTable, row));
-  providersTable.sampleRows = providers.map(row => rowToArray(providersTable, row));
-  departmentsTable.sampleRows = departments.map(row => rowToArray(departmentsTable, row));
-  encountersTable.sampleRows = encounters.map(row => rowToArray(encountersTable, row));
-  appointmentsTable.sampleRows = appointments.map(row => rowToArray(appointmentsTable, row));
-  chargesTable.sampleRows = charges.map(row => rowToArray(chargesTable, row));
-  claimsTable.sampleRows = claims.map(row => rowToArray(claimsTable, row));
-  dischargesTable.sampleRows = discharges.map(row => rowToArray(dischargesTable, row));
-  readmissionsTable.sampleRows = readmissions.map(row => rowToArray(readmissionsTable, row));
-  observationsTable.sampleRows = observations.map(row => rowToArray(observationsTable, row));
-}
-
-generateRelationalSampleRows();
-
-// ======================
-// LESSON BUILDER FUNCTIONS
-// ======================
-function conceptLesson(
-    id,
-    title,
-    objective,
-    sql_focus,
-    relevantTables,
-    joinHint,
-    summary,
-    bullets,
-    hospitalExample,
-    executiveTakeaway = null
-) {
-    return {
-        id,
-        type: "concept",
-        title,
-        objective,
-        sql_focus,
-        relevantTables,
-        joinHint,
-        content: { summary, bullets, hospitalExample },
-        executiveTakeaway
-    };
-}
-
-function challengeLesson(
-    id,
-    title,
-    objective,
-    sql_focus,
-    relevantTables,
-    joinHint,
-    starterQuery,
-    solutionQuery,
-    hint,
-    executiveTakeaway = null
-) {
-    return {
-        id,
-        type: "challenge",
-        title,
-        objective,
-        sql_focus,
-        relevantTables,
-        joinHint,
-        starterQuery,
-        solutionQuery,
-        hint,
-        executiveTakeaway
-    };
-}
-
-function scenarioLesson(
-    id,
-    title,
-    objective,
-    relevantTables,
-    joinHint,
-    summary,
-    prompt,
-    expectedAnswer,
-    executiveTakeaway = null
-) {
-    return {
-        id,
-        type: "scenario",
-        title,
-        objective,
-        sql_focus: [],
-        relevantTables,
-        joinHint,
-        content: { summary, prompt, expectedAnswer },
-        executiveTakeaway
-    };
-}
-// ===============================
-// SQL CURRICULUM FOR HOSPITAL ANALYTICS
-// Tracks 1 and 2 - Ready to Paste
-// ===============================
 
 const curriculum = [
   {
-    "id": "track_sql_master_curriculum_hospital",
-    "title": "CareOps SQL Analyst Full Curriculum",
-    "description": "A complete SQL learning path for hospital analytics covering foundations, core analysis, applied operational analytics, advanced decision support, and expert-level hospital SQL design.",
+    "id": "track_foundations",
+    "title": "Foundations",
+    "description": "Foundations learning path for CareOps hospital analytics.",
     "order": 1,
     "categories": [
       {
-        "id": "getting_started",
-        "title": "Getting Started",
+        "id": "intro_relational_databases",
+        "title": "Introduction to Relational Databases",
         "order": 1,
         "lessons": [
           {
-            "id": "gs_01",
-            "type": "concept",
-            "title": "What Hospital Data Looks Like",
-            "objective": "Understand the core hospital tables and how analysts think about them.",
-            "sql_focus": [],
+            "kind": "concept",
+            "id": "l_001",
+            "title": "What Is a Relational Database?",
+            "objective": "Understand the structure and purpose of relational databases in healthcare.",
+            "sql_focus": [
+              "Concept"
+            ],
             "relevantTables": [
               "patients",
               "encounters",
               "claims",
               "charges"
             ],
-            "joinHint": "No join needed.",
-            "content": {
-              "summary": "Hospital analytics usually starts with patients, encounters, finance, and workflow tables.",
-              "bullets": [
-                "Patients describe who the person is",
-                "Encounters describe what happened clinically",
-                "Claims and charges represent the financial side",
-                "Operational tables explain why metrics move"
-              ],
-              "hospitalExample": "A denial or readmission rate always originates from a defined data model."
-            },
-            "executiveTakeaway": null
+            "joinHint": "No join required unless you choose to connect related data for context.",
+            "summary": "Understand the structure and purpose of relational databases in healthcare.",
+            "bullets": [
+              "What Is a Relational Database? is part of the Introduction to Relational Databases module.",
+              "Focus on how the concept changes measurement quality, business meaning, or query structure.",
+              "Tie the concept back to real hospital analytics whenever possible."
+            ],
+            "example": "In CareOps, what is a relational database? supports clearer operational, financial, or quality analysis.",
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "What Is a Relational Database?",
+              "whyItMatters": "Understand the structure and purpose of relational databases in healthcare.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
           },
           {
-            "id": "gs_02",
-            "type": "challenge",
-            "title": "View Patients",
-            "objective": "Return all rows and columns from patients.",
+            "kind": "concept",
+            "id": "l_002",
+            "title": "Tables, Rows, and Columns",
+            "objective": "Identify how healthcare data is organized within tables.",
             "sql_focus": [
-              "SELECT"
+              "Concept"
+            ],
+            "relevantTables": [
+              "patients",
+              "encounters",
+              "claims",
+              "charges"
+            ],
+            "joinHint": "No join required unless you choose to connect related data for context.",
+            "summary": "Identify how healthcare data is organized within tables.",
+            "bullets": [
+              "Tables, Rows, and Columns is part of the Introduction to Relational Databases module.",
+              "Focus on how the concept changes measurement quality, business meaning, or query structure.",
+              "Tie the concept back to real hospital analytics whenever possible."
+            ],
+            "example": "In CareOps, tables, rows, and columns supports clearer operational, financial, or quality analysis.",
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Tables, Rows, and Columns",
+              "whyItMatters": "Identify how healthcare data is organized within tables.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "concept",
+            "id": "l_003",
+            "title": "Primary Keys and Unique Identifiers",
+            "objective": "Learn how primary keys ensure data integrity.",
+            "sql_focus": [
+              "Concept"
+            ],
+            "relevantTables": [
+              "patients",
+              "encounters",
+              "claims",
+              "charges"
+            ],
+            "joinHint": "No join required unless you choose to connect related data for context.",
+            "summary": "Learn how primary keys ensure data integrity.",
+            "bullets": [
+              "Primary Keys and Unique Identifiers is part of the Introduction to Relational Databases module.",
+              "Focus on how the concept changes measurement quality, business meaning, or query structure.",
+              "Tie the concept back to real hospital analytics whenever possible."
+            ],
+            "example": "In CareOps, primary keys and unique identifiers supports clearer operational, financial, or quality analysis.",
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Primary Keys and Unique Identifiers",
+              "whyItMatters": "Learn how primary keys ensure data integrity.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "challenge",
+            "id": "l_004",
+            "title": "Foreign Keys and Relationships",
+            "objective": "Understand how tables connect using foreign keys.",
+            "sql_focus": [
+              "SELECT",
+              "WHERE",
+              "GROUP BY",
+              "JOIN"
             ],
             "relevantTables": [
               "patients"
             ],
-            "joinHint": "No join needed.",
+            "joinHint": "Use the base table that matches the reporting grain, then join outward only when needed.",
+            "starterQuery": "SELECT * FROM patients LIMIT 10;",
+            "solutionQuery": "SELECT * FROM patients LIMIT 10;",
+            "hint": "Run a simple valid query against the mock data.",
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Foreign Keys and Relationships",
+              "whyItMatters": "Understand how tables connect using foreign keys.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "scenario",
+            "id": "l_005",
+            "title": "Understanding Healthcare Data Entities",
+            "objective": "Recognize core entities such as patients, encounters, and providers.",
+            "relevantTables": [
+              "patients",
+              "encounters",
+              "claims",
+              "charges"
+            ],
+            "joinHint": "Think about the correct grain, the business audience, and the operational consequence.",
+            "summary": "Recognize core entities such as patients, encounters, and providers.",
+            "prompt": "Explain how you would approach 'Understanding Healthcare Data Entities' in a CareOps hospital analytics context. Mention the likely data sources, the business interpretation, and one practical action.",
+            "expectedKeywords": [
+              "data",
+              "insight",
+              "action"
+            ],
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Understanding Healthcare Data Entities",
+              "whyItMatters": "Recognize core entities such as patients, encounters, and providers.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "challenge",
+            "id": "l_006",
+            "title": "Introduction to SQL Syntax",
+            "objective": "Learn the basic structure of SQL statements.",
+            "sql_focus": [
+              "SELECT",
+              "WHERE",
+              "GROUP BY",
+              "JOIN"
+            ],
+            "relevantTables": [
+              "patients"
+            ],
+            "joinHint": "Use the base table that matches the reporting grain, then join outward only when needed.",
+            "starterQuery": "SELECT * FROM patients LIMIT 10;",
+            "solutionQuery": "SELECT * FROM patients LIMIT 10;",
+            "hint": "Run a simple valid query against the mock data.",
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Introduction to SQL Syntax",
+              "whyItMatters": "Learn the basic structure of SQL statements.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "scenario",
+            "id": "l_007",
+            "title": "Navigating a SQL Environment",
+            "objective": "Become familiar with executing queries in a SQL interface.",
+            "relevantTables": [
+              "patients",
+              "encounters",
+              "claims",
+              "charges"
+            ],
+            "joinHint": "Think about the correct grain, the business audience, and the operational consequence.",
+            "summary": "Become familiar with executing queries in a SQL interface.",
+            "prompt": "Explain how you would approach 'Navigating a SQL Environment' in a CareOps hospital analytics context. Mention the likely data sources, the business interpretation, and one practical action.",
+            "expectedKeywords": [
+              "data",
+              "insight",
+              "action"
+            ],
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Navigating a SQL Environment",
+              "whyItMatters": "Become familiar with executing queries in a SQL interface.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          }
+        ]
+      },
+      {
+        "id": "basic_select_queries",
+        "title": "Basic SELECT Queries",
+        "order": 2,
+        "lessons": [
+          {
+            "kind": "challenge",
+            "id": "l_008",
+            "title": "Selecting All Columns with SELECT *",
+            "objective": "Retrieve complete datasets from a table.",
+            "sql_focus": [
+              "SELECT",
+              "WHERE",
+              "GROUP BY",
+              "JOIN"
+            ],
+            "relevantTables": [
+              "patients"
+            ],
+            "joinHint": "Use the base table that matches the reporting grain, then join outward only when needed.",
             "starterQuery": "SELECT * FROM patients;",
             "solutionQuery": "SELECT * FROM patients;",
             "hint": "Use SELECT * FROM patients;",
-            "executiveTakeaway": null
-          },
-          {
-            "id": "gs_03",
-            "type": "challenge",
-            "title": "View Encounters",
-            "objective": "Return all rows and columns from encounters.",
-            "sql_focus": [
-              "SELECT"
-            ],
-            "relevantTables": [
-              "encounters"
-            ],
-            "joinHint": "No join needed.",
-            "starterQuery": "SELECT * FROM encounters;",
-            "solutionQuery": "SELECT * FROM encounters;",
-            "hint": "Use SELECT * FROM encounters;",
-            "executiveTakeaway": null
-          },
-          {
-            "id": "gs_04",
-            "type": "challenge",
-            "title": "View Claims",
-            "objective": "Return all rows and columns from claims.",
-            "sql_focus": [
-              "SELECT"
-            ],
-            "relevantTables": [
-              "claims"
-            ],
-            "joinHint": "No join needed.",
-            "starterQuery": "SELECT * FROM claims;",
-            "solutionQuery": "SELECT * FROM claims;",
-            "hint": "Use SELECT * FROM claims;",
-            "executiveTakeaway": null
-          },
-          {
-            "id": "gs_05",
-            "type": "scenario",
-            "title": "Choose the Right Table",
-            "objective": "Identify the correct table for a denial question.",
-            "sql_focus": [],
-            "relevantTables": [
-              "claims",
-              "patients"
-            ],
-            "joinHint": "Think about where denial status lives.",
-            "content": {
-              "summary": "Picking the correct source table is the first analyst skill.",
-              "prompt": "Where should you start if leadership asks for denied claims by payer?",
-              "expectedAnswer": "claims"
-            },
-            "executiveTakeaway": null
-          }
-        ]
-      },
-      {
-        "id": "selecting_columns",
-        "title": "Selecting Columns",
-        "order": 2,
-        "lessons": [
-          {
-            "id": "sc_01",
-            "type": "concept",
-            "title": "SELECT Basics",
-            "objective": "Learn to return only the fields a stakeholder needs.",
-            "sql_focus": [
-              "SELECT"
-            ],
-            "relevantTables": [
-              "patients",
-              "claims",
-              "encounters"
-            ],
-            "joinHint": "No join needed.",
-            "content": {
-              "summary": "Good analysts reduce noise by selecting only the fields needed for the business question.",
-              "bullets": [
-                "Executives rarely want raw exports",
-                "Choose fields tied directly to the ask",
-                "Cleaner outputs are easier to validate"
-              ],
-              "hospitalExample": "If someone asks for denied dollars by payer, you probably do not need every patient demographic field."
-            },
-            "executiveTakeaway": null
-          },
-          {
-            "id": "sc_02",
-            "type": "challenge",
-            "title": "Patient Core Fields",
-            "objective": "Return patient_id, first_name, and last_name from patients.",
-            "sql_focus": [
-              "SELECT"
-            ],
-            "relevantTables": [
-              "patients"
-            ],
-            "joinHint": "No join needed.",
-            "starterQuery": "SELECT patient_id, first_name, last_name FROM patients;",
-            "solutionQuery": "SELECT patient_id, first_name, last_name FROM patients;",
-            "hint": "Select only the requested three columns.",
-            "executiveTakeaway": null
-          },
-          {
-            "id": "sc_03",
-            "type": "challenge",
-            "title": "Claim Financial Fields",
-            "objective": "Return claim_id, payer, and billed_amount from claims.",
-            "sql_focus": [
-              "SELECT"
-            ],
-            "relevantTables": [
-              "claims"
-            ],
-            "joinHint": "No join needed.",
-            "starterQuery": "SELECT claim_id, payer, billed_amount FROM claims;",
-            "solutionQuery": "SELECT claim_id, payer, billed_amount FROM claims;",
-            "hint": "Only return claim_id, payer, billed_amount.",
-            "executiveTakeaway": null
-          },
-          {
-            "id": "sc_04",
-            "type": "challenge",
-            "title": "Encounter Operational Fields",
-            "objective": "Return encounter_id, facility, department, status from encounters.",
-            "sql_focus": [
-              "SELECT"
-            ],
-            "relevantTables": [
-              "encounters"
-            ],
-            "joinHint": "No join needed.",
-            "starterQuery": "SELECT encounter_id, facility, department, status FROM encounters;",
-            "solutionQuery": "SELECT encounter_id, facility, department, status FROM encounters;",
-            "hint": "Return the four requested operational fields.",
-            "executiveTakeaway": null
-          },
-          {
-            "id": "sc_05",
-            "type": "scenario",
-            "title": "Executive-Focused Output",
-            "objective": "Choose the more executive-ready answer.",
-            "sql_focus": [],
-            "relevantTables": [
-              "claims"
-            ],
-            "joinHint": "Think audience first.",
-            "content": {
-              "summary": "The same data question can be answered with either clutter or clarity.",
-              "prompt": "For a leadership denial summary, should you emphasize payer and billed_amount or dump every claim field?",
-              "expectedAnswer": "payer"
-            },
             "executiveTakeaway": {
               "show": true,
-              "metric": "Focused reporting output",
-              "whyItMatters": "Leadership needs concise answers.",
-              "whatToShare": "Keep only the fields directly tied to the business question.",
-              "action": "Reduce clutter before sharing results."
+              "metric": "Selecting All Columns with SELECT *",
+              "whyItMatters": "Retrieve complete datasets from a table.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "challenge",
+            "id": "l_009",
+            "title": "Selecting Specific Columns",
+            "objective": "Extract only relevant fields for analysis.",
+            "sql_focus": [
+              "SELECT",
+              "WHERE",
+              "GROUP BY",
+              "JOIN"
+            ],
+            "relevantTables": [
+              "patients"
+            ],
+            "joinHint": "Use the base table that matches the reporting grain, then join outward only when needed.",
+            "starterQuery": "SELECT patient_id, first_name, last_name FROM patients;",
+            "solutionQuery": "SELECT patient_id, first_name, last_name FROM patients;",
+            "hint": "Select three columns from patients.",
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Selecting Specific Columns",
+              "whyItMatters": "Extract only relevant fields for analysis.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "challenge",
+            "id": "l_010",
+            "title": "Using Column Aliases",
+            "objective": "Improve readability of query results.",
+            "sql_focus": [
+              "SELECT",
+              "WHERE",
+              "GROUP BY",
+              "JOIN"
+            ],
+            "relevantTables": [
+              "patients"
+            ],
+            "joinHint": "Use the base table that matches the reporting grain, then join outward only when needed.",
+            "starterQuery": "SELECT patient_id AS id, first_name AS fname FROM patients;",
+            "solutionQuery": "SELECT patient_id AS id, first_name AS fname FROM patients;",
+            "hint": "Use AS to rename selected columns.",
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Using Column Aliases",
+              "whyItMatters": "Improve readability of query results.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "challenge",
+            "id": "l_011",
+            "title": "Removing Duplicates with DISTINCT",
+            "objective": "Identify unique values in healthcare datasets.",
+            "sql_focus": [
+              "SELECT",
+              "WHERE",
+              "GROUP BY",
+              "JOIN"
+            ],
+            "relevantTables": [
+              "patients"
+            ],
+            "joinHint": "Use the base table that matches the reporting grain, then join outward only when needed.",
+            "starterQuery": "SELECT DISTINCT insurance_type FROM patients;",
+            "solutionQuery": "SELECT DISTINCT insurance_type FROM patients;",
+            "hint": "Use DISTINCT on insurance_type.",
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Removing Duplicates with DISTINCT",
+              "whyItMatters": "Identify unique values in healthcare datasets.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "challenge",
+            "id": "l_012",
+            "title": "Limiting Results with LIMIT/TOP",
+            "objective": "Restrict the number of rows returned.",
+            "sql_focus": [
+              "SELECT",
+              "WHERE",
+              "GROUP BY",
+              "JOIN"
+            ],
+            "relevantTables": [
+              "encounters"
+            ],
+            "joinHint": "Use the base table that matches the reporting grain, then join outward only when needed.",
+            "starterQuery": "SELECT * FROM encounters LIMIT 10;",
+            "solutionQuery": "SELECT * FROM encounters LIMIT 10;",
+            "hint": "Use LIMIT to restrict rows.",
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Limiting Results with LIMIT/TOP",
+              "whyItMatters": "Restrict the number of rows returned.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "challenge",
+            "id": "l_013",
+            "title": "Sorting Results with ORDER BY",
+            "objective": "Organize data for better interpretation.",
+            "sql_focus": [
+              "SELECT",
+              "WHERE",
+              "GROUP BY",
+              "JOIN"
+            ],
+            "relevantTables": [
+              "encounters"
+            ],
+            "joinHint": "Use the base table that matches the reporting grain, then join outward only when needed.",
+            "starterQuery": "SELECT * FROM encounters ORDER BY admit_date DESC;",
+            "solutionQuery": "SELECT * FROM encounters ORDER BY admit_date DESC;",
+            "hint": "Sort by admit_date descending.",
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Sorting Results with ORDER BY",
+              "whyItMatters": "Organize data for better interpretation.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "challenge",
+            "id": "l_014",
+            "title": "Combining SELECT Features",
+            "objective": "Construct queries using multiple clauses.",
+            "sql_focus": [
+              "SELECT",
+              "WHERE",
+              "GROUP BY",
+              "JOIN"
+            ],
+            "relevantTables": [
+              "encounters"
+            ],
+            "joinHint": "Use the base table that matches the reporting grain, then join outward only when needed.",
+            "starterQuery": "SELECT DISTINCT department FROM encounters ORDER BY department LIMIT 5;",
+            "solutionQuery": "SELECT DISTINCT department FROM encounters ORDER BY department LIMIT 5;",
+            "hint": "Combine DISTINCT, ORDER BY, and LIMIT.",
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Combining SELECT Features",
+              "whyItMatters": "Construct queries using multiple clauses.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
             }
           }
         ]
       },
       {
-        "id": "filtering_rows",
-        "title": "Filtering Rows",
+        "id": "filtering_and_logical_conditions",
+        "title": "Filtering and Logical Conditions",
         "order": 3,
         "lessons": [
           {
-            "id": "fr_01",
-            "type": "concept",
+            "kind": "challenge",
+            "id": "l_015",
             "title": "Filtering with WHERE",
-            "objective": "Use WHERE to isolate the records that matter.",
+            "objective": "Retrieve records that meet specific criteria.",
             "sql_focus": [
-              "WHERE"
-            ],
-            "relevantTables": [
-              "patients",
-              "claims",
-              "encounters",
-              "charges"
-            ],
-            "joinHint": "No join needed.",
-            "content": {
-              "summary": "Most healthcare questions are about a subset of rows, not the full table.",
-              "bullets": [
-                "Filter by payer",
-                "Filter by status",
-                "Filter by department",
-                "Filter by amount"
-              ],
-              "hospitalExample": "A denial analysis is usually a subset of claims, not the whole claims table."
-            },
-            "executiveTakeaway": null
-          },
-          {
-            "id": "fr_02",
-            "type": "challenge",
-            "title": "Medicare Patients",
-            "objective": "Return Medicare patients with patient_id, first_name, and last_name.",
-            "sql_focus": [
-              "WHERE"
-            ],
-            "relevantTables": [
-              "patients"
-            ],
-            "joinHint": "No join needed.",
-            "starterQuery": "SELECT patient_id, first_name, last_name FROM patients WHERE insurance_type = 'Medicare';",
-            "solutionQuery": "SELECT patient_id, first_name, last_name FROM patients WHERE insurance_type = 'Medicare';",
-            "hint": "Filter on insurance_type = 'Medicare'.",
-            "executiveTakeaway": null
-          },
-          {
-            "id": "fr_03",
-            "type": "challenge",
-            "title": "Denied Claims",
-            "objective": "Return denied claims with claim_id, payer, billed_amount.",
-            "sql_focus": [
-              "WHERE"
-            ],
-            "relevantTables": [
-              "claims"
-            ],
-            "joinHint": "No join needed.",
-            "starterQuery": "SELECT claim_id, payer, billed_amount FROM claims WHERE claim_status = 'Denied';",
-            "solutionQuery": "SELECT claim_id, payer, billed_amount FROM claims WHERE claim_status = 'Denied';",
-            "hint": "Filter claim_status = 'Denied'.",
-            "executiveTakeaway": {
-              "show": true,
-              "metric": "Denied claims inventory",
-              "whyItMatters": "Denied claims represent reimbursement risk.",
-              "whatToShare": "Summarize denied count and dollars at risk.",
-              "action": "Escalate payer spikes and high-dollar denials."
-            }
-          },
-          {
-            "id": "fr_04",
-            "type": "challenge",
-            "title": "Cardiology Encounters",
-            "objective": "Return encounter_id, patient_id, department for Cardiology encounters.",
-            "sql_focus": [
-              "WHERE"
+              "SELECT",
+              "WHERE",
+              "GROUP BY",
+              "JOIN"
             ],
             "relevantTables": [
               "encounters"
             ],
-            "joinHint": "No join needed.",
-            "starterQuery": "SELECT encounter_id, patient_id, department FROM encounters WHERE department = 'Cardiology';",
-            "solutionQuery": "SELECT encounter_id, patient_id, department FROM encounters WHERE department = 'Cardiology';",
-            "hint": "Filter department = 'Cardiology'.",
-            "executiveTakeaway": null
+            "joinHint": "Use the base table that matches the reporting grain, then join outward only when needed.",
+            "starterQuery": "SELECT * FROM encounters WHERE status = 'Discharged';",
+            "solutionQuery": "SELECT * FROM encounters WHERE status = 'Discharged';",
+            "hint": "Filter encounters by status.",
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Filtering with WHERE",
+              "whyItMatters": "Retrieve records that meet specific criteria.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
           },
           {
-            "id": "fr_05",
-            "type": "challenge",
-            "title": "High-Dollar Charges",
-            "objective": "Return charge_id, payer, amount for charges over 2000.",
+            "kind": "challenge",
+            "id": "l_016",
+            "title": "Comparison Operators",
+            "objective": "Apply conditional logic to filter healthcare data.",
             "sql_focus": [
-              "WHERE"
+              "SELECT",
+              "WHERE",
+              "GROUP BY",
+              "JOIN"
             ],
             "relevantTables": [
               "charges"
             ],
-            "joinHint": "No join needed.",
-            "starterQuery": "SELECT charge_id, payer, amount FROM charges WHERE amount > 2000;",
-            "solutionQuery": "SELECT charge_id, payer, amount FROM charges WHERE amount > 2000;",
-            "hint": "Use amount > 2000.",
-            "executiveTakeaway": null
+            "joinHint": "Use the base table that matches the reporting grain, then join outward only when needed.",
+            "starterQuery": "SELECT * FROM charges WHERE amount > 1000;",
+            "solutionQuery": "SELECT * FROM charges WHERE amount > 1000;",
+            "hint": "Use a comparison operator on amount.",
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Comparison Operators",
+              "whyItMatters": "Apply conditional logic to filter healthcare data.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "challenge",
+            "id": "l_017",
+            "title": "Logical Operators",
+            "objective": "Combine multiple filtering conditions.",
+            "sql_focus": [
+              "SELECT",
+              "WHERE",
+              "GROUP BY",
+              "JOIN"
+            ],
+            "relevantTables": [
+              "patients"
+            ],
+            "joinHint": "Use the base table that matches the reporting grain, then join outward only when needed.",
+            "starterQuery": "SELECT * FROM patients WHERE age >= 65 AND insurance_type = 'Medicare';",
+            "solutionQuery": "SELECT * FROM patients WHERE age >= 65 AND insurance_type = 'Medicare';",
+            "hint": "Use AND or OR to combine filters.",
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Logical Operators",
+              "whyItMatters": "Combine multiple filtering conditions.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "challenge",
+            "id": "l_018",
+            "title": "Using BETWEEN for Range Filtering",
+            "objective": "Analyze metrics within defined ranges.",
+            "sql_focus": [
+              "SELECT",
+              "WHERE",
+              "GROUP BY",
+              "JOIN"
+            ],
+            "relevantTables": [
+              "encounters"
+            ],
+            "joinHint": "Use the base table that matches the reporting grain, then join outward only when needed.",
+            "starterQuery": "SELECT * FROM encounters WHERE length_of_stay BETWEEN 2 AND 5;",
+            "solutionQuery": "SELECT * FROM encounters WHERE length_of_stay BETWEEN 2 AND 5;",
+            "hint": "Use BETWEEN on length_of_stay.",
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Using BETWEEN for Range Filtering",
+              "whyItMatters": "Analyze metrics within defined ranges.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "challenge",
+            "id": "l_019",
+            "title": "Using IN for Multiple Values",
+            "objective": "Filter datasets by multiple categories.",
+            "sql_focus": [
+              "SELECT",
+              "WHERE",
+              "GROUP BY",
+              "JOIN"
+            ],
+            "relevantTables": [
+              "claims"
+            ],
+            "joinHint": "Use the base table that matches the reporting grain, then join outward only when needed.",
+            "starterQuery": "SELECT * FROM claims WHERE payer IN ('Medicare','Medicaid');",
+            "solutionQuery": "SELECT * FROM claims WHERE payer IN ('Medicare','Medicaid');",
+            "hint": "Use IN with payer values.",
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Using IN for Multiple Values",
+              "whyItMatters": "Filter datasets by multiple categories.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "challenge",
+            "id": "l_020",
+            "title": "Handling Missing Data with IS NULL",
+            "objective": "Identify incomplete healthcare records.",
+            "sql_focus": [
+              "SELECT",
+              "WHERE",
+              "GROUP BY",
+              "JOIN"
+            ],
+            "relevantTables": [
+              "patients"
+            ],
+            "joinHint": "Use the base table that matches the reporting grain, then join outward only when needed.",
+            "starterQuery": "SELECT * FROM patients WHERE city IS NULL;",
+            "solutionQuery": "SELECT * FROM patients WHERE city IS NULL;",
+            "hint": "Use IS NULL on a nullable field.",
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Handling Missing Data with IS NULL",
+              "whyItMatters": "Identify incomplete healthcare records.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "challenge",
+            "id": "l_021",
+            "title": "Pattern Matching with LIKE",
+            "objective": "Search for text patterns in patient or provider data.",
+            "sql_focus": [
+              "SELECT",
+              "WHERE",
+              "GROUP BY",
+              "JOIN"
+            ],
+            "relevantTables": [
+              "providers"
+            ],
+            "joinHint": "Use the base table that matches the reporting grain, then join outward only when needed.",
+            "starterQuery": "SELECT * FROM providers WHERE provider_name LIKE 'A%';",
+            "solutionQuery": "SELECT * FROM providers WHERE provider_name LIKE 'A%';",
+            "hint": "Use LIKE with a wildcard.",
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Pattern Matching with LIKE",
+              "whyItMatters": "Search for text patterns in patient or provider data.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
           }
         ]
       },
       {
-        "id": "sorting_results",
-        "title": "Sorting Results",
+        "id": "data_types_and_expressions",
+        "title": "Data Types and Expressions",
         "order": 4,
         "lessons": [
           {
-            "id": "sr_01",
-            "type": "concept",
-            "title": "Ordering Results",
-            "objective": "Use ORDER BY to rank and structure results for review.",
+            "kind": "concept",
+            "id": "l_022",
+            "title": "Understanding Common SQL Data Types",
+            "objective": "Recognize numeric, text, and date data types.",
             "sql_focus": [
-              "ORDER BY"
+              "Concept"
             ],
             "relevantTables": [
-              "charges",
               "patients",
-              "encounters"
+              "encounters",
+              "claims",
+              "charges"
             ],
-            "joinHint": "No join needed.",
-            "content": {
-              "summary": "Sorting helps surface what matters first.",
-              "bullets": [
-                "Descending is useful for biggest risks",
-                "Ascending is useful for names and timelines",
-                "You can sort by more than one field"
-              ],
-              "hospitalExample": "Executives often want the highest-dollar risk first, not an unsorted dump."
-            },
+            "joinHint": "No join required unless you choose to connect related data for context.",
+            "summary": "Recognize numeric, text, and date data types.",
+            "bullets": [
+              "Understanding Common SQL Data Types is part of the Data Types and Expressions module.",
+              "Focus on how the concept changes measurement quality, business meaning, or query structure.",
+              "Tie the concept back to real hospital analytics whenever possible."
+            ],
+            "example": "In CareOps, understanding common sql data types supports clearer operational, financial, or quality analysis.",
             "executiveTakeaway": {
               "show": true,
-              "metric": "Priority ranking",
-              "whyItMatters": "Sorting identifies top risks and opportunities quickly.",
-              "whatToShare": "Use ranked outputs instead of unsorted detail.",
-              "action": "Lead with highest-impact items."
+              "metric": "Understanding Common SQL Data Types",
+              "whyItMatters": "Recognize numeric, text, and date data types.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
             }
           },
           {
-            "id": "sr_02",
-            "type": "challenge",
-            "title": "Sort Charges Descending",
-            "objective": "Return charge_id, payer, amount ordered highest to lowest amount.",
+            "kind": "challenge",
+            "id": "l_023",
+            "title": "Working with Numeric Calculations",
+            "objective": "Perform arithmetic operations within queries.",
             "sql_focus": [
-              "ORDER BY"
+              "SELECT",
+              "WHERE",
+              "GROUP BY",
+              "JOIN"
             ],
             "relevantTables": [
               "charges"
             ],
-            "joinHint": "No join needed.",
-            "starterQuery": "SELECT charge_id, payer, amount FROM charges ORDER BY amount DESC;",
-            "solutionQuery": "SELECT charge_id, payer, amount FROM charges ORDER BY amount DESC;",
-            "hint": "Use ORDER BY amount DESC.",
-            "executiveTakeaway": null
+            "joinHint": "Use the base table that matches the reporting grain, then join outward only when needed.",
+            "starterQuery": "SELECT charge_id, amount, amount * 1.05 AS adjusted_amount FROM charges;",
+            "solutionQuery": "SELECT charge_id, amount, amount * 1.05 AS adjusted_amount FROM charges;",
+            "hint": "Create a derived numeric column.",
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Working with Numeric Calculations",
+              "whyItMatters": "Perform arithmetic operations within queries.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
           },
           {
-            "id": "sr_03",
-            "type": "challenge",
-            "title": "Sort Patients by Last Name",
-            "objective": "Return all patients ordered by last_name.",
+            "kind": "challenge",
+            "id": "l_024",
+            "title": "String Manipulation Functions",
+            "objective": "Format and clean textual healthcare data.",
             "sql_focus": [
-              "ORDER BY"
+              "SELECT",
+              "WHERE",
+              "GROUP BY",
+              "JOIN"
             ],
             "relevantTables": [
               "patients"
             ],
-            "joinHint": "No join needed.",
-            "starterQuery": "SELECT * FROM patients ORDER BY last_name;",
-            "solutionQuery": "SELECT * FROM patients ORDER BY last_name;",
-            "hint": "Use ORDER BY last_name.",
-            "executiveTakeaway": null
+            "joinHint": "Use the base table that matches the reporting grain, then join outward only when needed.",
+            "starterQuery": "SELECT UPPER(last_name) AS last_name_upper FROM patients;",
+            "solutionQuery": "SELECT UPPER(last_name) AS last_name_upper FROM patients;",
+            "hint": "Use a string function like UPPER.",
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "String Manipulation Functions",
+              "whyItMatters": "Format and clean textual healthcare data.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
           },
           {
-            "id": "sr_04",
-            "type": "challenge",
-            "title": "Sort Encounters by Facility and Department",
-            "objective": "Return all encounters ordered by facility, then department.",
+            "kind": "challenge",
+            "id": "l_025",
+            "title": "Date and Time Functions",
+            "objective": "Analyze time-based healthcare events.",
             "sql_focus": [
-              "ORDER BY"
+              "SELECT",
+              "WHERE",
+              "GROUP BY",
+              "JOIN"
             ],
             "relevantTables": [
               "encounters"
             ],
-            "joinHint": "No join needed.",
-            "starterQuery": "SELECT * FROM encounters ORDER BY facility, department;",
-            "solutionQuery": "SELECT * FROM encounters ORDER BY facility, department;",
-            "hint": "Use ORDER BY facility, department.",
-            "executiveTakeaway": null
-          },
-          {
-            "id": "sr_05",
-            "type": "scenario",
-            "title": "Top Items for Executives",
-            "objective": "Recognize when ranked results are better than full detail.",
-            "sql_focus": [],
-            "relevantTables": [
-              "charges",
-              "claims"
-            ],
-            "joinHint": "Think ranking by impact.",
-            "content": {
-              "summary": "Sorted output helps leadership focus on the biggest issues first.",
-              "prompt": "Should a leadership summary show the full unsorted file or highest-dollar items first?",
-              "expectedAnswer": "highest"
-            },
+            "joinHint": "Use the base table that matches the reporting grain, then join outward only when needed.",
+            "starterQuery": "SELECT encounter_id, julianday(discharge_date) - julianday(admit_date) AS los_days FROM encounters;",
+            "solutionQuery": "SELECT encounter_id, julianday(discharge_date) - julianday(admit_date) AS los_days FROM encounters;",
+            "hint": "Calculate date difference in SQLite syntax.",
             "executiveTakeaway": {
               "show": true,
-              "metric": "Top-ranked opportunities",
-              "whyItMatters": "Leadership time is limited.",
-              "whatToShare": "Use top items or highest-impact outputs in summaries.",
-              "action": "Sort by impact before sharing upward."
+              "metric": "Date and Time Functions",
+              "whyItMatters": "Analyze time-based healthcare events.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "challenge",
+            "id": "l_026",
+            "title": "Using CAST and CONVERT",
+            "objective": "Transform data types for accurate analysis.",
+            "sql_focus": [
+              "SELECT",
+              "WHERE",
+              "GROUP BY",
+              "JOIN"
+            ],
+            "relevantTables": [
+              "patients"
+            ],
+            "joinHint": "Use the base table that matches the reporting grain, then join outward only when needed.",
+            "starterQuery": "SELECT patient_id, CAST(age AS TEXT) AS age_text FROM patients;",
+            "solutionQuery": "SELECT patient_id, CAST(age AS TEXT) AS age_text FROM patients;",
+            "hint": "Use CAST on age.",
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Using CAST and CONVERT",
+              "whyItMatters": "Transform data types for accurate analysis.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "challenge",
+            "id": "l_027",
+            "title": "Conditional Logic with CASE Statements",
+            "objective": "Create derived categorical fields.",
+            "sql_focus": [
+              "SELECT",
+              "WHERE",
+              "GROUP BY",
+              "JOIN"
+            ],
+            "relevantTables": [
+              "patients"
+            ],
+            "joinHint": "Use the base table that matches the reporting grain, then join outward only when needed.",
+            "starterQuery": "SELECT patient_id, CASE WHEN age >= 65 THEN 'Senior' ELSE 'Adult' END AS age_group FROM patients;",
+            "solutionQuery": "SELECT patient_id, CASE WHEN age >= 65 THEN 'Senior' ELSE 'Adult' END AS age_group FROM patients;",
+            "hint": "Use CASE to create a grouped label.",
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Conditional Logic with CASE Statements",
+              "whyItMatters": "Create derived categorical fields.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "challenge",
+            "id": "l_028",
+            "title": "Creating Derived Columns",
+            "objective": "Build new analytical fields from existing data.",
+            "sql_focus": [
+              "SELECT",
+              "WHERE",
+              "GROUP BY",
+              "JOIN"
+            ],
+            "relevantTables": [
+              "encounters"
+            ],
+            "joinHint": "Use the base table that matches the reporting grain, then join outward only when needed.",
+            "starterQuery": "SELECT encounter_id, length_of_stay * 24 AS los_hours FROM encounters;",
+            "solutionQuery": "SELECT encounter_id, length_of_stay * 24 AS los_hours FROM encounters;",
+            "hint": "Create a new derived metric.",
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Creating Derived Columns",
+              "whyItMatters": "Build new analytical fields from existing data.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
             }
           }
         ]
       },
       {
-        "id": "strings",
-        "title": "Strings",
+        "id": "intro_healthcare_analytics",
+        "title": "Introduction to Healthcare Analytics",
         "order": 5,
         "lessons": [
           {
-            "id": "st_01",
-            "type": "concept",
-            "title": "Working with Text",
-            "objective": "Use string functions to clean and present text values.",
+            "kind": "concept",
+            "id": "l_029",
+            "title": "Overview of Healthcare Data Systems",
+            "objective": "Understand EMR, billing, and operational systems.",
             "sql_focus": [
-              "concatenation",
-              "UPPER",
-              "LOWER",
-              "TRIM"
+              "Concept"
             ],
             "relevantTables": [
               "patients",
-              "claims"
-            ],
-            "joinHint": "No join needed.",
-            "content": {
-              "summary": "String logic helps create readable and standardized outputs.",
-              "bullets": [
-                "Build display names",
-                "Standardize payer text",
-                "Clean unwanted spacing"
-              ],
-              "hospitalExample": "Many reports need one polished display field instead of several raw fields."
-            },
-            "executiveTakeaway": null
-          },
-          {
-            "id": "st_02",
-            "type": "challenge",
-            "title": "Build Patient Full Name",
-            "objective": "Return a full_name field from patients.",
-            "sql_focus": [
-              "concatenation"
-            ],
-            "relevantTables": [
-              "patients"
-            ],
-            "joinHint": "No join needed.",
-            "starterQuery": "SELECT first_name || ' ' || last_name AS full_name FROM patients;",
-            "solutionQuery": "SELECT first_name || ' ' || last_name AS full_name FROM patients;",
-            "hint": "Concatenate first_name and last_name with a space.",
-            "executiveTakeaway": null
-          },
-          {
-            "id": "st_03",
-            "type": "challenge",
-            "title": "Standardize Payer Labels",
-            "objective": "Return payer names in uppercase.",
-            "sql_focus": [
-              "UPPER"
-            ],
-            "relevantTables": [
-              "claims"
-            ],
-            "joinHint": "No join needed.",
-            "starterQuery": "SELECT UPPER(payer) AS payer_standardized FROM claims;",
-            "solutionQuery": "SELECT UPPER(payer) AS payer_standardized FROM claims;",
-            "hint": "Use UPPER(payer).",
-            "executiveTakeaway": null
-          },
-          {
-            "id": "st_04",
-            "type": "challenge",
-            "title": "Lowercase City Names",
-            "objective": "Return city values in lowercase.",
-            "sql_focus": [
-              "LOWER"
-            ],
-            "relevantTables": [
-              "patients"
-            ],
-            "joinHint": "No join needed.",
-            "starterQuery": "SELECT LOWER(city) AS city_lower FROM patients;",
-            "solutionQuery": "SELECT LOWER(city) AS city_lower FROM patients;",
-            "hint": "Use LOWER(city).",
-            "executiveTakeaway": null
-          },
-          {
-            "id": "st_05",
-            "type": "challenge",
-            "title": "Trim Payer Text",
-            "objective": "Return payer values with TRIM applied.",
-            "sql_focus": [
-              "TRIM"
-            ],
-            "relevantTables": [
-              "claims"
-            ],
-            "joinHint": "No join needed.",
-            "starterQuery": "SELECT TRIM(payer) AS payer_trimmed FROM claims;",
-            "solutionQuery": "SELECT TRIM(payer) AS payer_trimmed FROM claims;",
-            "hint": "Use TRIM(payer).",
-            "executiveTakeaway": null
-          }
-        ]
-      },
-      {
-        "id": "numbers_and_calculations",
-        "title": "Numbers and Calculations",
-        "order": 6,
-        "lessons": [
-          {
-            "id": "nm_01",
-            "type": "concept",
-            "title": "Raw Data vs Metrics",
-            "objective": "Understand why leaders prefer metrics over raw lists.",
-            "sql_focus": [
-              "ROUND",
-              "AVG",
-              "CASE",
-              "COUNT"
-            ],
-            "relevantTables": [
-              "claims",
-              "encounters",
-              "charges"
-            ],
-            "joinHint": "No join needed.",
-            "content": {
-              "summary": "Analysts turn raw rows into rates and summary metrics leaders can act on.",
-              "bullets": [
-                "Percent denied",
-                "Average LOS",
-                "Average charge",
-                "Remaining balance logic"
-              ],
-              "hospitalExample": "A denial rate tells a clearer story than a raw list of claims."
-            },
-            "executiveTakeaway": {
-              "show": true,
-              "metric": "Executive-friendly metrics",
-              "whyItMatters": "Leaders need directionally meaningful summaries.",
-              "whatToShare": "Translate rows into rates, averages, and dollar impact.",
-              "action": "Pick the KPI that best answers the question."
-            }
-          },
-          {
-            "id": "nm_02",
-            "type": "challenge",
-            "title": "Calculate Denial Rate",
-            "objective": "Return the percent of claims that are denied.",
-            "sql_focus": [
-              "CASE",
-              "COUNT",
-              "ROUND"
-            ],
-            "relevantTables": [
-              "claims"
-            ],
-            "joinHint": "No join needed.",
-            "starterQuery": "SELECT ROUND(100.0 * SUM(CASE WHEN claim_status = 'Denied' THEN 1 ELSE 0 END) / COUNT(*), 2) AS denial_rate FROM claims;",
-            "solutionQuery": "SELECT ROUND(100.0 * SUM(CASE WHEN claim_status = 'Denied' THEN 1 ELSE 0 END) / COUNT(*), 2) AS denial_rate FROM claims;",
-            "hint": "Use CASE inside an aggregate, divide by COUNT(*), then ROUND.",
-            "executiveTakeaway": null
-          },
-          {
-            "id": "nm_03",
-            "type": "challenge",
-            "title": "Calculate Average LOS",
-            "objective": "Return average length_of_stay.",
-            "sql_focus": [
-              "AVG",
-              "ROUND"
-            ],
-            "relevantTables": [
-              "encounters"
-            ],
-            "joinHint": "No join needed.",
-            "starterQuery": "SELECT ROUND(AVG(length_of_stay), 2) AS avg_los FROM encounters;",
-            "solutionQuery": "SELECT ROUND(AVG(length_of_stay), 2) AS avg_los FROM encounters;",
-            "hint": "Use AVG(length_of_stay) and ROUND.",
-            "executiveTakeaway": null
-          },
-          {
-            "id": "nm_04",
-            "type": "challenge",
-            "title": "Calculate Average Charge",
-            "objective": "Return average amount from charges.",
-            "sql_focus": [
-              "AVG",
-              "ROUND"
-            ],
-            "relevantTables": [
-              "charges"
-            ],
-            "joinHint": "No join needed.",
-            "starterQuery": "SELECT ROUND(AVG(amount), 2) AS avg_charge FROM charges;",
-            "solutionQuery": "SELECT ROUND(AVG(amount), 2) AS avg_charge FROM charges;",
-            "hint": "Use AVG(amount) and ROUND.",
-            "executiveTakeaway": null
-          },
-          {
-            "id": "nm_05",
-            "type": "challenge",
-            "title": "Estimate Remaining Balance",
-            "objective": "Return claim_id and billed_amount minus 1000 as remaining_balance.",
-            "sql_focus": [
-              "arithmetic"
-            ],
-            "relevantTables": [
-              "claims"
-            ],
-            "joinHint": "No join needed.",
-            "starterQuery": "SELECT claim_id, billed_amount - 1000 AS remaining_balance FROM claims;",
-            "solutionQuery": "SELECT claim_id, billed_amount - 1000 AS remaining_balance FROM claims;",
-            "hint": "Subtract 1000 from billed_amount and alias it.",
-            "executiveTakeaway": null
-          }
-        ]
-      },
-      {
-        "id": "null_handling",
-        "title": "NULL Handling",
-        "order": 7,
-        "lessons": [
-          {
-            "id": "nh_01",
-            "type": "concept",
-            "title": "Understanding NULL",
-            "objective": "Understand how missing values affect analysis.",
-            "sql_focus": [
-              "IS NULL",
-              "IS NOT NULL",
-              "COALESCE"
-            ],
-            "relevantTables": [
-              "encounters",
-              "claims"
-            ],
-            "joinHint": "No join needed.",
-            "content": {
-              "summary": "NULL means data is missing or unavailable and can distort reporting if ignored.",
-              "bullets": [
-                "NULL is not zero",
-                "NULL is not blank text",
-                "Missing data can distort summary logic"
-              ],
-              "hospitalExample": "Missing discharge_date values can distort throughput and LOS analysis."
-            },
-            "executiveTakeaway": null
-          },
-          {
-            "id": "nh_02",
-            "type": "challenge",
-            "title": "Find Missing Discharge Dates",
-            "objective": "Return encounter_id and patient_id where discharge_date is null.",
-            "sql_focus": [
-              "IS NULL"
-            ],
-            "relevantTables": [
-              "encounters"
-            ],
-            "joinHint": "No join needed.",
-            "starterQuery": "SELECT encounter_id, patient_id FROM encounters WHERE discharge_date IS NULL;",
-            "solutionQuery": "SELECT encounter_id, patient_id FROM encounters WHERE discharge_date IS NULL;",
-            "hint": "Use WHERE discharge_date IS NULL.",
-            "executiveTakeaway": null
-          },
-          {
-            "id": "nh_03",
-            "type": "challenge",
-            "title": "Find Non-Null Discharge Dates",
-            "objective": "Return encounter_id where discharge_date is not null.",
-            "sql_focus": [
-              "IS NOT NULL"
-            ],
-            "relevantTables": [
-              "encounters"
-            ],
-            "joinHint": "No join needed.",
-            "starterQuery": "SELECT encounter_id FROM encounters WHERE discharge_date IS NOT NULL;",
-            "solutionQuery": "SELECT encounter_id FROM encounters WHERE discharge_date IS NOT NULL;",
-            "hint": "Use WHERE discharge_date IS NOT NULL.",
-            "executiveTakeaway": null
-          },
-          {
-            "id": "nh_04",
-            "type": "challenge",
-            "title": "Replace Null Discharge Dates",
-            "objective": "Use COALESCE to replace null discharge_date with Still Admitted.",
-            "sql_focus": [
-              "COALESCE"
-            ],
-            "relevantTables": [
-              "encounters"
-            ],
-            "joinHint": "No join needed.",
-            "starterQuery": "SELECT encounter_id, COALESCE(discharge_date, 'Still Admitted') AS discharge_status FROM encounters;",
-            "solutionQuery": "SELECT encounter_id, COALESCE(discharge_date, 'Still Admitted') AS discharge_status FROM encounters;",
-            "hint": "Use COALESCE(discharge_date, 'Still Admitted').",
-            "executiveTakeaway": null
-          },
-          {
-            "id": "nh_05",
-            "type": "scenario",
-            "title": "Data Quality Scenario",
-            "objective": "Decide whether missing data should be escalated.",
-            "sql_focus": [],
-            "relevantTables": [
-              "encounters"
-            ],
-            "joinHint": "Think about business impact.",
-            "content": {
-              "summary": "Not every missing field matters equally, but some directly affect KPIs.",
-              "prompt": "If discharge_date is missing for many inpatient encounters, should that be escalated for LOS reporting accuracy?",
-              "expectedAnswer": "yes"
-            },
-            "executiveTakeaway": {
-              "show": true,
-              "metric": "Data quality risk",
-              "whyItMatters": "Missing data can directly distort executive reporting.",
-              "whatToShare": "Escalate data quality issues when they affect trusted KPIs.",
-              "action": "Tie data quality escalation to business impact."
-            }
-          }
-        ]
-      },
-      {
-        "id": "boolean_logic",
-        "title": "Boolean Logic",
-        "order": 8,
-        "lessons": [
-          {
-            "id": "bl_01",
-            "type": "concept",
-            "title": "Combining Conditions",
-            "objective": "Use AND, OR, and NOT to define meaningful populations.",
-            "sql_focus": [
-              "AND",
-              "OR",
-              "NOT"
-            ],
-            "relevantTables": [
-              "claims",
-              "encounters",
-              "patients"
-            ],
-            "joinHint": "No join needed.",
-            "content": {
-              "summary": "Boolean logic helps analysts define the exact population that matters.",
-              "bullets": [
-                "AND narrows",
-                "OR broadens",
-                "NOT excludes"
-              ],
-              "hospitalExample": "High-dollar denied claims are more actionable than all denied claims together."
-            },
-            "executiveTakeaway": null
-          },
-          {
-            "id": "bl_02",
-            "type": "challenge",
-            "title": "High-Priority Denials",
-            "objective": "Return denied claims over 2000 billed dollars.",
-            "sql_focus": [
-              "AND"
-            ],
-            "relevantTables": [
-              "claims"
-            ],
-            "joinHint": "No join needed.",
-            "starterQuery": "SELECT claim_id, payer, billed_amount FROM claims WHERE claim_status = 'Denied' AND billed_amount > 2000;",
-            "solutionQuery": "SELECT claim_id, payer, billed_amount FROM claims WHERE claim_status = 'Denied' AND billed_amount > 2000;",
-            "hint": "Use AND to combine claim_status and billed_amount filters.",
-            "executiveTakeaway": {
-              "show": true,
-              "metric": "High-priority denied claims",
-              "whyItMatters": "Not all denials carry the same financial importance.",
-              "whatToShare": "Separate high-dollar denials from overall denial volume.",
-              "action": "Prioritize analyst review on the largest risks."
-            }
-          },
-          {
-            "id": "bl_03",
-            "type": "challenge",
-            "title": "ER or Observation Encounters",
-            "objective": "Return encounter_id and encounter_type for Emergency or Observation encounters.",
-            "sql_focus": [
-              "OR"
-            ],
-            "relevantTables": [
-              "encounters"
-            ],
-            "joinHint": "No join needed.",
-            "starterQuery": "SELECT encounter_id, encounter_type FROM encounters WHERE encounter_type = 'Emergency' OR encounter_type = 'Observation';",
-            "solutionQuery": "SELECT encounter_id, encounter_type FROM encounters WHERE encounter_type = 'Emergency' OR encounter_type = 'Observation';",
-            "hint": "Use OR between Emergency and Observation.",
-            "executiveTakeaway": null
-          },
-          {
-            "id": "bl_04",
-            "type": "challenge",
-            "title": "Not Discharged Encounters",
-            "objective": "Return encounter_id and status where status is not Discharged.",
-            "sql_focus": [
-              "NOT"
-            ],
-            "relevantTables": [
-              "encounters"
-            ],
-            "joinHint": "No join needed.",
-            "starterQuery": "SELECT encounter_id, status FROM encounters WHERE NOT status = 'Discharged';",
-            "solutionQuery": "SELECT encounter_id, status FROM encounters WHERE NOT status = 'Discharged';",
-            "hint": "Use NOT with status = 'Discharged'.",
-            "executiveTakeaway": null
-          },
-          {
-            "id": "bl_05",
-            "type": "challenge",
-            "title": "Medicare or Medicaid Patients",
-            "objective": "Return patient_id and insurance_type for Medicare or Medicaid patients.",
-            "sql_focus": [
-              "OR"
-            ],
-            "relevantTables": [
-              "patients"
-            ],
-            "joinHint": "No join needed.",
-            "starterQuery": "SELECT patient_id, insurance_type FROM patients WHERE insurance_type = 'Medicare' OR insurance_type = 'Medicaid';",
-            "solutionQuery": "SELECT patient_id, insurance_type FROM patients WHERE insurance_type = 'Medicare' OR insurance_type = 'Medicaid';",
-            "hint": "Use OR between Medicare and Medicaid.",
-            "executiveTakeaway": null
-          }
-        ]
-      },
-      {
-        "id": "case_statements",
-        "title": "CASE Statements",
-        "order": 9,
-        "lessons": [
-          {
-            "id": "cs_01",
-            "type": "concept",
-            "title": "Categorizing Data with CASE",
-            "objective": "Use CASE to turn raw values into business buckets.",
-            "sql_focus": [
-              "CASE"
-            ],
-            "relevantTables": [
-              "charges",
-              "encounters",
-              "claims"
-            ],
-            "joinHint": "No join needed.",
-            "content": {
-              "summary": "CASE statements turn raw values into categories that leaders can interpret faster.",
-              "bullets": [
-                "High / Medium / Low",
-                "Open / Closed",
-                "Short / Long"
-              ],
-              "hospitalExample": "Leadership usually understands categories faster than noisy raw transactional detail."
-            },
-            "executiveTakeaway": {
-              "show": true,
-              "metric": "Categorized business summaries",
-              "whyItMatters": "Leadership prefers grouped insights over raw values.",
-              "whatToShare": "Use categories to simplify complex patterns.",
-              "action": "Turn raw detail into interpretable segments."
-            }
-          },
-          {
-            "id": "cs_02",
-            "type": "challenge",
-            "title": "Bucket Charges by Size",
-            "objective": "Return charge_id and a charge_bucket field.",
-            "sql_focus": [
-              "CASE"
-            ],
-            "relevantTables": [
-              "charges"
-            ],
-            "joinHint": "No join needed.",
-            "starterQuery": "SELECT charge_id, CASE WHEN amount >= 3000 THEN 'High' WHEN amount >= 1000 THEN 'Medium' ELSE 'Low' END AS charge_bucket FROM charges;",
-            "solutionQuery": "SELECT charge_id, CASE WHEN amount >= 3000 THEN 'High' WHEN amount >= 1000 THEN 'Medium' ELSE 'Low' END AS charge_bucket FROM charges;",
-            "hint": "Use CASE with High, Medium, and Low thresholds.",
-            "executiveTakeaway": null
-          },
-          {
-            "id": "cs_03",
-            "type": "challenge",
-            "title": "Group Claim Statuses",
-            "objective": "Return claim_id and a status_group of Open or Closed.",
-            "sql_focus": [
-              "CASE"
-            ],
-            "relevantTables": [
-              "claims"
-            ],
-            "joinHint": "No join needed.",
-            "starterQuery": "SELECT claim_id, CASE WHEN claim_status = 'Pending' THEN 'Open' ELSE 'Closed' END AS status_group FROM claims;",
-            "solutionQuery": "SELECT claim_id, CASE WHEN claim_status = 'Pending' THEN 'Open' ELSE 'Closed' END AS status_group FROM claims;",
-            "hint": "Map Pending to Open and everything else to Closed.",
-            "executiveTakeaway": null
-          },
-          {
-            "id": "cs_04",
-            "type": "challenge",
-            "title": "Bucket Length of Stay",
-            "objective": "Return encounter_id and a los_bucket of Long or Short.",
-            "sql_focus": [
-              "CASE"
-            ],
-            "relevantTables": [
-              "encounters"
-            ],
-            "joinHint": "No join needed.",
-            "starterQuery": "SELECT encounter_id, CASE WHEN length_of_stay >= 3 THEN 'Long' ELSE 'Short' END AS los_bucket FROM encounters;",
-            "solutionQuery": "SELECT encounter_id, CASE WHEN length_of_stay >= 3 THEN 'Long' ELSE 'Short' END AS los_bucket FROM encounters;",
-            "hint": "Use CASE on length_of_stay.",
-            "executiveTakeaway": null
-          },
-          {
-            "id": "cs_05",
-            "type": "scenario",
-            "title": "CASE for Executive Use",
-            "objective": "Recognize why CASE helps leadership communication.",
-            "sql_focus": [],
-            "relevantTables": [
-              "charges",
-              "encounters"
-            ],
-            "joinHint": "Think readability first.",
-            "content": {
-              "summary": "CASE makes reporting more interpretable for non-technical audiences.",
-              "prompt": "Would leadership usually understand raw decimals faster, or categorized buckets like Long and Short?",
-              "expectedAnswer": "buckets"
-            },
-            "executiveTakeaway": {
-              "show": true,
-              "metric": "Executive-friendly categorization",
-              "whyItMatters": "Categories are easier to discuss than raw distributions.",
-              "whatToShare": "Use buckets when raw values are too noisy.",
-              "action": "Apply CASE when clarity matters more than precision."
-            }
-          }
-        ]
-      },
-      {
-        "id": "aggregations",
-        "title": "Aggregations",
-        "order": 10,
-        "lessons": [
-          {
-            "id": "ag_01",
-            "type": "concept",
-            "title": "Summarizing Data with COUNT, SUM, and AVG",
-            "objective": "Understand the building blocks of KPIs and dashboards.",
-            "sql_focus": [
-              "COUNT",
-              "SUM",
-              "AVG"
-            ],
-            "relevantTables": [
               "encounters",
               "claims",
               "charges"
             ],
-            "joinHint": "No join needed.",
-            "content": {
-              "summary": "Aggregation functions are the core of most dashboards and executive reporting.",
-              "bullets": [
-                "COUNT = volume",
-                "SUM = dollars",
-                "AVG = typical burden or rate"
-              ],
-              "hospitalExample": "Executive dashboards often use encounter counts, total charges, and average LOS."
-            },
+            "joinHint": "No join required unless you choose to connect related data for context.",
+            "summary": "Understand EMR, billing, and operational systems.",
+            "bullets": [
+              "Overview of Healthcare Data Systems is part of the Introduction to Healthcare Analytics module.",
+              "Focus on how the concept changes measurement quality, business meaning, or query structure.",
+              "Tie the concept back to real hospital analytics whenever possible."
+            ],
+            "example": "In CareOps, overview of healthcare data systems supports clearer operational, financial, or quality analysis.",
             "executiveTakeaway": {
               "show": true,
-              "metric": "KPI building blocks",
-              "whyItMatters": "Most executive summaries are built from counts, sums, and averages.",
-              "whatToShare": "Translate row-level data into interpretable metrics.",
-              "action": "Use the summary statistic that best answers the question."
+              "metric": "Overview of Healthcare Data Systems",
+              "whyItMatters": "Understand EMR, billing, and operational systems.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
             }
           },
           {
-            "id": "ag_02",
-            "type": "challenge",
-            "title": "Calculate Total Charges",
-            "objective": "Return total charge dollars.",
-            "sql_focus": [
-              "SUM"
-            ],
+            "kind": "scenario",
+            "id": "l_030",
+            "title": "Patient vs. Encounter vs. Account",
+            "objective": "Distinguish between key healthcare data concepts.",
             "relevantTables": [
-              "charges"
-            ],
-            "joinHint": "No join needed.",
-            "starterQuery": "SELECT SUM(amount) AS total_amount FROM charges;",
-            "solutionQuery": "SELECT SUM(amount) AS total_amount FROM charges;",
-            "hint": "Use SUM(amount).",
-            "executiveTakeaway": null
-          },
-          {
-            "id": "ag_03",
-            "type": "challenge",
-            "title": "Count Total Encounters",
-            "objective": "Return total encounter volume.",
-            "sql_focus": [
-              "COUNT"
-            ],
-            "relevantTables": [
-              "encounters"
-            ],
-            "joinHint": "No join needed.",
-            "starterQuery": "SELECT COUNT(*) AS total_encounters FROM encounters;",
-            "solutionQuery": "SELECT COUNT(*) AS total_encounters FROM encounters;",
-            "hint": "Use COUNT(*) from encounters.",
-            "executiveTakeaway": null
-          },
-          {
-            "id": "ag_04",
-            "type": "challenge",
-            "title": "Average Billed Amount",
-            "objective": "Return average billed_amount.",
-            "sql_focus": [
-              "AVG"
-            ],
-            "relevantTables": [
-              "claims"
-            ],
-            "joinHint": "No join needed.",
-            "starterQuery": "SELECT AVG(billed_amount) AS avg_billed_amount FROM claims;",
-            "solutionQuery": "SELECT AVG(billed_amount) AS avg_billed_amount FROM claims;",
-            "hint": "Use AVG(billed_amount).",
-            "executiveTakeaway": null
-          },
-          {
-            "id": "ag_05",
-            "type": "challenge",
-            "title": "Count Total Claims",
-            "objective": "Return total claim count.",
-            "sql_focus": [
-              "COUNT"
-            ],
-            "relevantTables": [
-              "claims"
-            ],
-            "joinHint": "No join needed.",
-            "starterQuery": "SELECT COUNT(*) AS total_claims FROM claims;",
-            "solutionQuery": "SELECT COUNT(*) AS total_claims FROM claims;",
-            "hint": "Use COUNT(*) from claims.",
-            "executiveTakeaway": null
-          }
-        ]
-      },
-      {
-        "id": "group_by",
-        "title": "GROUP BY",
-        "order": 11,
-        "lessons": [
-          {
-            "id": "gb_01",
-            "type": "concept",
-            "title": "From Rows to Summaries",
-            "objective": "Understand how GROUP BY creates grouped reporting views.",
-            "sql_focus": [
-              "GROUP BY"
-            ],
-            "relevantTables": [
+              "patients",
               "encounters",
               "claims",
               "charges"
             ],
-            "joinHint": "No join needed.",
-            "content": {
-              "summary": "GROUP BY turns row-level data into grouped performance summaries.",
-              "bullets": [
-                "By facility",
-                "By payer",
-                "By department",
-                "By provider"
-              ],
-              "hospitalExample": "Leadership often wants comparisons across units rather than raw rows."
-            },
+            "joinHint": "Think about the correct grain, the business audience, and the operational consequence.",
+            "summary": "Distinguish between key healthcare data concepts.",
+            "prompt": "Explain how you would approach 'Patient vs. Encounter vs. Account' in a CareOps hospital analytics context. Mention the likely data sources, the business interpretation, and one practical action.",
+            "expectedKeywords": [
+              "data",
+              "insight",
+              "action"
+            ],
             "executiveTakeaway": {
               "show": true,
-              "metric": "Grouped performance view",
-              "whyItMatters": "Leaders compare units, not row-level detail.",
-              "whatToShare": "Use grouped summaries to show who is driving volume or risk.",
-              "action": "Organize results by the unit leadership can act on."
+              "metric": "Patient vs. Encounter vs. Account",
+              "whyItMatters": "Distinguish between key healthcare data concepts.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
             }
           },
           {
-            "id": "gb_02",
-            "type": "challenge",
-            "title": "Count Encounters by Facility",
-            "objective": "Return facility and encounter_count.",
+            "kind": "concept",
+            "id": "l_031",
+            "title": "Introduction to Revenue Cycle Data",
+            "objective": "Learn the flow from charges to payments.",
             "sql_focus": [
-              "GROUP BY",
-              "COUNT"
-            ],
-            "relevantTables": [
-              "encounters"
-            ],
-            "joinHint": "No join needed.",
-            "starterQuery": "SELECT facility, COUNT(*) AS encounter_count FROM encounters GROUP BY facility;",
-            "solutionQuery": "SELECT facility, COUNT(*) AS encounter_count FROM encounters GROUP BY facility;",
-            "hint": "Group by facility and count rows.",
-            "executiveTakeaway": null
-          },
-          {
-            "id": "gb_03",
-            "type": "challenge",
-            "title": "Denied Claims by Payer",
-            "objective": "Return payer and denied_claim_count.",
-            "sql_focus": [
-              "WHERE",
-              "GROUP BY",
-              "COUNT"
-            ],
-            "relevantTables": [
-              "claims"
-            ],
-            "joinHint": "No join needed.",
-            "starterQuery": "SELECT payer, COUNT(*) AS denied_claim_count FROM claims WHERE claim_status = 'Denied' GROUP BY payer;",
-            "solutionQuery": "SELECT payer, COUNT(*) AS denied_claim_count FROM claims WHERE claim_status = 'Denied' GROUP BY payer;",
-            "hint": "Filter denied claims, then group by payer.",
-            "executiveTakeaway": null
-          },
-          {
-            "id": "gb_04",
-            "type": "challenge",
-            "title": "Charges by Payer",
-            "objective": "Return payer and total_amount.",
-            "sql_focus": [
-              "GROUP BY",
-              "SUM"
-            ],
-            "relevantTables": [
-              "charges"
-            ],
-            "joinHint": "No join needed.",
-            "starterQuery": "SELECT payer, SUM(amount) AS total_amount FROM charges GROUP BY payer;",
-            "solutionQuery": "SELECT payer, SUM(amount) AS total_amount FROM charges GROUP BY payer;",
-            "hint": "Group by payer and sum amount.",
-            "executiveTakeaway": null
-          },
-          {
-            "id": "gb_05",
-            "type": "challenge",
-            "title": "Encounters by Department",
-            "objective": "Return department and encounter_count.",
-            "sql_focus": [
-              "GROUP BY",
-              "COUNT"
-            ],
-            "relevantTables": [
-              "encounters"
-            ],
-            "joinHint": "No join needed.",
-            "starterQuery": "SELECT department, COUNT(*) AS encounter_count FROM encounters GROUP BY department;",
-            "solutionQuery": "SELECT department, COUNT(*) AS encounter_count FROM encounters GROUP BY department;",
-            "hint": "Group by department.",
-            "executiveTakeaway": null
-          }
-        ]
-      },
-      {
-        "id": "having",
-        "title": "HAVING",
-        "order": 12,
-        "lessons": [
-          {
-            "id": "hv_01",
-            "type": "concept",
-            "title": "Filtering Groups with HAVING",
-            "objective": "Use HAVING to find exceptions after grouping.",
-            "sql_focus": [
-              "HAVING"
-            ],
-            "relevantTables": [
-              "claims",
-              "encounters",
-              "charges"
-            ],
-            "joinHint": "No join needed.",
-            "content": {
-              "summary": "HAVING filters grouped results after aggregation.",
-              "bullets": [
-                "WHERE filters rows",
-                "HAVING filters groups"
-              ],
-              "hospitalExample": "Use HAVING to isolate only the groups that exceed a threshold."
-            },
-            "executiveTakeaway": {
-              "show": true,
-              "metric": "Outlier detection",
-              "whyItMatters": "Leadership often cares about exceptions more than normal performance.",
-              "whatToShare": "Present only material outliers when the goal is action.",
-              "action": "Use HAVING to reduce noise."
-            }
-          },
-          {
-            "id": "hv_02",
-            "type": "challenge",
-            "title": "Payers with Multiple Denials",
-            "objective": "Return payers with more than one denied claim.",
-            "sql_focus": [
-              "WHERE",
-              "GROUP BY",
-              "HAVING"
-            ],
-            "relevantTables": [
-              "claims"
-            ],
-            "joinHint": "No join needed.",
-            "starterQuery": "SELECT payer, COUNT(*) AS denied_count FROM claims WHERE claim_status = 'Denied' GROUP BY payer HAVING COUNT(*) > 1;",
-            "solutionQuery": "SELECT payer, COUNT(*) AS denied_count FROM claims WHERE claim_status = 'Denied' GROUP BY payer HAVING COUNT(*) > 1;",
-            "hint": "Use HAVING COUNT(*) > 1.",
-            "executiveTakeaway": null
-          },
-          {
-            "id": "hv_03",
-            "type": "challenge",
-            "title": "Departments with Multiple Encounters",
-            "objective": "Return departments with more than one encounter.",
-            "sql_focus": [
-              "GROUP BY",
-              "HAVING"
-            ],
-            "relevantTables": [
-              "encounters"
-            ],
-            "joinHint": "No join needed.",
-            "starterQuery": "SELECT department, COUNT(*) AS encounter_count FROM encounters GROUP BY department HAVING COUNT(*) > 1;",
-            "solutionQuery": "SELECT department, COUNT(*) AS encounter_count FROM encounters GROUP BY department HAVING COUNT(*) > 1;",
-            "hint": "Use HAVING COUNT(*) > 1 after grouping.",
-            "executiveTakeaway": null
-          },
-          {
-            "id": "hv_04",
-            "type": "challenge",
-            "title": "Payers with High Total Charges",
-            "objective": "Return payers whose total charges exceed 2000.",
-            "sql_focus": [
-              "GROUP BY",
-              "HAVING",
-              "SUM"
-            ],
-            "relevantTables": [
-              "charges"
-            ],
-            "joinHint": "No join needed.",
-            "starterQuery": "SELECT payer, SUM(amount) AS total_amount FROM charges GROUP BY payer HAVING SUM(amount) > 2000;",
-            "solutionQuery": "SELECT payer, SUM(amount) AS total_amount FROM charges GROUP BY payer HAVING SUM(amount) > 2000;",
-            "hint": "Use HAVING SUM(amount) > 2000.",
-            "executiveTakeaway": null
-          },
-          {
-            "id": "hv_05",
-            "type": "scenario",
-            "title": "Outlier-Focused Leadership Review",
-            "objective": "Recognize why HAVING helps reduce clutter.",
-            "sql_focus": [],
-            "relevantTables": [
-              "claims",
-              "charges"
-            ],
-            "joinHint": "Think exceptions, not everything.",
-            "content": {
-              "summary": "HAVING helps isolate only the categories leadership really needs to discuss.",
-              "prompt": "If leaders only want groups above a meaningful threshold, should you use HAVING after grouping?",
-              "expectedAnswer": "yes"
-            },
-            "executiveTakeaway": {
-              "show": true,
-              "metric": "Threshold-based review",
-              "whyItMatters": "Leadership time is limited.",
-              "whatToShare": "Use HAVING to show only above-threshold groups.",
-              "action": "Filter to material exceptions before review."
-            }
-          }
-        ]
-      },
-      {
-        "id": "inner_joins",
-        "title": "Inner Joins",
-        "order": 13,
-        "lessons": [
-          {
-            "id": "ij_01",
-            "type": "concept",
-            "title": "Why Joins Matter",
-            "objective": "Understand why most real analysis requires more than one table.",
-            "sql_focus": [
-              "JOIN"
+              "Concept"
             ],
             "relevantTables": [
               "patients",
               "encounters",
               "claims",
-              "charges",
-              "providers"
-            ],
-            "joinHint": "Relationships matter: patient_id, encounter_id, provider_id, and department_id are common join paths.",
-            "content": {
-              "summary": "Real insight usually comes from combining related tables.",
-              "bullets": [
-                "Patients + encounters = who had which visit",
-                "Claims + patients = payer and patient context",
-                "Encounters + providers = provider-level operational views",
-                "Encounters + departments = service line reporting"
-              ],
-              "hospitalExample": "To explain denied dollars by department or provider, you need joined data."
-            },
-            "executiveTakeaway": {
-              "show": true,
-              "metric": "Integrated business story",
-              "whyItMatters": "Executives need context, not isolated facts.",
-              "whatToShare": "Joined data explains not only what happened, but where and to whom.",
-              "action": "Use joins when one table gives an incomplete answer."
-            }
-          },
-          {
-            "id": "ij_02",
-            "type": "challenge",
-            "title": "Join Encounters to Patients",
-            "objective": "Return encounter_id, first_name, and last_name.",
-            "sql_focus": [
-              "JOIN"
-            ],
-            "relevantTables": [
-              "encounters",
-              "patients"
-            ],
-            "joinHint": "encounters.patient_id = patients.patient_id",
-            "starterQuery": "SELECT e.encounter_id, p.first_name, p.last_name FROM encounters e JOIN patients p ON e.patient_id = p.patient_id;",
-            "solutionQuery": "SELECT e.encounter_id, p.first_name, p.last_name FROM encounters e JOIN patients p ON e.patient_id = p.patient_id;",
-            "hint": "Join encounters to patients on patient_id.",
-            "executiveTakeaway": null
-          },
-          {
-            "id": "ij_03",
-            "type": "challenge",
-            "title": "Join Claims to Patients",
-            "objective": "Return claim_id, first_name, and insurance_type.",
-            "sql_focus": [
-              "JOIN"
-            ],
-            "relevantTables": [
-              "claims",
-              "patients"
-            ],
-            "joinHint": "claims.patient_id = patients.patient_id",
-            "starterQuery": "SELECT c.claim_id, p.first_name, p.insurance_type FROM claims c JOIN patients p ON c.patient_id = p.patient_id;",
-            "solutionQuery": "SELECT c.claim_id, p.first_name, p.insurance_type FROM claims c JOIN patients p ON c.patient_id = p.patient_id;",
-            "hint": "Join claims to patients on patient_id.",
-            "executiveTakeaway": null
-          },
-          {
-            "id": "ij_04",
-            "type": "challenge",
-            "title": "Join Encounters to Providers",
-            "objective": "Return encounter_id, provider_name, and specialty.",
-            "sql_focus": [
-              "JOIN"
-            ],
-            "relevantTables": [
-              "encounters",
-              "providers"
-            ],
-            "joinHint": "encounters.provider_id = providers.provider_id",
-            "starterQuery": "SELECT e.encounter_id, p.provider_name, p.specialty FROM encounters e JOIN providers p ON e.provider_id = p.provider_id;",
-            "solutionQuery": "SELECT e.encounter_id, p.provider_name, p.specialty FROM encounters e JOIN providers p ON e.provider_id = p.provider_id;",
-            "hint": "Join encounters to providers on provider_id.",
-            "executiveTakeaway": null
-          },
-          {
-            "id": "ij_05",
-            "type": "challenge",
-            "title": "Join Claims to Encounter Department",
-            "objective": "Return claim_id, department, and billed_amount.",
-            "sql_focus": [
-              "JOIN"
-            ],
-            "relevantTables": [
-              "claims",
-              "encounters"
-            ],
-            "joinHint": "claims.encounter_id = encounters.encounter_id",
-            "starterQuery": "SELECT c.claim_id, e.department, c.billed_amount FROM claims c JOIN encounters e ON c.encounter_id = e.encounter_id;",
-            "solutionQuery": "SELECT c.claim_id, e.department, c.billed_amount FROM claims c JOIN encounters e ON c.encounter_id = e.encounter_id;",
-            "hint": "Join claims to encounters on encounter_id.",
-            "executiveTakeaway": null
-          }
-        ]
-      },
-      {
-        "id": "hospital_throughput",
-        "title": "Hospital Throughput",
-        "order": 14,
-        "lessons": [
-          {
-            "id": "ht_01",
-            "type": "concept",
-            "title": "What Throughput Metrics Measure",
-            "objective": "Understand discharge speed, departure lag, and delayed discharge concepts.",
-            "sql_focus": [
-              "AVG",
-              "WHERE",
-              "GROUP BY"
-            ],
-            "relevantTables": [
-              "discharges",
-              "encounters"
-            ],
-            "joinHint": "Most throughput questions start with discharges joined to encounters only if you need more context.",
-            "content": {
-              "summary": "Throughput measures how efficiently patients move through the system after care decisions are made.",
-              "bullets": [
-                "Discharge order to departure time is a common operational KPI",
-                "Delay flags help isolate preventable barriers",
-                "Department-level views help managers act"
-              ],
-              "hospitalExample": "A discharge delay problem is not just clinical. It often reflects transport, staffing, or workflow issues."
-            },
-            "executiveTakeaway": {
-              "show": true,
-              "metric": "Discharge turnaround",
-              "whyItMatters": "Long discharge lag ties up beds and hurts patient flow.",
-              "whatToShare": "Average minutes, high-delay departments, and common delay flags.",
-              "action": "Escalate units with persistent extended discharge timing."
-            }
-          },
-          {
-            "id": "ht_02",
-            "type": "challenge",
-            "title": "Average Discharge Order Minutes",
-            "objective": "Return average discharge_order_minutes from discharges.",
-            "sql_focus": [
-              "AVG"
-            ],
-            "relevantTables": [
-              "discharges"
-            ],
-            "joinHint": "No join needed.",
-            "starterQuery": "SELECT AVG(discharge_order_minutes) AS avg_discharge_order_minutes FROM discharges;",
-            "solutionQuery": "SELECT AVG(discharge_order_minutes) AS avg_discharge_order_minutes FROM discharges;",
-            "hint": "Use AVG(discharge_order_minutes).",
-            "executiveTakeaway": null
-          },
-          {
-            "id": "ht_03",
-            "type": "challenge",
-            "title": "Delayed for Transport Cases",
-            "objective": "Return discharge_id, encounter_id, and department where delayed_for_transport = 1.",
-            "sql_focus": [
-              "WHERE"
-            ],
-            "relevantTables": [
-              "discharges"
-            ],
-            "joinHint": "No join needed.",
-            "starterQuery": "SELECT discharge_id, encounter_id, department FROM discharges WHERE delayed_for_transport = 1;",
-            "solutionQuery": "SELECT discharge_id, encounter_id, department FROM discharges WHERE delayed_for_transport = 1;",
-            "hint": "Filter delayed_for_transport = 1.",
-            "executiveTakeaway": null
-          },
-          {
-            "id": "ht_04",
-            "type": "challenge",
-            "title": "Average Departure Minutes by Department",
-            "objective": "Return department and average departure_minutes by department.",
-            "sql_focus": [
-              "GROUP BY",
-              "AVG"
-            ],
-            "relevantTables": [
-              "discharges"
-            ],
-            "joinHint": "No join needed.",
-            "starterQuery": "SELECT department, AVG(departure_minutes) AS avg_departure_minutes FROM discharges GROUP BY department;",
-            "solutionQuery": "SELECT department, AVG(departure_minutes) AS avg_departure_minutes FROM discharges GROUP BY department;",
-            "hint": "Group by department and average departure_minutes.",
-            "executiveTakeaway": null
-          },
-          {
-            "id": "ht_05",
-            "type": "scenario",
-            "title": "Operational Escalation Scenario",
-            "objective": "Choose the right direction when throughput worsens.",
-            "sql_focus": [],
-            "relevantTables": [
-              "discharges"
-            ],
-            "joinHint": "Think manager-level actionability.",
-            "content": {
-              "summary": "Operations leaders need department-specific lag visibility, not just system averages.",
-              "prompt": "If discharge lag worsens, should you show only a hospital total or break it out by department?",
-              "expectedAnswer": "department"
-            },
-            "executiveTakeaway": null
-          }
-        ]
-      },
-      {
-        "id": "readmissions_observations",
-        "title": "Readmissions and Observation",
-        "order": 15,
-        "lessons": [
-          {
-            "id": "ro_01",
-            "type": "concept",
-            "title": "Why Readmissions and Observation Matter",
-            "objective": "Understand how readmissions and observation metrics support hospital operations and finance.",
-            "sql_focus": [
-              "COUNT",
-              "AVG",
-              "GROUP BY",
-              "WHERE"
-            ],
-            "relevantTables": [
-              "readmissions",
-              "observations"
-            ],
-            "joinHint": "These topics are usually analyzed separately, then combined into broader utilization stories.",
-            "content": {
-              "summary": "Readmissions and observation stays help explain utilization, avoidable returns, and reimbursement-sensitive activity.",
-              "bullets": [
-                "Thirty-day readmission is a classic hospital performance metric",
-                "Observation conversion rates reveal utilization patterns",
-                "Code 44 activity can signal documentation or status management issues"
-              ],
-              "hospitalExample": "A hospital can look financially stable but still have avoidable utilization friction hidden in readmission and observation trends."
-            },
-            "executiveTakeaway": {
-              "show": true,
-              "metric": "Utilization quality indicators",
-              "whyItMatters": "These measures affect both operations and reimbursement.",
-              "whatToShare": "Readmit volume, days to readmit, obs hours, and inpatient conversion patterns.",
-              "action": "Investigate spikes by department or facility."
-            }
-          },
-          {
-            "id": "ro_02",
-            "type": "challenge",
-            "title": "Count 30-Day Readmissions",
-            "objective": "Return the count of rows where readmit_within_30_days = 1.",
-            "sql_focus": [
-              "COUNT",
-              "WHERE"
-            ],
-            "relevantTables": [
-              "readmissions"
-            ],
-            "joinHint": "No join needed.",
-            "starterQuery": "SELECT COUNT(*) AS readmit_count FROM readmissions WHERE readmit_within_30_days = 1;",
-            "solutionQuery": "SELECT COUNT(*) AS readmit_count FROM readmissions WHERE readmit_within_30_days = 1;",
-            "hint": "Filter readmit_within_30_days = 1 and count rows.",
-            "executiveTakeaway": null
-          },
-          {
-            "id": "ro_03",
-            "type": "challenge",
-            "title": "Average Days to Readmit",
-            "objective": "Return average days_to_readmit for readmissions within 30 days.",
-            "sql_focus": [
-              "AVG",
-              "WHERE"
-            ],
-            "relevantTables": [
-              "readmissions"
-            ],
-            "joinHint": "No join needed.",
-            "starterQuery": "SELECT AVG(days_to_readmit) AS avg_days_to_readmit FROM readmissions WHERE readmit_within_30_days = 1;",
-            "solutionQuery": "SELECT AVG(days_to_readmit) AS avg_days_to_readmit FROM readmissions WHERE readmit_within_30_days = 1;",
-            "hint": "Filter to readmit_within_30_days = 1, then average days_to_readmit.",
-            "executiveTakeaway": null
-          },
-          {
-            "id": "ro_04",
-            "type": "challenge",
-            "title": "Observation Conversions by Facility",
-            "objective": "Return facility and count of converted observation encounters by facility.",
-            "sql_focus": [
-              "WHERE",
-              "GROUP BY",
-              "COUNT"
-            ],
-            "relevantTables": [
-              "observations"
-            ],
-            "joinHint": "No join needed.",
-            "starterQuery": "SELECT facility, COUNT(*) AS converted_obs_count FROM observations WHERE converted_to_inpatient = 1 GROUP BY facility;",
-            "solutionQuery": "SELECT facility, COUNT(*) AS converted_obs_count FROM observations WHERE converted_to_inpatient = 1 GROUP BY facility;",
-            "hint": "Filter converted_to_inpatient = 1 and group by facility.",
-            "executiveTakeaway": null
-          },
-          {
-            "id": "ro_05",
-            "type": "challenge",
-            "title": "Code 44 Cases",
-            "objective": "Return observation_id, encounter_id, and facility where code_44_flag = 1.",
-            "sql_focus": [
-              "WHERE"
-            ],
-            "relevantTables": [
-              "observations"
-            ],
-            "joinHint": "No join needed.",
-            "starterQuery": "SELECT observation_id, encounter_id, facility FROM observations WHERE code_44_flag = 1;",
-            "solutionQuery": "SELECT observation_id, encounter_id, facility FROM observations WHERE code_44_flag = 1;",
-            "hint": "Filter code_44_flag = 1.",
-            "executiveTakeaway": null
-          }
-        ]
-      },
-      {
-        "id": "readmissions_kpis",
-        "title": "Readmissions KPIs",
-        "order": 16,
-        "lessons": [
-          {
-            "id": "rd_01",
-            "type": "concept",
-            "title": "How Readmissions Logic Works",
-            "objective": "Understand the business logic behind readmissions reporting.",
-            "sql_focus": [
-              "JOIN",
-              "WHERE",
-              "DATE",
-              "CASE"
-            ],
-            "relevantTables": [
-              "encounters",
-              "patients"
-            ],
-            "joinHint": "Readmissions logic compares an index encounter to a later encounter for the same patient.",
-            "content": {
-              "summary": "Readmissions reporting depends on defining the index discharge, the readmission window, and the exclusions that belong in the metric.",
-              "bullets": [
-                "A readmission metric starts with a qualifying index encounter",
-                "The later visit must occur within the defined time window",
-                "Metric definitions matter as much as SQL logic"
-              ],
-              "hospitalExample": "Leadership uses readmissions metrics to understand avoidable utilization, discharge quality, and opportunity by service line or facility."
-            },
-            "executiveTakeaway": {
-              "show": true,
-              "metric": "30-day readmission performance",
-              "whyItMatters": "Readmissions affect quality, cost, and leadership perception of care transitions.",
-              "whatToShare": "Be explicit about the index definition, time window, and exclusions.",
-              "action": "Validate metric logic before socializing trends."
-            }
-          },
-          {
-            "id": "rd_02",
-            "type": "challenge",
-            "title": "Index Discharges",
-            "objective": "Return discharged inpatient encounters.",
-            "sql_focus": [
-              "WHERE",
-              "SELECT"
-            ],
-            "relevantTables": [
-              "encounters"
-            ],
-            "joinHint": "No join needed.",
-            "starterQuery": "SELECT encounter_id, patient_id, discharge_date FROM encounters WHERE encounter_type = 'Inpatient' AND discharge_date IS NOT NULL;",
-            "solutionQuery": "SELECT encounter_id, patient_id, discharge_date FROM encounters WHERE encounter_type = 'Inpatient' AND discharge_date IS NOT NULL;",
-            "hint": "Filter to inpatient encounters with a discharge date.",
-            "executiveTakeaway": null
-          },
-          {
-            "id": "rd_03",
-            "type": "challenge",
-            "title": "Potential Readmission Population",
-            "objective": "Return patients with more than one encounter.",
-            "sql_focus": [
-              "GROUP BY",
-              "COUNT",
-              "HAVING"
-            ],
-            "relevantTables": [
-              "encounters"
-            ],
-            "joinHint": "No join needed.",
-            "starterQuery": "SELECT patient_id, COUNT(*) AS encounter_count FROM encounters GROUP BY patient_id HAVING COUNT(*) > 1;",
-            "solutionQuery": "SELECT patient_id, COUNT(*) AS encounter_count FROM encounters GROUP BY patient_id HAVING COUNT(*) > 1;",
-            "hint": "Group by patient_id and keep only those with more than one encounter.",
-            "executiveTakeaway": null
-          },
-          {
-            "id": "rd_04",
-            "type": "challenge",
-            "title": "Encounter Timeline by Patient",
-            "objective": "Return patient encounters ordered by patient and discharge_date.",
-            "sql_focus": [
-              "ORDER BY",
-              "SELECT"
-            ],
-            "relevantTables": [
-              "encounters"
-            ],
-            "joinHint": "No join needed.",
-            "starterQuery": "SELECT patient_id, encounter_id, discharge_date FROM encounters ORDER BY patient_id, discharge_date;",
-            "solutionQuery": "SELECT patient_id, encounter_id, discharge_date FROM encounters ORDER BY patient_id, discharge_date;",
-            "hint": "Sort first by patient, then by discharge_date.",
-            "executiveTakeaway": null
-          },
-          {
-            "id": "rd_05",
-            "type": "scenario",
-            "title": "Readmission Definition Scenario",
-            "objective": "Recognize why metric definitions must be standardized.",
-            "sql_focus": [],
-            "relevantTables": [
-              "encounters"
-            ],
-            "joinHint": "Think denominator and exclusions.",
-            "content": {
-              "summary": "A readmission number is only useful if everyone agrees on what counts as an index event and what counts as a return.",
-              "prompt": "If one team uses all discharges and another excludes observation stays, can those readmission rates be compared as the same KPI?",
-              "expectedAnswer": "no"
-            },
-            "executiveTakeaway": {
-              "show": true,
-              "metric": "Readmission governance",
-              "whyItMatters": "Different inclusion logic produces different rates and undermines trust.",
-              "whatToShare": "Document the denominator before discussing performance.",
-              "action": "Standardize the measure specification before executive review."
-            }
-          }
-        ]
-      },
-      {
-        "id": "observation_kpis",
-        "title": "Observation KPIs",
-        "order": 17,
-        "lessons": [
-          {
-            "id": "ob_01",
-            "type": "concept",
-            "title": "Observation Reporting Basics",
-            "objective": "Understand how observation metrics differ from inpatient reporting.",
-            "sql_focus": [
-              "WHERE",
-              "CASE",
-              "AVG",
-              "GROUP BY"
-            ],
-            "relevantTables": [
-              "encounters"
-            ],
-            "joinHint": "Observation metrics usually begin with encounter_type = 'Observation'.",
-            "content": {
-              "summary": "Observation reporting often focuses on LOS by hours or days, conversions, and patients who remain in observation beyond target thresholds.",
-              "bullets": [
-                "Observation is a distinct operational workflow",
-                "LOS thresholds often drive review",
-                "Observation reporting frequently supports throughput and utilization management"
-              ],
-              "hospitalExample": "Leadership may care about prolonged observation stays, conversion patterns, and department ownership."
-            },
-            "executiveTakeaway": {
-              "show": true,
-              "metric": "Observation utilization",
-              "whyItMatters": "Observation volume and prolonged stays affect flow, capacity, and revenue interpretation.",
-              "whatToShare": "Summarize observation counts, average LOS, and long-stay exceptions.",
-              "action": "Use consistent thresholds for observation review."
-            }
-          },
-          {
-            "id": "ob_02",
-            "type": "challenge",
-            "title": "Observation Encounters",
-            "objective": "Return all observation encounters.",
-            "sql_focus": [
-              "WHERE"
-            ],
-            "relevantTables": [
-              "encounters"
-            ],
-            "joinHint": "No join needed.",
-            "starterQuery": "SELECT encounter_id, patient_id, department, length_of_stay FROM encounters WHERE encounter_type = 'Observation';",
-            "solutionQuery": "SELECT encounter_id, patient_id, department, length_of_stay FROM encounters WHERE encounter_type = 'Observation';",
-            "hint": "Filter encounter_type = 'Observation'.",
-            "executiveTakeaway": null
-          },
-          {
-            "id": "ob_03",
-            "type": "challenge",
-            "title": "Average Observation LOS",
-            "objective": "Return average LOS for observation encounters.",
-            "sql_focus": [
-              "WHERE",
-              "AVG",
-              "ROUND"
-            ],
-            "relevantTables": [
-              "encounters"
-            ],
-            "joinHint": "No join needed.",
-            "starterQuery": "SELECT ROUND(AVG(length_of_stay), 2) AS avg_observation_los FROM encounters WHERE encounter_type = 'Observation';",
-            "solutionQuery": "SELECT ROUND(AVG(length_of_stay), 2) AS avg_observation_los FROM encounters WHERE encounter_type = 'Observation';",
-            "hint": "Filter to observation, then average LOS.",
-            "executiveTakeaway": null
-          },
-          {
-            "id": "ob_04",
-            "type": "challenge",
-            "title": "Long Observation Stays",
-            "objective": "Return observation encounters with LOS over 2.",
-            "sql_focus": [
-              "WHERE"
-            ],
-            "relevantTables": [
-              "encounters"
-            ],
-            "joinHint": "No join needed.",
-            "starterQuery": "SELECT encounter_id, patient_id, length_of_stay FROM encounters WHERE encounter_type = 'Observation' AND length_of_stay > 2;",
-            "solutionQuery": "SELECT encounter_id, patient_id, length_of_stay FROM encounters WHERE encounter_type = 'Observation' AND length_of_stay > 2;",
-            "hint": "Filter to observation and LOS > 2.",
-            "executiveTakeaway": null
-          },
-          {
-            "id": "ob_05",
-            "type": "scenario",
-            "title": "Observation Threshold Scenario",
-            "objective": "Recognize why long-stay thresholds need consistency.",
-            "sql_focus": [],
-            "relevantTables": [
-              "encounters"
-            ],
-            "joinHint": "Think operational definition.",
-            "content": {
-              "summary": "Threshold reporting only works when everyone agrees on the cutoff that triggers review.",
-              "prompt": "If one report uses >24 hours and another uses >48 hours, are they describing the same prolonged observation KPI?",
-              "expectedAnswer": "no"
-            },
-            "executiveTakeaway": {
-              "show": true,
-              "metric": "Threshold-based observation review",
-              "whyItMatters": "Different cutoffs will produce very different exception counts.",
-              "whatToShare": "Define the long-stay threshold up front.",
-              "action": "Lock threshold logic before leadership distribution."
-            }
-          }
-        ]
-      },
-      {
-        "id": "length_of_stay_kpis",
-        "title": "Length of Stay KPIs",
-        "order": 18,
-        "lessons": [
-          {
-            "id": "ls_01",
-            "type": "concept",
-            "title": "Length of Stay as an Operational KPI",
-            "objective": "Understand how LOS helps explain utilization and throughput.",
-            "sql_focus": [
-              "AVG",
-              "GROUP BY",
-              "CASE",
-              "ORDER BY"
-            ],
-            "relevantTables": [
-              "encounters"
-            ],
-            "joinHint": "LOS is usually summarized by department, facility, service line, or encounter type.",
-            "content": {
-              "summary": "Length of stay can reveal throughput challenges, discharge barriers, and variation across operational units.",
-              "bullets": [
-                "Average LOS summarizes typical duration",
-                "Outlier LOS highlights exceptions",
-                "Grouped LOS views help leaders focus on where variation is occurring"
-              ],
-              "hospitalExample": "Leadership often wants average LOS plus a view of units with longer-than-expected stays."
-            },
-            "executiveTakeaway": {
-              "show": true,
-              "metric": "Length of stay performance",
-              "whyItMatters": "LOS affects capacity, patient flow, staffing pressure, and cost.",
-              "whatToShare": "Summarize average LOS and identify areas with elevated stay duration.",
-              "action": "Pair LOS summaries with ranked exception views."
-            }
-          },
-          {
-            "id": "ls_02",
-            "type": "challenge",
-            "title": "Average LOS by Facility",
-            "objective": "Return facility and average LOS.",
-            "sql_focus": [
-              "GROUP BY",
-              "AVG",
-              "ROUND"
-            ],
-            "relevantTables": [
-              "encounters"
-            ],
-            "joinHint": "No join needed.",
-            "starterQuery": "SELECT facility, ROUND(AVG(length_of_stay), 2) AS avg_los FROM encounters GROUP BY facility;",
-            "solutionQuery": "SELECT facility, ROUND(AVG(length_of_stay), 2) AS avg_los FROM encounters GROUP BY facility;",
-            "hint": "Group by facility and average LOS.",
-            "executiveTakeaway": null
-          },
-          {
-            "id": "ls_03",
-            "type": "challenge",
-            "title": "Longest Stay Encounters",
-            "objective": "Return encounters ordered by LOS descending.",
-            "sql_focus": [
-              "ORDER BY"
-            ],
-            "relevantTables": [
-              "encounters"
-            ],
-            "joinHint": "No join needed.",
-            "starterQuery": "SELECT encounter_id, patient_id, department, length_of_stay FROM encounters ORDER BY length_of_stay DESC;",
-            "solutionQuery": "SELECT encounter_id, patient_id, department, length_of_stay FROM encounters ORDER BY length_of_stay DESC;",
-            "hint": "Sort LOS from longest to shortest.",
-            "executiveTakeaway": null
-          },
-          {
-            "id": "ls_04",
-            "type": "challenge",
-            "title": "LOS Buckets by Encounter",
-            "objective": "Return encounter_id and a LOS bucket of Long or Short.",
-            "sql_focus": [
-              "CASE"
-            ],
-            "relevantTables": [
-              "encounters"
-            ],
-            "joinHint": "No join needed.",
-            "starterQuery": "SELECT encounter_id, CASE WHEN length_of_stay >= 3 THEN 'Long' ELSE 'Short' END AS los_bucket FROM encounters;",
-            "solutionQuery": "SELECT encounter_id, CASE WHEN length_of_stay >= 3 THEN 'Long' ELSE 'Short' END AS los_bucket FROM encounters;",
-            "hint": "Use CASE on length_of_stay.",
-            "executiveTakeaway": null
-          },
-          {
-            "id": "ls_05",
-            "type": "scenario",
-            "title": "LOS Interpretation Scenario",
-            "objective": "Recognize why average LOS alone is not always enough.",
-            "sql_focus": [],
-            "relevantTables": [
-              "encounters"
-            ],
-            "joinHint": "Think variation and outliers.",
-            "content": {
-              "summary": "An average can hide whether the issue is broad or driven by a few very long stays.",
-              "prompt": "If average LOS is high, should you usually also look at the longest individual stays or unit-level variation?",
-              "expectedAnswer": "yes"
-            },
-            "executiveTakeaway": {
-              "show": true,
-              "metric": "LOS interpretation depth",
-              "whyItMatters": "A single average can hide operational root causes.",
-              "whatToShare": "Pair average LOS with ranked outliers or grouped comparisons.",
-              "action": "Do not stop at the mean."
-            }
-          }
-        ]
-      },
-      {
-        "id": "denials_kpis",
-        "title": "Denials KPIs",
-        "order": 19,
-        "lessons": [
-          {
-            "id": "dn_01",
-            "type": "concept",
-            "title": "Denials as Financial and Operational Signals",
-            "objective": "Understand how denials reporting supports revenue cycle action.",
-            "sql_focus": [
-              "WHERE",
-              "GROUP BY",
-              "SUM",
-              "COUNT",
-              "ORDER BY"
-            ],
-            "relevantTables": [
-              "claims"
-            ],
-            "joinHint": "Denials logic usually starts with claim_status = 'Denied'.",
-            "content": {
-              "summary": "Denials reporting can be framed by count, dollars, payer, department, or claim category depending on the leadership question.",
-              "bullets": [
-                "Count shows volume",
-                "Billed dollars show financial impact",
-                "Grouped payer views help target action"
-              ],
-              "hospitalExample": "A payer with fewer denials can still be the biggest financial problem if the denied dollars are much larger."
-            },
-            "executiveTakeaway": {
-              "show": true,
-              "metric": "Denial count and dollars at risk",
-              "whyItMatters": "Denials directly affect reimbursement and cash flow.",
-              "whatToShare": "Show both count and dollar impact, not just one.",
-              "action": "Prioritize high-dollar denial categories first."
-            }
-          },
-          {
-            "id": "dn_02",
-            "type": "challenge",
-            "title": "Denied Claim Count",
-            "objective": "Return total count of denied claims.",
-            "sql_focus": [
-              "WHERE",
-              "COUNT"
-            ],
-            "relevantTables": [
-              "claims"
-            ],
-            "joinHint": "No join needed.",
-            "starterQuery": "SELECT COUNT(*) AS denied_claim_count FROM claims WHERE claim_status = 'Denied';",
-            "solutionQuery": "SELECT COUNT(*) AS denied_claim_count FROM claims WHERE claim_status = 'Denied';",
-            "hint": "Filter claim_status to Denied and count rows.",
-            "executiveTakeaway": null
-          },
-          {
-            "id": "dn_03",
-            "type": "challenge",
-            "title": "Denied Dollars Total",
-            "objective": "Return total billed amount for denied claims.",
-            "sql_focus": [
-              "WHERE",
-              "SUM"
-            ],
-            "relevantTables": [
-              "claims"
-            ],
-            "joinHint": "No join needed.",
-            "starterQuery": "SELECT SUM(billed_amount) AS denied_dollars FROM claims WHERE claim_status = 'Denied';",
-            "solutionQuery": "SELECT SUM(billed_amount) AS denied_dollars FROM claims WHERE claim_status = 'Denied';",
-            "hint": "Filter denied claims and sum billed_amount.",
-            "executiveTakeaway": null
-          },
-          {
-            "id": "dn_04",
-            "type": "challenge",
-            "title": "Denied Claims by Payer Ranked",
-            "objective": "Return payer and denied dollars ordered highest to lowest.",
-            "sql_focus": [
-              "WHERE",
-              "GROUP BY",
-              "SUM",
-              "ORDER BY"
-            ],
-            "relevantTables": [
-              "claims"
-            ],
-            "joinHint": "No join needed.",
-            "starterQuery": "SELECT payer, SUM(billed_amount) AS denied_dollars FROM claims WHERE claim_status = 'Denied' GROUP BY payer ORDER BY denied_dollars DESC;",
-            "solutionQuery": "SELECT payer, SUM(billed_amount) AS denied_dollars FROM claims WHERE claim_status = 'Denied' GROUP BY payer ORDER BY denied_dollars DESC;",
-            "hint": "Filter denied, group by payer, sum billed_amount, and sort descending.",
-            "executiveTakeaway": null
-          },
-          {
-            "id": "dn_05",
-            "type": "scenario",
-            "title": "Denial Prioritization Scenario",
-            "objective": "Recognize why denied dollars matter along with denied volume.",
-            "sql_focus": [],
-            "relevantTables": [
-              "claims"
-            ],
-            "joinHint": "Think financial impact, not just counts.",
-            "content": {
-              "summary": "The biggest operational focus is not always the category with the most rows.",
-              "prompt": "If one payer has fewer denials but far more denied dollars, should leadership still prioritize that payer for review?",
-              "expectedAnswer": "yes"
-            },
-            "executiveTakeaway": {
-              "show": true,
-              "metric": "High-impact denial prioritization",
-              "whyItMatters": "Dollar exposure can outweigh raw volume.",
-              "whatToShare": "Separate count-based and dollar-based prioritization.",
-              "action": "Escalate high-dollar denial risk even when volume is smaller."
-            }
-          }
-        ]
-      },
-      {
-        "id": "ed_throughput_kpis",
-        "title": "ED Throughput KPIs",
-        "order": 20,
-        "lessons": [
-          {
-            "id": "ed_01",
-            "type": "concept",
-            "title": "ED Throughput Framing",
-            "objective": "Understand how SQL supports emergency department throughput review.",
-            "sql_focus": [
-              "WHERE",
-              "GROUP BY",
-              "COUNT",
-              "AVG"
-            ],
-            "relevantTables": [
-              "encounters"
-            ],
-            "joinHint": "Emergency department reporting often starts with encounter_type = 'Emergency' or department = 'ER'.",
-            "content": {
-              "summary": "ED throughput views typically focus on volume, LOS, boarding proxies, and timing distribution by facility or department.",
-              "bullets": [
-                "ED volume is a starting point",
-                "ED LOS highlights operational burden",
-                "Grouped views help compare performance across sites or times"
-              ],
-              "hospitalExample": "Leadership often wants to know both how much volume exists and where throughput pressure may be building."
-            },
-            "executiveTakeaway": {
-              "show": true,
-              "metric": "ED throughput visibility",
-              "whyItMatters": "ED pressure affects patient experience, flow, and hospital operations.",
-              "whatToShare": "Summarize ED volume, average LOS, and top exception areas.",
-              "action": "Use grouped comparisons to focus operational response."
-            }
-          },
-          {
-            "id": "ed_02",
-            "type": "challenge",
-            "title": "Emergency Encounter Count",
-            "objective": "Return total count of emergency encounters.",
-            "sql_focus": [
-              "WHERE",
-              "COUNT"
-            ],
-            "relevantTables": [
-              "encounters"
-            ],
-            "joinHint": "No join needed.",
-            "starterQuery": "SELECT COUNT(*) AS emergency_encounter_count FROM encounters WHERE encounter_type = 'Emergency';",
-            "solutionQuery": "SELECT COUNT(*) AS emergency_encounter_count FROM encounters WHERE encounter_type = 'Emergency';",
-            "hint": "Filter encounter_type = 'Emergency' and count rows.",
-            "executiveTakeaway": null
-          },
-          {
-            "id": "ed_03",
-            "type": "challenge",
-            "title": "Average ED LOS",
-            "objective": "Return average LOS for emergency encounters.",
-            "sql_focus": [
-              "WHERE",
-              "AVG",
-              "ROUND"
-            ],
-            "relevantTables": [
-              "encounters"
-            ],
-            "joinHint": "No join needed.",
-            "starterQuery": "SELECT ROUND(AVG(length_of_stay), 2) AS avg_ed_los FROM encounters WHERE encounter_type = 'Emergency';",
-            "solutionQuery": "SELECT ROUND(AVG(length_of_stay), 2) AS avg_ed_los FROM encounters WHERE encounter_type = 'Emergency';",
-            "hint": "Filter emergency encounters and average LOS.",
-            "executiveTakeaway": null
-          },
-          {
-            "id": "ed_04",
-            "type": "challenge",
-            "title": "ED Volume by Facility",
-            "objective": "Return facility and emergency encounter count.",
-            "sql_focus": [
-              "WHERE",
-              "GROUP BY",
-              "COUNT"
-            ],
-            "relevantTables": [
-              "encounters"
-            ],
-            "joinHint": "No join needed.",
-            "starterQuery": "SELECT facility, COUNT(*) AS emergency_encounter_count FROM encounters WHERE encounter_type = 'Emergency' GROUP BY facility;",
-            "solutionQuery": "SELECT facility, COUNT(*) AS emergency_encounter_count FROM encounters WHERE encounter_type = 'Emergency' GROUP BY facility;",
-            "hint": "Filter emergency encounters, then group by facility.",
-            "executiveTakeaway": null
-          },
-          {
-            "id": "ed_05",
-            "type": "scenario",
-            "title": "Throughput Scenario",
-            "objective": "Recognize why ED throughput needs both volume and duration views.",
-            "sql_focus": [],
-            "relevantTables": [
-              "encounters"
-            ],
-            "joinHint": "Think volume plus time burden.",
-            "content": {
-              "summary": "A department can have high volume, long stays, or both, and each pattern suggests a different operational problem.",
-              "prompt": "If ED encounters are rising, should leadership usually also look at LOS instead of only raw volume?",
-              "expectedAnswer": "yes"
-            },
-            "executiveTakeaway": {
-              "show": true,
-              "metric": "ED throughput interpretation",
-              "whyItMatters": "Volume alone does not explain operational strain.",
-              "whatToShare": "Pair encounter counts with stay duration metrics.",
-              "action": "Use both load and time burden in ED reviews."
-            }
-          }
-        ]
-      },
-      {
-        "id": "appointment_access_kpis",
-        "title": "Appointment Access KPIs",
-        "order": 21,
-        "lessons": [
-          {
-            "id": "aa_01",
-            "type": "concept",
-            "title": "Access and Scheduling Logic",
-            "objective": "Understand how appointment data supports access reporting.",
-            "sql_focus": [
-              "WHERE",
-              "GROUP BY",
-              "COUNT",
-              "CASE"
-            ],
-            "relevantTables": [
-              "appointments"
-            ],
-            "joinHint": "Scheduling reporting often centers on status, department, provider, and date.",
-            "content": {
-              "summary": "Access reporting helps leaders understand completed visits, no-shows, scheduled demand, and possible scheduling gaps.",
-              "bullets": [
-                "Appointment status is central to access reporting",
-                "No-shows often matter by department or provider",
-                "Grouped volume helps identify operational pressure points"
-              ],
-              "hospitalExample": "Access KPIs often become the first signal that downstream throughput or clinic utilization issues are developing."
-            },
-            "executiveTakeaway": {
-              "show": true,
-              "metric": "Access and scheduling performance",
-              "whyItMatters": "Appointment completion and no-show patterns affect access, continuity, and revenue.",
-              "whatToShare": "Summarize completed, scheduled, and no-show activity by the unit leaders can influence.",
-              "action": "Escalate recurring no-show concentration by area."
-            }
-          },
-          {
-            "id": "aa_02",
-            "type": "challenge",
-            "title": "Completed Appointments Count",
-            "objective": "Return count of completed appointments.",
-            "sql_focus": [
-              "WHERE",
-              "COUNT"
-            ],
-            "relevantTables": [
-              "appointments"
-            ],
-            "joinHint": "No join needed.",
-            "starterQuery": "SELECT COUNT(*) AS completed_appointment_count FROM appointments WHERE status = 'Completed';",
-            "solutionQuery": "SELECT COUNT(*) AS completed_appointment_count FROM appointments WHERE status = 'Completed';",
-            "hint": "Filter status = 'Completed' and count rows.",
-            "executiveTakeaway": null
-          },
-          {
-            "id": "aa_03",
-            "type": "challenge",
-            "title": "No-Shows by Department",
-            "objective": "Return department and no-show count.",
-            "sql_focus": [
-              "WHERE",
-              "GROUP BY",
-              "COUNT"
-            ],
-            "relevantTables": [
-              "appointments"
-            ],
-            "joinHint": "No join needed.",
-            "starterQuery": "SELECT department, COUNT(*) AS no_show_count FROM appointments WHERE status = 'No Show' GROUP BY department;",
-            "solutionQuery": "SELECT department, COUNT(*) AS no_show_count FROM appointments WHERE status = 'No Show' GROUP BY department;",
-            "hint": "Filter No Show and group by department.",
-            "executiveTakeaway": null
-          },
-          {
-            "id": "aa_04",
-            "type": "challenge",
-            "title": "Appointments by Status",
-            "objective": "Return status and appointment count.",
-            "sql_focus": [
-              "GROUP BY",
-              "COUNT"
-            ],
-            "relevantTables": [
-              "appointments"
-            ],
-            "joinHint": "No join needed.",
-            "starterQuery": "SELECT status, COUNT(*) AS appointment_count FROM appointments GROUP BY status;",
-            "solutionQuery": "SELECT status, COUNT(*) AS appointment_count FROM appointments GROUP BY status;",
-            "hint": "Group by status and count appointments.",
-            "executiveTakeaway": null
-          },
-          {
-            "id": "aa_05",
-            "type": "scenario",
-            "title": "Access Review Scenario",
-            "objective": "Recognize why no-shows should usually be grouped, not only totaled.",
-            "sql_focus": [],
-            "relevantTables": [
-              "appointments"
-            ],
-            "joinHint": "Think actionability by unit.",
-            "content": {
-              "summary": "A system-wide total may confirm a problem, but grouped views show where to intervene.",
-              "prompt": "If no-shows are high, should leadership usually also want to know which departments or providers drive them?",
-              "expectedAnswer": "yes"
-            },
-            "executiveTakeaway": {
-              "show": true,
-              "metric": "Actionable no-show reporting",
-              "whyItMatters": "Grouped views reveal where intervention can actually occur.",
-              "whatToShare": "Move from overall totals to department or provider detail.",
-              "action": "Always tie access issues to an accountable unit."
-            }
-          }
-        ]
-      },
-      {
-        "id": "provider_performance_sql",
-        "title": "Provider Performance SQL",
-        "order": 22,
-        "lessons": [
-          {
-            "id": "pp_01",
-            "type": "concept",
-            "title": "Provider-Level Reporting Basics",
-            "objective": "Understand how provider performance views are constructed from encounter and appointment data.",
-            "sql_focus": [
-              "JOIN",
-              "GROUP BY",
-              "COUNT",
-              "AVG"
-            ],
-            "relevantTables": [
-              "providers",
-              "encounters",
-              "appointments"
-            ],
-            "joinHint": "Provider reporting usually joins provider dimension data to activity tables.",
-            "content": {
-              "summary": "Provider-level SQL can support views of volume, specialty comparisons, access patterns, and operational burden.",
-              "bullets": [
-                "Join providers to activity",
-                "Group by provider_name or specialty",
-                "Be careful not to mix provider and department questions"
-              ],
-              "hospitalExample": "Leaders often want to compare providers, but the reporting unit must match the actual question being asked."
-            },
-            "executiveTakeaway": {
-              "show": true,
-              "metric": "Provider activity visibility",
-              "whyItMatters": "Provider-level views support staffing, access, and performance review.",
-              "whatToShare": "Use provider grouping only when the business question is truly provider-specific.",
-              "action": "Align the reporting grain to the decision-maker."
-            }
-          },
-          {
-            "id": "pp_02",
-            "type": "challenge",
-            "title": "Encounters by Provider",
-            "objective": "Return provider_name and encounter count.",
-            "sql_focus": [
-              "JOIN",
-              "GROUP BY",
-              "COUNT"
-            ],
-            "relevantTables": [
-              "providers",
-              "encounters"
-            ],
-            "joinHint": "encounters.provider_id = providers.provider_id",
-            "starterQuery": "SELECT p.provider_name, COUNT(*) AS encounter_count FROM encounters e JOIN providers p ON e.provider_id = p.provider_id GROUP BY p.provider_name;",
-            "solutionQuery": "SELECT p.provider_name, COUNT(*) AS encounter_count FROM encounters e JOIN providers p ON e.provider_id = p.provider_id GROUP BY p.provider_name;",
-            "hint": "Join encounters to providers and group by provider_name.",
-            "executiveTakeaway": null
-          },
-          {
-            "id": "pp_03",
-            "type": "challenge",
-            "title": "Appointments by Provider",
-            "objective": "Return provider_name and appointment count.",
-            "sql_focus": [
-              "JOIN",
-              "GROUP BY",
-              "COUNT"
-            ],
-            "relevantTables": [
-              "providers",
-              "appointments"
-            ],
-            "joinHint": "appointments.provider_id = providers.provider_id",
-            "starterQuery": "SELECT p.provider_name, COUNT(*) AS appointment_count FROM appointments a JOIN providers p ON a.provider_id = p.provider_id GROUP BY p.provider_name;",
-            "solutionQuery": "SELECT p.provider_name, COUNT(*) AS appointment_count FROM appointments a JOIN providers p ON a.provider_id = p.provider_id GROUP BY p.provider_name;",
-            "hint": "Join appointments to providers and group by provider_name.",
-            "executiveTakeaway": null
-          },
-          {
-            "id": "pp_04",
-            "type": "challenge",
-            "title": "Average LOS by Provider",
-            "objective": "Return provider_name and average LOS.",
-            "sql_focus": [
-              "JOIN",
-              "GROUP BY",
-              "AVG",
-              "ROUND"
-            ],
-            "relevantTables": [
-              "providers",
-              "encounters"
-            ],
-            "joinHint": "encounters.provider_id = providers.provider_id",
-            "starterQuery": "SELECT p.provider_name, ROUND(AVG(e.length_of_stay), 2) AS avg_los FROM encounters e JOIN providers p ON e.provider_id = p.provider_id GROUP BY p.provider_name;",
-            "solutionQuery": "SELECT p.provider_name, ROUND(AVG(e.length_of_stay), 2) AS avg_los FROM encounters e JOIN providers p ON e.provider_id = p.provider_id GROUP BY p.provider_name;",
-            "hint": "Join encounters to providers, group by provider_name, and average LOS.",
-            "executiveTakeaway": null
-          },
-          {
-            "id": "pp_05",
-            "type": "scenario",
-            "title": "Provider Grain Scenario",
-            "objective": "Recognize why reporting grain matters.",
-            "sql_focus": [],
-            "relevantTables": [
-              "providers",
-              "encounters",
-              "appointments"
-            ],
-            "joinHint": "Think accountability and business question.",
-            "content": {
-              "summary": "A report can be technically correct but still wrong for the decision if the grain does not match the question.",
-              "prompt": "If leadership asks about provider performance, should you usually group by provider rather than only by department?",
-              "expectedAnswer": "yes"
-            },
-            "executiveTakeaway": {
-              "show": true,
-              "metric": "Correct reporting grain",
-              "whyItMatters": "Wrong grouping hides the accountable unit.",
-              "whatToShare": "Match provider questions with provider-level output.",
-              "action": "Confirm the grain before building the metric."
-            }
-          }
-        ]
-      },
-      {
-        "id": "executive_summary_sql",
-        "title": "Executive Summary SQL",
-        "order": 23,
-        "lessons": [
-          {
-            "id": "ex_01",
-            "type": "concept",
-            "title": "What Makes SQL Executive-Ready",
-            "objective": "Understand how to shape technical results for leadership use.",
-            "sql_focus": [
-              "GROUP BY",
-              "ORDER BY",
-              "SUM",
-              "COUNT",
-              "AVG",
-              "CASE"
-            ],
-            "relevantTables": [
-              "claims",
-              "charges",
-              "encounters",
-              "appointments"
-            ],
-            "joinHint": "Choose the metric and grouping that leadership can act on.",
-            "content": {
-              "summary": "Executive-ready SQL is not just correct. It is concise, prioritized, and tied to a business decision.",
-              "bullets": [
-                "Use grouped summaries instead of raw row dumps",
-                "Rank outputs when leaders need prioritization",
-                "Translate technical output into operational meaning"
-              ],
-              "hospitalExample": "A good analyst does not just return data. They frame what matters, why it matters, and what action should follow."
-            },
-            "executiveTakeaway": {
-              "show": true,
-              "metric": "Executive-facing summary quality",
-              "whyItMatters": "Leaders need interpretable, prioritized information rather than raw extracts.",
-              "whatToShare": "Provide grouped results, ranking, and business framing.",
-              "action": "Always ask what decision the SQL is meant to support."
-            }
-          },
-          {
-            "id": "ex_02",
-            "type": "challenge",
-            "title": "Top Payers by Charges",
-            "objective": "Return payer and total charges ordered highest to lowest.",
-            "sql_focus": [
-              "GROUP BY",
-              "SUM",
-              "ORDER BY"
-            ],
-            "relevantTables": [
               "charges"
             ],
-            "joinHint": "No join needed.",
-            "starterQuery": "SELECT payer, SUM(amount) AS total_amount FROM charges GROUP BY payer ORDER BY total_amount DESC;",
-            "solutionQuery": "SELECT payer, SUM(amount) AS total_amount FROM charges GROUP BY payer ORDER BY total_amount DESC;",
-            "hint": "Group by payer, sum amount, then sort descending.",
-            "executiveTakeaway": null
-          },
-          {
-            "id": "ex_03",
-            "type": "challenge",
-            "title": "Top Departments by Encounters",
-            "objective": "Return department and encounter count ordered highest to lowest.",
-            "sql_focus": [
-              "GROUP BY",
-              "COUNT",
-              "ORDER BY"
+            "joinHint": "No join required unless you choose to connect related data for context.",
+            "summary": "Learn the flow from charges to payments.",
+            "bullets": [
+              "Introduction to Revenue Cycle Data is part of the Introduction to Healthcare Analytics module.",
+              "Focus on how the concept changes measurement quality, business meaning, or query structure.",
+              "Tie the concept back to real hospital analytics whenever possible."
             ],
-            "relevantTables": [
-              "encounters"
-            ],
-            "joinHint": "No join needed.",
-            "starterQuery": "SELECT department, COUNT(*) AS encounter_count FROM encounters GROUP BY department ORDER BY encounter_count DESC;",
-            "solutionQuery": "SELECT department, COUNT(*) AS encounter_count FROM encounters GROUP BY department ORDER BY encounter_count DESC;",
-            "hint": "Group by department, count rows, and sort descending.",
-            "executiveTakeaway": null
-          },
-          {
-            "id": "ex_04",
-            "type": "challenge",
-            "title": "Denied Dollars by Payer",
-            "objective": "Return payer and denied dollars ordered highest to lowest.",
-            "sql_focus": [
-              "WHERE",
-              "GROUP BY",
-              "SUM",
-              "ORDER BY"
-            ],
-            "relevantTables": [
-              "claims"
-            ],
-            "joinHint": "No join needed.",
-            "starterQuery": "SELECT payer, SUM(billed_amount) AS denied_dollars FROM claims WHERE claim_status = 'Denied' GROUP BY payer ORDER BY denied_dollars DESC;",
-            "solutionQuery": "SELECT payer, SUM(billed_amount) AS denied_dollars FROM claims WHERE claim_status = 'Denied' GROUP BY payer ORDER BY denied_dollars DESC;",
-            "hint": "Filter denied claims, group by payer, sum billed_amount, and rank descending.",
-            "executiveTakeaway": null
-          },
-          {
-            "id": "ex_05",
-            "type": "scenario",
-            "title": "Leadership Summary Scenario",
-            "objective": "Recognize what should be surfaced first for executives.",
-            "sql_focus": [],
-            "relevantTables": [
-              "claims",
-              "charges",
-              "encounters"
-            ],
-            "joinHint": "Think actionability and priority.",
-            "content": {
-              "summary": "Leadership usually needs the most material issues first, not an undifferentiated export.",
-              "prompt": "If you are briefing executives, should you usually rank the biggest issues first instead of showing an unsorted full dataset?",
-              "expectedAnswer": "yes"
-            },
+            "example": "In CareOps, introduction to revenue cycle data supports clearer operational, financial, or quality analysis.",
             "executiveTakeaway": {
               "show": true,
-              "metric": "Executive prioritization",
-              "whyItMatters": "Ranking focuses attention on what most needs action.",
-              "whatToShare": "Lead with the biggest risks, opportunities, or exceptions.",
-              "action": "Sort by impact before presenting upward."
+              "metric": "Introduction to Revenue Cycle Data",
+              "whyItMatters": "Learn the flow from charges to payments.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "scenario",
+            "id": "l_032",
+            "title": "Basic Operational Metrics",
+            "objective": "Identify foundational healthcare KPIs.",
+            "relevantTables": [
+              "patients",
+              "encounters",
+              "claims",
+              "charges"
+            ],
+            "joinHint": "Think about the correct grain, the business audience, and the operational consequence.",
+            "summary": "Identify foundational healthcare KPIs.",
+            "prompt": "Explain how you would approach 'Basic Operational Metrics' in a CareOps hospital analytics context. Mention the likely data sources, the business interpretation, and one practical action.",
+            "expectedKeywords": [
+              "data",
+              "insight",
+              "action"
+            ],
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Basic Operational Metrics",
+              "whyItMatters": "Identify foundational healthcare KPIs.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "concept",
+            "id": "l_033",
+            "title": "Understanding Payer and Insurance Data",
+            "objective": "Recognize how payer information impacts analysis.",
+            "sql_focus": [
+              "Concept"
+            ],
+            "relevantTables": [
+              "patients",
+              "encounters",
+              "claims",
+              "charges"
+            ],
+            "joinHint": "No join required unless you choose to connect related data for context.",
+            "summary": "Recognize how payer information impacts analysis.",
+            "bullets": [
+              "Understanding Payer and Insurance Data is part of the Introduction to Healthcare Analytics module.",
+              "Focus on how the concept changes measurement quality, business meaning, or query structure.",
+              "Tie the concept back to real hospital analytics whenever possible."
+            ],
+            "example": "In CareOps, understanding payer and insurance data supports clearer operational, financial, or quality analysis.",
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Understanding Payer and Insurance Data",
+              "whyItMatters": "Recognize how payer information impacts analysis.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "concept",
+            "id": "l_034",
+            "title": "Data Quality and Integrity in Healthcare",
+            "objective": "Appreciate the importance of accurate data.",
+            "sql_focus": [
+              "Concept"
+            ],
+            "relevantTables": [
+              "patients",
+              "encounters",
+              "claims",
+              "charges"
+            ],
+            "joinHint": "No join required unless you choose to connect related data for context.",
+            "summary": "Appreciate the importance of accurate data.",
+            "bullets": [
+              "Data Quality and Integrity in Healthcare is part of the Introduction to Healthcare Analytics module.",
+              "Focus on how the concept changes measurement quality, business meaning, or query structure.",
+              "Tie the concept back to real hospital analytics whenever possible."
+            ],
+            "example": "In CareOps, data quality and integrity in healthcare supports clearer operational, financial, or quality analysis.",
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Data Quality and Integrity in Healthcare",
+              "whyItMatters": "Appreciate the importance of accurate data.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "scenario",
+            "id": "l_035",
+            "title": "Foundations Capstone: Patient Encounter Overview",
+            "objective": "Apply foundational SQL skills to a healthcare scenario.",
+            "relevantTables": [
+              "patients",
+              "encounters",
+              "claims",
+              "charges"
+            ],
+            "joinHint": "Think about the correct grain, the business audience, and the operational consequence.",
+            "summary": "Apply foundational SQL skills to a healthcare scenario.",
+            "prompt": "Explain how you would approach 'Foundations Capstone: Patient Encounter Overview' in a CareOps hospital analytics context. Mention the likely data sources, the business interpretation, and one practical action.",
+            "expectedKeywords": [
+              "data",
+              "insight",
+              "action"
+            ],
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Foundations Capstone: Patient Encounter Overview",
+              "whyItMatters": "Apply foundational SQL skills to a healthcare scenario.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
             }
           }
         ]
-      },
+      }
+    ]
+  },
+  {
+    "id": "track_core",
+    "title": "Core",
+    "description": "Core learning path for CareOps hospital analytics.",
+    "order": 2,
+    "categories": [
       {
-        "id": "join_strategy",
-        "title": "Join Strategy",
+        "id": "aggregations_and_grouping",
+        "title": "Aggregations and Grouping",
         "order": 1,
         "lessons": [
           {
-            "id": "t2_js_01",
-            "type": "concept",
-            "title": "Understanding Data Grain",
-            "objective": "Understand why encounter-level, patient-level, and provider-level reporting require different grains.",
+            "kind": "challenge",
+            "id": "l_036",
+            "title": "Introduction to Aggregate Functions",
+            "objective": "Use COUNT, SUM, AVG in healthcare analysis.",
             "sql_focus": [
-              "JOIN",
-              "GROUP BY"
-            ],
-            "relevantTables": [
-              "patients",
-              "encounters",
-              "providers",
-              "departments"
-            ],
-            "joinHint": "Start with the table that matches the reporting grain, then join outward for attributes.",
-            "content": {
-              "summary": "Data grain is the level each row represents. Choosing the wrong grain causes duplicates, incorrect counts, and misleading metrics.",
-              "bullets": [
-                "Encounter grain means one row per visit",
-                "Patient grain means one row per person",
-                "Provider grain means one row per provider summary",
-                "Joining at the wrong grain can inflate counts"
-              ],
-              "hospitalExample": "If leadership asks for encounter volume by provider, encounter rows should stay the base grain while provider data is joined in."
-            },
-            "executiveTakeaway": null
-          },
-          {
-            "id": "t2_js_02",
-            "type": "challenge",
-            "title": "Join Encounters to Patients",
-            "objective": "Return encounter_id, first_name, last_name, and insurance_type.",
-            "sql_focus": [
+              "SELECT",
+              "WHERE",
+              "GROUP BY",
               "JOIN"
             ],
             "relevantTables": [
-              "encounters",
-              "patients"
+              "encounters"
             ],
-            "joinHint": "encounters.patient_id = patients.patient_id",
-            "starterQuery": "SELECT e.encounter_id, p.first_name, p.last_name, p.insurance_type FROM encounters e JOIN patients p ON e.patient_id = p.patient_id;",
-            "solutionQuery": "SELECT e.encounter_id, p.first_name, p.last_name, p.insurance_type FROM encounters e JOIN patients p ON e.patient_id = p.patient_id;",
-            "hint": "Join encounters to patients on patient_id.",
-            "executiveTakeaway": null
-          },
-          {
-            "id": "t2_js_03",
-            "type": "scenario",
-            "title": "Choosing the Correct Base Table",
-            "objective": "Recognize which table should drive an encounter-volume analysis.",
-            "sql_focus": [],
-            "relevantTables": [
-              "encounters",
-              "patients",
-              "providers"
-            ],
-            "joinHint": "Think about what one row should represent.",
-            "content": {
-              "summary": "Many SQL errors happen before the query even starts, when the wrong table is chosen as the base.",
-              "prompt": "If you need visit counts by provider, should encounters usually be the base table rather than providers?",
-              "expectedAnswer": "yes"
-            },
-            "executiveTakeaway": null
-          },
-          {
-            "id": "t2_js_04",
-            "type": "challenge",
-            "title": "Join Encounters to Providers",
-            "objective": "Return encounter_id and provider_name by joining encounters to providers.",
-            "sql_focus": [
-              "JOIN"
-            ],
-            "relevantTables": [
-              "encounters",
-              "providers"
-            ],
-            "joinHint": "encounters.provider_id = providers.provider_id",
-            "starterQuery": "SELECT e.encounter_id, p.provider_name FROM encounters e JOIN providers p ON e.provider_id = p.provider_id;",
-            "solutionQuery": "SELECT e.encounter_id, p.provider_name FROM encounters e JOIN providers p ON e.provider_id = p.provider_id;",
-            "hint": "Join encounters to providers on provider_id.",
-            "executiveTakeaway": null
-          },
-          {
-            "id": "t2_js_05",
-            "type": "scenario",
-            "title": "Protecting the Grain",
-            "objective": "Recognize that the base table should match the grain of the KPI before adding joins.",
-            "sql_focus": [],
-            "relevantTables": [
-              "encounters",
-              "charges",
-              "claims"
-            ],
-            "joinHint": "Think one row per encounter before joining one-to-many tables.",
-            "content": {
-              "summary": "Analysts often break KPIs by joining detail tables before deciding what one row should represent.",
-              "prompt": "If the metric is encounter count, should the query usually start from encounters and only then join other tables carefully?",
-              "expectedAnswer": "yes"
-            },
+            "joinHint": "Use the base table that matches the reporting grain, then join outward only when needed.",
+            "starterQuery": "SELECT COUNT(*) AS encounter_count, AVG(length_of_stay) AS avg_los FROM encounters;",
+            "solutionQuery": "SELECT COUNT(*) AS encounter_count, AVG(length_of_stay) AS avg_los FROM encounters;",
+            "hint": "Use COUNT and AVG.",
             "executiveTakeaway": {
               "show": true,
-              "metric": "Grain-safe reporting",
-              "whyItMatters": "Wrong grain can inflate counts and destroy trust in the dashboard.",
-              "whatToShare": "State the reporting grain before presenting the result.",
-              "action": "Validate row counts after every one-to-many join."
+              "metric": "Introduction to Aggregate Functions",
+              "whyItMatters": "Use COUNT, SUM, AVG in healthcare analysis.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "challenge",
+            "id": "l_037",
+            "title": "Finding Minimum and Maximum Values",
+            "objective": "Use MIN and MAX to identify extremes.",
+            "sql_focus": [
+              "SELECT",
+              "WHERE",
+              "GROUP BY",
+              "JOIN"
+            ],
+            "relevantTables": [
+              "charges"
+            ],
+            "joinHint": "Use the base table that matches the reporting grain, then join outward only when needed.",
+            "starterQuery": "SELECT MIN(amount) AS min_charge, MAX(amount) AS max_charge FROM charges;",
+            "solutionQuery": "SELECT MIN(amount) AS min_charge, MAX(amount) AS max_charge FROM charges;",
+            "hint": "Use MIN and MAX.",
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Finding Minimum and Maximum Values",
+              "whyItMatters": "Use MIN and MAX to identify extremes.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "challenge",
+            "id": "l_038",
+            "title": "Grouping Data with GROUP BY",
+            "objective": "Summarize data at department, payer, or provider level.",
+            "sql_focus": [
+              "SELECT",
+              "WHERE",
+              "GROUP BY",
+              "JOIN"
+            ],
+            "relevantTables": [
+              "encounters"
+            ],
+            "joinHint": "Use the base table that matches the reporting grain, then join outward only when needed.",
+            "starterQuery": "SELECT department, COUNT(*) AS encounter_count FROM encounters GROUP BY department;",
+            "solutionQuery": "SELECT department, COUNT(*) AS encounter_count FROM encounters GROUP BY department;",
+            "hint": "Group by department and count rows.",
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Grouping Data with GROUP BY",
+              "whyItMatters": "Summarize data at department, payer, or provider level.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "challenge",
+            "id": "l_039",
+            "title": "Filtering Aggregated Results with HAVING",
+            "objective": "Apply post-aggregation filtering.",
+            "sql_focus": [
+              "SELECT",
+              "WHERE",
+              "GROUP BY",
+              "JOIN"
+            ],
+            "relevantTables": [
+              "encounters"
+            ],
+            "joinHint": "Use the base table that matches the reporting grain, then join outward only when needed.",
+            "starterQuery": "SELECT department, COUNT(*) AS encounter_count FROM encounters GROUP BY department HAVING COUNT(*) > 5;",
+            "solutionQuery": "SELECT department, COUNT(*) AS encounter_count FROM encounters GROUP BY department HAVING COUNT(*) > 5;",
+            "hint": "Use HAVING after GROUP BY.",
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Filtering Aggregated Results with HAVING",
+              "whyItMatters": "Apply post-aggregation filtering.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "challenge",
+            "id": "l_040",
+            "title": "Counting Distinct Values",
+            "objective": "Avoid duplicate counts in healthcare reporting.",
+            "sql_focus": [
+              "SELECT",
+              "WHERE",
+              "GROUP BY",
+              "JOIN"
+            ],
+            "relevantTables": [
+              "patients"
+            ],
+            "joinHint": "Use the base table that matches the reporting grain, then join outward only when needed.",
+            "starterQuery": "SELECT DISTINCT insurance_type FROM patients;",
+            "solutionQuery": "SELECT DISTINCT insurance_type FROM patients;",
+            "hint": "Use DISTINCT on insurance_type.",
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Counting Distinct Values",
+              "whyItMatters": "Avoid duplicate counts in healthcare reporting.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "challenge",
+            "id": "l_041",
+            "title": "Multi-Level Aggregations",
+            "objective": "Build layered summaries for executive reporting.",
+            "sql_focus": [
+              "SELECT",
+              "WHERE",
+              "GROUP BY",
+              "JOIN"
+            ],
+            "relevantTables": [
+              "encounters"
+            ],
+            "joinHint": "Use the base table that matches the reporting grain, then join outward only when needed.",
+            "starterQuery": "SELECT facility, department, COUNT(*) AS encounter_count FROM encounters GROUP BY facility, department;",
+            "solutionQuery": "SELECT facility, department, COUNT(*) AS encounter_count FROM encounters GROUP BY facility, department;",
+            "hint": "Group by more than one field.",
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Multi-Level Aggregations",
+              "whyItMatters": "Build layered summaries for executive reporting.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "scenario",
+            "id": "l_042",
+            "title": "Aggregation Capstone: Department Utilization",
+            "objective": "Apply grouping logic to utilization analysis.",
+            "relevantTables": [
+              "patients",
+              "encounters",
+              "claims",
+              "charges"
+            ],
+            "joinHint": "Think about the correct grain, the business audience, and the operational consequence.",
+            "summary": "Apply grouping logic to utilization analysis.",
+            "prompt": "Explain how you would approach 'Aggregation Capstone: Department Utilization' in a CareOps hospital analytics context. Mention the likely data sources, the business interpretation, and one practical action.",
+            "expectedKeywords": [
+              "data",
+              "insight",
+              "action"
+            ],
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Aggregation Capstone: Department Utilization",
+              "whyItMatters": "Apply grouping logic to utilization analysis.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
             }
           }
         ]
       },
       {
-        "id": "left_joins_missing_data",
-        "title": "Left Joins and Missing Data",
+        "id": "joining_multiple_tables",
+        "title": "Joining Multiple Tables",
         "order": 2,
         "lessons": [
           {
-            "id": "t2_lj_01",
-            "type": "concept",
-            "title": "INNER JOIN vs LEFT JOIN",
-            "objective": "Understand when unmatched rows should be preserved.",
+            "kind": "concept",
+            "id": "l_043",
+            "title": "Understanding Table Relationships",
+            "objective": "Understand how patient, encounter, and provider tables relate.",
             "sql_focus": [
-              "LEFT JOIN",
-              "IS NULL"
+              "Concept"
             ],
             "relevantTables": [
               "patients",
               "encounters",
-              "appointments"
+              "claims",
+              "charges"
             ],
-            "joinHint": "Use LEFT JOIN when the left table defines the full population you want to preserve.",
-            "content": {
-              "summary": "LEFT JOIN keeps all rows from the left table even when no match exists in the joined table.",
-              "bullets": [
-                "INNER JOIN keeps only matched rows",
-                "LEFT JOIN preserves the full left-side denominator",
-                "NULLs after a LEFT JOIN often indicate missing activity",
-                "LEFT JOIN is critical for access and gap analyses"
-              ],
-              "hospitalExample": "If you want all patients, including those without appointments, patients should stay on the left side."
-            },
+            "joinHint": "No join required unless you choose to connect related data for context.",
+            "summary": "Understand how patient, encounter, and provider tables relate.",
+            "bullets": [
+              "Understanding Table Relationships is part of the Joining Multiple Tables module.",
+              "Focus on how the concept changes measurement quality, business meaning, or query structure.",
+              "Tie the concept back to real hospital analytics whenever possible."
+            ],
+            "example": "In CareOps, understanding table relationships supports clearer operational, financial, or quality analysis.",
             "executiveTakeaway": {
               "show": true,
-              "metric": "Denominator preservation",
-              "whyItMatters": "Dropping unmatched rows can hide access gaps.",
-              "whatToShare": "Clarify whether unmatched records were included or excluded.",
-              "action": "Use LEFT JOIN when missing activity is itself the finding."
+              "metric": "Understanding Table Relationships",
+              "whyItMatters": "Understand how patient, encounter, and provider tables relate.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
             }
           },
           {
-            "id": "t2_lj_02",
-            "type": "challenge",
-            "title": "Patients Without Encounters",
-            "objective": "Return patient_id, first_name, and last_name for patients with no encounter.",
+            "kind": "challenge",
+            "id": "l_044",
+            "title": "INNER JOIN for Matching Records",
+            "objective": "Join records that match across tables.",
             "sql_focus": [
-              "LEFT JOIN",
+              "SELECT",
               "WHERE",
-              "IS NULL"
+              "GROUP BY",
+              "JOIN"
             ],
             "relevantTables": [
               "patients",
               "encounters"
             ],
-            "joinHint": "patients.patient_id = encounters.patient_id",
-            "starterQuery": "SELECT p.patient_id, p.first_name, p.last_name FROM patients p LEFT JOIN encounters e ON p.patient_id = e.patient_id WHERE e.encounter_id IS NULL;",
-            "solutionQuery": "SELECT p.patient_id, p.first_name, p.last_name FROM patients p LEFT JOIN encounters e ON p.patient_id = e.patient_id WHERE e.encounter_id IS NULL;",
-            "hint": "LEFT JOIN encounters to patients, then keep only rows where encounter_id is NULL.",
-            "executiveTakeaway": null
-          },
-          {
-            "id": "t2_lj_03",
-            "type": "scenario",
-            "title": "Finding Missing Activity",
-            "objective": "Recognize why LEFT JOIN is useful for identifying gaps.",
-            "sql_focus": [],
-            "relevantTables": [
-              "patients",
-              "appointments"
-            ],
-            "joinHint": "Think preserved population first.",
-            "content": {
-              "summary": "Gap analyses are about who or what did not have activity, so matched rows alone are not enough.",
-              "prompt": "If leadership wants to know which departments had no appointments, should unmatched rows be preserved with a LEFT JOIN?",
-              "expectedAnswer": "yes"
-            },
+            "joinHint": "Use the base table that matches the reporting grain, then join outward only when needed.",
+            "starterQuery": "SELECT e.encounter_id, p.first_name FROM encounters e JOIN patients p ON e.patient_id = p.patient_id;",
+            "solutionQuery": "SELECT e.encounter_id, p.first_name FROM encounters e JOIN patients p ON e.patient_id = p.patient_id;",
+            "hint": "Join encounters to patients on patient_id.",
             "executiveTakeaway": {
               "show": true,
-              "metric": "Access gap visibility",
-              "whyItMatters": "Missing activity can be operationally important.",
-              "whatToShare": "Include units with zero activity when that absence matters.",
-              "action": "Use preserved-population logic for gap analysis."
+              "metric": "INNER JOIN for Matching Records",
+              "whyItMatters": "Join records that match across tables.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
             }
           },
           {
-            "id": "t2_lj_04",
-            "type": "challenge",
-            "title": "Departments Without Appointments",
-            "objective": "Return department_name for departments with no matching appointments.",
+            "kind": "challenge",
+            "id": "l_045",
+            "title": "LEFT JOIN for Retaining Unmatched Records",
+            "objective": "Preserve base table rows when data is missing.",
             "sql_focus": [
-              "LEFT JOIN",
-              "IS NULL"
+              "SELECT",
+              "WHERE",
+              "GROUP BY",
+              "JOIN"
             ],
-            "relevantTables": [
-              "departments",
-              "appointments"
-            ],
-            "joinHint": "departments.department_id = appointments.department_id",
-            "starterQuery": "SELECT d.department_name FROM departments d LEFT JOIN appointments a ON d.department_id = a.department_id WHERE a.appointment_id IS NULL;",
-            "solutionQuery": "SELECT d.department_name FROM departments d LEFT JOIN appointments a ON d.department_id = a.department_id WHERE a.appointment_id IS NULL;",
-            "hint": "LEFT JOIN appointments to departments and filter where appointment_id is NULL.",
-            "executiveTakeaway": null
-          },
-          {
-            "id": "t2_lj_05",
-            "type": "scenario",
-            "title": "Preserving the Denominator",
-            "objective": "Recognize why LEFT JOIN supports accurate denominators.",
-            "sql_focus": [],
             "relevantTables": [
               "patients",
-              "encounters"
+              "claims"
             ],
-            "joinHint": "Think total eligible population.",
-            "content": {
-              "summary": "Some KPIs depend on the full eligible population, not just those with activity.",
-              "prompt": "If your denominator is all patients, should an INNER JOIN to encounters usually be avoided because it removes patients with no visits?",
-              "expectedAnswer": "yes"
-            },
+            "joinHint": "Use the base table that matches the reporting grain, then join outward only when needed.",
+            "starterQuery": "SELECT p.patient_id, c.claim_id FROM patients p LEFT JOIN claims c ON p.patient_id = c.patient_id;",
+            "solutionQuery": "SELECT p.patient_id, c.claim_id FROM patients p LEFT JOIN claims c ON p.patient_id = c.patient_id;",
+            "hint": "Use LEFT JOIN to retain all patients.",
             "executiveTakeaway": {
               "show": true,
-              "metric": "Trusted denominator logic",
-              "whyItMatters": "The wrong join type can quietly shrink the denominator.",
-              "whatToShare": "Document what population is being preserved in the query.",
-              "action": "Check denominator logic before discussing rates."
+              "metric": "LEFT JOIN for Retaining Unmatched Records",
+              "whyItMatters": "Preserve base table rows when data is missing.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "concept",
+            "id": "l_046",
+            "title": "RIGHT and FULL OUTER JOINs",
+            "objective": "Recognize broader join behavior and when to use it.",
+            "sql_focus": [
+              "Concept"
+            ],
+            "relevantTables": [
+              "patients",
+              "encounters",
+              "claims",
+              "charges"
+            ],
+            "joinHint": "No join required unless you choose to connect related data for context.",
+            "summary": "Recognize broader join behavior and when to use it.",
+            "bullets": [
+              "RIGHT and FULL OUTER JOINs is part of the Joining Multiple Tables module.",
+              "Focus on how the concept changes measurement quality, business meaning, or query structure.",
+              "Tie the concept back to real hospital analytics whenever possible."
+            ],
+            "example": "In CareOps, right and full outer joins supports clearer operational, financial, or quality analysis.",
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "RIGHT and FULL OUTER JOINs",
+              "whyItMatters": "Recognize broader join behavior and when to use it.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "challenge",
+            "id": "l_047",
+            "title": "Joining Multiple Tables in a Single Query",
+            "objective": "Connect patients, encounters, providers, and departments.",
+            "sql_focus": [
+              "SELECT",
+              "WHERE",
+              "GROUP BY",
+              "JOIN"
+            ],
+            "relevantTables": [
+              "patients",
+              "providers",
+              "departments",
+              "encounters"
+            ],
+            "joinHint": "Use the base table that matches the reporting grain, then join outward only when needed.",
+            "starterQuery": "SELECT e.encounter_id, p.first_name, pr.provider_name, d.department_name FROM encounters e JOIN patients p ON e.patient_id = p.patient_id JOIN providers pr ON e.provider_id = pr.provider_id JOIN departments d ON e.department_id = d.department_id;",
+            "solutionQuery": "SELECT e.encounter_id, p.first_name, pr.provider_name, d.department_name FROM encounters e JOIN patients p ON e.patient_id = p.patient_id JOIN providers pr ON e.provider_id = pr.provider_id JOIN departments d ON e.department_id = d.department_id;",
+            "hint": "Join all requested tables.",
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Joining Multiple Tables in a Single Query",
+              "whyItMatters": "Connect patients, encounters, providers, and departments.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "challenge",
+            "id": "l_048",
+            "title": "Self Joins in Healthcare Data",
+            "objective": "Use a table more than once in a query.",
+            "sql_focus": [
+              "SELECT",
+              "WHERE",
+              "GROUP BY",
+              "JOIN"
+            ],
+            "relevantTables": [
+              "providers"
+            ],
+            "joinHint": "Use the base table that matches the reporting grain, then join outward only when needed.",
+            "starterQuery": "SELECT a.provider_id, a.provider_name, b.provider_name AS peer_name FROM providers a JOIN providers b ON a.facility = b.facility AND a.provider_id <> b.provider_id LIMIT 10;",
+            "solutionQuery": "SELECT a.provider_id, a.provider_name, b.provider_name AS peer_name FROM providers a JOIN providers b ON a.facility = b.facility AND a.provider_id <> b.provider_id LIMIT 10;",
+            "hint": "Join providers to themselves by facility.",
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Self Joins in Healthcare Data",
+              "whyItMatters": "Use a table more than once in a query.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "scenario",
+            "id": "l_049",
+            "title": "Join Capstone: Patient Encounter Summary",
+            "objective": "Summarize encounter activity across tables.",
+            "relevantTables": [
+              "patients",
+              "encounters",
+              "claims",
+              "charges"
+            ],
+            "joinHint": "Think about the correct grain, the business audience, and the operational consequence.",
+            "summary": "Summarize encounter activity across tables.",
+            "prompt": "Explain how you would approach 'Join Capstone: Patient Encounter Summary' in a CareOps hospital analytics context. Mention the likely data sources, the business interpretation, and one practical action.",
+            "expectedKeywords": [
+              "data",
+              "insight",
+              "action"
+            ],
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Join Capstone: Patient Encounter Summary",
+              "whyItMatters": "Summarize encounter activity across tables.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
             }
           }
         ]
       },
       {
-        "id": "date_filters_reporting_periods",
-        "title": "Date Filters and Reporting Periods",
+        "id": "subqueries_and_ctes",
+        "title": "Subqueries and CTEs",
         "order": 3,
         "lessons": [
           {
-            "id": "t2_dt_01",
-            "type": "concept",
-            "title": "Filtering by Reporting Period",
-            "objective": "Understand how date filters define the reporting window.",
+            "kind": "concept",
+            "id": "l_050",
+            "title": "Introduction to Subqueries",
+            "objective": "Understand nested query patterns.",
             "sql_focus": [
-              "WHERE",
-              "BETWEEN",
-              "strftime"
+              "Concept"
             ],
             "relevantTables": [
-              "encounters",
-              "appointments"
-            ],
-            "joinHint": "Use admit_date, discharge_date, or date depending on the business question.",
-            "content": {
-              "summary": "Time-based reporting depends on explicitly choosing the date field and reporting window that match the metric definition.",
-              "bullets": [
-                "Different date fields answer different questions",
-                "Monthly reporting should use a clearly defined time column",
-                "The reporting period should be explicit and reproducible",
-                "Trend summaries depend on consistent date logic"
-              ],
-              "hospitalExample": "A discharge-based metric should not accidentally be filtered on admit_date if leadership expects discharge month reporting."
-            },
-            "executiveTakeaway": {
-              "show": true,
-              "metric": "Reporting period consistency",
-              "whyItMatters": "Mismatched date logic changes the meaning of the metric.",
-              "whatToShare": "State which date field defines the reporting period.",
-              "action": "Lock the date logic before trending results."
-            }
-          },
-          {
-            "id": "t2_dt_02",
-            "type": "challenge",
-            "title": "Admissions in 2025",
-            "objective": "Return encounter_id, patient_id, and admit_date for encounters admitted in 2025.",
-            "sql_focus": [
-              "WHERE"
-            ],
-            "relevantTables": [
-              "encounters"
-            ],
-            "joinHint": "No join needed.",
-            "starterQuery": "SELECT encounter_id, patient_id, admit_date FROM encounters WHERE admit_date BETWEEN '2025-01-01' AND '2025-12-31';",
-            "solutionQuery": "SELECT encounter_id, patient_id, admit_date FROM encounters WHERE admit_date BETWEEN '2025-01-01' AND '2025-12-31';",
-            "hint": "Filter admit_date between 2025-01-01 and 2025-12-31.",
-            "executiveTakeaway": null
-          },
-          {
-            "id": "t2_dt_03",
-            "type": "scenario",
-            "title": "Choosing the Right Date Field",
-            "objective": "Recognize why date-field selection changes the story.",
-            "sql_focus": [],
-            "relevantTables": [
-              "encounters"
-            ],
-            "joinHint": "Think event timing.",
-            "content": {
-              "summary": "The same table may have multiple time columns, and each one reflects a different operational milestone.",
-              "prompt": "If the question is discharges by month, should discharge_date usually define the month instead of admit_date?",
-              "expectedAnswer": "yes"
-            },
-            "executiveTakeaway": {
-              "show": true,
-              "metric": "Correct time attribution",
-              "whyItMatters": "Wrong date fields misplace volume into the wrong periods.",
-              "whatToShare": "Tie the date field to the event leadership is asking about.",
-              "action": "Validate the time anchor before distribution."
-            }
-          },
-          {
-            "id": "t2_dt_04",
-            "type": "challenge",
-            "title": "Encounter Count by Admit Month",
-            "objective": "Return admit_month and encounter_count.",
-            "sql_focus": [
-              "GROUP BY",
-              "COUNT",
-              "strftime"
-            ],
-            "relevantTables": [
-              "encounters"
-            ],
-            "joinHint": "No join needed.",
-            "starterQuery": "SELECT strftime('%Y-%m', admit_date) AS admit_month, COUNT(*) AS encounter_count FROM encounters GROUP BY strftime('%Y-%m', admit_date) ORDER BY admit_month;",
-            "solutionQuery": "SELECT strftime('%Y-%m', admit_date) AS admit_month, COUNT(*) AS encounter_count FROM encounters GROUP BY strftime('%Y-%m', admit_date) ORDER BY admit_month;",
-            "hint": "Use strftime('%Y-%m', admit_date), group by it, and count rows.",
-            "executiveTakeaway": null
-          },
-          {
-            "id": "t2_dt_05",
-            "type": "scenario",
-            "title": "Trend Interpretation",
-            "objective": "Recognize why consistent period logic matters for trends.",
-            "sql_focus": [],
-            "relevantTables": [
-              "encounters"
-            ],
-            "joinHint": "Think apples-to-apples comparison.",
-            "content": {
-              "summary": "Trend lines only mean something when each period is built using the same logic and same date anchor.",
-              "prompt": "If monthly comparisons use different date fields across reports, can those trends become misleading?",
-              "expectedAnswer": "yes"
-            },
-            "executiveTakeaway": {
-              "show": true,
-              "metric": "Reliable trending",
-              "whyItMatters": "Inconsistent period logic makes trends untrustworthy.",
-              "whatToShare": "Keep monthly logic consistent across all periods.",
-              "action": "Standardize period definitions before presenting trends."
-            }
-          }
-        ]
-      },
-      {
-        "id": "conditional_aggregation",
-        "title": "Conditional Aggregation",
-        "order": 4,
-        "lessons": [
-          {
-            "id": "t2_ca_01",
-            "type": "concept",
-            "title": "Building KPIs with Conditional Aggregation",
-            "objective": "Use CASE inside aggregates to build multi-part metrics in one query.",
-            "sql_focus": [
-              "CASE",
-              "SUM",
-              "COUNT"
-            ],
-            "relevantTables": [
-              "encounters",
-              "claims",
-              "appointments"
-            ],
-            "joinHint": "Conditional aggregation lets one grouped query calculate multiple business measures.",
-            "content": {
-              "summary": "Conditional aggregation is one of the most useful SQL patterns for dashboards because it turns categories into KPI columns.",
-              "bullets": [
-                "CASE inside SUM can count condition-specific rows",
-                "One query can produce several related KPIs",
-                "This pattern is common in dashboards",
-                "It reduces the need for multiple separate queries"
-              ],
-              "hospitalExample": "A single access query can report completed, cancelled, and no-show appointment counts side by side."
-            },
-            "executiveTakeaway": {
-              "show": true,
-              "metric": "Multi-KPI summary construction",
-              "whyItMatters": "Leadership often wants several related metrics together.",
-              "whatToShare": "Group once, then create multiple KPI columns with CASE.",
-              "action": "Use conditional aggregation to simplify dashboard logic."
-            }
-          },
-          {
-            "id": "t2_ca_02",
-            "type": "challenge",
-            "title": "Appointment Status Counts",
-            "objective": "Return completed_count and no_show_count from appointments.",
-            "sql_focus": [
-              "CASE",
-              "SUM"
-            ],
-            "relevantTables": [
-              "appointments"
-            ],
-            "joinHint": "No join needed.",
-            "starterQuery": "SELECT SUM(CASE WHEN status = 'Completed' THEN 1 ELSE 0 END) AS completed_count, SUM(CASE WHEN status = 'No Show' THEN 1 ELSE 0 END) AS no_show_count FROM appointments;",
-            "solutionQuery": "SELECT SUM(CASE WHEN status = 'Completed' THEN 1 ELSE 0 END) AS completed_count, SUM(CASE WHEN status = 'No Show' THEN 1 ELSE 0 END) AS no_show_count FROM appointments;",
-            "hint": "Use CASE inside SUM for both Completed and No Show.",
-            "executiveTakeaway": null
-          },
-          {
-            "id": "t2_ca_03",
-            "type": "scenario",
-            "title": "Multi-Metric Reporting",
-            "objective": "Recognize why leaders prefer several KPI columns in one grouped result.",
-            "sql_focus": [],
-            "relevantTables": [
-              "appointments",
-              "claims"
-            ],
-            "joinHint": "Think concise summary table.",
-            "content": {
-              "summary": "Decision-makers often prefer one grouped view with several metrics rather than several separate outputs they must mentally combine.",
-              "prompt": "If leadership wants completed visits and no-shows by department in one table, is conditional aggregation usually a strong approach?",
-              "expectedAnswer": "yes"
-            },
-            "executiveTakeaway": {
-              "show": true,
-              "metric": "Compact KPI reporting",
-              "whyItMatters": "One grouped table is easier to interpret than multiple disconnected queries.",
-              "whatToShare": "Show related KPIs side by side when they support the same decision.",
-              "action": "Use CASE-based metrics in grouped summaries."
-            }
-          },
-          {
-            "id": "t2_ca_04",
-            "type": "challenge",
-            "title": "Encounter Type Counts by Facility",
-            "objective": "Return facility, inpatient_count, and emergency_count.",
-            "sql_focus": [
-              "GROUP BY",
-              "CASE",
-              "SUM"
-            ],
-            "relevantTables": [
-              "encounters"
-            ],
-            "joinHint": "No join needed.",
-            "starterQuery": "SELECT facility, SUM(CASE WHEN encounter_type = 'Inpatient' THEN 1 ELSE 0 END) AS inpatient_count, SUM(CASE WHEN encounter_type = 'Emergency' THEN 1 ELSE 0 END) AS emergency_count FROM encounters GROUP BY facility;",
-            "solutionQuery": "SELECT facility, SUM(CASE WHEN encounter_type = 'Inpatient' THEN 1 ELSE 0 END) AS inpatient_count, SUM(CASE WHEN encounter_type = 'Emergency' THEN 1 ELSE 0 END) AS emergency_count FROM encounters GROUP BY facility;",
-            "hint": "Group by facility and use CASE inside SUM for each encounter type.",
-            "executiveTakeaway": null
-          },
-          {
-            "id": "t2_ca_05",
-            "type": "scenario",
-            "title": "Operational Interpretation",
-            "objective": "Recognize why segmented counts are more useful than one total.",
-            "sql_focus": [],
-            "relevantTables": [
-              "encounters"
-            ],
-            "joinHint": "Think operational meaning.",
-            "content": {
-              "summary": "A single total may confirm volume, but segmented KPI columns explain what kinds of volume are driving the result.",
-              "prompt": "If one facility has the same total encounters as another but a much higher emergency_count, does the segmented view provide more operational insight than the total alone?",
-              "expectedAnswer": "yes"
-            },
-            "executiveTakeaway": {
-              "show": true,
-              "metric": "Segmented activity mix",
-              "whyItMatters": "Composition often matters as much as total volume.",
-              "whatToShare": "Pair totals with component breakdowns.",
-              "action": "Use conditional categories to reveal what is driving the metric."
-            }
-          }
-        ]
-      },
-      {
-        "id": "distinct_counts_and_grain",
-        "title": "Distinct Counts and Data Grain",
-        "order": 5,
-        "lessons": [
-          {
-            "id": "t2_dc_01",
-            "type": "concept",
-            "title": "COUNT vs COUNT DISTINCT",
-            "objective": "Understand when counting rows is different from counting unique entities.",
-            "sql_focus": [
-              "COUNT",
-              "COUNT DISTINCT"
-            ],
-            "relevantTables": [
-              "encounters",
               "patients",
-              "appointments"
-            ],
-            "joinHint": "Use COUNT(*) for row volume and COUNT(DISTINCT ...) for unique entities.",
-            "content": {
-              "summary": "Distinct counting prevents one entity from being counted multiple times when it appears across many rows.",
-              "bullets": [
-                "Encounter count is not the same as patient count",
-                "One patient can have many encounters",
-                "Distinct counts are often needed for denominators",
-                "Wrong counting methods can inflate utilization"
-              ],
-              "hospitalExample": "A clinic with 100 visits may only have 60 unique patients, and those two numbers answer different questions."
-            },
-            "executiveTakeaway": {
-              "show": true,
-              "metric": "Unique population measurement",
-              "whyItMatters": "Volume and unique reach are not the same thing.",
-              "whatToShare": "Specify whether the metric counts visits or people.",
-              "action": "Choose DISTINCT when unique entities matter."
-            }
-          },
-          {
-            "id": "t2_dc_02",
-            "type": "challenge",
-            "title": "Unique Patients by Department",
-            "objective": "Return department and unique_patient_count.",
-            "sql_focus": [
-              "GROUP BY",
-              "COUNT DISTINCT"
-            ],
-            "relevantTables": [
-              "encounters"
-            ],
-            "joinHint": "No join needed.",
-            "starterQuery": "SELECT department, COUNT(DISTINCT patient_id) AS unique_patient_count FROM encounters GROUP BY department;",
-            "solutionQuery": "SELECT department, COUNT(DISTINCT patient_id) AS unique_patient_count FROM encounters GROUP BY department;",
-            "hint": "Group by department and count distinct patient_id.",
-            "executiveTakeaway": null
-          },
-          {
-            "id": "t2_dc_03",
-            "type": "scenario",
-            "title": "Visits vs Patients",
-            "objective": "Recognize why visit volume and unique patients answer different questions.",
-            "sql_focus": [],
-            "relevantTables": [
-              "encounters"
-            ],
-            "joinHint": "Think rows versus people.",
-            "content": {
-              "summary": "A high visit count can be driven by repeat utilizers, while a high unique-patient count reflects broader reach.",
-              "prompt": "If leadership asks how many individual patients were seen, should COUNT(DISTINCT patient_id) usually be preferred over COUNT(*)?",
-              "expectedAnswer": "yes"
-            },
-            "executiveTakeaway": {
-              "show": true,
-              "metric": "Unique reach",
-              "whyItMatters": "Leaders often need to know whether volume reflects many people or repeat visits.",
-              "whatToShare": "Separate unique patients from total encounters.",
-              "action": "State clearly whether the output is visit-based or person-based."
-            }
-          },
-          {
-            "id": "t2_dc_04",
-            "type": "challenge",
-            "title": "Unique Patients by Facility",
-            "objective": "Return facility and unique_patient_count.",
-            "sql_focus": [
-              "GROUP BY",
-              "COUNT DISTINCT"
-            ],
-            "relevantTables": [
-              "encounters"
-            ],
-            "joinHint": "No join needed.",
-            "starterQuery": "SELECT facility, COUNT(DISTINCT patient_id) AS unique_patient_count FROM encounters GROUP BY facility;",
-            "solutionQuery": "SELECT facility, COUNT(DISTINCT patient_id) AS unique_patient_count FROM encounters GROUP BY facility;",
-            "hint": "Group by facility and count distinct patient_id.",
-            "executiveTakeaway": null
-          },
-          {
-            "id": "t2_dc_05",
-            "type": "scenario",
-            "title": "High Utilizer Interpretation",
-            "objective": "Recognize when the gap between total encounters and unique patients suggests repeat utilization.",
-            "sql_focus": [],
-            "relevantTables": [
-              "encounters"
-            ],
-            "joinHint": "Think repeated visits.",
-            "content": {
-              "summary": "When encounter counts are much higher than unique patient counts, repeat utilization is likely contributing to the difference.",
-              "prompt": "If a department has many more encounters than unique patients, could that indicate repeat utilization by the same patients?",
-              "expectedAnswer": "yes"
-            },
-            "executiveTakeaway": {
-              "show": true,
-              "metric": "Repeat-utilization signal",
-              "whyItMatters": "Repeat activity can indicate chronic demand or care coordination issues.",
-              "whatToShare": "Compare total encounters against distinct patients.",
-              "action": "Investigate areas with large gaps between rows and unique people."
-            }
-          }
-        ]
-      },
-      {
-        "id": "subqueries",
-        "title": "Subqueries",
-        "order": 6,
-        "lessons": [
-          {
-            "id": "t2_sq_01",
-            "type": "concept",
-            "title": "Using Subqueries for Comparison Logic",
-            "objective": "Understand how subqueries support comparisons against averages, thresholds, and filtered populations.",
-            "sql_focus": [
-              "SUBQUERY",
-              "AVG",
-              "WHERE"
-            ],
-            "relevantTables": [
               "encounters",
               "claims",
               "charges"
             ],
-            "joinHint": "Subqueries are useful when the filter depends on a value calculated from the data itself.",
-            "content": {
-              "summary": "A subquery can calculate a comparison value first, then let the outer query filter against it.",
-              "bullets": [
-                "Subqueries can appear in WHERE or SELECT logic",
-                "They are useful for average comparisons",
-                "They help define dynamic thresholds",
-                "They can keep complex logic readable"
-              ],
-              "hospitalExample": "To find encounters above average LOS, you first need the average LOS value, which a subquery can calculate."
-            },
+            "joinHint": "No join required unless you choose to connect related data for context.",
+            "summary": "Understand nested query patterns.",
+            "bullets": [
+              "Introduction to Subqueries is part of the Subqueries and CTEs module.",
+              "Focus on how the concept changes measurement quality, business meaning, or query structure.",
+              "Tie the concept back to real hospital analytics whenever possible."
+            ],
+            "example": "In CareOps, introduction to subqueries supports clearer operational, financial, or quality analysis.",
             "executiveTakeaway": {
               "show": true,
-              "metric": "Dynamic benchmark logic",
-              "whyItMatters": "Some filters depend on the dataset rather than a fixed number.",
-              "whatToShare": "Explain the benchmark used for comparison.",
-              "action": "Use subqueries when thresholds come from the data."
+              "metric": "Introduction to Subqueries",
+              "whyItMatters": "Understand nested query patterns.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
             }
           },
           {
-            "id": "t2_sq_02",
-            "type": "challenge",
-            "title": "Encounters Above Average LOS",
-            "objective": "Return encounter_id and length_of_stay for encounters above the overall average LOS.",
+            "kind": "challenge",
+            "id": "l_051",
+            "title": "Subqueries in the WHERE Clause",
+            "objective": "Use subqueries to filter results dynamically.",
             "sql_focus": [
-              "SUBQUERY",
-              "AVG",
-              "WHERE"
+              "SELECT",
+              "WHERE",
+              "GROUP BY",
+              "JOIN"
+            ],
+            "relevantTables": [
+              "patients",
+              "encounters"
+            ],
+            "joinHint": "Use the base table that matches the reporting grain, then join outward only when needed.",
+            "starterQuery": "SELECT * FROM encounters WHERE patient_id IN (SELECT patient_id FROM patients WHERE insurance_type = 'Medicare');",
+            "solutionQuery": "SELECT * FROM encounters WHERE patient_id IN (SELECT patient_id FROM patients WHERE insurance_type = 'Medicare');",
+            "hint": "Use a subquery inside WHERE.",
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Subqueries in the WHERE Clause",
+              "whyItMatters": "Use subqueries to filter results dynamically.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "challenge",
+            "id": "l_052",
+            "title": "Correlated Subqueries",
+            "objective": "Understand row-dependent nested queries.",
+            "sql_focus": [
+              "SELECT",
+              "WHERE",
+              "GROUP BY",
+              "JOIN"
+            ],
+            "relevantTables": [
+              "patients",
+              "encounters"
+            ],
+            "joinHint": "Use the base table that matches the reporting grain, then join outward only when needed.",
+            "starterQuery": "SELECT p.patient_id, p.first_name FROM patients p WHERE EXISTS (SELECT 1 FROM encounters e WHERE e.patient_id = p.patient_id);",
+            "solutionQuery": "SELECT p.patient_id, p.first_name FROM patients p WHERE EXISTS (SELECT 1 FROM encounters e WHERE e.patient_id = p.patient_id);",
+            "hint": "Use EXISTS in a correlated subquery.",
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Correlated Subqueries",
+              "whyItMatters": "Understand row-dependent nested queries.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "challenge",
+            "id": "l_053",
+            "title": "Introduction to Common Table Expressions",
+            "objective": "Use CTEs to make complex SQL readable.",
+            "sql_focus": [
+              "SELECT",
+              "WHERE",
+              "GROUP BY",
+              "JOIN"
             ],
             "relevantTables": [
               "encounters"
             ],
-            "joinHint": "No join needed.",
-            "starterQuery": "SELECT encounter_id, length_of_stay FROM encounters WHERE length_of_stay > (SELECT AVG(length_of_stay) FROM encounters);",
-            "solutionQuery": "SELECT encounter_id, length_of_stay FROM encounters WHERE length_of_stay > (SELECT AVG(length_of_stay) FROM encounters);",
-            "hint": "Use a subquery to get AVG(length_of_stay) from encounters.",
-            "executiveTakeaway": null
-          },
-          {
-            "id": "t2_sq_03",
-            "type": "scenario",
-            "title": "Benchmark Comparison",
-            "objective": "Recognize when a subquery is useful for comparing rows to a system benchmark.",
-            "sql_focus": [],
-            "relevantTables": [
-              "encounters",
-              "claims"
-            ],
-            "joinHint": "Think compare-to-average.",
-            "content": {
-              "summary": "Subqueries are especially helpful when you want rows that exceed an average or other derived benchmark.",
-              "prompt": "If you need departments whose average LOS exceeds the system-wide average LOS, is subquery logic a reasonable approach?",
-              "expectedAnswer": "yes"
-            },
+            "joinHint": "Use the base table that matches the reporting grain, then join outward only when needed.",
+            "starterQuery": "WITH encounter_counts AS (SELECT patient_id, COUNT(*) AS cnt FROM encounters GROUP BY patient_id) SELECT * FROM encounter_counts;",
+            "solutionQuery": "WITH encounter_counts AS (SELECT patient_id, COUNT(*) AS cnt FROM encounters GROUP BY patient_id) SELECT * FROM encounter_counts;",
+            "hint": "Start with WITH and select from the CTE.",
             "executiveTakeaway": {
               "show": true,
-              "metric": "Benchmark-based exception detection",
-              "whyItMatters": "Operational review often focuses on performance relative to a benchmark.",
-              "whatToShare": "Describe whether the comparison is against system average, target, or peer rate.",
-              "action": "Use data-derived benchmarks when fixed thresholds are not enough."
+              "metric": "Introduction to Common Table Expressions",
+              "whyItMatters": "Use CTEs to make complex SQL readable.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
             }
           },
           {
-            "id": "t2_sq_04",
-            "type": "challenge",
-            "title": "Charges Above Average Amount",
-            "objective": "Return charge_id and amount for charges above the average charge amount.",
+            "kind": "concept",
+            "id": "l_054",
+            "title": "Recursive CTEs",
+            "objective": "Recognize recursive patterns for hierarchical data.",
             "sql_focus": [
-              "SUBQUERY",
-              "AVG"
+              "Concept"
             ],
             "relevantTables": [
+              "patients",
+              "encounters",
+              "claims",
               "charges"
             ],
-            "joinHint": "No join needed.",
-            "starterQuery": "SELECT charge_id, amount FROM charges WHERE amount > (SELECT AVG(amount) FROM charges);",
-            "solutionQuery": "SELECT charge_id, amount FROM charges WHERE amount > (SELECT AVG(amount) FROM charges);",
-            "hint": "Use a subquery with AVG(amount).",
-            "executiveTakeaway": null
-          },
-          {
-            "id": "t2_sq_05",
-            "type": "scenario",
-            "title": "Executive Interpretation of Benchmarks",
-            "objective": "Recognize why benchmark-based exceptions are more actionable than raw lists.",
-            "sql_focus": [],
-            "relevantTables": [
-              "charges",
-              "encounters"
+            "joinHint": "No join required unless you choose to connect related data for context.",
+            "summary": "Recognize recursive patterns for hierarchical data.",
+            "bullets": [
+              "Recursive CTEs is part of the Subqueries and CTEs module.",
+              "Focus on how the concept changes measurement quality, business meaning, or query structure.",
+              "Tie the concept back to real hospital analytics whenever possible."
             ],
-            "joinHint": "Think what exceeds normal.",
-            "content": {
-              "summary": "Executives often care less about the full list and more about which rows or groups exceed a meaningful benchmark.",
-              "prompt": "If only above-average outliers matter for review, does a benchmark-based filter make the output more actionable?",
-              "expectedAnswer": "yes"
-            },
+            "example": "In CareOps, recursive ctes supports clearer operational, financial, or quality analysis.",
             "executiveTakeaway": {
               "show": true,
-              "metric": "Actionable exception filtering",
-              "whyItMatters": "Leadership review improves when the output is narrowed to what stands out.",
-              "whatToShare": "Highlight what exceeds the benchmark instead of everything.",
-              "action": "Use comparison logic to isolate meaningful exceptions."
-            }
-          }
-        ]
-      },
-      {
-        "id": "ctes",
-        "title": "Common Table Expressions",
-        "order": 7,
-        "lessons": [
-          {
-            "id": "t2_cte_01",
-            "type": "concept",
-            "title": "Why CTEs Improve Complex SQL",
-            "objective": "Use CTEs to break complex logic into readable steps.",
-            "sql_focus": [
-              "WITH",
-              "CTE"
-            ],
-            "relevantTables": [
-              "encounters",
-              "claims",
-              "appointments"
-            ],
-            "joinHint": "CTEs let you define intermediate datasets before the final query.",
-            "content": {
-              "summary": "Common Table Expressions improve readability, maintainability, and validation by splitting complex SQL into named steps.",
-              "bullets": [
-                "CTEs create named temporary result sets",
-                "They make long SQL easier to debug",
-                "They help isolate denominator and numerator logic",
-                "They improve readability for future analysts"
-              ],
-              "hospitalExample": "A readmissions metric is much easier to validate when index encounters and return encounters are defined in separate named steps."
-            },
-            "executiveTakeaway": {
-              "show": true,
-              "metric": "Readable analytic logic",
-              "whyItMatters": "Complex metrics are easier to trust when their pieces are visible.",
-              "whatToShare": "Organize multi-step logic into named intermediate sets.",
-              "action": "Use CTEs when one long query becomes hard to reason about."
+              "metric": "Recursive CTEs",
+              "whyItMatters": "Recognize recursive patterns for hierarchical data.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
             }
           },
           {
-            "id": "t2_cte_02",
-            "type": "challenge",
-            "title": "CTE for Discharged Encounters",
-            "objective": "Use a CTE called discharged_encounters to return encounter_id, patient_id, and discharge_date for encounters with a non-null discharge_date.",
+            "kind": "challenge",
+            "id": "l_055",
+            "title": "Refactoring Queries Using CTEs",
+            "objective": "Rewrite complex logic into structured steps.",
             "sql_focus": [
-              "WITH",
-              "CTE",
-              "IS NOT NULL"
-            ],
-            "relevantTables": [
-              "encounters"
-            ],
-            "joinHint": "Define the filtered encounter set first, then select from it.",
-            "starterQuery": "WITH discharged_encounters AS (SELECT encounter_id, patient_id, discharge_date FROM encounters WHERE discharge_date IS NOT NULL) SELECT encounter_id, patient_id, discharge_date FROM discharged_encounters;",
-            "solutionQuery": "WITH discharged_encounters AS (SELECT encounter_id, patient_id, discharge_date FROM encounters WHERE discharge_date IS NOT NULL) SELECT encounter_id, patient_id, discharge_date FROM discharged_encounters;",
-            "hint": "Use WITH discharged_encounters AS (...) and then select from it.",
-            "executiveTakeaway": null
-          },
-          {
-            "id": "t2_cte_03",
-            "type": "scenario",
-            "title": "Readable Multi-Step Logic",
-            "objective": "Recognize why a CTE can be better than one long nested query.",
-            "sql_focus": [],
-            "relevantTables": [
-              "encounters",
-              "claims"
-            ],
-            "joinHint": "Think modular logic.",
-            "content": {
-              "summary": "When a metric has multiple steps, readability is often just as important as technical correctness.",
-              "prompt": "If a query has a denominator step, a numerator step, and then a final rate calculation, can CTEs make that logic easier to validate?",
-              "expectedAnswer": "yes"
-            },
-            "executiveTakeaway": {
-              "show": true,
-              "metric": "Transparent metric construction",
-              "whyItMatters": "Named steps make validation and review easier.",
-              "whatToShare": "Separate population-building from final calculation logic.",
-              "action": "Use CTEs for multi-step KPIs."
-            }
-          },
-          {
-            "id": "t2_cte_04",
-            "type": "challenge",
-            "title": "CTE with Grouped Output",
-            "objective": "Use a CTE called denied_claims to return payer and denied_count from denied claims.",
-            "sql_focus": [
-              "WITH",
+              "SELECT",
+              "WHERE",
               "GROUP BY",
-              "COUNT",
-              "WHERE"
+              "JOIN"
             ],
             "relevantTables": [
               "claims"
             ],
-            "joinHint": "Define denied_claims first, then aggregate from it.",
-            "starterQuery": "WITH denied_claims AS (SELECT * FROM claims WHERE claim_status = 'Denied') SELECT payer, COUNT(*) AS denied_count FROM denied_claims GROUP BY payer;",
-            "solutionQuery": "WITH denied_claims AS (SELECT * FROM claims WHERE claim_status = 'Denied') SELECT payer, COUNT(*) AS denied_count FROM denied_claims GROUP BY payer;",
-            "hint": "Build a denied_claims CTE first, then group by payer.",
-            "executiveTakeaway": null
-          },
-          {
-            "id": "t2_cte_05",
-            "type": "scenario",
-            "title": "Executive Confidence in Logic",
-            "objective": "Recognize why transparent SQL design helps executive trust.",
-            "sql_focus": [],
-            "relevantTables": [
-              "claims",
-              "encounters"
-            ],
-            "joinHint": "Think explainability.",
-            "content": {
-              "summary": "Even when leaders never see the SQL, explainable logic improves the analyst's ability to defend and validate the metric.",
-              "prompt": "If a KPI is likely to be questioned, can CTE-based stepwise logic make it easier to explain and defend?",
-              "expectedAnswer": "yes"
-            },
+            "joinHint": "Use the base table that matches the reporting grain, then join outward only when needed.",
+            "starterQuery": "WITH denied AS (SELECT payer, billed_amount FROM claims WHERE claim_status = 'Denied') SELECT payer, SUM(billed_amount) AS denied_dollars FROM denied GROUP BY payer;",
+            "solutionQuery": "WITH denied AS (SELECT payer, billed_amount FROM claims WHERE claim_status = 'Denied') SELECT payer, SUM(billed_amount) AS denied_dollars FROM denied GROUP BY payer;",
+            "hint": "Use a CTE to simplify logic.",
             "executiveTakeaway": {
               "show": true,
-              "metric": "Defensible metric design",
-              "whyItMatters": "Transparent logic is easier to audit and explain.",
-              "whatToShare": "Be ready to describe the metric in steps, not just with one final number.",
-              "action": "Use readable SQL for high-visibility metrics."
+              "metric": "Refactoring Queries Using CTEs",
+              "whyItMatters": "Rewrite complex logic into structured steps.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "scenario",
+            "id": "l_056",
+            "title": "CTE Capstone: Readmission Identification",
+            "objective": "Apply CTE logic to a hospital workflow problem.",
+            "relevantTables": [
+              "patients",
+              "encounters",
+              "claims",
+              "charges"
+            ],
+            "joinHint": "Think about the correct grain, the business audience, and the operational consequence.",
+            "summary": "Apply CTE logic to a hospital workflow problem.",
+            "prompt": "Explain how you would approach 'CTE Capstone: Readmission Identification' in a CareOps hospital analytics context. Mention the likely data sources, the business interpretation, and one practical action.",
+            "expectedKeywords": [
+              "data",
+              "insight",
+              "action"
+            ],
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "CTE Capstone: Readmission Identification",
+              "whyItMatters": "Apply CTE logic to a hospital workflow problem.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
             }
           }
         ]
@@ -4248,632 +1648,3386 @@ const curriculum = [
       {
         "id": "window_functions",
         "title": "Window Functions",
-        "order": 8,
+        "order": 4,
         "lessons": [
           {
-            "id": "t2_wf_01",
-            "type": "concept",
+            "kind": "concept",
+            "id": "l_057",
             "title": "Introduction to Window Functions",
-            "objective": "Understand how window functions calculate row-level analytics without collapsing rows.",
+            "objective": "Understand analytic calculations across result sets.",
             "sql_focus": [
-              "ROW_NUMBER",
-              "RANK",
-              "OVER",
-              "PARTITION BY",
-              "ORDER BY"
+              "Concept"
             ],
             "relevantTables": [
+              "patients",
               "encounters",
-              "providers"
+              "claims",
+              "charges"
             ],
-            "joinHint": "Window functions keep detail rows while adding rankings, sequence numbers, or cumulative values.",
-            "content": {
-              "summary": "Window functions are powerful because they add context to each row without forcing a grouped summary.",
-              "bullets": [
-                "ROW_NUMBER creates sequence within a partition",
-                "RANK compares rows within a partition",
-                "Window functions do not collapse rows like GROUP BY",
-                "They are useful for ranking and timeline logic"
-              ],
-              "hospitalExample": "If you want the first encounter per patient, ROW_NUMBER can label each encounter in order within each patient group."
-            },
+            "joinHint": "No join required unless you choose to connect related data for context.",
+            "summary": "Understand analytic calculations across result sets.",
+            "bullets": [
+              "Introduction to Window Functions is part of the Window Functions module.",
+              "Focus on how the concept changes measurement quality, business meaning, or query structure.",
+              "Tie the concept back to real hospital analytics whenever possible."
+            ],
+            "example": "In CareOps, introduction to window functions supports clearer operational, financial, or quality analysis.",
             "executiveTakeaway": {
               "show": true,
-              "metric": "Row-level analytic context",
-              "whyItMatters": "Some questions require both row detail and comparative context.",
-              "whatToShare": "Use rankings and sequence logic when grouped summaries are not enough.",
-              "action": "Apply window functions for ordering within groups."
+              "metric": "Introduction to Window Functions",
+              "whyItMatters": "Understand analytic calculations across result sets.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
             }
           },
           {
-            "id": "t2_wf_02",
-            "type": "challenge",
-            "title": "Encounter Sequence by Patient",
-            "objective": "Return patient_id, encounter_id, discharge_date, and encounter_sequence using ROW_NUMBER over patient_id ordered by discharge_date.",
+            "kind": "challenge",
+            "id": "l_058",
+            "title": "ROW_NUMBER for Sequential Ranking",
+            "objective": "Assign row order within groups.",
             "sql_focus": [
-              "ROW_NUMBER",
-              "OVER",
-              "PARTITION BY",
-              "ORDER BY"
-            ],
-            "relevantTables": [
-              "encounters"
-            ],
-            "joinHint": "Partition by patient_id and order by discharge_date.",
-            "starterQuery": "SELECT patient_id, encounter_id, discharge_date, ROW_NUMBER() OVER (PARTITION BY patient_id ORDER BY discharge_date) AS encounter_sequence FROM encounters;",
-            "solutionQuery": "SELECT patient_id, encounter_id, discharge_date, ROW_NUMBER() OVER (PARTITION BY patient_id ORDER BY discharge_date) AS encounter_sequence FROM encounters;",
-            "hint": "Use ROW_NUMBER() OVER (PARTITION BY patient_id ORDER BY discharge_date).",
-            "executiveTakeaway": null
-          },
-          {
-            "id": "t2_wf_03",
-            "type": "scenario",
-            "title": "First Encounter Logic",
-            "objective": "Recognize why window functions help identify first or latest events.",
-            "sql_focus": [],
-            "relevantTables": [
-              "encounters"
-            ],
-            "joinHint": "Think sequence within patient.",
-            "content": {
-              "summary": "Questions about first, latest, or top rows within a category are strong candidates for window functions.",
-              "prompt": "If you need the first encounter for each patient, is ROW_NUMBER usually more appropriate than a simple GROUP BY alone?",
-              "expectedAnswer": "yes"
-            },
-            "executiveTakeaway": {
-              "show": true,
-              "metric": "First-event identification",
-              "whyItMatters": "Operational timelines often require event sequencing, not just counts.",
-              "whatToShare": "Use sequence logic when the question is about order, not just totals.",
-              "action": "Choose window functions for first/latest-row logic."
-            }
-          },
-          {
-            "id": "t2_wf_04",
-            "type": "challenge",
-            "title": "Rank Providers by Encounter Volume",
-            "objective": "Return provider_id, encounter_count, and provider_rank ranked by encounter_count descending.",
-            "sql_focus": [
-              "RANK",
-              "COUNT",
+              "SELECT",
+              "WHERE",
               "GROUP BY",
-              "OVER",
-              "ORDER BY"
+              "JOIN"
             ],
             "relevantTables": [
               "encounters"
             ],
-            "joinHint": "Aggregate provider encounter counts first, then rank them.",
-            "starterQuery": "SELECT provider_id, encounter_count, RANK() OVER (ORDER BY encounter_count DESC) AS provider_rank FROM (SELECT provider_id, COUNT(*) AS encounter_count FROM encounters GROUP BY provider_id);",
-            "solutionQuery": "SELECT provider_id, encounter_count, RANK() OVER (ORDER BY encounter_count DESC) AS provider_rank FROM (SELECT provider_id, COUNT(*) AS encounter_count FROM encounters GROUP BY provider_id);",
-            "hint": "Count encounters by provider in a subquery, then apply RANK() over encounter_count DESC.",
-            "executiveTakeaway": null
-          },
-          {
-            "id": "t2_wf_05",
-            "type": "scenario",
-            "title": "Ranking Interpretation",
-            "objective": "Recognize why rankings can be more useful than raw sorted lists.",
-            "sql_focus": [],
-            "relevantTables": [
-              "encounters",
-              "providers"
-            ],
-            "joinHint": "Think comparative position.",
-            "content": {
-              "summary": "Rankings show not just order, but relative position, which often makes discussion easier for leadership.",
-              "prompt": "If leaders want to know the top providers by volume, can a ranked output be easier to discuss than a raw unsorted list?",
-              "expectedAnswer": "yes"
-            },
+            "joinHint": "Use the base table that matches the reporting grain, then join outward only when needed.",
+            "starterQuery": "SELECT encounter_id, patient_id, ROW_NUMBER() OVER (PARTITION BY patient_id ORDER BY admit_date) AS rn FROM encounters;",
+            "solutionQuery": "SELECT encounter_id, patient_id, ROW_NUMBER() OVER (PARTITION BY patient_id ORDER BY admit_date) AS rn FROM encounters;",
+            "hint": "Use ROW_NUMBER with OVER.",
             "executiveTakeaway": {
               "show": true,
-              "metric": "Comparative standing",
-              "whyItMatters": "Rankings clarify position and priority.",
-              "whatToShare": "Use ranks when leadership needs a relative ordering.",
-              "action": "Convert sorted outputs into ranked summaries when useful."
+              "metric": "ROW_NUMBER for Sequential Ranking",
+              "whyItMatters": "Assign row order within groups.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "challenge",
+            "id": "l_059",
+            "title": "RANK and DENSE_RANK",
+            "objective": "Compare ranking methods for operational metrics.",
+            "sql_focus": [
+              "SELECT",
+              "WHERE",
+              "GROUP BY",
+              "JOIN"
+            ],
+            "relevantTables": [
+              "encounters"
+            ],
+            "joinHint": "Use the base table that matches the reporting grain, then join outward only when needed.",
+            "starterQuery": "SELECT provider_id, COUNT(*) AS encounter_count, RANK() OVER (ORDER BY COUNT(*) DESC) AS provider_rank FROM encounters GROUP BY provider_id;",
+            "solutionQuery": "SELECT provider_id, COUNT(*) AS encounter_count, RANK() OVER (ORDER BY COUNT(*) DESC) AS provider_rank FROM encounters GROUP BY provider_id;",
+            "hint": "Rank providers by volume.",
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "RANK and DENSE_RANK",
+              "whyItMatters": "Compare ranking methods for operational metrics.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "challenge",
+            "id": "l_060",
+            "title": "Running Totals with SUM OVER",
+            "objective": "Build cumulative views of performance.",
+            "sql_focus": [
+              "SELECT",
+              "WHERE",
+              "GROUP BY",
+              "JOIN"
+            ],
+            "relevantTables": [
+              "encounters"
+            ],
+            "joinHint": "Use the base table that matches the reporting grain, then join outward only when needed.",
+            "starterQuery": "SELECT admit_date, COUNT(*) AS daily_encounters, SUM(COUNT(*)) OVER (ORDER BY admit_date) AS running_total FROM encounters GROUP BY admit_date ORDER BY admit_date;",
+            "solutionQuery": "SELECT admit_date, COUNT(*) AS daily_encounters, SUM(COUNT(*)) OVER (ORDER BY admit_date) AS running_total FROM encounters GROUP BY admit_date ORDER BY admit_date;",
+            "hint": "Build a running total.",
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Running Totals with SUM OVER",
+              "whyItMatters": "Build cumulative views of performance.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "challenge",
+            "id": "l_061",
+            "title": "Partitioning Data with PARTITION BY",
+            "objective": "Restart calculations across groups.",
+            "sql_focus": [
+              "SELECT",
+              "WHERE",
+              "GROUP BY",
+              "JOIN"
+            ],
+            "relevantTables": [
+              "encounters"
+            ],
+            "joinHint": "Use the base table that matches the reporting grain, then join outward only when needed.",
+            "starterQuery": "SELECT patient_id, encounter_id, ROW_NUMBER() OVER (PARTITION BY patient_id ORDER BY admit_date DESC) AS recent_rank FROM encounters;",
+            "solutionQuery": "SELECT patient_id, encounter_id, ROW_NUMBER() OVER (PARTITION BY patient_id ORDER BY admit_date DESC) AS recent_rank FROM encounters;",
+            "hint": "Use PARTITION BY patient_id.",
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Partitioning Data with PARTITION BY",
+              "whyItMatters": "Restart calculations across groups.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "challenge",
+            "id": "l_062",
+            "title": "LAG and LEAD for Temporal Analysis",
+            "objective": "Compare events across time.",
+            "sql_focus": [
+              "SELECT",
+              "WHERE",
+              "GROUP BY",
+              "JOIN"
+            ],
+            "relevantTables": [
+              "encounters"
+            ],
+            "joinHint": "Use the base table that matches the reporting grain, then join outward only when needed.",
+            "starterQuery": "SELECT patient_id, admit_date, LAG(admit_date) OVER (PARTITION BY patient_id ORDER BY admit_date) AS prior_admit FROM encounters;",
+            "solutionQuery": "SELECT patient_id, admit_date, LAG(admit_date) OVER (PARTITION BY patient_id ORDER BY admit_date) AS prior_admit FROM encounters;",
+            "hint": "Use LAG across ordered encounters.",
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "LAG and LEAD for Temporal Analysis",
+              "whyItMatters": "Compare events across time.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "scenario",
+            "id": "l_063",
+            "title": "Window Function Capstone: Patient Visit Trends",
+            "objective": "Analyze trends with analytic functions.",
+            "relevantTables": [
+              "patients",
+              "encounters",
+              "claims",
+              "charges"
+            ],
+            "joinHint": "Think about the correct grain, the business audience, and the operational consequence.",
+            "summary": "Analyze trends with analytic functions.",
+            "prompt": "Explain how you would approach 'Window Function Capstone: Patient Visit Trends' in a CareOps hospital analytics context. Mention the likely data sources, the business interpretation, and one practical action.",
+            "expectedKeywords": [
+              "data",
+              "insight",
+              "action"
+            ],
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Window Function Capstone: Patient Visit Trends",
+              "whyItMatters": "Analyze trends with analytic functions.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
             }
           }
         ]
       },
       {
-        "id": "readmissions_build_logic",
-        "title": "Readmissions Build Logic",
-        "order": 9,
+        "id": "data_manipulation_and_management",
+        "title": "Data Manipulation and Management",
+        "order": 5,
         "lessons": [
           {
-            "id": "t2_rd_01",
-            "type": "concept",
-            "title": "Readmissions Logic Foundations",
-            "objective": "Understand how a readmissions metric links an index encounter to a later return encounter.",
+            "kind": "challenge",
+            "id": "l_064",
+            "title": "INSERT Statements",
+            "objective": "Add new rows to a table.",
             "sql_focus": [
-              "JOIN",
-              "WHERE",
-              "DATE LOGIC"
-            ],
-            "relevantTables": [
-              "encounters",
-              "readmissions"
-            ],
-            "joinHint": "Readmissions metrics depend on qualifying index events and a later return within the defined window.",
-            "content": {
-              "summary": "A readmissions metric is only meaningful when the index population, return window, and exclusions are clearly specified.",
-              "bullets": [
-                "The index event must be defined",
-                "The return event must occur after the index event",
-                "The time window matters",
-                "Specification consistency matters as much as SQL"
-              ],
-              "hospitalExample": "A 30-day readmission rate changes immediately if one analyst includes observation discharges and another does not."
-            },
-            "executiveTakeaway": {
-              "show": true,
-              "metric": "Readmission measure specification",
-              "whyItMatters": "Metric definitions drive the trustworthiness of the rate.",
-              "whatToShare": "Document the index definition and return window before sharing the rate.",
-              "action": "Validate specification before trend interpretation."
-            }
-          },
-          {
-            "id": "t2_rd_02",
-            "type": "challenge",
-            "title": "Qualifying Index Encounters",
-            "objective": "Return encounter_id, patient_id, and discharge_date for inpatient encounters with a non-null discharge_date.",
-            "sql_focus": [
-              "WHERE"
-            ],
-            "relevantTables": [
-              "encounters"
-            ],
-            "joinHint": "No join needed.",
-            "starterQuery": "SELECT encounter_id, patient_id, discharge_date FROM encounters WHERE encounter_type = 'Inpatient' AND discharge_date IS NOT NULL;",
-            "solutionQuery": "SELECT encounter_id, patient_id, discharge_date FROM encounters WHERE encounter_type = 'Inpatient' AND discharge_date IS NOT NULL;",
-            "hint": "Filter to encounter_type = 'Inpatient' and discharge_date IS NOT NULL.",
-            "executiveTakeaway": null
-          },
-          {
-            "id": "t2_rd_03",
-            "type": "scenario",
-            "title": "Readmission Governance",
-            "objective": "Recognize why inconsistent denominator logic breaks comparability.",
-            "sql_focus": [],
-            "relevantTables": [
-              "encounters"
-            ],
-            "joinHint": "Think consistent specification.",
-            "content": {
-              "summary": "Even perfectly written SQL produces untrustworthy rates if the business definition is not standardized.",
-              "prompt": "If one report excludes observation stays from the index denominator and another includes them, are the readmission rates directly comparable?",
-              "expectedAnswer": "no"
-            },
-            "executiveTakeaway": {
-              "show": true,
-              "metric": "Readmission comparability",
-              "whyItMatters": "Different denominators produce different rates.",
-              "whatToShare": "Standardize what counts as an eligible index event.",
-              "action": "Do not compare rates built from different specifications."
-            }
-          },
-          {
-            "id": "t2_rd_04",
-            "type": "challenge",
-            "title": "Count 30-Day Readmission Flags by Facility",
-            "objective": "Return facility and readmit_count for rows where readmit_within_30_days = 1.",
-            "sql_focus": [
+              "SELECT",
               "WHERE",
               "GROUP BY",
-              "COUNT"
+              "JOIN"
             ],
             "relevantTables": [
-              "readmissions"
+              "providers"
             ],
-            "joinHint": "No join needed.",
-            "starterQuery": "SELECT facility, COUNT(*) AS readmit_count FROM readmissions WHERE readmit_within_30_days = 1 GROUP BY facility;",
-            "solutionQuery": "SELECT facility, COUNT(*) AS readmit_count FROM readmissions WHERE readmit_within_30_days = 1 GROUP BY facility;",
-            "hint": "Filter readmit_within_30_days = 1, then group by facility.",
-            "executiveTakeaway": null
-          },
-          {
-            "id": "t2_rd_05",
-            "type": "scenario",
-            "title": "Operational Interpretation of Readmissions",
-            "objective": "Recognize why readmission counts alone are not enough without denominator context.",
-            "sql_focus": [],
-            "relevantTables": [
-              "readmissions",
-              "encounters"
-            ],
-            "joinHint": "Think rate, not just volume.",
-            "content": {
-              "summary": "Facilities with higher discharge volume may naturally have more readmission counts, so counts alone can be misleading.",
-              "prompt": "If one facility has more readmissions but also far more discharges, should leadership usually want a readmission rate instead of count alone?",
-              "expectedAnswer": "yes"
-            },
+            "joinHint": "Use the base table that matches the reporting grain, then join outward only when needed.",
+            "starterQuery": "INSERT INTO providers (provider_id, provider_name, specialty, facility) VALUES (999, 'Taylor Example', 'General Medicine', 'Main Campus');",
+            "solutionQuery": "INSERT INTO providers (provider_id, provider_name, specialty, facility) VALUES (999, 'Taylor Example', 'General Medicine', 'Main Campus');",
+            "hint": "Insert a new provider row.",
             "executiveTakeaway": {
               "show": true,
-              "metric": "Rate-based readmission review",
-              "whyItMatters": "Counts do not account for underlying discharge volume.",
-              "whatToShare": "Pair readmission counts with denominator-based rates.",
-              "action": "Avoid interpreting counts without context."
+              "metric": "INSERT Statements",
+              "whyItMatters": "Add new rows to a table.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "challenge",
+            "id": "l_065",
+            "title": "UPDATE Statements",
+            "objective": "Modify existing records safely.",
+            "sql_focus": [
+              "SELECT",
+              "WHERE",
+              "GROUP BY",
+              "JOIN"
+            ],
+            "relevantTables": [
+              "providers"
+            ],
+            "joinHint": "Use the base table that matches the reporting grain, then join outward only when needed.",
+            "starterQuery": "UPDATE providers SET facility = 'North Campus' WHERE provider_id = 1;",
+            "solutionQuery": "UPDATE providers SET facility = 'North Campus' WHERE provider_id = 1;",
+            "hint": "Update one provider row.",
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "UPDATE Statements",
+              "whyItMatters": "Modify existing records safely.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "challenge",
+            "id": "l_066",
+            "title": "DELETE Statements",
+            "objective": "Remove records with precise criteria.",
+            "sql_focus": [
+              "SELECT",
+              "WHERE",
+              "GROUP BY",
+              "JOIN"
+            ],
+            "relevantTables": [
+              "providers"
+            ],
+            "joinHint": "Use the base table that matches the reporting grain, then join outward only when needed.",
+            "starterQuery": "DELETE FROM providers WHERE provider_id = 999;",
+            "solutionQuery": "DELETE FROM providers WHERE provider_id = 999;",
+            "hint": "Delete the example provider row.",
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "DELETE Statements",
+              "whyItMatters": "Remove records with precise criteria.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "challenge",
+            "id": "l_067",
+            "title": "Creating Tables with CREATE TABLE",
+            "objective": "Define new storage structures.",
+            "sql_focus": [
+              "SELECT",
+              "WHERE",
+              "GROUP BY",
+              "JOIN"
+            ],
+            "relevantTables": [
+              "sandbox_notes"
+            ],
+            "joinHint": "Use the base table that matches the reporting grain, then join outward only when needed.",
+            "starterQuery": "CREATE TABLE sandbox_notes (note_id INTEGER, note_text TEXT);",
+            "solutionQuery": "CREATE TABLE sandbox_notes (note_id INTEGER, note_text TEXT);",
+            "hint": "Use CREATE TABLE with two columns.",
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Creating Tables with CREATE TABLE",
+              "whyItMatters": "Define new storage structures.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "challenge",
+            "id": "l_068",
+            "title": "Modifying Tables with ALTER TABLE",
+            "objective": "Change a table without recreating it.",
+            "sql_focus": [
+              "SELECT",
+              "WHERE",
+              "GROUP BY",
+              "JOIN"
+            ],
+            "relevantTables": [
+              "sandbox_notes"
+            ],
+            "joinHint": "Use the base table that matches the reporting grain, then join outward only when needed.",
+            "starterQuery": "ALTER TABLE sandbox_notes ADD COLUMN created_by TEXT;",
+            "solutionQuery": "ALTER TABLE sandbox_notes ADD COLUMN created_by TEXT;",
+            "hint": "Use ALTER TABLE ADD COLUMN.",
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Modifying Tables with ALTER TABLE",
+              "whyItMatters": "Change a table without recreating it.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "concept",
+            "id": "l_069",
+            "title": "Dropping Objects with DROP",
+            "objective": "Recognize destructive statements and when not to use them.",
+            "sql_focus": [
+              "Concept"
+            ],
+            "relevantTables": [
+              "patients",
+              "encounters",
+              "claims",
+              "charges"
+            ],
+            "joinHint": "No join required unless you choose to connect related data for context.",
+            "summary": "Recognize destructive statements and when not to use them.",
+            "bullets": [
+              "Dropping Objects with DROP is part of the Data Manipulation and Management module.",
+              "Focus on how the concept changes measurement quality, business meaning, or query structure.",
+              "Tie the concept back to real hospital analytics whenever possible."
+            ],
+            "example": "In CareOps, dropping objects with drop supports clearer operational, financial, or quality analysis.",
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Dropping Objects with DROP",
+              "whyItMatters": "Recognize destructive statements and when not to use them.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "scenario",
+            "id": "l_070",
+            "title": "CRUD Capstone: Maintaining Provider Records",
+            "objective": "Apply data management statements in context.",
+            "relevantTables": [
+              "patients",
+              "encounters",
+              "claims",
+              "charges"
+            ],
+            "joinHint": "Think about the correct grain, the business audience, and the operational consequence.",
+            "summary": "Apply data management statements in context.",
+            "prompt": "Explain how you would approach 'CRUD Capstone: Maintaining Provider Records' in a CareOps hospital analytics context. Mention the likely data sources, the business interpretation, and one practical action.",
+            "expectedKeywords": [
+              "data",
+              "insight",
+              "action"
+            ],
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "CRUD Capstone: Maintaining Provider Records",
+              "whyItMatters": "Apply data management statements in context.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
             }
           }
         ]
-      },
+      }
+    ]
+  },
+  {
+    "id": "track_applied",
+    "title": "Applied",
+    "description": "Applied learning path for CareOps hospital analytics.",
+    "order": 3,
+    "categories": [
       {
-        "id": "observation_and_throughput_logic",
-        "title": "Observation and Throughput Logic",
-        "order": 10,
+        "id": "healthcare_operational_analytics",
+        "title": "Healthcare Operational Analytics",
+        "order": 1,
         "lessons": [
           {
-            "id": "t2_ot_01",
-            "type": "concept",
-            "title": "Observation and Throughput Reporting",
-            "objective": "Understand how observation and discharge workflow metrics reflect operational efficiency.",
+            "kind": "challenge",
+            "id": "l_071",
+            "title": "Calculating Average Length of Stay",
+            "objective": "Measure average LOS using encounter data.",
             "sql_focus": [
-              "AVG",
+              "SELECT",
               "WHERE",
-              "GROUP BY"
+              "GROUP BY",
+              "JOIN"
             ],
             "relevantTables": [
-              "observations",
-              "discharges",
               "encounters"
             ],
-            "joinHint": "Observation and throughput metrics often focus on hours, delays, and conversion patterns.",
-            "content": {
-              "summary": "Throughput metrics explain how efficiently patients move through the hospital, while observation metrics explain status management and prolonged stays.",
-              "bullets": [
-                "Observation hours reflect utilization burden",
-                "Discharge timing reflects operational friction",
-                "Department and facility rollups support manager action",
-                "Threshold-based exceptions are common"
-              ],
-              "hospitalExample": "A prolonged observation stay may indicate throughput bottlenecks, status issues, or downstream discharge barriers."
-            },
+            "joinHint": "Use the base table that matches the reporting grain, then join outward only when needed.",
+            "starterQuery": "SELECT AVG(length_of_stay) AS avg_los FROM encounters;",
+            "solutionQuery": "SELECT AVG(length_of_stay) AS avg_los FROM encounters;",
+            "hint": "Average the length_of_stay field.",
             "executiveTakeaway": {
               "show": true,
-              "metric": "Throughput and status efficiency",
-              "whyItMatters": "These measures affect flow, capacity, and patient experience.",
-              "whatToShare": "Highlight long stays, delayed departures, and conversion patterns.",
-              "action": "Investigate units with persistent delay patterns."
+              "metric": "Calculating Average Length of Stay",
+              "whyItMatters": "Measure average LOS using encounter data.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
             }
           },
           {
-            "id": "t2_ot_02",
-            "type": "challenge",
-            "title": "Average Observation Hours by Facility",
-            "objective": "Return facility and avg_obs_hours.",
+            "kind": "challenge",
+            "id": "l_072",
+            "title": "Emergency Department Throughput Analysis",
+            "objective": "Analyze wait and throughput times.",
             "sql_focus": [
+              "SELECT",
+              "WHERE",
               "GROUP BY",
-              "AVG"
+              "JOIN"
+            ],
+            "relevantTables": [
+              "charges",
+              "discharges"
+            ],
+            "joinHint": "Use the base table that matches the reporting grain, then join outward only when needed.",
+            "starterQuery": "SELECT facility, AVG(discharge_order_minutes) AS avg_order_to_discharge FROM discharges GROUP BY facility;",
+            "solutionQuery": "SELECT facility, AVG(discharge_order_minutes) AS avg_order_to_discharge FROM discharges GROUP BY facility;",
+            "hint": "Use discharges for throughput timing.",
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Emergency Department Throughput Analysis",
+              "whyItMatters": "Analyze wait and throughput times.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "challenge",
+            "id": "l_073",
+            "title": "Bed Utilization and Capacity Metrics",
+            "objective": "Evaluate how beds are being used.",
+            "sql_focus": [
+              "SELECT",
+              "WHERE",
+              "GROUP BY",
+              "JOIN"
+            ],
+            "relevantTables": [
+              "encounters"
+            ],
+            "joinHint": "Use the base table that matches the reporting grain, then join outward only when needed.",
+            "starterQuery": "SELECT facility, COUNT(*) AS active_encounters FROM encounters GROUP BY facility;",
+            "solutionQuery": "SELECT facility, COUNT(*) AS active_encounters FROM encounters GROUP BY facility;",
+            "hint": "Summarize active encounter volume by facility.",
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Bed Utilization and Capacity Metrics",
+              "whyItMatters": "Evaluate how beds are being used.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "challenge",
+            "id": "l_074",
+            "title": "Observation vs. Inpatient Conversion Rates",
+            "objective": "Calculate conversion and escalation rates.",
+            "sql_focus": [
+              "SELECT",
+              "WHERE",
+              "GROUP BY",
+              "JOIN"
             ],
             "relevantTables": [
               "observations"
             ],
-            "joinHint": "No join needed.",
-            "starterQuery": "SELECT facility, AVG(obs_hours) AS avg_obs_hours FROM observations GROUP BY facility;",
-            "solutionQuery": "SELECT facility, AVG(obs_hours) AS avg_obs_hours FROM observations GROUP BY facility;",
-            "hint": "Group by facility and average obs_hours.",
-            "executiveTakeaway": null
-          },
-          {
-            "id": "t2_ot_03",
-            "type": "scenario",
-            "title": "Observation Review Scenario",
-            "objective": "Recognize why average observation hours should be paired with long-stay exceptions.",
-            "sql_focus": [],
-            "relevantTables": [
-              "observations"
-            ],
-            "joinHint": "Think mean plus outliers.",
-            "content": {
-              "summary": "An average can hide whether the issue is widespread or driven by a smaller number of very long stays.",
-              "prompt": "If average observation hours rise, should you usually also look at long observation cases rather than stopping at the average alone?",
-              "expectedAnswer": "yes"
-            },
+            "joinHint": "Use the base table that matches the reporting grain, then join outward only when needed.",
+            "starterQuery": "SELECT facility, AVG(CASE WHEN converted_to_inpatient = 1 THEN 1.0 ELSE 0 END) AS conversion_rate FROM observations GROUP BY facility;",
+            "solutionQuery": "SELECT facility, AVG(CASE WHEN converted_to_inpatient = 1 THEN 1.0 ELSE 0 END) AS conversion_rate FROM observations GROUP BY facility;",
+            "hint": "Calculate observation conversion rate.",
             "executiveTakeaway": {
               "show": true,
-              "metric": "Observation exception review",
-              "whyItMatters": "Averages alone can hide operational outliers.",
-              "whatToShare": "Pair average duration with long-stay exception counts.",
-              "action": "Do not stop at the average."
+              "metric": "Observation vs. Inpatient Conversion Rates",
+              "whyItMatters": "Calculate conversion and escalation rates.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
             }
           },
           {
-            "id": "t2_ot_04",
-            "type": "challenge",
-            "title": "Discharge Delays Over 240 Minutes",
-            "objective": "Return discharge_id, department, and departure_minutes for discharges where departure_minutes > 240.",
+            "kind": "challenge",
+            "id": "l_075",
+            "title": "Provider Productivity and Visit Volumes",
+            "objective": "Measure provider activity and volume.",
             "sql_focus": [
-              "WHERE"
+              "SELECT",
+              "WHERE",
+              "GROUP BY",
+              "JOIN"
             ],
             "relevantTables": [
-              "discharges"
+              "encounters"
             ],
-            "joinHint": "No join needed.",
-            "starterQuery": "SELECT discharge_id, department, departure_minutes FROM discharges WHERE departure_minutes > 240;",
-            "solutionQuery": "SELECT discharge_id, department, departure_minutes FROM discharges WHERE departure_minutes > 240;",
-            "hint": "Filter departure_minutes > 240.",
-            "executiveTakeaway": null
-          },
-          {
-            "id": "t2_ot_05",
-            "type": "scenario",
-            "title": "Department-Level Throughput Action",
-            "objective": "Recognize why throughput problems should usually be broken out by department.",
-            "sql_focus": [],
-            "relevantTables": [
-              "discharges"
-            ],
-            "joinHint": "Think manager actionability.",
-            "content": {
-              "summary": "A hospital total confirms the problem exists, but department-level results show where leaders can intervene.",
-              "prompt": "If discharge delays over 240 minutes are increasing, should leadership usually want the result broken out by department?",
-              "expectedAnswer": "yes"
-            },
+            "joinHint": "Use the base table that matches the reporting grain, then join outward only when needed.",
+            "starterQuery": "SELECT provider_id, COUNT(*) AS encounter_count FROM encounters GROUP BY provider_id ORDER BY encounter_count DESC;",
+            "solutionQuery": "SELECT provider_id, COUNT(*) AS encounter_count FROM encounters GROUP BY provider_id ORDER BY encounter_count DESC;",
+            "hint": "Count encounters by provider.",
             "executiveTakeaway": {
               "show": true,
-              "metric": "Department throughput accountability",
-              "whyItMatters": "Operational action happens at the unit level.",
-              "whatToShare": "Move from hospital totals to department-specific exception views.",
-              "action": "Tie throughput problems to accountable areas."
+              "metric": "Provider Productivity and Visit Volumes",
+              "whyItMatters": "Measure provider activity and volume.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "challenge",
+            "id": "l_076",
+            "title": "Patient No-Show Rate Analysis",
+            "objective": "Quantify access leakage from no-shows.",
+            "sql_focus": [
+              "SELECT",
+              "WHERE",
+              "GROUP BY",
+              "JOIN"
+            ],
+            "relevantTables": [
+              "appointments"
+            ],
+            "joinHint": "Use the base table that matches the reporting grain, then join outward only when needed.",
+            "starterQuery": "SELECT department, AVG(CASE WHEN status = 'No Show' THEN 1.0 ELSE 0 END) AS no_show_rate FROM appointments GROUP BY department;",
+            "solutionQuery": "SELECT department, AVG(CASE WHEN status = 'No Show' THEN 1.0 ELSE 0 END) AS no_show_rate FROM appointments GROUP BY department;",
+            "hint": "Calculate no-show rate from appointments.",
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Patient No-Show Rate Analysis",
+              "whyItMatters": "Quantify access leakage from no-shows.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "scenario",
+            "id": "l_077",
+            "title": "Operational Analytics Capstone",
+            "objective": "Tie operational metrics together in one story.",
+            "relevantTables": [
+              "patients",
+              "encounters",
+              "claims",
+              "charges"
+            ],
+            "joinHint": "Think about the correct grain, the business audience, and the operational consequence.",
+            "summary": "Tie operational metrics together in one story.",
+            "prompt": "Explain how you would approach 'Operational Analytics Capstone' in a CareOps hospital analytics context. Mention the likely data sources, the business interpretation, and one practical action.",
+            "expectedKeywords": [
+              "data",
+              "insight",
+              "action"
+            ],
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Operational Analytics Capstone",
+              "whyItMatters": "Tie operational metrics together in one story.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
             }
           }
         ]
       },
       {
-        "id": "revenue_cycle_denials_analysis",
-        "title": "Revenue Cycle and Denials Analysis",
-        "order": 11,
+        "id": "revenue_cycle_analytics",
+        "title": "Revenue Cycle Analytics",
+        "order": 2,
         "lessons": [
           {
-            "id": "t2_dn_01",
-            "type": "concept",
-            "title": "Denials as a Revenue Cycle KPI",
-            "objective": "Understand why denials should be analyzed by both count and dollars.",
+            "kind": "concept",
+            "id": "l_078",
+            "title": "Charges, Claims, and Payments Overview",
+            "objective": "Understand the main revenue cycle entities.",
             "sql_focus": [
-              "WHERE",
-              "GROUP BY",
-              "SUM",
-              "COUNT"
+              "Concept"
             ],
             "relevantTables": [
-              "claims"
+              "patients",
+              "encounters",
+              "claims",
+              "charges"
             ],
-            "joinHint": "Denials can be measured as volume, dollar exposure, or both.",
-            "content": {
-              "summary": "A denial analysis should usually separate denial count from denied dollars because the largest financial issue is not always the largest volume issue.",
-              "bullets": [
-                "Count shows operational workload",
-                "Denied dollars show financial impact",
-                "Payer grouping helps focus action",
-                "High-dollar denials may deserve priority even at lower volume"
-              ],
-              "hospitalExample": "A payer with fewer denied claims can still be the biggest problem if its denied dollars are much higher than everyone else's."
-            },
+            "joinHint": "No join required unless you choose to connect related data for context.",
+            "summary": "Understand the main revenue cycle entities.",
+            "bullets": [
+              "Charges, Claims, and Payments Overview is part of the Revenue Cycle Analytics module.",
+              "Focus on how the concept changes measurement quality, business meaning, or query structure.",
+              "Tie the concept back to real hospital analytics whenever possible."
+            ],
+            "example": "In CareOps, charges, claims, and payments overview supports clearer operational, financial, or quality analysis.",
             "executiveTakeaway": {
               "show": true,
-              "metric": "Denial count and dollar exposure",
-              "whyItMatters": "Revenue cycle action depends on both workload and financial impact.",
-              "whatToShare": "Present both denial count and denied dollars.",
-              "action": "Prioritize high-dollar categories first."
+              "metric": "Charges, Claims, and Payments Overview",
+              "whyItMatters": "Understand the main revenue cycle entities.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
             }
           },
           {
-            "id": "t2_dn_02",
-            "type": "challenge",
-            "title": "Denied Claims by Payer",
-            "objective": "Return payer and denied_claim_count.",
+            "kind": "challenge",
+            "id": "l_079",
+            "title": "Payer Mix Analysis",
+            "objective": "Quantify the distribution of payer types.",
             "sql_focus": [
+              "SELECT",
               "WHERE",
               "GROUP BY",
-              "COUNT"
+              "JOIN"
             ],
             "relevantTables": [
               "claims"
             ],
-            "joinHint": "No join needed.",
-            "starterQuery": "SELECT payer, COUNT(*) AS denied_claim_count FROM claims WHERE claim_status = 'Denied' GROUP BY payer;",
-            "solutionQuery": "SELECT payer, COUNT(*) AS denied_claim_count FROM claims WHERE claim_status = 'Denied' GROUP BY payer;",
-            "hint": "Filter denied claims, then group by payer.",
-            "executiveTakeaway": null
-          },
-          {
-            "id": "t2_dn_03",
-            "type": "scenario",
-            "title": "Count vs Dollars Scenario",
-            "objective": "Recognize why a payer with fewer denials can still be the higher priority issue.",
-            "sql_focus": [],
-            "relevantTables": [
-              "claims"
-            ],
-            "joinHint": "Think financial impact.",
-            "content": {
-              "summary": "Operational focus should not be driven by count alone when dollar exposure differs meaningfully.",
-              "prompt": "If Payer A has fewer denied claims than Payer B but much higher denied dollars, should leadership still consider Payer A a priority?",
-              "expectedAnswer": "yes"
-            },
+            "joinHint": "Use the base table that matches the reporting grain, then join outward only when needed.",
+            "starterQuery": "SELECT payer, COUNT(*) AS claim_count FROM claims GROUP BY payer ORDER BY claim_count DESC;",
+            "solutionQuery": "SELECT payer, COUNT(*) AS claim_count FROM claims GROUP BY payer ORDER BY claim_count DESC;",
+            "hint": "Group claims by payer.",
             "executiveTakeaway": {
               "show": true,
-              "metric": "High-impact denial prioritization",
-              "whyItMatters": "Dollar risk can outweigh raw volume.",
-              "whatToShare": "Separate count-based and dollar-based prioritization.",
-              "action": "Escalate high-dollar denial categories."
+              "metric": "Payer Mix Analysis",
+              "whyItMatters": "Quantify the distribution of payer types.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
             }
           },
           {
-            "id": "t2_dn_04",
-            "type": "challenge",
-            "title": "Denied Dollars by Payer",
-            "objective": "Return payer and denied_dollars ordered highest to lowest.",
+            "kind": "challenge",
+            "id": "l_080",
+            "title": "Denial Rate Calculations",
+            "objective": "Measure denial volume and rate.",
             "sql_focus": [
+              "SELECT",
               "WHERE",
               "GROUP BY",
-              "SUM",
-              "ORDER BY"
+              "JOIN"
             ],
             "relevantTables": [
               "claims"
             ],
-            "joinHint": "No join needed.",
+            "joinHint": "Use the base table that matches the reporting grain, then join outward only when needed.",
+            "starterQuery": "SELECT AVG(CASE WHEN claim_status = 'Denied' THEN 1.0 ELSE 0 END) AS denial_rate FROM claims;",
+            "solutionQuery": "SELECT AVG(CASE WHEN claim_status = 'Denied' THEN 1.0 ELSE 0 END) AS denial_rate FROM claims;",
+            "hint": "Calculate a denial rate from claims.",
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Denial Rate Calculations",
+              "whyItMatters": "Measure denial volume and rate.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "challenge",
+            "id": "l_081",
+            "title": "Days in Accounts Receivable",
+            "objective": "Estimate aging and revenue velocity.",
+            "sql_focus": [
+              "SELECT",
+              "WHERE",
+              "GROUP BY",
+              "JOIN"
+            ],
+            "relevantTables": [
+              "encounters"
+            ],
+            "joinHint": "Use the base table that matches the reporting grain, then join outward only when needed.",
+            "starterQuery": "SELECT AVG(julianday('2026-01-31') - julianday(admit_date)) AS avg_days_open FROM encounters;",
+            "solutionQuery": "SELECT AVG(julianday('2026-01-31') - julianday(admit_date)) AS avg_days_open FROM encounters;",
+            "hint": "Use dates to estimate aging.",
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Days in Accounts Receivable",
+              "whyItMatters": "Estimate aging and revenue velocity.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "challenge",
+            "id": "l_082",
+            "title": "Net vs. Gross Revenue",
+            "objective": "Separate booked revenue from collected value.",
+            "sql_focus": [
+              "SELECT",
+              "WHERE",
+              "GROUP BY",
+              "JOIN"
+            ],
+            "relevantTables": [
+              "charges"
+            ],
+            "joinHint": "Use the base table that matches the reporting grain, then join outward only when needed.",
+            "starterQuery": "SELECT SUM(amount) AS gross_charges, SUM(amount) * 0.82 AS estimated_net_revenue FROM charges;",
+            "solutionQuery": "SELECT SUM(amount) AS gross_charges, SUM(amount) * 0.82 AS estimated_net_revenue FROM charges;",
+            "hint": "Compare gross to estimated net.",
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Net vs. Gross Revenue",
+              "whyItMatters": "Separate booked revenue from collected value.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "challenge",
+            "id": "l_083",
+            "title": "Contractual Adjustments and Write-Offs",
+            "objective": "Recognize the impact of reimbursement rules.",
+            "sql_focus": [
+              "SELECT",
+              "WHERE",
+              "GROUP BY",
+              "JOIN"
+            ],
+            "relevantTables": [
+              "claims"
+            ],
+            "joinHint": "Use the base table that matches the reporting grain, then join outward only when needed.",
+            "starterQuery": "SELECT payer, SUM(billed_amount) * 0.1 AS estimated_adjustments FROM claims GROUP BY payer;",
+            "solutionQuery": "SELECT payer, SUM(billed_amount) * 0.1 AS estimated_adjustments FROM claims GROUP BY payer;",
+            "hint": "Estimate adjustments by payer.",
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Contractual Adjustments and Write-Offs",
+              "whyItMatters": "Recognize the impact of reimbursement rules.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "scenario",
+            "id": "l_084",
+            "title": "Revenue Cycle Capstone",
+            "objective": "Summarize financial performance drivers.",
+            "relevantTables": [
+              "patients",
+              "encounters",
+              "claims",
+              "charges"
+            ],
+            "joinHint": "Think about the correct grain, the business audience, and the operational consequence.",
+            "summary": "Summarize financial performance drivers.",
+            "prompt": "Explain how you would approach 'Revenue Cycle Capstone' in a CareOps hospital analytics context. Mention the likely data sources, the business interpretation, and one practical action.",
+            "expectedKeywords": [
+              "data",
+              "insight",
+              "action"
+            ],
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Revenue Cycle Capstone",
+              "whyItMatters": "Summarize financial performance drivers.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          }
+        ]
+      },
+      {
+        "id": "quality_and_clinical_metrics",
+        "title": "Quality and Clinical Metrics",
+        "order": 3,
+        "lessons": [
+          {
+            "kind": "challenge",
+            "id": "l_085",
+            "title": "30-Day Readmission Rates",
+            "objective": "Calculate readmission performance accurately.",
+            "sql_focus": [
+              "SELECT",
+              "WHERE",
+              "GROUP BY",
+              "JOIN"
+            ],
+            "relevantTables": [
+              "readmissions"
+            ],
+            "joinHint": "Use the base table that matches the reporting grain, then join outward only when needed.",
+            "starterQuery": "SELECT AVG(CASE WHEN readmit_within_30_days = 1 THEN 1.0 ELSE 0 END) AS readmission_rate FROM readmissions;",
+            "solutionQuery": "SELECT AVG(CASE WHEN readmit_within_30_days = 1 THEN 1.0 ELSE 0 END) AS readmission_rate FROM readmissions;",
+            "hint": "Calculate average readmission rate.",
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "30-Day Readmission Rates",
+              "whyItMatters": "Calculate readmission performance accurately.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "concept",
+            "id": "l_086",
+            "title": "Mortality and Complication Indicators",
+            "objective": "Recognize quality and safety metrics.",
+            "sql_focus": [
+              "Concept"
+            ],
+            "relevantTables": [
+              "patients",
+              "encounters",
+              "claims",
+              "charges"
+            ],
+            "joinHint": "No join required unless you choose to connect related data for context.",
+            "summary": "Recognize quality and safety metrics.",
+            "bullets": [
+              "Mortality and Complication Indicators is part of the Quality and Clinical Metrics module.",
+              "Focus on how the concept changes measurement quality, business meaning, or query structure.",
+              "Tie the concept back to real hospital analytics whenever possible."
+            ],
+            "example": "In CareOps, mortality and complication indicators supports clearer operational, financial, or quality analysis.",
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Mortality and Complication Indicators",
+              "whyItMatters": "Recognize quality and safety metrics.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "challenge",
+            "id": "l_087",
+            "title": "Chronic Disease Cohort Identification",
+            "objective": "Define cohorts for analytics.",
+            "sql_focus": [
+              "SELECT",
+              "WHERE",
+              "GROUP BY",
+              "JOIN"
+            ],
+            "relevantTables": [
+              "patients"
+            ],
+            "joinHint": "Use the base table that matches the reporting grain, then join outward only when needed.",
+            "starterQuery": "SELECT patient_id, risk_score FROM patients WHERE risk_score >= 8;",
+            "solutionQuery": "SELECT patient_id, risk_score FROM patients WHERE risk_score >= 8;",
+            "hint": "Use risk_score to define a high-risk cohort.",
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Chronic Disease Cohort Identification",
+              "whyItMatters": "Define cohorts for analytics.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "challenge",
+            "id": "l_088",
+            "title": "Preventive Care Compliance",
+            "objective": "Track compliance with expected care steps.",
+            "sql_focus": [
+              "SELECT",
+              "WHERE",
+              "GROUP BY",
+              "JOIN"
+            ],
+            "relevantTables": [
+              "patients"
+            ],
+            "joinHint": "Use the base table that matches the reporting grain, then join outward only when needed.",
+            "starterQuery": "SELECT insurance_type, AVG(CASE WHEN risk_score <= 5 THEN 1.0 ELSE 0 END) AS estimated_compliance_rate FROM patients GROUP BY insurance_type;",
+            "solutionQuery": "SELECT insurance_type, AVG(CASE WHEN risk_score <= 5 THEN 1.0 ELSE 0 END) AS estimated_compliance_rate FROM patients GROUP BY insurance_type;",
+            "hint": "Create a simple compliance estimate by group.",
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Preventive Care Compliance",
+              "whyItMatters": "Track compliance with expected care steps.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "challenge",
+            "id": "l_089",
+            "title": "Risk Stratification Using SQL",
+            "objective": "Segment populations by risk.",
+            "sql_focus": [
+              "SELECT",
+              "WHERE",
+              "GROUP BY",
+              "JOIN"
+            ],
+            "relevantTables": [
+              "patients"
+            ],
+            "joinHint": "Use the base table that matches the reporting grain, then join outward only when needed.",
+            "starterQuery": "SELECT CASE WHEN risk_score >= 8 THEN 'High' WHEN risk_score >= 5 THEN 'Moderate' ELSE 'Low' END AS risk_band, COUNT(*) AS patient_count FROM patients GROUP BY risk_band;",
+            "solutionQuery": "SELECT CASE WHEN risk_score >= 8 THEN 'High' WHEN risk_score >= 5 THEN 'Moderate' ELSE 'Low' END AS risk_band, COUNT(*) AS patient_count FROM patients GROUP BY risk_band;",
+            "hint": "Stratify by risk_score using CASE.",
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Risk Stratification Using SQL",
+              "whyItMatters": "Segment populations by risk.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "challenge",
+            "id": "l_090",
+            "title": "Clinical Outcome Trend Analysis",
+            "objective": "Evaluate outcomes over time.",
+            "sql_focus": [
+              "SELECT",
+              "WHERE",
+              "GROUP BY",
+              "JOIN"
+            ],
+            "relevantTables": [
+              "encounters"
+            ],
+            "joinHint": "Use the base table that matches the reporting grain, then join outward only when needed.",
+            "starterQuery": "SELECT admit_date, AVG(length_of_stay) AS avg_los FROM encounters GROUP BY admit_date ORDER BY admit_date;",
+            "solutionQuery": "SELECT admit_date, AVG(length_of_stay) AS avg_los FROM encounters GROUP BY admit_date ORDER BY admit_date;",
+            "hint": "Trend LOS by date.",
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Clinical Outcome Trend Analysis",
+              "whyItMatters": "Evaluate outcomes over time.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "scenario",
+            "id": "l_091",
+            "title": "Quality Metrics Capstone",
+            "objective": "Translate clinical metrics into action.",
+            "relevantTables": [
+              "patients",
+              "encounters",
+              "claims",
+              "charges"
+            ],
+            "joinHint": "Think about the correct grain, the business audience, and the operational consequence.",
+            "summary": "Translate clinical metrics into action.",
+            "prompt": "Explain how you would approach 'Quality Metrics Capstone' in a CareOps hospital analytics context. Mention the likely data sources, the business interpretation, and one practical action.",
+            "expectedKeywords": [
+              "data",
+              "insight",
+              "action"
+            ],
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Quality Metrics Capstone",
+              "whyItMatters": "Translate clinical metrics into action.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          }
+        ]
+      },
+      {
+        "id": "dimensional_modeling_for_analytics",
+        "title": "Dimensional Modeling for Analytics",
+        "order": 4,
+        "lessons": [
+          {
+            "kind": "concept",
+            "id": "l_092",
+            "title": "Introduction to Data Warehousing Concepts",
+            "objective": "Understand analytic storage models.",
+            "sql_focus": [
+              "Concept"
+            ],
+            "relevantTables": [
+              "patients",
+              "encounters",
+              "claims",
+              "charges"
+            ],
+            "joinHint": "No join required unless you choose to connect related data for context.",
+            "summary": "Understand analytic storage models.",
+            "bullets": [
+              "Introduction to Data Warehousing Concepts is part of the Dimensional Modeling for Analytics module.",
+              "Focus on how the concept changes measurement quality, business meaning, or query structure.",
+              "Tie the concept back to real hospital analytics whenever possible."
+            ],
+            "example": "In CareOps, introduction to data warehousing concepts supports clearer operational, financial, or quality analysis.",
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Introduction to Data Warehousing Concepts",
+              "whyItMatters": "Understand analytic storage models.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "concept",
+            "id": "l_093",
+            "title": "Fact and Dimension Tables",
+            "objective": "Differentiate measures from descriptors.",
+            "sql_focus": [
+              "Concept"
+            ],
+            "relevantTables": [
+              "patients",
+              "encounters",
+              "claims",
+              "charges"
+            ],
+            "joinHint": "No join required unless you choose to connect related data for context.",
+            "summary": "Differentiate measures from descriptors.",
+            "bullets": [
+              "Fact and Dimension Tables is part of the Dimensional Modeling for Analytics module.",
+              "Focus on how the concept changes measurement quality, business meaning, or query structure.",
+              "Tie the concept back to real hospital analytics whenever possible."
+            ],
+            "example": "In CareOps, fact and dimension tables supports clearer operational, financial, or quality analysis.",
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Fact and Dimension Tables",
+              "whyItMatters": "Differentiate measures from descriptors.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "concept",
+            "id": "l_094",
+            "title": "Star and Snowflake Schemas",
+            "objective": "Compare common warehouse patterns.",
+            "sql_focus": [
+              "Concept"
+            ],
+            "relevantTables": [
+              "patients",
+              "encounters",
+              "claims",
+              "charges"
+            ],
+            "joinHint": "No join required unless you choose to connect related data for context.",
+            "summary": "Compare common warehouse patterns.",
+            "bullets": [
+              "Star and Snowflake Schemas is part of the Dimensional Modeling for Analytics module.",
+              "Focus on how the concept changes measurement quality, business meaning, or query structure.",
+              "Tie the concept back to real hospital analytics whenever possible."
+            ],
+            "example": "In CareOps, star and snowflake schemas supports clearer operational, financial, or quality analysis.",
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Star and Snowflake Schemas",
+              "whyItMatters": "Compare common warehouse patterns.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "scenario",
+            "id": "l_095",
+            "title": "Building a Healthcare Fact Table",
+            "objective": "Design a fact table for encounters or claims.",
+            "relevantTables": [
+              "patients",
+              "encounters",
+              "claims",
+              "charges"
+            ],
+            "joinHint": "Think about the correct grain, the business audience, and the operational consequence.",
+            "summary": "Design a fact table for encounters or claims.",
+            "prompt": "Explain how you would approach 'Building a Healthcare Fact Table' in a CareOps hospital analytics context. Mention the likely data sources, the business interpretation, and one practical action.",
+            "expectedKeywords": [
+              "data",
+              "insight",
+              "action"
+            ],
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Building a Healthcare Fact Table",
+              "whyItMatters": "Design a fact table for encounters or claims.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "concept",
+            "id": "l_096",
+            "title": "Slowly Changing Dimensions",
+            "objective": "Handle historical attribute changes.",
+            "sql_focus": [
+              "Concept"
+            ],
+            "relevantTables": [
+              "patients",
+              "encounters",
+              "claims",
+              "charges"
+            ],
+            "joinHint": "No join required unless you choose to connect related data for context.",
+            "summary": "Handle historical attribute changes.",
+            "bullets": [
+              "Slowly Changing Dimensions is part of the Dimensional Modeling for Analytics module.",
+              "Focus on how the concept changes measurement quality, business meaning, or query structure.",
+              "Tie the concept back to real hospital analytics whenever possible."
+            ],
+            "example": "In CareOps, slowly changing dimensions supports clearer operational, financial, or quality analysis.",
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Slowly Changing Dimensions",
+              "whyItMatters": "Handle historical attribute changes.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "scenario",
+            "id": "l_097",
+            "title": "Designing an Analytical Data Mart",
+            "objective": "Plan a focused reporting layer.",
+            "relevantTables": [
+              "patients",
+              "encounters",
+              "claims",
+              "charges"
+            ],
+            "joinHint": "Think about the correct grain, the business audience, and the operational consequence.",
+            "summary": "Plan a focused reporting layer.",
+            "prompt": "Explain how you would approach 'Designing an Analytical Data Mart' in a CareOps hospital analytics context. Mention the likely data sources, the business interpretation, and one practical action.",
+            "expectedKeywords": [
+              "data",
+              "insight",
+              "action"
+            ],
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Designing an Analytical Data Mart",
+              "whyItMatters": "Plan a focused reporting layer.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "scenario",
+            "id": "l_098",
+            "title": "Dimensional Modeling Capstone",
+            "objective": "Apply warehouse thinking to a healthcare case.",
+            "relevantTables": [
+              "patients",
+              "encounters",
+              "claims",
+              "charges"
+            ],
+            "joinHint": "Think about the correct grain, the business audience, and the operational consequence.",
+            "summary": "Apply warehouse thinking to a healthcare case.",
+            "prompt": "Explain how you would approach 'Dimensional Modeling Capstone' in a CareOps hospital analytics context. Mention the likely data sources, the business interpretation, and one practical action.",
+            "expectedKeywords": [
+              "data",
+              "insight",
+              "action"
+            ],
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Dimensional Modeling Capstone",
+              "whyItMatters": "Apply warehouse thinking to a healthcare case.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          }
+        ]
+      },
+      {
+        "id": "executive_communication_and_insights",
+        "title": "Executive Communication and Insights",
+        "order": 5,
+        "lessons": [
+          {
+            "kind": "scenario",
+            "id": "l_099",
+            "title": "Translating SQL Results into Business Insights",
+            "objective": "Move from data to action.",
+            "relevantTables": [
+              "patients",
+              "encounters",
+              "claims",
+              "charges"
+            ],
+            "joinHint": "Think about the correct grain, the business audience, and the operational consequence.",
+            "summary": "Move from data to action.",
+            "prompt": "Explain how you would approach 'Translating SQL Results into Business Insights' in a CareOps hospital analytics context. Mention the likely data sources, the business interpretation, and one practical action.",
+            "expectedKeywords": [
+              "data",
+              "insight",
+              "action"
+            ],
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Translating SQL Results into Business Insights",
+              "whyItMatters": "Move from data to action.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "scenario",
+            "id": "l_100",
+            "title": "Identifying Financial Risks and Opportunities",
+            "objective": "Highlight what leadership should notice first.",
+            "relevantTables": [
+              "patients",
+              "encounters",
+              "claims",
+              "charges"
+            ],
+            "joinHint": "Think about the correct grain, the business audience, and the operational consequence.",
+            "summary": "Highlight what leadership should notice first.",
+            "prompt": "Explain how you would approach 'Identifying Financial Risks and Opportunities' in a CareOps hospital analytics context. Mention the likely data sources, the business interpretation, and one practical action.",
+            "expectedKeywords": [
+              "data",
+              "insight",
+              "action"
+            ],
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Identifying Financial Risks and Opportunities",
+              "whyItMatters": "Highlight what leadership should notice first.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "scenario",
+            "id": "l_101",
+            "title": "Writing Executive Summaries",
+            "objective": "Summarize findings clearly for leaders.",
+            "relevantTables": [
+              "patients",
+              "encounters",
+              "claims",
+              "charges"
+            ],
+            "joinHint": "Think about the correct grain, the business audience, and the operational consequence.",
+            "summary": "Summarize findings clearly for leaders.",
+            "prompt": "Explain how you would approach 'Writing Executive Summaries' in a CareOps hospital analytics context. Mention the likely data sources, the business interpretation, and one practical action.",
+            "expectedKeywords": [
+              "data",
+              "insight",
+              "action"
+            ],
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Writing Executive Summaries",
+              "whyItMatters": "Summarize findings clearly for leaders.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "scenario",
+            "id": "l_102",
+            "title": "Storytelling with Data for Healthcare Leaders",
+            "objective": "Structure insights to drive decisions.",
+            "relevantTables": [
+              "patients",
+              "encounters",
+              "claims",
+              "charges"
+            ],
+            "joinHint": "Think about the correct grain, the business audience, and the operational consequence.",
+            "summary": "Structure insights to drive decisions.",
+            "prompt": "Explain how you would approach 'Storytelling with Data for Healthcare Leaders' in a CareOps hospital analytics context. Mention the likely data sources, the business interpretation, and one practical action.",
+            "expectedKeywords": [
+              "data",
+              "insight",
+              "action"
+            ],
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Storytelling with Data for Healthcare Leaders",
+              "whyItMatters": "Structure insights to drive decisions.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "scenario",
+            "id": "l_103",
+            "title": "Designing Metrics for Executive Dashboards",
+            "objective": "Select meaningful KPI definitions.",
+            "relevantTables": [
+              "patients",
+              "encounters",
+              "claims",
+              "charges"
+            ],
+            "joinHint": "Think about the correct grain, the business audience, and the operational consequence.",
+            "summary": "Select meaningful KPI definitions.",
+            "prompt": "Explain how you would approach 'Designing Metrics for Executive Dashboards' in a CareOps hospital analytics context. Mention the likely data sources, the business interpretation, and one practical action.",
+            "expectedKeywords": [
+              "data",
+              "insight",
+              "action"
+            ],
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Designing Metrics for Executive Dashboards",
+              "whyItMatters": "Select meaningful KPI definitions.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "scenario",
+            "id": "l_104",
+            "title": "Recommending Operational Improvements",
+            "objective": "Tie findings to next-step actions.",
+            "relevantTables": [
+              "patients",
+              "encounters",
+              "claims",
+              "charges"
+            ],
+            "joinHint": "Think about the correct grain, the business audience, and the operational consequence.",
+            "summary": "Tie findings to next-step actions.",
+            "prompt": "Explain how you would approach 'Recommending Operational Improvements' in a CareOps hospital analytics context. Mention the likely data sources, the business interpretation, and one practical action.",
+            "expectedKeywords": [
+              "data",
+              "insight",
+              "action"
+            ],
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Recommending Operational Improvements",
+              "whyItMatters": "Tie findings to next-step actions.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "scenario",
+            "id": "l_105",
+            "title": "Executive Insight Capstone",
+            "objective": "Deliver a concise executive-ready recommendation.",
+            "relevantTables": [
+              "patients",
+              "encounters",
+              "claims",
+              "charges"
+            ],
+            "joinHint": "Think about the correct grain, the business audience, and the operational consequence.",
+            "summary": "Deliver a concise executive-ready recommendation.",
+            "prompt": "Explain how you would approach 'Executive Insight Capstone' in a CareOps hospital analytics context. Mention the likely data sources, the business interpretation, and one practical action.",
+            "expectedKeywords": [
+              "data",
+              "insight",
+              "action"
+            ],
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Executive Insight Capstone",
+              "whyItMatters": "Deliver a concise executive-ready recommendation.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "track_advanced",
+    "title": "Advanced",
+    "description": "Advanced learning path for CareOps hospital analytics.",
+    "order": 4,
+    "categories": [
+      {
+        "id": "query_optimization_and_performance",
+        "title": "Query Optimization and Performance",
+        "order": 1,
+        "lessons": [
+          {
+            "kind": "concept",
+            "id": "l_106",
+            "title": "Understanding Query Execution Plans",
+            "objective": "See how the database interprets a query.",
+            "sql_focus": [
+              "Concept"
+            ],
+            "relevantTables": [
+              "patients",
+              "encounters",
+              "claims",
+              "charges"
+            ],
+            "joinHint": "No join required unless you choose to connect related data for context.",
+            "summary": "See how the database interprets a query.",
+            "bullets": [
+              "Understanding Query Execution Plans is part of the Query Optimization and Performance module.",
+              "Focus on how the concept changes measurement quality, business meaning, or query structure.",
+              "Tie the concept back to real hospital analytics whenever possible."
+            ],
+            "example": "In CareOps, understanding query execution plans supports clearer operational, financial, or quality analysis.",
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Understanding Query Execution Plans",
+              "whyItMatters": "See how the database interprets a query.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "concept",
+            "id": "l_107",
+            "title": "Indexing Strategies for Performance",
+            "objective": "Use indexes to improve search speed.",
+            "sql_focus": [
+              "Concept"
+            ],
+            "relevantTables": [
+              "patients",
+              "encounters",
+              "claims",
+              "charges"
+            ],
+            "joinHint": "No join required unless you choose to connect related data for context.",
+            "summary": "Use indexes to improve search speed.",
+            "bullets": [
+              "Indexing Strategies for Performance is part of the Query Optimization and Performance module.",
+              "Focus on how the concept changes measurement quality, business meaning, or query structure.",
+              "Tie the concept back to real hospital analytics whenever possible."
+            ],
+            "example": "In CareOps, indexing strategies for performance supports clearer operational, financial, or quality analysis.",
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Indexing Strategies for Performance",
+              "whyItMatters": "Use indexes to improve search speed.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "scenario",
+            "id": "l_108",
+            "title": "Avoiding Common SQL Performance Pitfalls",
+            "objective": "Recognize wasteful patterns.",
+            "relevantTables": [
+              "patients",
+              "encounters",
+              "claims",
+              "charges"
+            ],
+            "joinHint": "Think about the correct grain, the business audience, and the operational consequence.",
+            "summary": "Recognize wasteful patterns.",
+            "prompt": "Explain how you would approach 'Avoiding Common SQL Performance Pitfalls' in a CareOps hospital analytics context. Mention the likely data sources, the business interpretation, and one practical action.",
+            "expectedKeywords": [
+              "data",
+              "insight",
+              "action"
+            ],
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Avoiding Common SQL Performance Pitfalls",
+              "whyItMatters": "Recognize wasteful patterns.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "concept",
+            "id": "l_109",
+            "title": "Table Partitioning Techniques",
+            "objective": "Understand partitioning for large datasets.",
+            "sql_focus": [
+              "Concept"
+            ],
+            "relevantTables": [
+              "patients",
+              "encounters",
+              "claims",
+              "charges"
+            ],
+            "joinHint": "No join required unless you choose to connect related data for context.",
+            "summary": "Understand partitioning for large datasets.",
+            "bullets": [
+              "Table Partitioning Techniques is part of the Query Optimization and Performance module.",
+              "Focus on how the concept changes measurement quality, business meaning, or query structure.",
+              "Tie the concept back to real hospital analytics whenever possible."
+            ],
+            "example": "In CareOps, table partitioning techniques supports clearer operational, financial, or quality analysis.",
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Table Partitioning Techniques",
+              "whyItMatters": "Understand partitioning for large datasets.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "concept",
+            "id": "l_110",
+            "title": "Materialized Views",
+            "objective": "Use precomputed structures for faster reporting.",
+            "sql_focus": [
+              "Concept"
+            ],
+            "relevantTables": [
+              "patients",
+              "encounters",
+              "claims",
+              "charges"
+            ],
+            "joinHint": "No join required unless you choose to connect related data for context.",
+            "summary": "Use precomputed structures for faster reporting.",
+            "bullets": [
+              "Materialized Views is part of the Query Optimization and Performance module.",
+              "Focus on how the concept changes measurement quality, business meaning, or query structure.",
+              "Tie the concept back to real hospital analytics whenever possible."
+            ],
+            "example": "In CareOps, materialized views supports clearer operational, financial, or quality analysis.",
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Materialized Views",
+              "whyItMatters": "Use precomputed structures for faster reporting.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "scenario",
+            "id": "l_111",
+            "title": "Optimizing Joins and Aggregations",
+            "objective": "Reduce cost in heavy analytical queries.",
+            "relevantTables": [
+              "patients",
+              "encounters",
+              "claims",
+              "charges"
+            ],
+            "joinHint": "Think about the correct grain, the business audience, and the operational consequence.",
+            "summary": "Reduce cost in heavy analytical queries.",
+            "prompt": "Explain how you would approach 'Optimizing Joins and Aggregations' in a CareOps hospital analytics context. Mention the likely data sources, the business interpretation, and one practical action.",
+            "expectedKeywords": [
+              "data",
+              "insight",
+              "action"
+            ],
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Optimizing Joins and Aggregations",
+              "whyItMatters": "Reduce cost in heavy analytical queries.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "scenario",
+            "id": "l_112",
+            "title": "Performance Optimization Capstone",
+            "objective": "Improve a slow healthcare query.",
+            "relevantTables": [
+              "patients",
+              "encounters",
+              "claims",
+              "charges"
+            ],
+            "joinHint": "Think about the correct grain, the business audience, and the operational consequence.",
+            "summary": "Improve a slow healthcare query.",
+            "prompt": "Explain how you would approach 'Performance Optimization Capstone' in a CareOps hospital analytics context. Mention the likely data sources, the business interpretation, and one practical action.",
+            "expectedKeywords": [
+              "data",
+              "insight",
+              "action"
+            ],
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Performance Optimization Capstone",
+              "whyItMatters": "Improve a slow healthcare query.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          }
+        ]
+      },
+      {
+        "id": "advanced_database_design",
+        "title": "Advanced Database Design",
+        "order": 2,
+        "lessons": [
+          {
+            "kind": "concept",
+            "id": "l_113",
+            "title": "Normalization",
+            "objective": "Organize tables to reduce redundancy.",
+            "sql_focus": [
+              "Concept"
+            ],
+            "relevantTables": [
+              "patients",
+              "encounters",
+              "claims",
+              "charges"
+            ],
+            "joinHint": "No join required unless you choose to connect related data for context.",
+            "summary": "Organize tables to reduce redundancy.",
+            "bullets": [
+              "Normalization is part of the Advanced Database Design module.",
+              "Focus on how the concept changes measurement quality, business meaning, or query structure.",
+              "Tie the concept back to real hospital analytics whenever possible."
+            ],
+            "example": "In CareOps, normalization supports clearer operational, financial, or quality analysis.",
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Normalization",
+              "whyItMatters": "Organize tables to reduce redundancy.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "concept",
+            "id": "l_114",
+            "title": "Denormalization for Analytics",
+            "objective": "Trade purity for analytical usability when appropriate.",
+            "sql_focus": [
+              "Concept"
+            ],
+            "relevantTables": [
+              "patients",
+              "encounters",
+              "claims",
+              "charges"
+            ],
+            "joinHint": "No join required unless you choose to connect related data for context.",
+            "summary": "Trade purity for analytical usability when appropriate.",
+            "bullets": [
+              "Denormalization for Analytics is part of the Advanced Database Design module.",
+              "Focus on how the concept changes measurement quality, business meaning, or query structure.",
+              "Tie the concept back to real hospital analytics whenever possible."
+            ],
+            "example": "In CareOps, denormalization for analytics supports clearer operational, financial, or quality analysis.",
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Denormalization for Analytics",
+              "whyItMatters": "Trade purity for analytical usability when appropriate.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "concept",
+            "id": "l_115",
+            "title": "Referential Integrity and Constraints",
+            "objective": "Protect data integrity with rules.",
+            "sql_focus": [
+              "Concept"
+            ],
+            "relevantTables": [
+              "patients",
+              "encounters",
+              "claims",
+              "charges"
+            ],
+            "joinHint": "No join required unless you choose to connect related data for context.",
+            "summary": "Protect data integrity with rules.",
+            "bullets": [
+              "Referential Integrity and Constraints is part of the Advanced Database Design module.",
+              "Focus on how the concept changes measurement quality, business meaning, or query structure.",
+              "Tie the concept back to real hospital analytics whenever possible."
+            ],
+            "example": "In CareOps, referential integrity and constraints supports clearer operational, financial, or quality analysis.",
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Referential Integrity and Constraints",
+              "whyItMatters": "Protect data integrity with rules.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "concept",
+            "id": "l_116",
+            "title": "Surrogate vs. Natural Keys",
+            "objective": "Choose identifier strategies intentionally.",
+            "sql_focus": [
+              "Concept"
+            ],
+            "relevantTables": [
+              "patients",
+              "encounters",
+              "claims",
+              "charges"
+            ],
+            "joinHint": "No join required unless you choose to connect related data for context.",
+            "summary": "Choose identifier strategies intentionally.",
+            "bullets": [
+              "Surrogate vs. Natural Keys is part of the Advanced Database Design module.",
+              "Focus on how the concept changes measurement quality, business meaning, or query structure.",
+              "Tie the concept back to real hospital analytics whenever possible."
+            ],
+            "example": "In CareOps, surrogate vs. natural keys supports clearer operational, financial, or quality analysis.",
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Surrogate vs. Natural Keys",
+              "whyItMatters": "Choose identifier strategies intentionally.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "scenario",
+            "id": "l_117",
+            "title": "Data Governance and Metadata Management",
+            "objective": "Document definitions and ownership.",
+            "relevantTables": [
+              "patients",
+              "encounters",
+              "claims",
+              "charges"
+            ],
+            "joinHint": "Think about the correct grain, the business audience, and the operational consequence.",
+            "summary": "Document definitions and ownership.",
+            "prompt": "Explain how you would approach 'Data Governance and Metadata Management' in a CareOps hospital analytics context. Mention the likely data sources, the business interpretation, and one practical action.",
+            "expectedKeywords": [
+              "data",
+              "insight",
+              "action"
+            ],
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Data Governance and Metadata Management",
+              "whyItMatters": "Document definitions and ownership.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "scenario",
+            "id": "l_118",
+            "title": "Managing Slowly Changing Dimensions",
+            "objective": "Preserve history without breaking reports.",
+            "relevantTables": [
+              "patients",
+              "encounters",
+              "claims",
+              "charges"
+            ],
+            "joinHint": "Think about the correct grain, the business audience, and the operational consequence.",
+            "summary": "Preserve history without breaking reports.",
+            "prompt": "Explain how you would approach 'Managing Slowly Changing Dimensions' in a CareOps hospital analytics context. Mention the likely data sources, the business interpretation, and one practical action.",
+            "expectedKeywords": [
+              "data",
+              "insight",
+              "action"
+            ],
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Managing Slowly Changing Dimensions",
+              "whyItMatters": "Preserve history without breaking reports.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "scenario",
+            "id": "l_119",
+            "title": "Database Design Capstone",
+            "objective": "Assess design quality for a reporting need.",
+            "relevantTables": [
+              "patients",
+              "encounters",
+              "claims",
+              "charges"
+            ],
+            "joinHint": "Think about the correct grain, the business audience, and the operational consequence.",
+            "summary": "Assess design quality for a reporting need.",
+            "prompt": "Explain how you would approach 'Database Design Capstone' in a CareOps hospital analytics context. Mention the likely data sources, the business interpretation, and one practical action.",
+            "expectedKeywords": [
+              "data",
+              "insight",
+              "action"
+            ],
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Database Design Capstone",
+              "whyItMatters": "Assess design quality for a reporting need.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          }
+        ]
+      },
+      {
+        "id": "transactions_and_data_integrity",
+        "title": "Transactions and Data Integrity",
+        "order": 3,
+        "lessons": [
+          {
+            "kind": "concept",
+            "id": "l_120",
+            "title": "ACID Principles",
+            "objective": "Understand transaction guarantees.",
+            "sql_focus": [
+              "Concept"
+            ],
+            "relevantTables": [
+              "patients",
+              "encounters",
+              "claims",
+              "charges"
+            ],
+            "joinHint": "No join required unless you choose to connect related data for context.",
+            "summary": "Understand transaction guarantees.",
+            "bullets": [
+              "ACID Principles is part of the Transactions and Data Integrity module.",
+              "Focus on how the concept changes measurement quality, business meaning, or query structure.",
+              "Tie the concept back to real hospital analytics whenever possible."
+            ],
+            "example": "In CareOps, acid principles supports clearer operational, financial, or quality analysis.",
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "ACID Principles",
+              "whyItMatters": "Understand transaction guarantees.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "challenge",
+            "id": "l_121",
+            "title": "Transaction Control",
+            "objective": "Use BEGIN, COMMIT, and ROLLBACK appropriately.",
+            "sql_focus": [
+              "SELECT",
+              "WHERE",
+              "GROUP BY",
+              "JOIN"
+            ],
+            "relevantTables": [
+              "patients"
+            ],
+            "joinHint": "Use the base table that matches the reporting grain, then join outward only when needed.",
+            "starterQuery": "SELECT * FROM patients LIMIT 10;",
+            "solutionQuery": "SELECT * FROM patients LIMIT 10;",
+            "hint": "Run a simple valid query against the mock data.",
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Transaction Control",
+              "whyItMatters": "Use BEGIN, COMMIT, and ROLLBACK appropriately.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "concept",
+            "id": "l_122",
+            "title": "Isolation Levels and Concurrency",
+            "objective": "Recognize how users affect one another.",
+            "sql_focus": [
+              "Concept"
+            ],
+            "relevantTables": [
+              "patients",
+              "encounters",
+              "claims",
+              "charges"
+            ],
+            "joinHint": "No join required unless you choose to connect related data for context.",
+            "summary": "Recognize how users affect one another.",
+            "bullets": [
+              "Isolation Levels and Concurrency is part of the Transactions and Data Integrity module.",
+              "Focus on how the concept changes measurement quality, business meaning, or query structure.",
+              "Tie the concept back to real hospital analytics whenever possible."
+            ],
+            "example": "In CareOps, isolation levels and concurrency supports clearer operational, financial, or quality analysis.",
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Isolation Levels and Concurrency",
+              "whyItMatters": "Recognize how users affect one another.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "concept",
+            "id": "l_123",
+            "title": "Locking and Deadlocks",
+            "objective": "Understand contention and recovery.",
+            "sql_focus": [
+              "Concept"
+            ],
+            "relevantTables": [
+              "patients",
+              "encounters",
+              "claims",
+              "charges"
+            ],
+            "joinHint": "No join required unless you choose to connect related data for context.",
+            "summary": "Understand contention and recovery.",
+            "bullets": [
+              "Locking and Deadlocks is part of the Transactions and Data Integrity module.",
+              "Focus on how the concept changes measurement quality, business meaning, or query structure.",
+              "Tie the concept back to real hospital analytics whenever possible."
+            ],
+            "example": "In CareOps, locking and deadlocks supports clearer operational, financial, or quality analysis.",
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Locking and Deadlocks",
+              "whyItMatters": "Understand contention and recovery.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "scenario",
+            "id": "l_124",
+            "title": "Error Handling in SQL",
+            "objective": "Protect workflows from partial failure.",
+            "relevantTables": [
+              "patients",
+              "encounters",
+              "claims",
+              "charges"
+            ],
+            "joinHint": "Think about the correct grain, the business audience, and the operational consequence.",
+            "summary": "Protect workflows from partial failure.",
+            "prompt": "Explain how you would approach 'Error Handling in SQL' in a CareOps hospital analytics context. Mention the likely data sources, the business interpretation, and one practical action.",
+            "expectedKeywords": [
+              "data",
+              "insight",
+              "action"
+            ],
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Error Handling in SQL",
+              "whyItMatters": "Protect workflows from partial failure.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "scenario",
+            "id": "l_125",
+            "title": "Auditing and Change Tracking",
+            "objective": "Track what changed and why.",
+            "relevantTables": [
+              "patients",
+              "encounters",
+              "claims",
+              "charges"
+            ],
+            "joinHint": "Think about the correct grain, the business audience, and the operational consequence.",
+            "summary": "Track what changed and why.",
+            "prompt": "Explain how you would approach 'Auditing and Change Tracking' in a CareOps hospital analytics context. Mention the likely data sources, the business interpretation, and one practical action.",
+            "expectedKeywords": [
+              "data",
+              "insight",
+              "action"
+            ],
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Auditing and Change Tracking",
+              "whyItMatters": "Track what changed and why.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "scenario",
+            "id": "l_126",
+            "title": "Transactions Capstone",
+            "objective": "Apply integrity thinking to a sensitive workflow.",
+            "relevantTables": [
+              "patients",
+              "encounters",
+              "claims",
+              "charges"
+            ],
+            "joinHint": "Think about the correct grain, the business audience, and the operational consequence.",
+            "summary": "Apply integrity thinking to a sensitive workflow.",
+            "prompt": "Explain how you would approach 'Transactions Capstone' in a CareOps hospital analytics context. Mention the likely data sources, the business interpretation, and one practical action.",
+            "expectedKeywords": [
+              "data",
+              "insight",
+              "action"
+            ],
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Transactions Capstone",
+              "whyItMatters": "Apply integrity thinking to a sensitive workflow.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          }
+        ]
+      },
+      {
+        "id": "data_governance_and_compliance",
+        "title": "Data Governance and Compliance",
+        "order": 4,
+        "lessons": [
+          {
+            "kind": "concept",
+            "id": "l_127",
+            "title": "Introduction to HIPAA and PHI",
+            "objective": "Recognize compliance boundaries.",
+            "sql_focus": [
+              "Concept"
+            ],
+            "relevantTables": [
+              "patients",
+              "encounters",
+              "claims",
+              "charges"
+            ],
+            "joinHint": "No join required unless you choose to connect related data for context.",
+            "summary": "Recognize compliance boundaries.",
+            "bullets": [
+              "Introduction to HIPAA and PHI is part of the Data Governance and Compliance module.",
+              "Focus on how the concept changes measurement quality, business meaning, or query structure.",
+              "Tie the concept back to real hospital analytics whenever possible."
+            ],
+            "example": "In CareOps, introduction to hipaa and phi supports clearer operational, financial, or quality analysis.",
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Introduction to HIPAA and PHI",
+              "whyItMatters": "Recognize compliance boundaries.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "challenge",
+            "id": "l_128",
+            "title": "De-identification and Data Masking",
+            "objective": "Protect sensitive information in analytics.",
+            "sql_focus": [
+              "SELECT",
+              "WHERE",
+              "GROUP BY",
+              "JOIN"
+            ],
+            "relevantTables": [
+              "patients"
+            ],
+            "joinHint": "Use the base table that matches the reporting grain, then join outward only when needed.",
+            "starterQuery": "SELECT * FROM patients LIMIT 10;",
+            "solutionQuery": "SELECT * FROM patients LIMIT 10;",
+            "hint": "Run a simple valid query against the mock data.",
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "De-identification and Data Masking",
+              "whyItMatters": "Protect sensitive information in analytics.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "concept",
+            "id": "l_129",
+            "title": "Role-Based Access Control",
+            "objective": "Restrict data access intentionally.",
+            "sql_focus": [
+              "Concept"
+            ],
+            "relevantTables": [
+              "patients",
+              "encounters",
+              "claims",
+              "charges"
+            ],
+            "joinHint": "No join required unless you choose to connect related data for context.",
+            "summary": "Restrict data access intentionally.",
+            "bullets": [
+              "Role-Based Access Control is part of the Data Governance and Compliance module.",
+              "Focus on how the concept changes measurement quality, business meaning, or query structure.",
+              "Tie the concept back to real hospital analytics whenever possible."
+            ],
+            "example": "In CareOps, role-based access control supports clearer operational, financial, or quality analysis.",
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Role-Based Access Control",
+              "whyItMatters": "Restrict data access intentionally.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "scenario",
+            "id": "l_130",
+            "title": "Data Stewardship and Ownership",
+            "objective": "Assign accountability to key data assets.",
+            "relevantTables": [
+              "patients",
+              "encounters",
+              "claims",
+              "charges"
+            ],
+            "joinHint": "Think about the correct grain, the business audience, and the operational consequence.",
+            "summary": "Assign accountability to key data assets.",
+            "prompt": "Explain how you would approach 'Data Stewardship and Ownership' in a CareOps hospital analytics context. Mention the likely data sources, the business interpretation, and one practical action.",
+            "expectedKeywords": [
+              "data",
+              "insight",
+              "action"
+            ],
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Data Stewardship and Ownership",
+              "whyItMatters": "Assign accountability to key data assets.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "scenario",
+            "id": "l_131",
+            "title": "Data Lineage and Traceability",
+            "objective": "Trace where a metric comes from.",
+            "relevantTables": [
+              "patients",
+              "encounters",
+              "claims",
+              "charges"
+            ],
+            "joinHint": "Think about the correct grain, the business audience, and the operational consequence.",
+            "summary": "Trace where a metric comes from.",
+            "prompt": "Explain how you would approach 'Data Lineage and Traceability' in a CareOps hospital analytics context. Mention the likely data sources, the business interpretation, and one practical action.",
+            "expectedKeywords": [
+              "data",
+              "insight",
+              "action"
+            ],
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Data Lineage and Traceability",
+              "whyItMatters": "Trace where a metric comes from.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "scenario",
+            "id": "l_132",
+            "title": "Ethical Use of Healthcare Data",
+            "objective": "Recognize responsible analytical practice.",
+            "relevantTables": [
+              "patients",
+              "encounters",
+              "claims",
+              "charges"
+            ],
+            "joinHint": "Think about the correct grain, the business audience, and the operational consequence.",
+            "summary": "Recognize responsible analytical practice.",
+            "prompt": "Explain how you would approach 'Ethical Use of Healthcare Data' in a CareOps hospital analytics context. Mention the likely data sources, the business interpretation, and one practical action.",
+            "expectedKeywords": [
+              "data",
+              "insight",
+              "action"
+            ],
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Ethical Use of Healthcare Data",
+              "whyItMatters": "Recognize responsible analytical practice.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "scenario",
+            "id": "l_133",
+            "title": "Governance Capstone",
+            "objective": "Evaluate a report for compliance and stewardship.",
+            "relevantTables": [
+              "patients",
+              "encounters",
+              "claims",
+              "charges"
+            ],
+            "joinHint": "Think about the correct grain, the business audience, and the operational consequence.",
+            "summary": "Evaluate a report for compliance and stewardship.",
+            "prompt": "Explain how you would approach 'Governance Capstone' in a CareOps hospital analytics context. Mention the likely data sources, the business interpretation, and one practical action.",
+            "expectedKeywords": [
+              "data",
+              "insight",
+              "action"
+            ],
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Governance Capstone",
+              "whyItMatters": "Evaluate a report for compliance and stewardship.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          }
+        ]
+      },
+      {
+        "id": "advanced_analytical_techniques",
+        "title": "Advanced Analytical Techniques",
+        "order": 5,
+        "lessons": [
+          {
+            "kind": "challenge",
+            "id": "l_134",
+            "title": "Cohort Analysis Using SQL",
+            "objective": "Track populations through time.",
+            "sql_focus": [
+              "SELECT",
+              "WHERE",
+              "GROUP BY",
+              "JOIN"
+            ],
+            "relevantTables": [
+              "patients"
+            ],
+            "joinHint": "Use the base table that matches the reporting grain, then join outward only when needed.",
+            "starterQuery": "SELECT * FROM patients LIMIT 10;",
+            "solutionQuery": "SELECT * FROM patients LIMIT 10;",
+            "hint": "Run a simple valid query against the mock data.",
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Cohort Analysis Using SQL",
+              "whyItMatters": "Track populations through time.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "challenge",
+            "id": "l_135",
+            "title": "Time-Series Analysis in Healthcare",
+            "objective": "Examine trends by day, month, or quarter.",
+            "sql_focus": [
+              "SELECT",
+              "WHERE",
+              "GROUP BY",
+              "JOIN"
+            ],
+            "relevantTables": [
+              "patients"
+            ],
+            "joinHint": "Use the base table that matches the reporting grain, then join outward only when needed.",
+            "starterQuery": "SELECT * FROM patients LIMIT 10;",
+            "solutionQuery": "SELECT * FROM patients LIMIT 10;",
+            "hint": "Run a simple valid query against the mock data.",
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Time-Series Analysis in Healthcare",
+              "whyItMatters": "Examine trends by day, month, or quarter.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "scenario",
+            "id": "l_136",
+            "title": "Predictive Feature Engineering",
+            "objective": "Prepare analytical inputs in SQL.",
+            "relevantTables": [
+              "patients",
+              "encounters",
+              "claims",
+              "charges"
+            ],
+            "joinHint": "Think about the correct grain, the business audience, and the operational consequence.",
+            "summary": "Prepare analytical inputs in SQL.",
+            "prompt": "Explain how you would approach 'Predictive Feature Engineering' in a CareOps hospital analytics context. Mention the likely data sources, the business interpretation, and one practical action.",
+            "expectedKeywords": [
+              "data",
+              "insight",
+              "action"
+            ],
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Predictive Feature Engineering",
+              "whyItMatters": "Prepare analytical inputs in SQL.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "scenario",
+            "id": "l_137",
+            "title": "Risk Scoring Models",
+            "objective": "Support risk-based operational targeting.",
+            "relevantTables": [
+              "patients",
+              "encounters",
+              "claims",
+              "charges"
+            ],
+            "joinHint": "Think about the correct grain, the business audience, and the operational consequence.",
+            "summary": "Support risk-based operational targeting.",
+            "prompt": "Explain how you would approach 'Risk Scoring Models' in a CareOps hospital analytics context. Mention the likely data sources, the business interpretation, and one practical action.",
+            "expectedKeywords": [
+              "data",
+              "insight",
+              "action"
+            ],
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Risk Scoring Models",
+              "whyItMatters": "Support risk-based operational targeting.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "scenario",
+            "id": "l_138",
+            "title": "Integrating SQL with BI Tools",
+            "objective": "Prepare output for visualization layers.",
+            "relevantTables": [
+              "patients",
+              "encounters",
+              "claims",
+              "charges"
+            ],
+            "joinHint": "Think about the correct grain, the business audience, and the operational consequence.",
+            "summary": "Prepare output for visualization layers.",
+            "prompt": "Explain how you would approach 'Integrating SQL with BI Tools' in a CareOps hospital analytics context. Mention the likely data sources, the business interpretation, and one practical action.",
+            "expectedKeywords": [
+              "data",
+              "insight",
+              "action"
+            ],
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Integrating SQL with BI Tools",
+              "whyItMatters": "Prepare output for visualization layers.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "scenario",
+            "id": "l_139",
+            "title": "Preparing Data for Machine Learning",
+            "objective": "Shape reliable model-ready datasets.",
+            "relevantTables": [
+              "patients",
+              "encounters",
+              "claims",
+              "charges"
+            ],
+            "joinHint": "Think about the correct grain, the business audience, and the operational consequence.",
+            "summary": "Shape reliable model-ready datasets.",
+            "prompt": "Explain how you would approach 'Preparing Data for Machine Learning' in a CareOps hospital analytics context. Mention the likely data sources, the business interpretation, and one practical action.",
+            "expectedKeywords": [
+              "data",
+              "insight",
+              "action"
+            ],
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Preparing Data for Machine Learning",
+              "whyItMatters": "Shape reliable model-ready datasets.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "scenario",
+            "id": "l_140",
+            "title": "Advanced Analytics Capstone",
+            "objective": "Combine analytical techniques for a strategic view.",
+            "relevantTables": [
+              "patients",
+              "encounters",
+              "claims",
+              "charges"
+            ],
+            "joinHint": "Think about the correct grain, the business audience, and the operational consequence.",
+            "summary": "Combine analytical techniques for a strategic view.",
+            "prompt": "Explain how you would approach 'Advanced Analytics Capstone' in a CareOps hospital analytics context. Mention the likely data sources, the business interpretation, and one practical action.",
+            "expectedKeywords": [
+              "data",
+              "insight",
+              "action"
+            ],
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Advanced Analytics Capstone",
+              "whyItMatters": "Combine analytical techniques for a strategic view.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "track_expert",
+    "title": "Expert",
+    "description": "Expert learning path for CareOps hospital analytics.",
+    "order": 5,
+    "categories": [
+      {
+        "id": "strategic_healthcare_analytics",
+        "title": "Strategic Healthcare Analytics",
+        "order": 1,
+        "lessons": [
+          {
+            "kind": "scenario",
+            "id": "l_141",
+            "title": "Population Health Management",
+            "objective": "Use analytics to understand populations.",
+            "relevantTables": [
+              "patients",
+              "encounters",
+              "claims",
+              "charges"
+            ],
+            "joinHint": "Think about the correct grain, the business audience, and the operational consequence.",
+            "summary": "Use analytics to understand populations.",
+            "prompt": "Explain how you would approach 'Population Health Management' in a CareOps hospital analytics context. Mention the likely data sources, the business interpretation, and one practical action.",
+            "expectedKeywords": [
+              "data",
+              "insight",
+              "action"
+            ],
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Population Health Management",
+              "whyItMatters": "Use analytics to understand populations.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "challenge",
+            "id": "l_142",
+            "title": "Service Line Profitability",
+            "objective": "Measure performance by service line.",
+            "sql_focus": [
+              "SELECT",
+              "WHERE",
+              "GROUP BY",
+              "JOIN"
+            ],
+            "relevantTables": [
+              "departments",
+              "encounters",
+              "charges"
+            ],
+            "joinHint": "Use the base table that matches the reporting grain, then join outward only when needed.",
+            "starterQuery": "SELECT d.service_line, SUM(c.amount) AS total_charges FROM charges c JOIN encounters e ON c.encounter_id = e.encounter_id JOIN departments d ON e.department_id = d.department_id GROUP BY d.service_line ORDER BY total_charges DESC;",
+            "solutionQuery": "SELECT d.service_line, SUM(c.amount) AS total_charges FROM charges c JOIN encounters e ON c.encounter_id = e.encounter_id JOIN departments d ON e.department_id = d.department_id GROUP BY d.service_line ORDER BY total_charges DESC;",
+            "hint": "Use charges, encounters, and departments.",
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Service Line Profitability",
+              "whyItMatters": "Measure performance by service line.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "scenario",
+            "id": "l_143",
+            "title": "Market Share and Growth Analysis",
+            "objective": "Estimate organizational opportunity.",
+            "relevantTables": [
+              "patients",
+              "encounters",
+              "claims",
+              "charges"
+            ],
+            "joinHint": "Think about the correct grain, the business audience, and the operational consequence.",
+            "summary": "Estimate organizational opportunity.",
+            "prompt": "Explain how you would approach 'Market Share and Growth Analysis' in a CareOps hospital analytics context. Mention the likely data sources, the business interpretation, and one practical action.",
+            "expectedKeywords": [
+              "data",
+              "insight",
+              "action"
+            ],
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Market Share and Growth Analysis",
+              "whyItMatters": "Estimate organizational opportunity.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "scenario",
+            "id": "l_144",
+            "title": "Value-Based Care Metrics",
+            "objective": "Align analytics to quality and cost incentives.",
+            "relevantTables": [
+              "patients",
+              "encounters",
+              "claims",
+              "charges"
+            ],
+            "joinHint": "Think about the correct grain, the business audience, and the operational consequence.",
+            "summary": "Align analytics to quality and cost incentives.",
+            "prompt": "Explain how you would approach 'Value-Based Care Metrics' in a CareOps hospital analytics context. Mention the likely data sources, the business interpretation, and one practical action.",
+            "expectedKeywords": [
+              "data",
+              "insight",
+              "action"
+            ],
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Value-Based Care Metrics",
+              "whyItMatters": "Align analytics to quality and cost incentives.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "challenge",
+            "id": "l_145",
+            "title": "Cost-of-Care Analysis",
+            "objective": "Connect utilization and financial performance.",
+            "sql_focus": [
+              "SELECT",
+              "WHERE",
+              "GROUP BY",
+              "JOIN"
+            ],
+            "relevantTables": [
+              "encounters"
+            ],
+            "joinHint": "Use the base table that matches the reporting grain, then join outward only when needed.",
+            "starterQuery": "SELECT facility, AVG(length_of_stay) * 1250 AS estimated_cost_of_care FROM encounters GROUP BY facility;",
+            "solutionQuery": "SELECT facility, AVG(length_of_stay) * 1250 AS estimated_cost_of_care FROM encounters GROUP BY facility;",
+            "hint": "Estimate cost of care by facility.",
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Cost-of-Care Analysis",
+              "whyItMatters": "Connect utilization and financial performance.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "scenario",
+            "id": "l_146",
+            "title": "Strategic Planning with Data",
+            "objective": "Support future planning with evidence.",
+            "relevantTables": [
+              "patients",
+              "encounters",
+              "claims",
+              "charges"
+            ],
+            "joinHint": "Think about the correct grain, the business audience, and the operational consequence.",
+            "summary": "Support future planning with evidence.",
+            "prompt": "Explain how you would approach 'Strategic Planning with Data' in a CareOps hospital analytics context. Mention the likely data sources, the business interpretation, and one practical action.",
+            "expectedKeywords": [
+              "data",
+              "insight",
+              "action"
+            ],
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Strategic Planning with Data",
+              "whyItMatters": "Support future planning with evidence.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "scenario",
+            "id": "l_147",
+            "title": "Strategic Analytics Capstone",
+            "objective": "Develop an insight for strategic leadership.",
+            "relevantTables": [
+              "patients",
+              "encounters",
+              "claims",
+              "charges"
+            ],
+            "joinHint": "Think about the correct grain, the business audience, and the operational consequence.",
+            "summary": "Develop an insight for strategic leadership.",
+            "prompt": "Explain how you would approach 'Strategic Analytics Capstone' in a CareOps hospital analytics context. Mention the likely data sources, the business interpretation, and one practical action.",
+            "expectedKeywords": [
+              "data",
+              "insight",
+              "action"
+            ],
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Strategic Analytics Capstone",
+              "whyItMatters": "Develop an insight for strategic leadership.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          }
+        ]
+      },
+      {
+        "id": "revenue_optimization_strategies",
+        "title": "Revenue Optimization Strategies",
+        "order": 2,
+        "lessons": [
+          {
+            "kind": "challenge",
+            "id": "l_148",
+            "title": "Identifying Revenue Leakage",
+            "objective": "Find where money is being lost.",
+            "sql_focus": [
+              "SELECT",
+              "WHERE",
+              "GROUP BY",
+              "JOIN"
+            ],
+            "relevantTables": [
+              "claims"
+            ],
+            "joinHint": "Use the base table that matches the reporting grain, then join outward only when needed.",
             "starterQuery": "SELECT payer, SUM(billed_amount) AS denied_dollars FROM claims WHERE claim_status = 'Denied' GROUP BY payer ORDER BY denied_dollars DESC;",
             "solutionQuery": "SELECT payer, SUM(billed_amount) AS denied_dollars FROM claims WHERE claim_status = 'Denied' GROUP BY payer ORDER BY denied_dollars DESC;",
-            "hint": "Filter denied claims, sum billed_amount by payer, and order descending.",
-            "executiveTakeaway": null
-          },
-          {
-            "id": "t2_dn_05",
-            "type": "scenario",
-            "title": "Executive Denials Summary",
-            "objective": "Recognize what leaders should usually see first in a denials review.",
-            "sql_focus": [],
-            "relevantTables": [
-              "claims"
-            ],
-            "joinHint": "Think ranked material issues.",
-            "content": {
-              "summary": "Leaders usually need the biggest financial risks first, not an undifferentiated file of all denied claims.",
-              "prompt": "If you are preparing a denials briefing for executives, should you usually rank denied dollars by payer instead of showing raw claim detail first?",
-              "expectedAnswer": "yes"
-            },
+            "hint": "Summarize denied dollars by payer.",
             "executiveTakeaway": {
               "show": true,
-              "metric": "Executive denial prioritization",
-              "whyItMatters": "Ranking focuses attention on the biggest financial issues.",
-              "whatToShare": "Lead with the highest-dollar denial categories.",
-              "action": "Sort by impact before presenting upward."
+              "metric": "Identifying Revenue Leakage",
+              "whyItMatters": "Find where money is being lost.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "scenario",
+            "id": "l_149",
+            "title": "Denial Prevention Strategies",
+            "objective": "Move from denial measurement to prevention.",
+            "relevantTables": [
+              "patients",
+              "encounters",
+              "claims",
+              "charges"
+            ],
+            "joinHint": "Think about the correct grain, the business audience, and the operational consequence.",
+            "summary": "Move from denial measurement to prevention.",
+            "prompt": "Explain how you would approach 'Denial Prevention Strategies' in a CareOps hospital analytics context. Mention the likely data sources, the business interpretation, and one practical action.",
+            "expectedKeywords": [
+              "data",
+              "insight",
+              "action"
+            ],
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Denial Prevention Strategies",
+              "whyItMatters": "Move from denial measurement to prevention.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "scenario",
+            "id": "l_150",
+            "title": "Contract Modeling and Reimbursement",
+            "objective": "Understand reimbursement scenarios analytically.",
+            "relevantTables": [
+              "patients",
+              "encounters",
+              "claims",
+              "charges"
+            ],
+            "joinHint": "Think about the correct grain, the business audience, and the operational consequence.",
+            "summary": "Understand reimbursement scenarios analytically.",
+            "prompt": "Explain how you would approach 'Contract Modeling and Reimbursement' in a CareOps hospital analytics context. Mention the likely data sources, the business interpretation, and one practical action.",
+            "expectedKeywords": [
+              "data",
+              "insight",
+              "action"
+            ],
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Contract Modeling and Reimbursement",
+              "whyItMatters": "Understand reimbursement scenarios analytically.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "challenge",
+            "id": "l_151",
+            "title": "Charge Capture Optimization",
+            "objective": "Find missed or delayed charges.",
+            "sql_focus": [
+              "SELECT",
+              "WHERE",
+              "GROUP BY",
+              "JOIN"
+            ],
+            "relevantTables": [
+              "charges"
+            ],
+            "joinHint": "Use the base table that matches the reporting grain, then join outward only when needed.",
+            "starterQuery": "SELECT encounter_id, COUNT(*) AS charge_count FROM charges GROUP BY encounter_id HAVING COUNT(*) < 2;",
+            "solutionQuery": "SELECT encounter_id, COUNT(*) AS charge_count FROM charges GROUP BY encounter_id HAVING COUNT(*) < 2;",
+            "hint": "Find encounters with low charge volume.",
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Charge Capture Optimization",
+              "whyItMatters": "Find missed or delayed charges.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "scenario",
+            "id": "l_152",
+            "title": "Financial Impact of Coding Accuracy",
+            "objective": "Connect coding quality to net revenue.",
+            "relevantTables": [
+              "patients",
+              "encounters",
+              "claims",
+              "charges"
+            ],
+            "joinHint": "Think about the correct grain, the business audience, and the operational consequence.",
+            "summary": "Connect coding quality to net revenue.",
+            "prompt": "Explain how you would approach 'Financial Impact of Coding Accuracy' in a CareOps hospital analytics context. Mention the likely data sources, the business interpretation, and one practical action.",
+            "expectedKeywords": [
+              "data",
+              "insight",
+              "action"
+            ],
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Financial Impact of Coding Accuracy",
+              "whyItMatters": "Connect coding quality to net revenue.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "scenario",
+            "id": "l_153",
+            "title": "Scenario Modeling for Revenue Growth",
+            "objective": "Project impact under multiple futures.",
+            "relevantTables": [
+              "patients",
+              "encounters",
+              "claims",
+              "charges"
+            ],
+            "joinHint": "Think about the correct grain, the business audience, and the operational consequence.",
+            "summary": "Project impact under multiple futures.",
+            "prompt": "Explain how you would approach 'Scenario Modeling for Revenue Growth' in a CareOps hospital analytics context. Mention the likely data sources, the business interpretation, and one practical action.",
+            "expectedKeywords": [
+              "data",
+              "insight",
+              "action"
+            ],
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Scenario Modeling for Revenue Growth",
+              "whyItMatters": "Project impact under multiple futures.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "scenario",
+            "id": "l_154",
+            "title": "Revenue Optimization Capstone",
+            "objective": "Deliver a revenue improvement recommendation.",
+            "relevantTables": [
+              "patients",
+              "encounters",
+              "claims",
+              "charges"
+            ],
+            "joinHint": "Think about the correct grain, the business audience, and the operational consequence.",
+            "summary": "Deliver a revenue improvement recommendation.",
+            "prompt": "Explain how you would approach 'Revenue Optimization Capstone' in a CareOps hospital analytics context. Mention the likely data sources, the business interpretation, and one practical action.",
+            "expectedKeywords": [
+              "data",
+              "insight",
+              "action"
+            ],
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Revenue Optimization Capstone",
+              "whyItMatters": "Deliver a revenue improvement recommendation.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
             }
           }
         ]
       },
       {
-        "id": "executive_rollups_and_framing",
-        "title": "Executive Rollups and Analyst Framing",
-        "order": 12,
+        "id": "operational_performance_improvement",
+        "title": "Operational Performance Improvement",
+        "order": 3,
         "lessons": [
           {
-            "id": "t2_ex_01",
-            "type": "concept",
-            "title": "What Makes an Intermediate Query Executive-Ready",
-            "objective": "Understand how to turn technically correct output into decision-support reporting.",
-            "sql_focus": [
-              "GROUP BY",
-              "ORDER BY",
-              "CASE",
-              "SUM",
-              "COUNT",
-              "AVG"
-            ],
+            "kind": "scenario",
+            "id": "l_155",
+            "title": "Throughput and Capacity Optimization",
+            "objective": "Use flow data to improve operations.",
             "relevantTables": [
+              "patients",
               "encounters",
               "claims",
-              "charges",
-              "appointments"
+              "charges"
             ],
-            "joinHint": "Use the grouping and metric that aligns to the decision-maker's level of action.",
-            "content": {
-              "summary": "Executive-ready SQL is concise, prioritized, and tied to a business question. It does not stop at correctness.",
-              "bullets": [
-                "Group by the accountable unit",
-                "Use rates, counts, or dollars appropriately",
-                "Rank results when priority matters",
-                "Translate raw output into business meaning"
-              ],
-              "hospitalExample": "A good executive summary shows where the issue is, how big it is, and what likely needs attention next."
-            },
+            "joinHint": "Think about the correct grain, the business audience, and the operational consequence.",
+            "summary": "Use flow data to improve operations.",
+            "prompt": "Explain how you would approach 'Throughput and Capacity Optimization' in a CareOps hospital analytics context. Mention the likely data sources, the business interpretation, and one practical action.",
+            "expectedKeywords": [
+              "data",
+              "insight",
+              "action"
+            ],
             "executiveTakeaway": {
               "show": true,
-              "metric": "Executive-ready analytic output",
-              "whyItMatters": "Leaders need prioritized, interpretable information.",
-              "whatToShare": "Summarize what matters, why it matters, and where action should happen.",
-              "action": "Design SQL around the decision it supports."
+              "metric": "Throughput and Capacity Optimization",
+              "whyItMatters": "Use flow data to improve operations.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
             }
           },
           {
-            "id": "t2_ex_02",
-            "type": "challenge",
-            "title": "Executive Summary of Encounters by Department",
-            "objective": "Return department and encounter_count ordered highest to lowest.",
+            "kind": "challenge",
+            "id": "l_156",
+            "title": "Workforce Productivity Analysis",
+            "objective": "Assess efficiency without losing context.",
             "sql_focus": [
-              "GROUP BY",
-              "COUNT",
-              "ORDER BY"
-            ],
-            "relevantTables": [
-              "encounters"
-            ],
-            "joinHint": "No join needed.",
-            "starterQuery": "SELECT department, COUNT(*) AS encounter_count FROM encounters GROUP BY department ORDER BY encounter_count DESC;",
-            "solutionQuery": "SELECT department, COUNT(*) AS encounter_count FROM encounters GROUP BY department ORDER BY encounter_count DESC;",
-            "hint": "Group by department, count rows, and sort descending.",
-            "executiveTakeaway": null
-          },
-          {
-            "id": "t2_ex_03",
-            "type": "scenario",
-            "title": "Actionability Scenario",
-            "objective": "Recognize why grouped and ranked summaries are more useful than raw detail for executives.",
-            "sql_focus": [],
-            "relevantTables": [
-              "encounters",
-              "claims"
-            ],
-            "joinHint": "Think decision support.",
-            "content": {
-              "summary": "Executives usually need to know which areas deserve attention first rather than reading through raw detail extracts.",
-              "prompt": "If leadership is short on time, is a ranked grouped summary usually more useful than a full raw export?",
-              "expectedAnswer": "yes"
-            },
-            "executiveTakeaway": {
-              "show": true,
-              "metric": "Leadership-focused summary design",
-              "whyItMatters": "Decision-makers need signal, not noise.",
-              "whatToShare": "Use grouped and ranked results for quick prioritization.",
-              "action": "Reduce clutter before sharing upward."
-            }
-          },
-          {
-            "id": "t2_ex_04",
-            "type": "challenge",
-            "title": "Executive Summary of No-Shows by Department",
-            "objective": "Return department and no_show_count ordered highest to lowest.",
-            "sql_focus": [
+              "SELECT",
               "WHERE",
               "GROUP BY",
-              "COUNT",
-              "ORDER BY"
+              "JOIN"
             ],
             "relevantTables": [
-              "appointments"
-            ],
-            "joinHint": "No join needed.",
-            "starterQuery": "SELECT department, COUNT(*) AS no_show_count FROM appointments WHERE status = 'No Show' GROUP BY department ORDER BY no_show_count DESC;",
-            "solutionQuery": "SELECT department, COUNT(*) AS no_show_count FROM appointments WHERE status = 'No Show' GROUP BY department ORDER BY no_show_count DESC;",
-            "hint": "Filter to No Show, then group by department and order descending.",
-            "executiveTakeaway": null
-          },
-          {
-            "id": "t2_ex_05",
-            "type": "scenario",
-            "title": "Analyst Framing Scenario",
-            "objective": "Recognize that analysts should frame the result, not just return data.",
-            "sql_focus": [],
-            "relevantTables": [
-              "appointments",
-              "claims",
               "encounters"
             ],
-            "joinHint": "Think insight plus implication.",
-            "content": {
-              "summary": "An analyst adds value by connecting the result to operational meaning and likely next steps, not just by producing the dataset.",
-              "prompt": "If one department clearly leads in no-shows, should the analyst usually frame that as a department-level access opportunity instead of just handing over the table?",
-              "expectedAnswer": "yes"
-            },
+            "joinHint": "Use the base table that matches the reporting grain, then join outward only when needed.",
+            "starterQuery": "SELECT provider_id, COUNT(*) AS encounter_count FROM encounters GROUP BY provider_id ORDER BY encounter_count DESC;",
+            "solutionQuery": "SELECT provider_id, COUNT(*) AS encounter_count FROM encounters GROUP BY provider_id ORDER BY encounter_count DESC;",
+            "hint": "Summarize encounters per provider.",
             "executiveTakeaway": {
               "show": true,
-              "metric": "Analyst framing quality",
-              "whyItMatters": "Data becomes useful when tied to implication and action.",
-              "whatToShare": "State what stands out and what it likely means.",
-              "action": "Do not stop at returning the table."
+              "metric": "Workforce Productivity Analysis",
+              "whyItMatters": "Assess efficiency without losing context.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "scenario",
+            "id": "l_157",
+            "title": "Supply Chain Analytics",
+            "objective": "Connect operations to resource availability.",
+            "relevantTables": [
+              "patients",
+              "encounters",
+              "claims",
+              "charges"
+            ],
+            "joinHint": "Think about the correct grain, the business audience, and the operational consequence.",
+            "summary": "Connect operations to resource availability.",
+            "prompt": "Explain how you would approach 'Supply Chain Analytics' in a CareOps hospital analytics context. Mention the likely data sources, the business interpretation, and one practical action.",
+            "expectedKeywords": [
+              "data",
+              "insight",
+              "action"
+            ],
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Supply Chain Analytics",
+              "whyItMatters": "Connect operations to resource availability.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "scenario",
+            "id": "l_158",
+            "title": "Scheduling Optimization",
+            "objective": "Use analytics to improve appointment access.",
+            "relevantTables": [
+              "patients",
+              "encounters",
+              "claims",
+              "charges"
+            ],
+            "joinHint": "Think about the correct grain, the business audience, and the operational consequence.",
+            "summary": "Use analytics to improve appointment access.",
+            "prompt": "Explain how you would approach 'Scheduling Optimization' in a CareOps hospital analytics context. Mention the likely data sources, the business interpretation, and one practical action.",
+            "expectedKeywords": [
+              "data",
+              "insight",
+              "action"
+            ],
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Scheduling Optimization",
+              "whyItMatters": "Use analytics to improve appointment access.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "scenario",
+            "id": "l_159",
+            "title": "Benchmarking Against Industry Standards",
+            "objective": "Compare internal performance to external targets.",
+            "relevantTables": [
+              "patients",
+              "encounters",
+              "claims",
+              "charges"
+            ],
+            "joinHint": "Think about the correct grain, the business audience, and the operational consequence.",
+            "summary": "Compare internal performance to external targets.",
+            "prompt": "Explain how you would approach 'Benchmarking Against Industry Standards' in a CareOps hospital analytics context. Mention the likely data sources, the business interpretation, and one practical action.",
+            "expectedKeywords": [
+              "data",
+              "insight",
+              "action"
+            ],
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Benchmarking Against Industry Standards",
+              "whyItMatters": "Compare internal performance to external targets.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "scenario",
+            "id": "l_160",
+            "title": "Continuous Performance Monitoring",
+            "objective": "Design repeatable monitoring logic.",
+            "relevantTables": [
+              "patients",
+              "encounters",
+              "claims",
+              "charges"
+            ],
+            "joinHint": "Think about the correct grain, the business audience, and the operational consequence.",
+            "summary": "Design repeatable monitoring logic.",
+            "prompt": "Explain how you would approach 'Continuous Performance Monitoring' in a CareOps hospital analytics context. Mention the likely data sources, the business interpretation, and one practical action.",
+            "expectedKeywords": [
+              "data",
+              "insight",
+              "action"
+            ],
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Continuous Performance Monitoring",
+              "whyItMatters": "Design repeatable monitoring logic.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "scenario",
+            "id": "l_161",
+            "title": "Operational Improvement Capstone",
+            "objective": "Recommend a measurable improvement plan.",
+            "relevantTables": [
+              "patients",
+              "encounters",
+              "claims",
+              "charges"
+            ],
+            "joinHint": "Think about the correct grain, the business audience, and the operational consequence.",
+            "summary": "Recommend a measurable improvement plan.",
+            "prompt": "Explain how you would approach 'Operational Improvement Capstone' in a CareOps hospital analytics context. Mention the likely data sources, the business interpretation, and one practical action.",
+            "expectedKeywords": [
+              "data",
+              "insight",
+              "action"
+            ],
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Operational Improvement Capstone",
+              "whyItMatters": "Recommend a measurable improvement plan.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          }
+        ]
+      },
+      {
+        "id": "executive_decision_support",
+        "title": "Executive Decision Support",
+        "order": 4,
+        "lessons": [
+          {
+            "kind": "scenario",
+            "id": "l_162",
+            "title": "Building Executive KPI Frameworks",
+            "objective": "Define a leadership-facing KPI set.",
+            "relevantTables": [
+              "patients",
+              "encounters",
+              "claims",
+              "charges"
+            ],
+            "joinHint": "Think about the correct grain, the business audience, and the operational consequence.",
+            "summary": "Define a leadership-facing KPI set.",
+            "prompt": "Explain how you would approach 'Building Executive KPI Frameworks' in a CareOps hospital analytics context. Mention the likely data sources, the business interpretation, and one practical action.",
+            "expectedKeywords": [
+              "data",
+              "insight",
+              "action"
+            ],
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Building Executive KPI Frameworks",
+              "whyItMatters": "Define a leadership-facing KPI set.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "scenario",
+            "id": "l_163",
+            "title": "Designing CFO and CMO Dashboards",
+            "objective": "Tailor views to executive priorities.",
+            "relevantTables": [
+              "patients",
+              "encounters",
+              "claims",
+              "charges"
+            ],
+            "joinHint": "Think about the correct grain, the business audience, and the operational consequence.",
+            "summary": "Tailor views to executive priorities.",
+            "prompt": "Explain how you would approach 'Designing CFO and CMO Dashboards' in a CareOps hospital analytics context. Mention the likely data sources, the business interpretation, and one practical action.",
+            "expectedKeywords": [
+              "data",
+              "insight",
+              "action"
+            ],
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Designing CFO and CMO Dashboards",
+              "whyItMatters": "Tailor views to executive priorities.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "scenario",
+            "id": "l_164",
+            "title": "Communicating Insights to Leadership",
+            "objective": "Present findings with clarity and prioritization.",
+            "relevantTables": [
+              "patients",
+              "encounters",
+              "claims",
+              "charges"
+            ],
+            "joinHint": "Think about the correct grain, the business audience, and the operational consequence.",
+            "summary": "Present findings with clarity and prioritization.",
+            "prompt": "Explain how you would approach 'Communicating Insights to Leadership' in a CareOps hospital analytics context. Mention the likely data sources, the business interpretation, and one practical action.",
+            "expectedKeywords": [
+              "data",
+              "insight",
+              "action"
+            ],
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Communicating Insights to Leadership",
+              "whyItMatters": "Present findings with clarity and prioritization.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "scenario",
+            "id": "l_165",
+            "title": "Change Management Through Analytics",
+            "objective": "Use data to support adoption and accountability.",
+            "relevantTables": [
+              "patients",
+              "encounters",
+              "claims",
+              "charges"
+            ],
+            "joinHint": "Think about the correct grain, the business audience, and the operational consequence.",
+            "summary": "Use data to support adoption and accountability.",
+            "prompt": "Explain how you would approach 'Change Management Through Analytics' in a CareOps hospital analytics context. Mention the likely data sources, the business interpretation, and one practical action.",
+            "expectedKeywords": [
+              "data",
+              "insight",
+              "action"
+            ],
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Change Management Through Analytics",
+              "whyItMatters": "Use data to support adoption and accountability.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "scenario",
+            "id": "l_166",
+            "title": "Data-Driven Strategic Recommendations",
+            "objective": "Translate metrics into actions.",
+            "relevantTables": [
+              "patients",
+              "encounters",
+              "claims",
+              "charges"
+            ],
+            "joinHint": "Think about the correct grain, the business audience, and the operational consequence.",
+            "summary": "Translate metrics into actions.",
+            "prompt": "Explain how you would approach 'Data-Driven Strategic Recommendations' in a CareOps hospital analytics context. Mention the likely data sources, the business interpretation, and one practical action.",
+            "expectedKeywords": [
+              "data",
+              "insight",
+              "action"
+            ],
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Data-Driven Strategic Recommendations",
+              "whyItMatters": "Translate metrics into actions.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "scenario",
+            "id": "l_167",
+            "title": "Measuring ROI of Analytics Initiatives",
+            "objective": "Quantify the value of analytics work.",
+            "relevantTables": [
+              "patients",
+              "encounters",
+              "claims",
+              "charges"
+            ],
+            "joinHint": "Think about the correct grain, the business audience, and the operational consequence.",
+            "summary": "Quantify the value of analytics work.",
+            "prompt": "Explain how you would approach 'Measuring ROI of Analytics Initiatives' in a CareOps hospital analytics context. Mention the likely data sources, the business interpretation, and one practical action.",
+            "expectedKeywords": [
+              "data",
+              "insight",
+              "action"
+            ],
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Measuring ROI of Analytics Initiatives",
+              "whyItMatters": "Quantify the value of analytics work.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "scenario",
+            "id": "l_168",
+            "title": "Executive Decision Support Capstone",
+            "objective": "Create a concise decision-support package.",
+            "relevantTables": [
+              "patients",
+              "encounters",
+              "claims",
+              "charges"
+            ],
+            "joinHint": "Think about the correct grain, the business audience, and the operational consequence.",
+            "summary": "Create a concise decision-support package.",
+            "prompt": "Explain how you would approach 'Executive Decision Support Capstone' in a CareOps hospital analytics context. Mention the likely data sources, the business interpretation, and one practical action.",
+            "expectedKeywords": [
+              "data",
+              "insight",
+              "action"
+            ],
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Executive Decision Support Capstone",
+              "whyItMatters": "Create a concise decision-support package.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          }
+        ]
+      },
+      {
+        "id": "careops_master_capstone",
+        "title": "CareOps Master Capstone",
+        "order": 5,
+        "lessons": [
+          {
+            "kind": "scenario",
+            "id": "l_169",
+            "title": "Integrated Healthcare Data Scenario",
+            "objective": "Work across multiple subject areas at once.",
+            "relevantTables": [
+              "patients",
+              "encounters",
+              "claims",
+              "charges"
+            ],
+            "joinHint": "Think about the correct grain, the business audience, and the operational consequence.",
+            "summary": "Work across multiple subject areas at once.",
+            "prompt": "Explain how you would approach 'Integrated Healthcare Data Scenario' in a CareOps hospital analytics context. Mention the likely data sources, the business interpretation, and one practical action.",
+            "expectedKeywords": [
+              "data",
+              "insight",
+              "action"
+            ],
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Integrated Healthcare Data Scenario",
+              "whyItMatters": "Work across multiple subject areas at once.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "scenario",
+            "id": "l_170",
+            "title": "Financial Diagnosis and Root Cause Analysis",
+            "objective": "Find the cause behind a financial problem.",
+            "relevantTables": [
+              "patients",
+              "encounters",
+              "claims",
+              "charges"
+            ],
+            "joinHint": "Think about the correct grain, the business audience, and the operational consequence.",
+            "summary": "Find the cause behind a financial problem.",
+            "prompt": "Explain how you would approach 'Financial Diagnosis and Root Cause Analysis' in a CareOps hospital analytics context. Mention the likely data sources, the business interpretation, and one practical action.",
+            "expectedKeywords": [
+              "data",
+              "insight",
+              "action"
+            ],
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Financial Diagnosis and Root Cause Analysis",
+              "whyItMatters": "Find the cause behind a financial problem.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "scenario",
+            "id": "l_171",
+            "title": "Operational Improvement Strategy",
+            "objective": "Recommend a change backed by data.",
+            "relevantTables": [
+              "patients",
+              "encounters",
+              "claims",
+              "charges"
+            ],
+            "joinHint": "Think about the correct grain, the business audience, and the operational consequence.",
+            "summary": "Recommend a change backed by data.",
+            "prompt": "Explain how you would approach 'Operational Improvement Strategy' in a CareOps hospital analytics context. Mention the likely data sources, the business interpretation, and one practical action.",
+            "expectedKeywords": [
+              "data",
+              "insight",
+              "action"
+            ],
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Operational Improvement Strategy",
+              "whyItMatters": "Recommend a change backed by data.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "scenario",
+            "id": "l_172",
+            "title": "Executive Summary and Presentation",
+            "objective": "Package your findings for leadership.",
+            "relevantTables": [
+              "patients",
+              "encounters",
+              "claims",
+              "charges"
+            ],
+            "joinHint": "Think about the correct grain, the business audience, and the operational consequence.",
+            "summary": "Package your findings for leadership.",
+            "prompt": "Explain how you would approach 'Executive Summary and Presentation' in a CareOps hospital analytics context. Mention the likely data sources, the business interpretation, and one practical action.",
+            "expectedKeywords": [
+              "data",
+              "insight",
+              "action"
+            ],
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Executive Summary and Presentation",
+              "whyItMatters": "Package your findings for leadership.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "scenario",
+            "id": "l_173",
+            "title": "Building an End-to-End Analytical Solution",
+            "objective": "Move from data question to deployable answer.",
+            "relevantTables": [
+              "patients",
+              "encounters",
+              "claims",
+              "charges"
+            ],
+            "joinHint": "Think about the correct grain, the business audience, and the operational consequence.",
+            "summary": "Move from data question to deployable answer.",
+            "prompt": "Explain how you would approach 'Building an End-to-End Analytical Solution' in a CareOps hospital analytics context. Mention the likely data sources, the business interpretation, and one practical action.",
+            "expectedKeywords": [
+              "data",
+              "insight",
+              "action"
+            ],
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Building an End-to-End Analytical Solution",
+              "whyItMatters": "Move from data question to deployable answer.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "scenario",
+            "id": "l_174",
+            "title": "Peer Review and Iteration",
+            "objective": "Refine analysis through critique.",
+            "relevantTables": [
+              "patients",
+              "encounters",
+              "claims",
+              "charges"
+            ],
+            "joinHint": "Think about the correct grain, the business audience, and the operational consequence.",
+            "summary": "Refine analysis through critique.",
+            "prompt": "Explain how you would approach 'Peer Review and Iteration' in a CareOps hospital analytics context. Mention the likely data sources, the business interpretation, and one practical action.",
+            "expectedKeywords": [
+              "data",
+              "insight",
+              "action"
+            ],
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Peer Review and Iteration",
+              "whyItMatters": "Refine analysis through critique.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
+            }
+          },
+          {
+            "kind": "scenario",
+            "id": "l_175",
+            "title": "Final CareOps Certification Assessment",
+            "objective": "Demonstrate readiness across the curriculum.",
+            "relevantTables": [
+              "patients",
+              "encounters",
+              "claims",
+              "charges"
+            ],
+            "joinHint": "Think about the correct grain, the business audience, and the operational consequence.",
+            "summary": "Demonstrate readiness across the curriculum.",
+            "prompt": "Explain how you would approach 'Final CareOps Certification Assessment' in a CareOps hospital analytics context. Mention the likely data sources, the business interpretation, and one practical action.",
+            "expectedKeywords": [
+              "data",
+              "insight",
+              "action"
+            ],
+            "executiveTakeaway": {
+              "show": true,
+              "metric": "Final CareOps Certification Assessment",
+              "whyItMatters": "Demonstrate readiness across the curriculum.",
+              "whatToShare": "Summarize the most material insight, the likely driver, and the operational or financial impact.",
+              "action": "Identify the next action leadership should consider based on the pattern in the data."
             }
           }
         ]
@@ -4882,1984 +5036,978 @@ const curriculum = [
   }
 ];
 
-// ======================
-// HELPER FUNCTIONS
-// ======================
-function getTrack() {
-    return curriculum.find(t => t.id === appState.currentTrackId) || curriculum[0];
-}
-
-
-function getAllCategories() {
-    return getTrack().categories || [];
-}
-
-function getVisibleCategories() {
-    const categories = getAllCategories();
-    if (!activeDifficultyFilter) return categories;
-
-    const matchedLevel = LEARNING_LEVELS.find(level => level.label === activeDifficultyFilter);
-    if (!matchedLevel) return categories;
-
-    return categories.filter(category => matchedLevel.categoryIds.includes(category.id));
-}
-
-function getLearningLevelStats() {
-    return LEARNING_LEVELS.map(level => {
-        const categories = getAllCategories().filter(category => level.categoryIds.includes(category.id));
-        const totalLessons = categories.reduce((sum, category) => sum + category.lessons.length, 0);
-        const completedLessons = categories.reduce(
-            (sum, category) => sum + category.lessons.filter(lesson => isLessonCompleted(lesson.id)).length,
-            0
-        );
-        const completedCurriculum = categories.filter(category =>
-            category.lessons.every(lesson => isLessonCompleted(lesson.id))
-        ).length;
-
-        return {
-            ...level,
-            categories,
-            totalLessons,
-            completedLessons,
-            totalCurriculum: categories.length,
-            completedCurriculum,
-            completionPercent: totalLessons ? Math.round((completedLessons / totalLessons) * 100) : 0
-        };
-    });
-}
-
-function levelBadgeCount() {
-    return getLearningLevelStats().filter(level => level.completedLessons === level.totalLessons && level.totalLessons > 0).length;
-}
-
-function getAllLessons() {
-    return getAllCategories().flatMap(category =>
-        category.lessons.map(lesson => ({
-            categoryId: category.id,
-            categoryTitle: category.title,
-            lesson
-        }))
-    );
-}
-
 function saveProgress() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
 }
 
 function loadProgress() {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (!saved) return;
-
-    try {
-        const parsed = JSON.parse(saved);
-        appState = { ...appState, ...parsed };
-    } catch (error) {
-        console.warn("Failed to load progress:", error);
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+    const parsed = JSON.parse(raw);
+    if (parsed && typeof parsed === "object") {
+      appState = {
+        ...appState,
+        ...parsed,
+        lessonStats: parsed.lessonStats || {},
+        completedLessonIds: parsed.completedLessonIds || [],
+        firstTryLessonIds: parsed.firstTryLessonIds || []
+      };
     }
+  } catch (error) {
+    console.error("Could not load progress:", error);
+  }
 }
 
-// ======================
-// INITIALIZATION
-// ======================
-
-// ======================
-// PART 2 OF 4
-// SQL ENGINE, RESULT HELPERS, GRADING ENGINE
-// ======================
-
-// ======================
-// SQLITE ENGINE HELPERS
-// ======================
-function inferSqliteType(columnName) {
-    const col = String(columnName || "").toLowerCase();
-
-    if (
-        col.endsWith("_id") ||
-        col === "age" ||
-        col === "risk_score" ||
-        col === "amount" ||
-        col === "billed_amount" ||
-        col === "discharge_order_minutes" ||
-        col === "departure_minutes" ||
-        col === "days_to_readmit" ||
-        col === "obs_hours" ||
-        col === "delayed_for_transport" ||
-        col === "readmit_within_30_days" ||
-        col === "converted_to_inpatient" ||
-        col === "code_44_flag"
-    ) {
-        return "INTEGER";
-    }
-
-    if (col === "length_of_stay") {
-        return "REAL";
-    }
-
-    return "TEXT";
-}
-
-function escapeSqlString(value) {
-    return String(value).replace(/'/g, "''");
-}
-
-async function initializeSqlEngine() {
-    if (sqlEngineReady && sqlDb) return;
-
-    if (typeof window.initSqlJs !== "function") {
-        throw new Error("sql.js library was not found on the page.");
-    }
-
-    SQL = await window.initSqlJs({
-        locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/${file}`
-    });
-
-    sqlDb = new SQL.Database();
-
-    schema.tables.forEach(table => {
-        const columnDefs = table.notableColumns.map(columnName => {
-            const type = inferSqliteType(columnName);
-            return `${columnName} ${type}`;
-        });
-
-        const createSql = `CREATE TABLE ${table.name} (${columnDefs.join(", ")});`;
-        sqlDb.run(createSql);
-
-        table.sampleRows.forEach(row => {
-            const valuesSql = row.map(cell => {
-                if (cell === null || cell === undefined) return "NULL";
-                if (typeof cell === "number") return String(cell);
-                return `'${escapeSqlString(cell)}'`;
-            });
-
-            const insertSql = `
-                INSERT INTO ${table.name} (${table.notableColumns.join(", ")})
-                VALUES (${valuesSql.join(", ")});
-            `;
-            sqlDb.run(insertSql);
-        });
-    });
-
-    sqlEngineReady = true;
-}
-
-function executeSqlAgainstDb(sql) {
-    if (!sqlDb) {
-        throw new Error("SQL engine is not initialized.");
-    }
-
-    const cleanedSql = String(sql || "").trim();
-    if (!cleanedSql) {
-        return { columns: [], rows: [] };
-    }
-
-    const results = sqlDb.exec(cleanedSql);
-
-    if (!results || results.length === 0) {
-        return { columns: [], rows: [] };
-    }
-
-    const first = results[0];
-    return {
-        columns: first.columns || [],
-        rows: first.values || []
-    };
-}
-
-// ======================
-// RESULT DISPLAY HELPERS
-// ======================
-function escapeHtml(value) {
-    return String(value)
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#39;");
-}
-
-function buildResultTable(columns, rows) {
-    let html = "<div class='query-results-table-wrap'><table class='preview-table'><thead><tr>";
-
-    columns.forEach(column => {
-        html += `<th>${escapeHtml(column)}</th>`;
-    });
-
-    html += "</tr></thead><tbody>";
-
-    rows.forEach(row => {
-        html += "<tr>";
-        row.forEach(cell => {
-            html += `<td>${cell === null ? "NULL" : escapeHtml(cell)}</td>`;
-        });
-        html += "</tr>";
-    });
-
-    html += "</tbody></table></div>";
-    return html;
-}
-
-function buildPreviewTable(columns, rows) {
-    let html = "<table class='preview-table'><tr>";
-
-    columns.forEach(column => {
-        html += `<th>${escapeHtml(column)}</th>`;
-    });
-
-    html += "</tr>";
-
-    rows.forEach(row => {
-        html += "<tr>";
-        row.forEach(cell => {
-            html += `<td>${cell === null ? "NULL" : escapeHtml(cell)}</td>`;
-        });
-        html += "</tr>";
-    });
-
-    html += "</table>";
-    return html;
-}
-
-// ======================
-// SQL NORMALIZATION + COMPARISON
-// ======================
-function normalizeSql(sql) {
-    return String(sql || "")
-        .trim()
-        .replace(/;$/, "")
-        .replace(/\s+/g, " ")
-        .toLowerCase();
-}
-
-function canonicalizeValue(value) {
-    if (value === null || value === undefined) return "null";
-    if (typeof value === "number") return Number(value).toString();
-    return String(value).trim().toLowerCase();
-}
-
-function canonicalizeRows(rows) {
-    return rows
-        .map(row => row.map(canonicalizeValue))
-        .map(row => JSON.stringify(row))
-        .sort();
-}
-
-function areRowSetsEqual(rowsA, rowsB) {
-    if (rowsA.length !== rowsB.length) return false;
-
-    const a = canonicalizeRows(rowsA);
-    const b = canonicalizeRows(rowsB);
-
-    for (let i = 0; i < a.length; i += 1) {
-        if (a[i] !== b[i]) return false;
-    }
-
-    return true;
-}
-
-function normalizedColumnName(name) {
-    return String(name || "")
-        .trim()
-        .toLowerCase()
-        .replace(/\s+/g, "_");
-}
-
-function areColumnsEquivalent(userColumns, solutionColumns) {
-    if (userColumns.length !== solutionColumns.length) return false;
-
-    const userNormalized = userColumns.map(normalizedColumnName).sort();
-    const solutionNormalized = solutionColumns.map(normalizedColumnName).sort();
-
-    for (let i = 0; i < userNormalized.length; i += 1) {
-        if (userNormalized[i] !== solutionNormalized[i]) return false;
-    }
-
-    return true;
-}
-
-function computeRowMatchPercent(userRows, solutionRows) {
-    if (!solutionRows.length && !userRows.length) return 100;
-    if (!solutionRows.length) return 0;
-
-    const userSet = canonicalizeRows(userRows);
-    const solutionSet = canonicalizeRows(solutionRows);
-
-    let matches = 0;
-    const used = new Set();
-
-    solutionSet.forEach(solutionRow => {
-        for (let i = 0; i < userSet.length; i += 1) {
-            if (used.has(i)) continue;
-            if (userSet[i] === solutionRow) {
-                used.add(i);
-                matches += 1;
-                break;
-            }
-        }
-    });
-
-    return Math.round((matches / solutionSet.length) * 100);
-}
-
-// ======================
-// TABLE DETECTION + SQL STRUCTURE
-// ======================
-function detectTablesFromSql(sql) {
-    if (!sql) return [];
-
-    const lowered = String(sql).toLowerCase();
-    const found = [];
-
-    schema.tables.forEach(table => {
-        const tableName = table.name.toLowerCase();
-        const patterns = [
-            new RegExp(`\\bfrom\\s+${tableName}\\b`, "i"),
-            new RegExp(`\\bjoin\\s+${tableName}\\b`, "i"),
-            new RegExp(`\\bupdate\\s+${tableName}\\b`, "i"),
-            new RegExp(`\\binto\\s+${tableName}\\b`, "i"),
-            new RegExp(`\\bdelete\\s+from\\s+${tableName}\\b`, "i")
-        ];
-
-        if (patterns.some(pattern => pattern.test(lowered))) {
-            found.push(table.name);
-        }
-    });
-
-    return [...new Set(found)];
-}
-
-function analyzeSqlStructure(sql) {
-    const normalized = normalizeSql(sql);
-
-    return {
-        sql: normalized,
-        hasSelect: /\bselect\b/.test(normalized),
-        hasFrom: /\bfrom\b/.test(normalized),
-        hasWhere: /\bwhere\b/.test(normalized),
-        hasOrderBy: /\border by\b/.test(normalized),
-        hasGroupBy: /\bgroup by\b/.test(normalized),
-        hasHaving: /\bhaving\b/.test(normalized),
-        hasJoin: /\bjoin\b/.test(normalized),
-        hasLeftJoin: /\bleft join\b/.test(normalized),
-        hasCase: /\bcase\b/.test(normalized),
-        hasAvg: /\bavg\s*\(/.test(normalized),
-        hasSum: /\bsum\s*\(/.test(normalized),
-        hasCount: /\bcount\s*\(/.test(normalized),
-        hasRound: /\bround\s*\(/.test(normalized),
-        hasCoalesce: /\bcoalesce\s*\(/.test(normalized),
-        hasUpper: /\bupper\s*\(/.test(normalized),
-        hasLower: /\blower\s*\(/.test(normalized),
-        hasTrim: /\btrim\s*\(/.test(normalized),
-        tables: detectTablesFromSql(normalized)
-    };
-}
-
-// ======================
-// GRADING + SCORING
-// ======================
-function scoreToTier(score) {
-    if (score >= 95) return "Perfect";
-    if (score >= 80) return "Pass";
-    if (score >= 60) return "Almost There";
-    return "Needs Work";
-}
-
-function tierRank(tier) {
-    const map = {
-        "Not Started": 0,
-        "Needs Work": 1,
-        "Almost There": 2,
-        "Pass": 3,
-        "Perfect": 4
-    };
-    return map[tier] || 0;
-}
-
-function formatPercent(value) {
-    return `${Number(value || 0).toFixed(0)}%`;
-}
-
-function gradeStructure(userQuery, solutionQuery) {
-    const user = analyzeSqlStructure(userQuery);
-    const solution = analyzeSqlStructure(solutionQuery);
-
-    const checks = [
-        { key: "hasSelect", label: "SELECT" },
-        { key: "hasFrom", label: "FROM" },
-        { key: "hasWhere", label: "WHERE" },
-        { key: "hasOrderBy", label: "ORDER BY" },
-        { key: "hasGroupBy", label: "GROUP BY" },
-        { key: "hasHaving", label: "HAVING" },
-        { key: "hasJoin", label: "JOIN" },
-        { key: "hasLeftJoin", label: "LEFT JOIN" },
-        { key: "hasCase", label: "CASE" },
-        { key: "hasAvg", label: "AVG" },
-        { key: "hasSum", label: "SUM" },
-        { key: "hasCount", label: "COUNT" },
-        { key: "hasRound", label: "ROUND" },
-        { key: "hasCoalesce", label: "COALESCE" },
-        { key: "hasUpper", label: "UPPER" },
-        { key: "hasLower", label: "LOWER" },
-        { key: "hasTrim", label: "TRIM" }
-    ];
-
-    const relevantChecks = checks.filter(check => solution[check.key] === true);
-
-    if (!relevantChecks.length) {
-        return {
-            score: 100,
-            matched: [],
-            missed: []
-        };
-    }
-
-    const matched = [];
-    const missed = [];
-
-    relevantChecks.forEach(check => {
-        if (user[check.key]) {
-            matched.push(check.label);
-        } else {
-            missed.push(check.label);
-        }
-    });
-
-    return {
-        score: Math.round((matched.length / relevantChecks.length) * 100),
-        matched,
-        missed
-    };
-}
-
-function gradeTableUsage(userQuery, solutionQuery) {
-    const userTables = analyzeSqlStructure(userQuery).tables.slice().sort();
-    const solutionTables = analyzeSqlStructure(solutionQuery).tables.slice().sort();
-
-    if (!solutionTables.length) {
-        return {
-            score: 100,
-            matched: [],
-            missed: [],
-            unexpected: []
-        };
-    }
-
-    const matched = solutionTables.filter(table => userTables.includes(table));
-    const missed = solutionTables.filter(table => !userTables.includes(table));
-    const unexpected = userTables.filter(table => !solutionTables.includes(table));
-
-    const score = Math.max(
-        0,
-        Math.round((matched.length / solutionTables.length) * 100) - (unexpected.length * 15)
-    );
-
-    return {
-        score: Math.max(0, Math.min(100, score)),
-        matched,
-        missed,
-        unexpected
-    };
-}
-
-function buildGradeResult(userQuery, solutionQuery, userResult, solutionResult) {
-    const structure = gradeStructure(userQuery, solutionQuery);
-    const tables = gradeTableUsage(userQuery, solutionQuery);
-
-    const columnsMatch = areColumnsEquivalent(userResult.columns, solutionResult.columns);
-    const rowsMatch = areRowSetsEqual(userResult.rows, solutionResult.rows);
-
-    const columnScore = columnsMatch ? 100 : 0;
-    const rowScore = computeRowMatchPercent(userResult.rows, solutionResult.rows);
-
-    const weightedScore = Math.round(
-        (structure.score * 0.20) +
-        (tables.score * 0.20) +
-        (columnScore * 0.25) +
-        (rowScore * 0.35)
-    );
-
-    const exactSqlMatch = normalizeSql(userQuery) === normalizeSql(solutionQuery);
-    const equivalentOutput = columnsMatch && rowsMatch;
-    const tier = exactSqlMatch ? "Perfect" : scoreToTier(weightedScore);
-
-    return {
-        score: exactSqlMatch ? 100 : weightedScore,
-        tier,
-        passed: equivalentOutput || weightedScore >= 80,
-        exactSqlMatch,
-        equivalentOutput,
-        structure,
-        tables,
-        columnScore,
-        rowScore,
-        columnsMatch,
-        rowsMatch
-    };
-}
-
-function buildGradeFeedback(gradeResult, lesson) {
-    const parts = [];
-
-    parts.push(`<p><strong>Tier:</strong> ${escapeHtml(gradeResult.tier)} (${formatPercent(gradeResult.score)})</p>`);
-    parts.push(
-        `<p><strong>Breakdown:</strong> Structure ${formatPercent(gradeResult.structure.score)} | Tables ${formatPercent(gradeResult.tables.score)} | Columns ${formatPercent(gradeResult.columnScore)} | Rows ${formatPercent(gradeResult.rowScore)}</p>`
-    );
-
-    if (gradeResult.exactSqlMatch) {
-        parts.push("<p>You matched the exact lesson solution.</p>");
-        return parts.join("");
-    }
-
-    if (gradeResult.equivalentOutput) {
-        parts.push("<p>Your SQL is different from the lesson answer, but the output is equivalent and accepted.</p>");
-        return parts.join("");
-    }
-
-    if (gradeResult.structure.missed.length) {
-        parts.push(`<p><strong>Missing SQL pieces:</strong> ${escapeHtml(gradeResult.structure.missed.join(", "))}</p>`);
-    }
-
-    if (gradeResult.tables.missed.length) {
-        parts.push(`<p><strong>Missing expected tables:</strong> ${escapeHtml(gradeResult.tables.missed.join(", "))}</p>`);
-    }
-
-    if (gradeResult.tables.unexpected.length) {
-        parts.push(`<p><strong>Unexpected tables used:</strong> ${escapeHtml(gradeResult.tables.unexpected.join(", "))}</p>`);
-    }
-
-    if (!gradeResult.columnsMatch) {
-        parts.push("<p>Your selected output columns do not match the expected result.</p>");
-    }
-
-    if (!gradeResult.rowsMatch) {
-        parts.push("<p>Your result rows do not match the expected result. Recheck filters, joins, grouping, or calculations.</p>");
-    }
-
-    if (lesson && lesson.hint) {
-        parts.push(`<p><strong>Hint:</strong> ${escapeHtml(lesson.hint)}</p>`);
-    }
-
-    return parts.join("");
-}
-
-// ======================
-// LESSON STATS + ACHIEVEMENTS
-// ======================
-function getLessonStats(lessonId) {
-    if (!appState.lessonStats || typeof appState.lessonStats !== "object") {
-        appState.lessonStats = {};
-    }
-
-    if (!appState.lessonStats[lessonId]) {
-        appState.lessonStats[lessonId] = {
-            attempts: 0,
-            passes: 0,
-            bestScore: 0,
-            bestTier: "Not Started",
-            mastered: false,
-            lastScore: 0,
-            lastTier: "Not Started"
-        };
-    }
-
-    return appState.lessonStats[lessonId];
-}
-
-function updateLessonStatsOnGrade(lessonId, gradeResult, passed) {
-    const stats = getLessonStats(lessonId);
-
-    stats.attempts += 1;
-    stats.lastScore = gradeResult.score;
-    stats.lastTier = gradeResult.tier;
-
-    if (passed) {
-        stats.passes += 1;
-    }
-
-    if (gradeResult.score > stats.bestScore) {
-        stats.bestScore = gradeResult.score;
-    }
-
-    if (tierRank(gradeResult.tier) > tierRank(stats.bestTier)) {
-        stats.bestTier = gradeResult.tier;
-    }
-
-    if (gradeResult.tier === "Perfect" || gradeResult.score >= 90) {
-        stats.mastered = true;
-    }
-}
-
-function masteryCount() {
-    const stats = appState.lessonStats || {};
-    return Object.values(stats).filter(stat => stat && stat.mastered).length;
-}
-
-function achievements() {
-    const completed = completedLessonCount();
-    const firstTry = appState.firstTryLessonIds.length;
-    const mastered = masteryCount();
-    const catComplete = categoryId => {
-        const category = getAllCategories().find(item => item.id === categoryId);
-        return !!category && category.lessons.every(lesson => isLessonCompleted(lesson.id));
-    };
-
-    return [
-        { label: "First Step", earned: completed >= 1, emoji: "🚀" },
-        { label: "Getting the Hang of It", earned: completed >= 5, emoji: "📘" },
-        { label: "On a Roll", earned: completed >= 10, emoji: "🔥" },
-        { label: "Quarter Century", earned: completed >= 25, emoji: "🏅" },
-        { label: "Halfway Hero", earned: completed >= 50, emoji: "🥈" },
-        { label: "Century Club", earned: completed >= 100, emoji: "💯" },
-
-        { label: "First-Try Flash", earned: firstTry >= 3, emoji: "⚡" },
-        { label: "Precision Pro", earned: firstTry >= 10, emoji: "🎯" },
-        { label: "Mastermind", earned: mastered >= 5, emoji: "🧠" },
-        { label: "Master of Masters", earned: mastered >= 25, emoji: "👑" },
-
-        { label: "Join Genius", earned: catComplete("inner_joins"), emoji: "🔗" },
-        { label: "Aggregate King", earned: catComplete("aggregations"), emoji: "👑" },
-        { label: "Filter Fanatic", earned: catComplete("filtering_rows"), emoji: "🎯" },
-        { label: "Grouping Guru", earned: catComplete("group_by"), emoji: "📊" },
-        { label: "CASE Commander", earned: catComplete("case_statements"), emoji: "🧩" },
-        { label: "Null Navigator", earned: catComplete("null_handling"), emoji: "🧭" },
-
-        { label: "Throughput Thinker", earned: catComplete("hospital_throughput"), emoji: "🏥" },
-        { label: "Readmission Ranger", earned: catComplete("readmissions_kpis"), emoji: "🔁" },
-        { label: "Financial Fixer", earned: catComplete("denials_kpis"), emoji: "💰" },
-        { label: "Executive Whisperer", earned: catComplete("executive_summary_sql"), emoji: "🗣️" }
-    ];
-}
-
-function categoryBadgeCount() {
-    return getAllCategories().filter(category =>
-        category.lessons.every(lesson => isLessonCompleted(lesson.id))
-    ).length;
-}
-
-// ======================
-// FEEDBACK / ERROR HELPERS
-// ======================
-function getExecutionErrorMessage(error) {
-    const raw = String(error && error.message ? error.message : error || "");
-    const message = raw.toLowerCase();
-
-    if (message.includes("syntax error")) {
-        return "SQL syntax error. Check commas, parentheses, aliases, and clause order.";
-    }
-
-    if (message.includes("no such table")) {
-        return "One of the tables in your query does not exist in this lesson schema.";
-    }
-
-    if (message.includes("no such column")) {
-        return "One of the columns in your query does not exist in the table you used.";
-    }
-
-    if (message.includes("ambiguous")) {
-        return "A column reference is ambiguous. Add the table alias or full table.column reference.";
-    }
-
-    return raw || "The query could not be executed.";
-}
-
-function explainFirstMiss(userQuery, lesson, userError = null) {
-    if (userError) {
-        return getExecutionErrorMessage(userError);
-    }
-
-    const user = analyzeSqlStructure(userQuery);
-    const solution = analyzeSqlStructure(lesson.solutionQuery || "");
-
-    if (!user.hasSelect) return "Your query is missing SELECT.";
-    if (!user.hasFrom) return "Your query is missing FROM.";
-
-    if (solution.tables.length && user.tables.length) {
-        const expected = solution.tables.slice().sort().join(", ");
-        const actual = user.tables.slice().sort().join(", ");
-        if (expected !== actual) {
-            return `You used the wrong table set. Expected ${expected}, but your query used ${actual}.`;
-        }
-    }
-
-    if (solution.hasJoin && !user.hasJoin) return "This lesson needs a JOIN, but your query does not include one.";
-    if (solution.hasLeftJoin && !user.hasLeftJoin) return "This lesson needs a LEFT JOIN, but your query does not include one.";
-    if (solution.hasWhere && !user.hasWhere) return "This lesson needs a WHERE clause, but your query does not include one.";
-    if (solution.hasGroupBy && !user.hasGroupBy) return "This lesson needs a GROUP BY clause, but your query does not include one.";
-    if (solution.hasHaving && !user.hasHaving) return "This lesson needs a HAVING clause, but your query does not include one.";
-    if (solution.hasOrderBy && !user.hasOrderBy) return "This lesson needs an ORDER BY clause, but your query does not include one.";
-
-    return "Your SQL ran, but the output still does not match the lesson target.";
-}
-
-function explainCorrectAnswer(lesson) {
-    const solution = lesson.solutionQuery || "";
-
-    if (/left join/i.test(solution)) {
-        return "This works because it preserves the left table while adding matched values from the related table.";
-    }
-
-    if (/join/i.test(solution)) {
-        return "This works because it joins the correct related tables, uses the right join key, and returns the requested fields.";
-    }
-
-    if (/group by/i.test(solution) && /having/i.test(solution)) {
-        return "This works because it groups the data correctly, calculates the required summary, and then filters the grouped results.";
-    }
-
-    if (/group by/i.test(solution)) {
-        return "This works because it summarizes the data at the correct grouping level.";
-    }
-
-    if (/case/i.test(solution)) {
-        return "This works because it transforms raw values into the requested business categories.";
-    }
-
-    if (/avg|sum|count|round/i.test(solution)) {
-        return "This works because it calculates the requested metric from the correct table and fields.";
-    }
-
-    if (/where/i.test(solution) && /order by/i.test(solution)) {
-        return "This works because it filters to the right records and then sorts them in the requested order.";
-    }
-
-    if (/where/i.test(solution)) {
-        return "This works because it selects the requested fields and filters to the exact records the lesson asked for.";
-    }
-
-    if (/order by/i.test(solution)) {
-        return "This works because it selects the requested fields and sorts the results correctly.";
-    }
-
-    if (/select\s+\*/i.test(solution)) {
-        return "This works because the lesson asks for all columns and all rows from the target table.";
-    }
-
-    return "This works because it returns exactly what the lesson asked for.";
-}
-
-// ======================
-// PART 3 OF 4
-// SCHEMA UI, DASHBOARD, CURRICULUM NAV, LESSON RENDERING
-// ======================
-
-// ======================
-// STATE DEFAULTS + UI HELPERS
-// ======================
-function initializeStateDefaults() {
-    const track = getTrack();
-    if (!track) return;
-
-    if (!appState.currentCategoryId) {
-        appState.currentCategoryId = track.categories[0].id;
-    }
-
-    if (!appState.currentLessonId) {
-        appState.currentLessonId = track.categories[0].lessons[0].id;
-    }
-
-    if (!appState.completedLessonIds) {
-        appState.completedLessonIds = [];
-    }
-
-    if (!appState.firstTryLessonIds) {
-        appState.firstTryLessonIds = [];
-    }
-
-    if (!appState.lessonStats || typeof appState.lessonStats !== "object") {
-        appState.lessonStats = {};
-    }
-
-    if (typeof appState.schemaPanelWidth !== "number") {
-        appState.schemaPanelWidth = 320;
-    }
-}
-
-function sqlFocusText(sqlFocus) {
-    return sqlFocus && sqlFocus.length ? sqlFocus.join(", ") : "—";
-}
-
-
-function difficultyClassFromLabel(label) {
-    if (label === "Foundations") return "difficulty-foundations";
-    if (label === "Core") return "difficulty-core";
-    if (label === "Applied") return "difficulty-applied";
-    if (label === "Advanced") return "difficulty-advanced";
-    return "difficulty-expert";
-}
-
-function lessonTypeClass(type) {
-    return `lesson-type-${type}`;
-}
-
-function formatLessonType(type) {
-    if (!type) return "";
-    return type.charAt(0).toUpperCase() + type.slice(1).toLowerCase();
-}
-
-function categoryDifficulty(category) {
-    const matchedLevel = LEARNING_LEVELS.find(level => level.categoryIds.includes(category.id));
-    return matchedLevel ? matchedLevel.label : "Advanced";
-}
-// ======================
-// SCHEMA LOOKUP HELPERS
-// ======================
-function getTableByName(name) {
-    return schema.tables.find(table => table.name === name);
-}
-
-function relatedRelationships(tableName) {
-    return schema.relationships.filter(rel => rel.includes(`${tableName}.`));
-}
-
-function filterRelevantRelationships(relevantTables) {
-    if (!relevantTables || !relevantTables.length) return schema.relationships;
-
-    return schema.relationships.filter(rel => {
-        const matches = relevantTables.filter(tableName => rel.includes(`${tableName}.`));
-        return matches.length >= 2;
-    });
-}
-
-// ======================
-// LESSON STATE HELPERS
-// ======================
-function getLessonRecordById(lessonId) {
-    return getAllLessons().find(item => item.lesson.id === lessonId) || null;
-}
-
-function getCurrentLessonRecord() {
-    return getLessonRecordById(appState.currentLessonId);
-}
-
-function getCurrentLesson() {
-    const record = getCurrentLessonRecord();
-    return record ? record.lesson : null;
-}
-
-function isLessonCompleted(lessonId) {
-    return appState.completedLessonIds.includes(lessonId);
-}
-
-function markLessonComplete(lessonId) {
-    if (!appState.completedLessonIds.includes(lessonId)) {
-        appState.completedLessonIds.push(lessonId);
-    }
-}
-
-function markLessonFirstTry(lessonId) {
-    if (!appState.firstTryLessonIds.includes(lessonId)) {
-        appState.firstTryLessonIds.push(lessonId);
-    }
-}
-
-function totalLessonCount() {
-    return getAllLessons().length;
-}
-
-function completedLessonCount() {
-    return appState.completedLessonIds.length;
-}
-
-// ======================
-// SCHEMA RENDERING
-// ======================
-function renderSchemaTables() {
-    const container = document.getElementById("schema-tables");
-    if (!container) return;
-
-    container.innerHTML = "";
-
-    schema.tables.forEach(table => {
-        const details = document.createElement("details");
-        details.className = "schema-card";
-        details.id = `schema-${table.name}`;
-
-       details.innerHTML = `
-    <summary>${escapeHtml(table.name)}</summary>
-    <div class="schema-card-body">
-        <p><strong>Description:</strong> ${escapeHtml(table.description)}</p>
-        <p><strong>Keys:</strong> ${escapeHtml(table.keyColumns.join(", "))}</p>
-        <p><strong>Columns:</strong> ${escapeHtml(table.notableColumns.join(", "))}</p>
-        <div class="schema-table-actions">
-            <button
-                type="button"
-                class="schema-table-view-btn"
-                onclick="openTableModal('${table.name}')"
-            >
-                Open Table Viewer
-            </button>
-        </div>
-    </div>
-`;
-
-        container.appendChild(details);
-    });
-}
-
-function renderRelationships(relevantTables = []) {
-    const container = document.getElementById("schema-relationships");
-    if (!container) return;
-
-    container.innerHTML = "";
-    const relationshipsToShow = filterRelevantRelationships(relevantTables);
-
-    relationshipsToShow.forEach(relationship => {
-        const item = document.createElement("div");
-        item.className = "relationship-item";
-        item.innerText = relationship;
-        container.appendChild(item);
-    });
-
-    if (!relationshipsToShow.length) {
-        const item = document.createElement("div");
-        item.className = "relationship-item";
-        item.innerText = "No direct relationships highlighted for this lesson.";
-        container.appendChild(item);
-    }
-}
-
-function renderSchema() {
-    renderSchemaTables();
-    renderRelationships([]);
-}
-
-function highlightRelevantSchema(tables = []) {
-    document.querySelectorAll(".schema-card").forEach(card => {
-        card.open = false;
-    });
-
-    tables.forEach(tableName => {
-        const card = document.getElementById(`schema-${tableName}`);
-        if (card) card.open = true;
-    });
-
-    renderRelationships(tables);
-}
-
-function openTableModal(tableName) {
-    const table = getTableByName(tableName);
-    if (!table) return;
-
-    const titleEl = document.getElementById("table-modal-title");
-    const descriptionEl = document.getElementById("table-modal-description");
-    const keysEl = document.getElementById("table-modal-keys");
-    const columnsEl = document.getElementById("table-modal-columns");
-    const relationshipsWrap = document.getElementById("table-modal-relationships");
-    const previewWrap = document.getElementById("table-modal-preview-content");
-    const overlay = document.getElementById("table-modal-overlay");
-
-    if (titleEl) titleEl.innerText = table.name;
-    if (descriptionEl) descriptionEl.innerText = table.description;
-    if (keysEl) keysEl.innerText = table.keyColumns.join(", ");
-    if (columnsEl) columnsEl.innerText = table.notableColumns.join(", ");
-
-    if (relationshipsWrap) {
-        relationshipsWrap.innerHTML = "";
-        relatedRelationships(table.name).forEach(rel => {
-            const chip = document.createElement("div");
-            chip.className = "modal-relationship-chip";
-            chip.innerText = rel;
-            relationshipsWrap.appendChild(chip);
-        });
-    }
-
-    if (previewWrap) {
-        previewWrap.innerHTML = buildPreviewTable(table.notableColumns, table.sampleRows);
-    }
-
-    if (overlay) {
-        overlay.classList.remove("hidden");
-    }
-}
-
-function closeTableModal(event) {
-    if (event && event.target && event.target.id !== "table-modal-overlay") return;
-
-    const overlay = document.getElementById("table-modal-overlay");
-    if (overlay) {
-        overlay.classList.add("hidden");
-    }
-}
-
-// ======================
-// SCHEMA PANEL RESIZER
-// ======================
 function applySchemaPanelWidth() {
-    const panel = document.getElementById("schema-panel");
-    const shell = document.querySelector(".app-shell");
-    if (!panel || !shell) return;
-
-    const maxWidth = Math.floor(window.innerWidth * 0.55);
-    const width = Math.max(260, Math.min(appState.schemaPanelWidth || 320, maxWidth));
-
-    panel.style.width = `${width}px`;
-    shell.style.gridTemplateColumns = `${width}px 14px 1fr`;
-    appState.schemaPanelWidth = width;
+  const panel = document.getElementById("schema-panel");
+  const shell = document.querySelector(".app-shell");
+  if (!panel || !shell) return;
+  const width = Math.max(260, Math.min(appState.schemaPanelWidth || 320, Math.floor(window.innerWidth * 0.55)));
+  panel.style.width = `${width}px`;
+  shell.style.gridTemplateColumns = `${width}px 14px 1fr`;
 }
 
 function initSchemaResizer() {
-    const resizer = document.getElementById("schema-resizer");
-    const shell = document.querySelector(".app-shell");
-    if (!resizer || !shell) return;
-
-    let dragging = false;
-
-    document.addEventListener("mousedown", function (event) {
-        if (!event.target.closest("#schema-resizer")) return;
-        dragging = true;
-        event.preventDefault();
-        document.body.style.userSelect = "none";
-        document.body.style.cursor = "col-resize";
-        document.body.classList.add("resizing-schema");
-    });
-
-    document.addEventListener("mousemove", function (event) {
-        if (!dragging) return;
-
-        const shellRect = shell.getBoundingClientRect();
-        const nextWidth = event.clientX - shellRect.left;
-        const maxWidth = Math.floor(window.innerWidth * 0.55);
-
-        appState.schemaPanelWidth = Math.max(260, Math.min(nextWidth, maxWidth));
-        applySchemaPanelWidth();
-    });
-
-    document.addEventListener("mouseup", function () {
-        if (!dragging) return;
-
-        dragging = false;
-        document.body.style.userSelect = "";
-        document.body.style.cursor = "";
-        document.body.classList.remove("resizing-schema");
-        saveProgress();
-    });
+  const resizer = document.getElementById("schema-resizer");
+  const shell = document.querySelector(".app-shell");
+  if (!resizer || !shell) return;
+  let dragging = false;
+  resizer.addEventListener("mousedown", function () {
+    dragging = true;
+    document.body.style.userSelect = "none";
+    document.body.style.cursor = "col-resize";
+    document.body.classList.add("resizing-schema");
+  });
+  document.addEventListener("mousemove", function (event) {
+    if (!dragging) return;
+    const shellRect = shell.getBoundingClientRect();
+    const nextWidth = event.clientX - shellRect.left;
+    appState.schemaPanelWidth = Math.max(260, Math.min(nextWidth, Math.floor(window.innerWidth * 0.55)));
+    applySchemaPanelWidth();
+  });
+  document.addEventListener("mouseup", function () {
+    if (!dragging) return;
+    dragging = false;
+    document.body.style.userSelect = "";
+    document.body.style.cursor = "";
+    document.body.classList.remove("resizing-schema");
+    saveProgress();
+  });
 }
 
-// ======================
-// DASHBOARD + ACHIEVEMENTS UI
-// ======================
-function updateDashboard() {
-    const total = totalLessonCount();
-    const completed = completedLessonCount();
-    const current = getCurrentLesson();
-    const track = getTrack();
+function conceptLesson(spec) {
+  return {
+    id: spec.id,
+    type: "concept",
+    title: spec.title,
+    objective: spec.objective,
+    sql_focus: spec.sql_focus || [],
+    relevantTables: spec.relevantTables || [],
+    joinHint: spec.joinHint || "No join required.",
+    content: {
+      summary: spec.summary || "",
+      bullets: spec.bullets || [],
+      example: spec.example || ""
+    },
+    executiveTakeaway: spec.executiveTakeaway || null
+  };
+}
 
-    const progressText = document.getElementById("progress-text");
-    const progressBar = document.getElementById("progress-bar");
-    const currentLevelDisplay = document.getElementById("current-level-display");
-    const badgeCount = document.getElementById("badge-count");
-    const trackTitle = document.getElementById("track-title");
-    const trackDescription = document.getElementById("track-description");
+function challengeLesson(spec) {
+  return {
+    id: spec.id,
+    type: "challenge",
+    title: spec.title,
+    objective: spec.objective,
+    sql_focus: spec.sql_focus || [],
+    relevantTables: spec.relevantTables || [],
+    joinHint: spec.joinHint || "Think carefully about the reporting grain and join path.",
+    starterQuery: spec.starterQuery || "",
+    solutionQuery: spec.solutionQuery || "",
+    hint: spec.hint || "",
+    executiveTakeaway: spec.executiveTakeaway || null
+  };
+}
 
-    if (progressText) {
-        progressText.innerText = `${completed} / ${total} lessons completed`;
-    }
+function scenarioLesson(spec) {
+  return {
+    id: spec.id,
+    type: "scenario",
+    title: spec.title,
+    objective: spec.objective,
+    sql_focus: [],
+    relevantTables: spec.relevantTables || [],
+    joinHint: spec.joinHint || "Think about data sources, grain, and business meaning.",
+    content: {
+      summary: spec.summary || "",
+      prompt: spec.prompt || "",
+      expectedKeywords: spec.expectedKeywords || []
+    },
+    executiveTakeaway: spec.executiveTakeaway || null
+  };
+}
 
-    if (progressBar) {
-        progressBar.style.width = `${total ? (completed / total) * 100 : 0}%`;
-    }
+function normalizeCurriculum() {
+  curriculum.forEach(track => {
+    track.categories.forEach(category => {
+      category.lessons = category.lessons.map(lesson => {
+        if (lesson.kind === "concept") return conceptLesson(lesson);
+        if (lesson.kind === "challenge") return challengeLesson(lesson);
+        return scenarioLesson(lesson);
+      });
+    });
+  });
+}
 
-    if (currentLevelDisplay) {
-        const currentStats = current ? getLessonStats(current.id) : null;
-        currentLevelDisplay.innerText = current
-            ? `${current.title}${currentStats && currentStats.bestTier !== "Not Started" ? ` · ${currentStats.bestTier}` : ""}`
-            : "No lesson selected";
-    }
+function getTrack() {
+  return curriculum.find(track => track.id === appState.currentTrackId) || curriculum[0];
+}
 
-    if (badgeCount) {
-        badgeCount.innerText = `${levelBadgeCount()} learning level badges earned · ${masteryCount()} mastered`;
-    }
+function getAllCategories() {
+  return getTrack().categories || [];
+}
 
-    if (trackTitle) trackTitle.innerText = track.title;
-    if (trackDescription) {
-        trackDescription.innerText = activeDifficultyFilter
-            ? `${activeDifficultyFilter} curriculum view · completion and mastery tracking.`
-            : "Curriculum, learning levels, completion, and mastery tracking.";
-    }
+function getCurrentCategory() {
+  return getAllCategories().find(category => category.id === appState.currentCategoryId) || getAllCategories()[0] || null;
+}
+
+function getAllLessons() {
+  return getAllCategories().flatMap(category => category.lessons);
+}
+
+function getCurrentLesson() {
+  return getAllLessons().find(lesson => lesson.id === appState.currentLessonId) || null;
+}
+
+function totalLessonCount() {
+  return getAllLessons().length;
+}
+
+function completedLessonCount() {
+  return appState.completedLessonIds.length;
+}
+
+function isLessonCompleted(lessonId) {
+  return appState.completedLessonIds.includes(lessonId);
+}
+
+function markLessonCompleted(lessonId, firstTry = false) {
+  if (!isLessonCompleted(lessonId)) {
+    appState.completedLessonIds.push(lessonId);
+  }
+  if (firstTry && !appState.firstTryLessonIds.includes(lessonId)) {
+    appState.firstTryLessonIds.push(lessonId);
+  }
+  saveProgress();
+}
+
+function getLessonStats(lessonId) {
+  if (!appState.lessonStats[lessonId]) {
+    appState.lessonStats[lessonId] = {
+      attempts: 0,
+      passes: 0,
+      bestScore: 0,
+      bestTier: "Not Started",
+      mastered: false,
+      lastScore: 0,
+      lastTier: "Not Started"
+    };
+  }
+  return appState.lessonStats[lessonId];
+}
+
+function tierRank(tier) {
+  return {
+    "Not Started": 0,
+    "Developing": 1,
+    "Passing": 2,
+    "Strong": 3,
+    "Perfect": 4
+  }[tier] || 0;
+}
+
+function updateLessonStatsOnGrade(lessonId, gradeResult, passed) {
+  const stats = getLessonStats(lessonId);
+  stats.attempts += 1;
+  stats.lastScore = gradeResult.score;
+  stats.lastTier = gradeResult.tier;
+  if (passed) stats.passes += 1;
+  if (gradeResult.score > stats.bestScore) stats.bestScore = gradeResult.score;
+  if (tierRank(gradeResult.tier) > tierRank(stats.bestTier)) stats.bestTier = gradeResult.tier;
+  if (gradeResult.score >= 90 || gradeResult.tier === "Perfect") stats.mastered = true;
+}
+
+function masteryCount() {
+  return Object.values(appState.lessonStats).filter(stat => stat && stat.mastered).length;
+}
+
+function categoryComplete(category) {
+  return category.lessons.every(lesson => isLessonCompleted(lesson.id));
+}
+
+function categoryBadgeCount() {
+  return getAllCategories().filter(categoryComplete).length;
+}
+
+function levelBadgeCount() {
+  return LEARNING_LEVELS.filter(level => {
+    const track = curriculum.find(item => item.id === level.trackId);
+    return !!track && track.categories.every(categoryComplete);
+  }).length;
+}
+
+function achievements() {
+  const completed = completedLessonCount();
+  const firstTry = appState.firstTryLessonIds.length;
+  const mastered = masteryCount();
+  const catComplete = categoryId => {
+    const category = getAllCategories().find(item => item.id === categoryId);
+    return !!category && category.lessons.every(lesson => isLessonCompleted(lesson.id));
+  };
+  return [
+    { label: "First Step", earned: completed >= 1, emoji: "🚀" },
+    { label: "Getting the Hang of It", earned: completed >= 5, emoji: "📘" },
+    { label: "On a Roll", earned: completed >= 10, emoji: "🔥" },
+    { label: "Quarter Century", earned: completed >= 25, emoji: "🏅" },
+    { label: "Halfway Hero", earned: completed >= 50, emoji: "🥈" },
+    { label: "Century Club", earned: completed >= 100, emoji: "💯" },
+    { label: "First-Try Flash", earned: firstTry >= 3, emoji: "⚡" },
+    { label: "Precision Pro", earned: firstTry >= 10, emoji: "🎯" },
+    { label: "Mastermind", earned: mastered >= 5, emoji: "🧠" },
+    { label: "Master of Masters", earned: mastered >= 25, emoji: "👑" },
+    { label: "Join Genius", earned: catComplete("joining_multiple_tables"), emoji: "🔗" },
+    { label: "Aggregate King", earned: catComplete("aggregations_and_grouping"), emoji: "👑" },
+    { label: "Filter Fanatic", earned: catComplete("filtering_and_logical_conditions"), emoji: "🎯" },
+    { label: "Grouping Guru", earned: catComplete("aggregations_and_grouping"), emoji: "📊" },
+    { label: "CASE Commander", earned: catComplete("data_types_and_expressions"), emoji: "🧩" },
+    { label: "Null Navigator", earned: catComplete("filtering_and_logical_conditions"), emoji: "🧭" },
+    { label: "Throughput Thinker", earned: catComplete("healthcare_operational_analytics"), emoji: "🏥" },
+    { label: "Readmission Ranger", earned: catComplete("quality_and_clinical_metrics"), emoji: "🔁" },
+    { label: "Financial Fixer", earned: catComplete("revenue_cycle_analytics"), emoji: "💰" },
+    { label: "Executive Whisperer", earned: catComplete("executive_communication_and_insights"), emoji: "🗣️" }
+  ];
 }
 
 function renderAchievements() {
-    const container = document.getElementById("badges-container");
-    if (!container) return;
-
-    container.innerHTML = "";
-
-    achievements().forEach(achievement => {
-        const chip = document.createElement("div");
-        chip.className = achievement.earned ? "badge-chip" : "badge-chip locked";
-        chip.innerText = `${achievement.emoji} ${achievement.label}`;
-        container.appendChild(chip);
-    });
+  const container = document.getElementById("badges-container");
+  if (!container) return;
+  container.innerHTML = "";
+  achievements().forEach(achievement => {
+    const chip = document.createElement("div");
+    chip.className = achievement.earned ? "badge-chip" : "badge-chip locked";
+    chip.innerText = `${achievement.emoji} ${achievement.label}`;
+    container.appendChild(chip);
+  });
 }
 
-// ======================
-// CURRICULUM SIDE PANEL
-// ======================
+function updateDashboard() {
+  const total = totalLessonCount();
+  const completed = completedLessonCount();
+  const current = getCurrentLesson();
+  const track = getTrack();
+  const progressText = document.getElementById("progress-text");
+  const progressBar = document.getElementById("progress-bar");
+  const currentLevelDisplay = document.getElementById("current-level-display");
+  const badgeCount = document.getElementById("badge-count");
+  const trackTitle = document.getElementById("track-title");
+  const trackDescription = document.getElementById("track-description");
+  if (progressText) progressText.innerText = `${completed} / ${total} lessons completed`;
+  if (progressBar) progressBar.style.width = `${total ? (completed / total) * 100 : 0}%`;
+  if (currentLevelDisplay) {
+    const currentStats = current ? getLessonStats(current.id) : null;
+    currentLevelDisplay.innerText = current ? `${current.title}${currentStats && currentStats.bestTier !== "Not Started" ? ` · ${currentStats.bestTier}` : ""}` : "No lesson selected";
+  }
+  if (badgeCount) {
+    badgeCount.innerText = `${levelBadgeCount()} learning level badges earned · ${masteryCount()} mastered`;
+  }
+  if (trackTitle) trackTitle.innerText = track.title;
+  if (trackDescription) trackDescription.innerText = "Curriculum, learning levels, completion, and mastery tracking.";
+}
+
+function renderSchema() {
+  const tablesWrap = document.getElementById("schema-tables");
+  const relationshipsWrap = document.getElementById("schema-relationships");
+  if (tablesWrap) {
+    tablesWrap.innerHTML = "";
+    schema.tables.forEach(table => {
+      const details = document.createElement("details");
+      details.className = "schema-card";
+      const summary = document.createElement("summary");
+      summary.textContent = table.name;
+      details.appendChild(summary);
+      const p = document.createElement("p");
+      p.innerHTML = `<strong>Description:</strong> ${table.description}<br><strong>Columns:</strong> ${table.notableColumns.join(", ")}`;
+      details.appendChild(p);
+      const actions = document.createElement("div");
+      actions.className = "schema-table-actions";
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "schema-table-view-btn";
+      btn.textContent = "Open Table Viewer";
+      btn.addEventListener("click", () => openTableModal(table.name));
+      actions.appendChild(btn);
+      details.appendChild(actions);
+      tablesWrap.appendChild(details);
+    });
+  }
+  if (relationshipsWrap) {
+    relationshipsWrap.innerHTML = "";
+    schema.relationships.forEach(item => {
+      const div = document.createElement("div");
+      div.className = "relationship-item";
+      div.textContent = item;
+      relationshipsWrap.appendChild(div);
+    });
+  }
+}
+
+function levelForTrack(trackId) {
+  return LEARNING_LEVELS.find(level => level.trackId === trackId);
+}
+
+function getVisibleCategories() {
+  return getAllCategories();
+}
+
+function renderTrackCategoryCards() {
+  const container = document.getElementById("track-category-cards");
+  if (!container) return;
+  container.innerHTML = "";
+  LEARNING_LEVELS.forEach(level => {
+    const track = curriculum.find(item => item.id === level.trackId);
+    const totalCategories = track.categories.length;
+    const doneCategories = track.categories.filter(categoryComplete).length;
+    const totalLessons = track.categories.flatMap(c => c.lessons).length;
+    const doneLessons = track.categories.flatMap(c => c.lessons).filter(lesson => isLessonCompleted(lesson.id)).length;
+    const percent = totalLessons ? Math.round((doneLessons / totalLessons) * 100) : 0;
+    const card = document.createElement("button");
+    card.type = "button";
+    card.className = "track-badge-card level-card" + (appState.currentTrackId === track.id ? " active" : "");
+    card.style.borderColor = level.color;
+    card.innerHTML = `
+      <div class="track-badge-icon-wrap">
+        <div class="track-badge-ring" style="--badge-progress: ${percent}%; background: conic-gradient(${level.color} ${percent}%, #e2e8f0 0);">
+          <div class="track-badge-icon level-icon" style="color:${level.color};">${percent}%</div>
+        </div>
+      </div>
+      <div class="track-badge-name">${level.label}</div>
+      <div class="track-badge-stats">${doneCategories} / ${totalCategories} curriculum complete<br>${doneLessons} / ${totalLessons} lessons completed</div>
+      <div class="track-badge-helper">Click to view this learning level</div>
+    `;
+    card.addEventListener("click", () => {
+      appState.currentTrackId = track.id;
+      appState.currentCategoryId = track.categories[0]?.id || null;
+      appState.currentLessonId = null;
+      saveProgress();
+      renderAll();
+    });
+    container.appendChild(card);
+  });
+}
+
 function renderCurriculumNav() {
-    const list = document.getElementById("category-list");
-    if (!list) return;
-
-    list.innerHTML = "";
-
-    getVisibleCategories().forEach(category => {
-        const wrap = document.createElement("div");
-        wrap.className = "curriculum-category";
-
-        const total = category.lessons.length;
-        const done = category.lessons.filter(lesson => isLessonCompleted(lesson.id)).length;
-        const mastered = category.lessons.filter(lesson => getLessonStats(lesson.id).mastered).length;
-        const isComplete = done === total;
-
-        const header = document.createElement("button");
-        header.className = `curriculum-category-header${isComplete ? " is-complete" : ""}`;
-        header.type = "button";
-        header.innerHTML = `
-            <div class="curriculum-category-row">
-                <div class="curriculum-category-main">
-                    <span class="curriculum-category-title">${escapeHtml(category.title)}</span>
-                    <div class="curriculum-category-header-meta">
-                        <span class="curriculum-category-meta">${done}/${total} completed</span>
-                        <span class="curriculum-category-meta">${mastered} mastered</span>
-                        ${isComplete ? '<span class="curriculum-complete-pill">Completed</span>' : ""}
-                    </div>
-                </div>
-                <div class="curriculum-category-arrow">›</div>
-            </div>
-        `;
-
-        header.addEventListener("click", function () {
-            if (category.lessons.length) {
-                const firstIncomplete = category.lessons.find(lesson => !isLessonCompleted(lesson.id));
-                loadLesson((firstIncomplete || category.lessons[0]).id);
-            }
-        });
-
-        wrap.appendChild(header);
-        list.appendChild(wrap);
+  const list = document.getElementById("category-list");
+  if (!list) return;
+  list.innerHTML = "";
+  getAllCategories().forEach(category => {
+    const wrap = document.createElement("div");
+    wrap.className = "curriculum-category";
+    const total = category.lessons.length;
+    const done = category.lessons.filter(lesson => isLessonCompleted(lesson.id)).length;
+    const mastered = category.lessons.filter(lesson => getLessonStats(lesson.id).mastered).length;
+    const header = document.createElement("button");
+    header.type = "button";
+    header.className = "curriculum-category-header" + (done === total ? " is-complete" : "");
+    header.innerHTML = `
+      <div class="curriculum-category-row">
+        <div class="curriculum-category-main">
+          <span class="curriculum-category-title">${category.title}</span>
+          <div class="curriculum-category-header-meta">
+            <span class="curriculum-category-meta">${done}/${total} completed</span>
+            <span class="curriculum-category-meta">${mastered} mastered</span>
+          </div>
+        </div>
+        <span class="curriculum-category-arrow">›</span>
+      </div>
+    `;
+    header.addEventListener("click", () => {
+      appState.currentCategoryId = category.id;
+      if (!appState.currentLessonId || !category.lessons.find(lesson => lesson.id === appState.currentLessonId)) {
+        appState.currentLessonId = category.lessons[0]?.id || null;
+      }
+      saveProgress();
+      renderAll();
     });
+    wrap.appendChild(header);
+    list.appendChild(wrap);
+  });
 }
 
-// ======================
-// LESSON BODY VISIBILITY
-// ======================
-function hideAllLessonBodies() {
-    const concept = document.getElementById("concept-content");
-    const challenge = document.getElementById("challenge-content");
-    const scenario = document.getElementById("scenario-content");
-    const executive = document.getElementById("executive-takeaway");
-
-    if (concept) concept.classList.add("hidden");
-    if (challenge) challenge.classList.add("hidden");
-    if (scenario) scenario.classList.add("hidden");
-    if (executive) executive.classList.add("hidden");
-}
-
-// ======================
-// LESSON HEADER + TAKEAWAYS
-// ======================
-function renderLessonHeader(record) {
-    const { categoryTitle, lesson } = record;
-    const track = getTrack();
-    const lessonStats = getLessonStats(lesson.id);
-
-    const trackTitleDisplay = document.getElementById("track-title-display");
-    const lessonTitle = document.getElementById("lesson-title");
-    const lessonObjective = document.getElementById("lesson-objective");
-    const typeBadge = document.getElementById("current-lesson-type-badge");
-    const categoryBadge = document.getElementById("current-category-badge");
-    const lessonTables = document.getElementById("lesson-tables");
-    const lessonJoinHint = document.getElementById("lesson-join-hint");
-    const lessonSqlFocus = document.getElementById("lesson-sql-focus");
-
-    if (trackTitleDisplay) trackTitleDisplay.innerText = track.title;
-    if (lessonTitle) lessonTitle.innerText = lesson.title;
-
-    if (lessonObjective) {
-        const masteryText = lessonStats.bestTier !== "Not Started"
-            ? ` Current best: ${lessonStats.bestTier} (${formatPercent(lessonStats.bestScore)}).`
-            : "";
-        lessonObjective.innerText = `${lesson.objective || ""}${masteryText}`;
-    }
-
-    if (typeBadge) {
-        typeBadge.className = `lesson-type-badge ${lessonTypeClass(lesson.type)}`;
-        typeBadge.innerText = formatLessonType(lesson.type);
-    }
-
-    if (categoryBadge) {
-        categoryBadge.className = "difficulty-badge difficulty-intermediate";
-        categoryBadge.innerText = categoryTitle;
-    }
-
-    if (lessonTables) {
-        lessonTables.innerHTML = `<strong>Relevant Tables:</strong> ${escapeHtml((lesson.relevantTables || []).join(", ") || "—")}`;
-    }
-
-    if (lessonJoinHint) {
-        lessonJoinHint.innerHTML = `<strong>Join Hint:</strong> ${escapeHtml(lesson.joinHint || "—")}`;
-    }
-
-    if (lessonSqlFocus) {
-        const masterySuffix = lesson.type === "challenge"
-            ? ` | <strong>Best Tier:</strong> ${escapeHtml(lessonStats.bestTier)}`
-            : "";
-        lessonSqlFocus.innerHTML = `<strong>SQL Focus:</strong> ${escapeHtml(sqlFocusText(lesson.sql_focus))}${masterySuffix}`;
-    }
-}
-
-function renderHintBox(lesson) {
-    const hintBox = document.getElementById("level-hint");
-    if (!hintBox) return;
-
-    if (lesson.type === "concept") {
-        hintBox.innerText = "Read the concept summary, bullets, and hospital example. Mark the lesson complete when ready.";
-    } else if (lesson.type === "scenario") {
-        hintBox.innerText = "Respond to the scenario using the business context provided. Think like an analyst supporting leadership.";
-    } else {
-        hintBox.innerText = "Run your query and check your answer. You earn a grading tier: Perfect, Pass, Almost There, or Needs Work.";
-    }
-}
-
-function renderExecutiveTakeaway(lesson) {
-    const wrap = document.getElementById("executive-takeaway");
-    if (!wrap) return;
-
-    if (!lesson.executiveTakeaway || !lesson.executiveTakeaway.show) {
-        wrap.classList.add("hidden");
-        return;
-    }
-
-    wrap.classList.remove("hidden");
-
-    const metricEl = document.getElementById("exec-metric");
-    const whyEl = document.getElementById("exec-why");
-    const shareEl = document.getElementById("exec-share");
-    const actionEl = document.getElementById("exec-action");
-
-    if (metricEl) metricEl.innerHTML = `<strong>Metric:</strong> ${escapeHtml(lesson.executiveTakeaway.metric || "—")}`;
-    if (whyEl) whyEl.innerHTML = `<strong>Why it matters:</strong> ${escapeHtml(lesson.executiveTakeaway.whyItMatters || "—")}`;
-    if (shareEl) shareEl.innerHTML = `<strong>What to share:</strong> ${escapeHtml(lesson.executiveTakeaway.whatToShare || "—")}`;
-    if (actionEl) actionEl.innerHTML = `<strong>Recommended action:</strong> ${escapeHtml(lesson.executiveTakeaway.action || "—")}`;
-}
-
-// ======================
-// LESSON CONTENT RENDERERS
-// ======================
-function renderConceptLesson(lesson) {
-    hideAllLessonBodies();
-
-    const conceptWrap = document.getElementById("concept-content");
-    const summaryEl = document.getElementById("concept-summary");
-    const bulletsEl = document.getElementById("concept-bullets");
-    const exampleEl = document.getElementById("concept-example");
-    const feedbackEl = document.getElementById("feedback");
-    const outputEl = document.getElementById("output");
-
-    if (conceptWrap) conceptWrap.classList.remove("hidden");
-    if (summaryEl) summaryEl.innerText = lesson.content?.summary || "";
-
-    if (bulletsEl) {
-        bulletsEl.innerHTML = "";
-        (lesson.content?.bullets || []).forEach(bullet => {
-            const li = document.createElement("li");
-            li.innerText = bullet;
-            bulletsEl.appendChild(li);
-        });
-    }
-
-    if (exampleEl) exampleEl.innerText = lesson.content?.hospitalExample || "";
-    if (feedbackEl) feedbackEl.innerHTML = "";
-    if (outputEl) outputEl.innerHTML = "";
-}
-
-function renderScenarioLesson(lesson) {
-    hideAllLessonBodies();
-
-    const wrap = document.getElementById("scenario-content");
-    const summaryEl = document.getElementById("scenario-summary");
-    const promptEl = document.getElementById("scenario-prompt");
-    const responseEl = document.getElementById("scenario-response");
-    const scenarioFeedbackEl = document.getElementById("scenario-feedback");
-    const feedbackEl = document.getElementById("feedback");
-    const outputEl = document.getElementById("output");
-
-    if (wrap) wrap.classList.remove("hidden");
-    if (summaryEl) summaryEl.innerText = lesson.content?.summary || "";
-    if (promptEl) promptEl.innerText = lesson.content?.prompt || "";
-    if (responseEl) responseEl.value = "";
-    if (scenarioFeedbackEl) scenarioFeedbackEl.innerHTML = "";
-    if (feedbackEl) feedbackEl.innerHTML = "";
-    if (outputEl) outputEl.innerHTML = "";
-}
-
-function renderChallengeLesson(lesson) {
-    hideAllLessonBodies();
-
-    const wrap = document.getElementById("challenge-content");
-    const queryBox = document.getElementById("query");
-    const feedbackEl = document.getElementById("feedback");
-    const outputEl = document.getElementById("output");
-
-    if (wrap) wrap.classList.remove("hidden");
-    if (queryBox) queryBox.value = lesson.starterQuery || "";
-    if (feedbackEl) feedbackEl.innerHTML = "";
-    if (outputEl) outputEl.innerHTML = "";
-
-    attempts = 0;
-    lastRunQuery = "";
-
-    highlightRelevantSchema(lesson.relevantTables || []);
-
-    if (queryBox) {
-        queryBox.oninput = function () {
-            const detectedTables = detectTablesFromSql(queryBox.value);
-            if (detectedTables.length) {
-                highlightRelevantSchema(detectedTables);
-            } else {
-                highlightRelevantSchema(lesson.relevantTables || []);
-            }
-        };
-    }
-}
-
-// ======================
-// LESSON LOADING
-// ======================
-function loadLesson(lessonId) {
-    const record = getLessonRecordById(lessonId);
-    if (!record) return;
-
-    appState.currentLessonId = lessonId;
-    appState.currentCategoryId = record.categoryId;
-    attempts = 0;
-    lastRunQuery = "";
-
-    showLessonWorkspace();
-    renderLessonHeader(record);
-    renderHintBox(record.lesson);
-    renderExecutiveTakeaway(record.lesson);
-    highlightRelevantSchema(record.lesson.relevantTables || []);
-
-    if (record.lesson.type === "concept") {
-        renderConceptLesson(record.lesson);
-    } else if (record.lesson.type === "scenario") {
-        renderScenarioLesson(record.lesson);
-    } else {
-        renderChallengeLesson(record.lesson);
-    }
-
-    renderCurriculumNav();
-    updateDashboard();
+function renderOverview() {
+  const track = getTrack();
+  const cats = track.categories;
+  const total = cats.flatMap(c => c.lessons).length;
+  const completed = cats.flatMap(c => c.lessons).filter(l => isLessonCompleted(l.id)).length;
+  const title = document.getElementById("track-overview-title");
+  const desc = document.getElementById("track-overview-description");
+  const trackTitleDisplay = document.getElementById("track-title-display-overview");
+  const progressText = document.getElementById("track-overview-progress-text");
+  const progressBar = document.getElementById("track-overview-progress-bar");
+  const learnings = document.getElementById("track-overview-learnings");
+  const impact = document.getElementById("track-overview-impact");
+  if (title) title.innerText = track.title;
+  if (desc) desc.innerText = track.description;
+  if (trackTitleDisplay) trackTitleDisplay.innerText = levelForTrack(track.id)?.label || "Track";
+  if (progressText) progressText.innerText = `${completed} of ${total} lessons completed`;
+  if (progressBar) progressBar.style.width = `${total ? (completed / total) * 100 : 0}%`;
+  if (learnings) learnings.innerHTML = "<li>How to query healthcare data with SQL</li><li>How to interpret operational and financial metrics</li><li>How to communicate findings to leaders</li>";
+  if (impact) impact.innerHTML = "<li>Improve quality and operational visibility</li><li>Support financial performance and denial reduction</li><li>Communicate what leaders should act on</li>";
+  const startBtn = document.getElementById("start-track-btn");
+  const resumeBtn = document.getElementById("resume-track-btn");
+  if (startBtn) startBtn.onclick = function () {
+    appState.currentCategoryId = track.categories[0]?.id || null;
+    appState.currentLessonId = track.categories[0]?.lessons[0]?.id || null;
     saveProgress();
-}
-
-// ======================
-// TRACK OVERVIEW / MAIN SCREEN
-// ======================
-function showTrackOverview() {
-    const overview = document.getElementById("track-overview");
-    const workspace = document.getElementById("lesson-workspace");
-
-    if (overview) overview.classList.remove("hidden");
-    if (workspace) workspace.classList.add("hidden");
-
-    renderTrackOverview();
+    showLessonWorkspace();
+    renderAll();
+  };
+  if (resumeBtn) resumeBtn.onclick = function () {
+    const firstIncomplete = track.categories.flatMap(c => c.lessons).find(l => !isLessonCompleted(l.id));
+    const lesson = firstIncomplete || track.categories[0]?.lessons[0];
+    if (!lesson) return;
+    appState.currentLessonId = lesson.id;
+    appState.currentCategoryId = track.categories.find(c => c.lessons.some(l => l.id === lesson.id))?.id || null;
+    saveProgress();
+    showLessonWorkspace();
+    renderAll();
+  };
 }
 
 function showLessonWorkspace() {
-    const overview = document.getElementById("track-overview");
-    const workspace = document.getElementById("lesson-workspace");
-
-    if (overview) overview.classList.add("hidden");
-    if (workspace) workspace.classList.remove("hidden");
+  const overview = document.getElementById("track-overview");
+  const workspace = document.getElementById("lesson-workspace");
+  if (overview) overview.classList.add("hidden");
+  if (workspace) workspace.classList.remove("hidden");
 }
 
+function showOverview() {
+  const overview = document.getElementById("track-overview");
+  const workspace = document.getElementById("lesson-workspace");
+  if (overview) overview.classList.remove("hidden");
+  if (workspace) workspace.classList.add("hidden");
+}
 
-function renderTrackOverview() {
-    const track = getTrack();
-    const completed = completedLessonCount();
-    const total = totalLessonCount();
-    const levelStats = getLearningLevelStats();
+function renderLesson() {
+  const lesson = getCurrentLesson();
+  if (!lesson) return;
+  showLessonWorkspace();
+  document.getElementById("track-title-display").innerText = getCurrentCategory()?.title || "Category";
+  document.getElementById("lesson-title").innerText = lesson.title;
+  document.getElementById("lesson-objective").innerText = lesson.objective;
+  document.getElementById("lesson-tables").innerHTML = `<strong>Relevant Tables:</strong> ${lesson.relevantTables.join(", ") || "—"}`;
+  document.getElementById("lesson-join-hint").innerHTML = `<strong>Join Hint:</strong> ${lesson.joinHint || "—"}`;
+  document.getElementById("lesson-sql-focus").innerHTML = `<strong>SQL Focus:</strong> ${(lesson.sql_focus || []).join(", ") || "—"}`;
 
-    const titleEl = document.getElementById("track-overview-title");
-    const descEl = document.getElementById("track-overview-description");
-    const progressTextEl = document.getElementById("track-overview-progress-text");
-    const progressBarEl = document.getElementById("track-overview-progress-bar");
-    const trackLabelEl = document.getElementById("track-title-display-overview");
-    const cardsWrap = document.getElementById("track-category-cards");
+  const typeBadge = document.getElementById("current-lesson-type-badge");
+  const catBadge = document.getElementById("current-category-badge");
+  if (typeBadge) {
+    typeBadge.className = "lesson-type-badge lesson-type-" + lesson.type;
+    typeBadge.innerText = lesson.type.charAt(0).toUpperCase() + lesson.type.slice(1);
+  }
+  const level = levelForTrack(appState.currentTrackId);
+  if (catBadge && level) {
+    const map = { foundations: "difficulty-easy", core: "difficulty-intermediate", applied: "difficulty-hard", advanced: "difficulty-advanced", expert: "difficulty-advanced" };
+    catBadge.className = "difficulty-badge " + (map[level.key] || "difficulty-intermediate");
+    catBadge.innerText = level.label;
+  }
 
-    if (trackLabelEl) {
-        trackLabelEl.innerText = activeDifficultyFilter ? `${track.title} · ${activeDifficultyFilter}` : track.title;
-    }
+  ["concept-content","challenge-content","scenario-content","executive-takeaway"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.add("hidden");
+  });
 
-    if (titleEl) {
-        titleEl.innerText = activeDifficultyFilter ? `${activeDifficultyFilter} Learning Level` : track.title;
-    }
-
-    if (descEl) {
-        descEl.innerText = activeDifficultyFilter
-            ? `Showing only ${activeDifficultyFilter.toLowerCase()} curriculum. Click the active level card again to clear the filter.`
-            : `${track.description} ${masteryCount()} lesson(s) mastered.`;
-    }
-
-    if (progressTextEl) {
-        progressTextEl.innerText = `${completed} of ${total} lessons completed`;
-    }
-
-    if (progressBarEl) {
-        progressBarEl.style.width = `${total ? (completed / total) * 100 : 0}%`;
-    }
-
-    if (!cardsWrap) return;
-    cardsWrap.innerHTML = "";
-
-    levelStats.forEach(level => {
-        const card = document.createElement("div");
-        const isActive = activeDifficultyFilter === level.label;
-        card.className = `track-badge-card level-card${isActive ? " active" : ""}`;
-        card.style.borderColor = level.color;
-        card.innerHTML = `
-            <div class="track-badge-icon-wrap">
-                <div class="track-badge-ring level-ring" style="background: conic-gradient(${level.color} ${level.completionPercent}%, #e2e8f0 0);">
-                    <div class="track-badge-icon level-icon" style="color:${level.color}; border-color:${level.color}33;">
-                        ${level.completionPercent}%
-                    </div>
-                </div>
-            </div>
-            <div class="track-badge-name">${escapeHtml(level.label)}</div>
-            <div class="track-badge-meta">
-                <span class="difficulty-badge ${difficultyClassFromLabel(level.label)}">${escapeHtml(level.label)}</span>
-            </div>
-            <div class="track-badge-stats">
-                <div><strong>${level.completedCurriculum}/${level.totalCurriculum}</strong> curriculum complete</div>
-                <div>${level.completedLessons}/${level.totalLessons} lessons completed</div>
-                <div class="track-badge-helper">${isActive ? "Click to show all curriculum" : "Click to view this learning level"}</div>
-            </div>
-        `;
-
-        card.addEventListener("click", function () {
-            activeDifficultyFilter = isActive ? null : level.label;
-            renderTrackOverview();
-            renderCurriculumNav();
-        });
-
-        cardsWrap.appendChild(card);
+  if (lesson.type === "concept") {
+    document.getElementById("concept-content").classList.remove("hidden");
+    document.getElementById("concept-summary").innerText = lesson.content.summary;
+    const bullets = document.getElementById("concept-bullets");
+    bullets.innerHTML = "";
+    (lesson.content.bullets || []).forEach(item => {
+      const li = document.createElement("li");
+      li.innerText = item;
+      bullets.appendChild(li);
     });
+    document.getElementById("concept-example").innerText = lesson.content.example || "";
+  }
+
+  if (lesson.type === "challenge") {
+    document.getElementById("challenge-content").classList.remove("hidden");
+    const query = document.getElementById("query");
+    query.value = lesson.starterQuery || "";
+    document.getElementById("feedback").innerText = "";
+    document.getElementById("output").innerHTML = "";
+  }
+
+  if (lesson.type === "scenario") {
+    document.getElementById("scenario-content").classList.remove("hidden");
+    document.getElementById("scenario-summary").innerText = lesson.content.summary || "";
+    document.getElementById("scenario-prompt").innerText = lesson.content.prompt || "";
+    document.getElementById("scenario-response").value = "";
+    document.getElementById("scenario-feedback").innerText = "";
+  }
+
+  if (lesson.executiveTakeaway && lesson.executiveTakeaway.show) {
+    document.getElementById("executive-takeaway").classList.remove("hidden");
+    document.getElementById("exec-metric").innerHTML = `<strong>Metric:</strong> ${lesson.executiveTakeaway.metric}`;
+    document.getElementById("exec-why").innerHTML = `<strong>Why it matters:</strong> ${lesson.executiveTakeaway.whyItMatters}`;
+    document.getElementById("exec-share").innerHTML = `<strong>What to share:</strong> ${lesson.executiveTakeaway.whatToShare}`;
+    document.getElementById("exec-action").innerHTML = `<strong>Recommended action:</strong> ${lesson.executiveTakeaway.action}`;
+  }
 }
 
-// ======================
-// TOP-LEVEL BUTTON BINDINGS
-// ======================
-function bindOverviewButtons() {
-    const openOverviewBtn = document.getElementById("open-overview-btn");
-    const resumeTrackBtn = document.getElementById("resume-track-btn");
-    const startTrackBtn = document.getElementById("start-track-btn");
-
-    if (openOverviewBtn) {
-        openOverviewBtn.addEventListener("click", function () {
-            activeDifficultyFilter = null;
-            showTrackOverview();
-            renderCurriculumNav();
-        });
-    }
-
-    if (resumeTrackBtn) {
-        resumeTrackBtn.addEventListener("click", function () {
-            if (appState.currentLessonId) {
-                loadLesson(appState.currentLessonId);
-            }
-        });
-    }
-
-    if (startTrackBtn) {
-        startTrackBtn.addEventListener("click", function () {
-            const firstTrack = curriculum[0];
-            const firstCategory = firstTrack.categories[0];
-            const firstLesson = firstCategory.lessons[0];
-            loadLesson(firstLesson.id);
-        });
-    }
+function renderAll() {
+  applySchemaPanelWidth();
+  renderSchema();
+  renderAchievements();
+  updateDashboard();
+  renderCurriculumNav();
+  renderTrackCategoryCards();
+  renderOverview();
+  if (appState.currentLessonId) renderLesson();
 }
 
-function bindLevelsPanelToggle() {
-    const btn = document.getElementById("toggle-levels-panel-btn");
-    const panel = document.getElementById("levels-panel");
-    if (!btn || !panel) return;
-
-    btn.addEventListener("click", function () {
-        panel.classList.toggle("collapsed");
-        btn.innerText = panel.classList.contains("collapsed") ? "Expand" : "Collapse";
+function generateMockData() {
+  const patients = [];
+  const providers = [];
+  const departments = [
+    { department_id: 1, department_name: "Emergency Department", facility: "Main Campus", service_line: "Emergency" },
+    { department_id: 2, department_name: "Hospital Medicine", facility: "Main Campus", service_line: "Medicine" },
+    { department_id: 3, department_name: "Observation Unit", facility: "Main Campus", service_line: "Observation" },
+    { department_id: 4, department_name: "Family Medicine Clinic", facility: "North Campus", service_line: "Primary Care" },
+    { department_id: 5, department_name: "Cardiology", facility: "Main Campus", service_line: "Heart" }
+  ];
+  const providerNames = ["Adams","Bennett","Carter","Diaz","Ellis","Foster","Garcia","Hall","Irwin","Jones"];
+  const specialties = ["Emergency Medicine","Hospital Medicine","Cardiology","Family Medicine","Observation"];
+  for (let i = 1; i <= 10; i++) {
+    providers.push({ provider_id: i, provider_name: `Dr. ${providerNames[i-1]}`, specialty: specialties[(i-1)%specialties.length], facility: i % 2 === 0 ? "North Campus" : "Main Campus" });
+  }
+  const firstNames = ["Ava","Liam","Noah","Emma","Mia","Elijah","Sophia","Lucas","Olivia","Mason"];
+  const lastNames = ["Smith","Johnson","Williams","Brown","Jones","Miller","Davis","Wilson","Taylor","Moore"];
+  const insurance = ["Medicare","Medicaid","Commercial","Self Pay"];
+  const cities = ["Myrtle Beach","Georgetown","Conway", null, "Pawleys Island"];
+  for (let i = 1; i <= 60; i++) {
+    patients.push({
+      patient_id: i,
+      first_name: firstNames[(i-1)%firstNames.length],
+      last_name: lastNames[(i-1)%lastNames.length],
+      age: 18 + (i % 72),
+      gender: i % 2 === 0 ? "F" : "M",
+      insurance_type: insurance[(i-1)%insurance.length],
+      risk_score: (i % 10) + 1,
+      city: cities[(i-1)%cities.length]
     });
+  }
+  const encounters = [];
+  const charges = [];
+  const claims = [];
+  const appointments = [];
+  const discharges = [];
+  const observations = [];
+  const readmissions = [];
+  let chargeId = 1, claimId = 1, appointmentId = 1, dischargeId = 1, observationId = 1, readmissionId = 1;
+  for (let i = 1; i <= 120; i++) {
+    const patientId = (i % 60) + 1;
+    const dept = departments[(i-1)%departments.length];
+    const provider = providers[(i-1)%providers.length];
+    const admitDay = (i % 28) + 1;
+    const los = (i % 7) + 1;
+    const admitDate = `2026-01-${String(admitDay).padStart(2,"0")}`;
+    const dischargeDay = Math.min(28, admitDay + los);
+    const dischargeDate = `2026-01-${String(dischargeDay).padStart(2,"0")}`;
+    const encounter = {
+      encounter_id: i,
+      patient_id: patientId,
+      provider_id: provider.provider_id,
+      department_id: dept.department_id,
+      facility: dept.facility,
+      department: dept.department_name,
+      status: i % 6 === 0 ? "In Progress" : "Discharged",
+      encounter_type: i % 4 === 0 ? "Observation" : "Inpatient",
+      length_of_stay: los,
+      admit_date: admitDate,
+      discharge_date: dischargeDate
+    };
+    encounters.push(encounter);
+
+    appointments.push({
+      appointment_id: appointmentId++,
+      patient_id: patientId,
+      provider_id: provider.provider_id,
+      department_id: dept.department_id,
+      facility: dept.facility,
+      department: dept.department_name,
+      status: i % 9 === 0 ? "No Show" : "Completed",
+      date: admitDate
+    });
+
+    const amount = 500 + (i * 37);
+    charges.push({
+      charge_id: chargeId++,
+      patient_id: patientId,
+      encounter_id: i,
+      amount: amount,
+      payer: ["Medicare","Medicaid","Commercial","Self Pay"][i % 4],
+      charge_type: i % 2 === 0 ? "Facility" : "Professional"
+    });
+    charges.push({
+      charge_id: chargeId++,
+      patient_id: patientId,
+      encounter_id: i,
+      amount: amount * 0.45,
+      payer: ["Medicare","Medicaid","Commercial","Self Pay"][i % 4],
+      charge_type: i % 2 === 0 ? "Professional" : "Ancillary"
+    });
+
+    claims.push({
+      claim_id: claimId++,
+      patient_id: patientId,
+      encounter_id: i,
+      payer: ["Medicare","Medicaid","Commercial","Self Pay"][i % 4],
+      claim_status: i % 7 === 0 ? "Denied" : "Paid",
+      billed_amount: amount * 1.4
+    });
+
+    discharges.push({
+      discharge_id: dischargeId++,
+      encounter_id: i,
+      patient_id: patientId,
+      facility: dept.facility,
+      department: dept.department_name,
+      discharge_disposition: i % 10 === 0 ? "SNF" : "Home",
+      discharge_order_minutes: 40 + (i % 180),
+      departure_minutes: 60 + (i % 240),
+      delayed_for_transport: i % 8 === 0 ? 1 : 0
+    });
+
+    if (encounter.encounter_type === "Observation") {
+      observations.push({
+        observation_id: observationId++,
+        encounter_id: i,
+        patient_id: patientId,
+        facility: dept.facility,
+        department: dept.department_name,
+        obs_hours: 6 + (i % 60),
+        converted_to_inpatient: i % 5 === 0 ? 1 : 0,
+        code_44_flag: i % 11 === 0 ? 1 : 0
+      });
+    }
+  }
+
+  for (let i = 1; i <= 30; i++) {
+    readmissions.push({
+      readmission_id: readmissionId++,
+      index_encounter_id: i,
+      readmit_encounter_id: i + 60,
+      patient_id: (i % 60) + 1,
+      facility: i % 2 === 0 ? "North Campus" : "Main Campus",
+      readmit_within_30_days: i % 3 === 0 ? 1 : 0,
+      days_to_readmit: 5 + (i % 25)
+    });
+  }
+
+  schema.tables.forEach(table => {
+    const rows = {patients, providers, departments, encounters, appointments, charges, claims, discharges, readmissions, observations}[table.name];
+    table.sampleRows = rows.slice(0, 5);
+  });
+
+  return { patients, providers, departments, encounters, appointments, charges, claims, discharges, readmissions, observations };
 }
 
-// ======================
-// PART 4 OF 4
-// LESSON ACTIONS, NAVIGATION, RESET, DRAFTS, INIT
-// ======================
+function initDatabase() {
+  return new Promise((resolve, reject) => {
+    if (sqlEngineReady) return resolve();
+    if (typeof initSqlJs !== "function") return reject(new Error("SQL.js not loaded."));
+    initSqlJs({ locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/${file}` })
+      .then(SQLLib => {
+        SQL = SQLLib;
+        sqlDb = new SQL.Database();
+        const data = generateMockData();
+        createTables();
+        seedTable("patients", data.patients);
+        seedTable("providers", data.providers);
+        seedTable("departments", data.departments);
+        seedTable("encounters", data.encounters);
+        seedTable("appointments", data.appointments);
+        seedTable("charges", data.charges);
+        seedTable("claims", data.claims);
+        seedTable("discharges", data.discharges);
+        seedTable("readmissions", data.readmissions);
+        seedTable("observations", data.observations);
+        sqlEngineReady = true;
+        resolve();
+      })
+      .catch(reject);
+  });
+}
 
-// ======================
-// LESSON ACTIONS
-// ======================
-function markConceptComplete() {
-    const lesson = getCurrentLesson();
-    if (!lesson || lesson.type !== "concept") return;
+function createTables() {
+  sqlDb.run(`CREATE TABLE patients (patient_id INTEGER, first_name TEXT, last_name TEXT, age INTEGER, gender TEXT, insurance_type TEXT, risk_score INTEGER, city TEXT);`);
+  sqlDb.run(`CREATE TABLE providers (provider_id INTEGER, provider_name TEXT, specialty TEXT, facility TEXT);`);
+  sqlDb.run(`CREATE TABLE departments (department_id INTEGER, department_name TEXT, facility TEXT, service_line TEXT);`);
+  sqlDb.run(`CREATE TABLE encounters (encounter_id INTEGER, patient_id INTEGER, provider_id INTEGER, department_id INTEGER, facility TEXT, department TEXT, status TEXT, encounter_type TEXT, length_of_stay INTEGER, admit_date TEXT, discharge_date TEXT);`);
+  sqlDb.run(`CREATE TABLE appointments (appointment_id INTEGER, patient_id INTEGER, provider_id INTEGER, department_id INTEGER, facility TEXT, department TEXT, status TEXT, date TEXT);`);
+  sqlDb.run(`CREATE TABLE charges (charge_id INTEGER, patient_id INTEGER, encounter_id INTEGER, amount REAL, payer TEXT, charge_type TEXT);`);
+  sqlDb.run(`CREATE TABLE claims (claim_id INTEGER, patient_id INTEGER, encounter_id INTEGER, payer TEXT, claim_status TEXT, billed_amount REAL);`);
+  sqlDb.run(`CREATE TABLE discharges (discharge_id INTEGER, encounter_id INTEGER, patient_id INTEGER, facility TEXT, department TEXT, discharge_disposition TEXT, discharge_order_minutes INTEGER, departure_minutes INTEGER, delayed_for_transport INTEGER);`);
+  sqlDb.run(`CREATE TABLE readmissions (readmission_id INTEGER, index_encounter_id INTEGER, readmit_encounter_id INTEGER, patient_id INTEGER, facility TEXT, readmit_within_30_days INTEGER, days_to_readmit INTEGER);`);
+  sqlDb.run(`CREATE TABLE observations (observation_id INTEGER, encounter_id INTEGER, patient_id INTEGER, facility TEXT, department TEXT, obs_hours INTEGER, converted_to_inpatient INTEGER, code_44_flag INTEGER);`);
+}
 
-    markLessonComplete(lesson.id);
-    renderAchievements();
-    renderCurriculumNav();
-    updateDashboard();
-    renderTrackOverview();
-    saveProgress();
+function seedTable(tableName, rows) {
+  if (!rows.length) return;
+  const cols = Object.keys(rows[0]);
+  const stmt = sqlDb.prepare(`INSERT INTO ${tableName} (${cols.join(",")}) VALUES (${cols.map(() => "?").join(",")});`);
+  rows.forEach(row => stmt.run(cols.map(col => row[col])));
+  stmt.free();
+}
 
-    const feedback = document.getElementById("feedback");
+function queryToResult(query) {
+  const result = sqlDb.exec(query);
+  if (!result.length) return { columns: [], values: [] };
+  return { columns: result[0].columns, values: result[0].values };
+}
+
+function formatResultTable(result) {
+  if (!result.columns.length) return "<p>No rows returned.</p>";
+  let html = '<div class="query-results-table-wrap"><table class="preview-table"><thead><tr>';
+  result.columns.forEach(col => html += `<th>${col}</th>`);
+  html += "</tr></thead><tbody>";
+  result.values.forEach(row => {
+    html += "<tr>";
+    row.forEach(cell => html += `<td>${cell === null ? "" : cell}</td>`);
+    html += "</tr>";
+  });
+  html += "</tbody></table></div>";
+  return html;
+}
+
+function getExecutionErrorMessage(error) {
+  const raw = String(error && error.message ? error.message : error || "");
+  const message = raw.toLowerCase();
+  if (message.includes("syntax error")) return "SQL syntax error. Check commas, parentheses, aliases, and clause order.";
+  if (message.includes("no such table")) return "One of the tables in your query does not exist in this lesson schema.";
+  if (message.includes("no such column")) return "One of the columns in your query does not exist in the table you used.";
+  if (message.includes("ambiguous")) return "A column reference is ambiguous. Add the table alias or full table.column reference.";
+  return raw || "The query could not be executed.";
+}
+
+function runQuery() {
+  const lesson = getCurrentLesson();
+  const output = document.getElementById("output");
+  const feedback = document.getElementById("feedback");
+  const queryBox = document.getElementById("query");
+  if (!lesson || lesson.type !== "challenge" || !queryBox) return;
+  const query = queryBox.value.trim();
+  lastRunQuery = query;
+  try {
+    const result = queryToResult(query);
+    if (output) output.innerHTML = formatResultTable(result);
     if (feedback) {
-        feedback.innerHTML = "<p style='color:#16a34a; font-weight:700;'>✅ Concept marked complete.</p>";
+      feedback.className = "";
+      feedback.innerText = "Query ran successfully.";
     }
+  } catch (error) {
+    if (output) output.innerHTML = "";
+    if (feedback) {
+      feedback.className = "error";
+      feedback.innerText = getExecutionErrorMessage(error);
+    }
+  }
 }
 
-async function runQuery() {
-    const lesson = getCurrentLesson();
-    if (!lesson || lesson.type !== "challenge") return;
-
-    const queryBox = document.getElementById("query");
-    const output = document.getElementById("output");
-    if (!queryBox || !output) return;
-
-    const query = queryBox.value.trim();
-    lastRunQuery = query;
-
-    if (!query) {
-        output.innerHTML = "<p>Please enter a SQL query first.</p>";
-        return;
-    }
-
-    try {
-        if (!sqlEngineReady) {
-            output.innerHTML = "<p>Loading SQL engine...</p>";
-            await initializeSqlEngine();
-        }
-
-        const detectedTables = detectTablesFromSql(query);
-        if (detectedTables.length) {
-            highlightRelevantSchema(detectedTables);
-        }
-
-        const result = executeSqlAgainstDb(query);
-
-        output.innerHTML = `
-            <p><strong>Query executed.</strong></p>
-            <p><code>${escapeHtml(query)}</code></p>
-            <p><strong>${result.rows.length}</strong> row(s) returned.</p>
-            ${buildResultTable(result.columns, result.rows)}
-        `;
-    } catch (error) {
-        output.innerHTML = `
-            <p><strong>Query execution failed.</strong></p>
-            <p>${escapeHtml(getExecutionErrorMessage(error))}</p>
-        `;
-    }
+function normalizeResult(result) {
+  return JSON.stringify({
+    columns: result.columns,
+    values: result.values
+  });
 }
 
-async function checkAnswer() {
-    const lesson = getCurrentLesson();
-    if (!lesson || lesson.type !== "challenge") return;
+function gradePass() {
+  if (attempts === 0) return { score: 100, tier: "Perfect" };
+  if (attempts === 1) return { score: 92, tier: "Strong" };
+  return { score: 82, tier: "Passing" };
+}
 
-    const queryBox = document.getElementById("query");
-    const feedback = document.getElementById("feedback");
-    const hint = document.getElementById("level-hint");
-
-    if (!queryBox || !feedback) return;
-
-    const query = queryBox.value.trim();
-
-    if (!query) {
-        feedback.innerHTML = "<p style='color:#dc2626; font-weight:700;'>Please enter a query first.</p>";
-        return;
+function checkAnswer() {
+  const lesson = getCurrentLesson();
+  const feedback = document.getElementById("feedback");
+  const queryBox = document.getElementById("query");
+  if (!lesson || lesson.type !== "challenge" || !queryBox) return;
+  attempts += 1;
+  const query = queryBox.value.trim();
+  try {
+    const userResult = queryToResult(query);
+    const solutionResult = queryToResult(lesson.solutionQuery);
+    const passed = normalizeResult(userResult) === normalizeResult(solutionResult);
+    if (passed) {
+      const grade = gradePass();
+      updateLessonStatsOnGrade(lesson.id, grade, true);
+      markLessonCompleted(lesson.id, attempts === 1);
+      feedback.className = "success";
+      feedback.innerText = `Correct. Score: ${grade.score} · Tier: ${grade.tier}`;
+      saveProgress();
+      renderAll();
+    } else {
+      updateLessonStatsOnGrade(lesson.id, { score: 45, tier: "Developing" }, false);
+      feedback.className = "error";
+      feedback.innerText = attempts >= 3 ? `Not quite. Suggested answer:\n${lesson.solutionQuery}` : `Not quite yet. Hint: ${lesson.hint}`;
+      saveProgress();
     }
-
-    attempts += 1;
-
-    try {
-        if (!sqlEngineReady) {
-            await initializeSqlEngine();
-        }
-
-        const userResult = executeSqlAgainstDb(query);
-        const solutionResult = executeSqlAgainstDb(lesson.solutionQuery || "");
-        const gradeResult = buildGradeResult(query, lesson.solutionQuery || "", userResult, solutionResult);
-
-        updateLessonStatsOnGrade(lesson.id, gradeResult, gradeResult.passed);
-
-        if (gradeResult.passed) {
-            feedback.innerHTML = `
-                <p style='color:#16a34a; font-weight:700;'>✅ ${escapeHtml(gradeResult.tier)}</p>
-                ${buildGradeFeedback(gradeResult, lesson)}
-            `;
-
-            markLessonComplete(lesson.id);
-
-            if (attempts === 1 && gradeResult.score >= 95) {
-                markLessonFirstTry(lesson.id);
-            }
-
-            clearQueryDraft(lesson.id);
-            renderAchievements();
-            renderCurriculumNav();
-            updateDashboard();
-            renderTrackOverview();
-            renderLessonHeader(getCurrentLessonRecord());
-            saveProgress();
-            return;
-        }
-
-        if (attempts === 1) {
-            feedback.innerHTML = `
-                <p style='color:#dc2626; font-weight:700;'>❌ ${escapeHtml(gradeResult.tier)}</p>
-                ${buildGradeFeedback(gradeResult, lesson)}
-            `;
-
-            if (hint) {
-                hint.innerText = "Try again. Improve the weakest part of the breakdown first: structure, tables, columns, or rows.";
-            }
-
-            saveProgress();
-            return;
-        }
-
-        if (attempts === 2) {
-            feedback.innerHTML = `
-                <p style='color:#dc2626; font-weight:700;'>❌ ${escapeHtml(gradeResult.tier)}</p>
-                ${buildGradeFeedback(gradeResult, lesson)}
-            `;
-
-            if (hint) {
-                hint.innerText = `Hint: ${lesson.hint || "Review the exact output requested and compare your selected fields, filters, joins, and calculations."}`;
-            }
-
-            saveProgress();
-            return;
-        }
-
-        feedback.innerHTML = `
-            <p style='color:#dc2626; font-weight:700;'>❌ ${escapeHtml(gradeResult.tier)}</p>
-            ${buildGradeFeedback(gradeResult, lesson)}
-            <p><strong>Correct answer:</strong></p>
-            <p><code>${escapeHtml(lesson.solutionQuery || "")}</code></p>
-            <p><strong>Why:</strong> ${escapeHtml(explainCorrectAnswer(lesson))}</p>
-        `;
-
-        if (hint) {
-            hint.innerText = `Answer shown. ${explainCorrectAnswer(lesson)}`;
-        }
-
-        saveProgress();
-    } catch (error) {
-        const errorMessage = explainFirstMiss(query, lesson, error);
-        const provisionalGrade = {
-            score: 25,
-            tier: "Needs Work",
-            passed: false
-        };
-
-        updateLessonStatsOnGrade(lesson.id, provisionalGrade, false);
-
-        if (attempts === 1) {
-            feedback.innerHTML = `<p style='color:#dc2626; font-weight:700;'>❌ Needs Work</p><p>${escapeHtml(errorMessage)}</p>`;
-            if (hint) {
-                hint.innerText = "Try again. Fix the SQL execution issue first.";
-            }
-            saveProgress();
-            return;
-        }
-
-        if (attempts === 2) {
-            feedback.innerHTML = `<p style='color:#dc2626; font-weight:700;'>❌ Needs Work</p><p>${escapeHtml(errorMessage)}</p>`;
-            if (hint) {
-                hint.innerText = `Hint: ${lesson.hint || "Review the lesson objective and compare your SQL structure to the target output."}`;
-            }
-            saveProgress();
-            return;
-        }
-
-        feedback.innerHTML = `
-            <p style='color:#dc2626; font-weight:700;'>❌ Needs Work</p>
-            <p>${escapeHtml(errorMessage)}</p>
-            <p><strong>Correct answer:</strong></p>
-            <p><code>${escapeHtml(lesson.solutionQuery || "")}</code></p>
-            <p><strong>Why:</strong> ${escapeHtml(explainCorrectAnswer(lesson))}</p>
-        `;
-
-        if (hint) {
-            hint.innerText = `Answer shown. ${explainCorrectAnswer(lesson)}`;
-        }
-
-        saveProgress();
-    }
+  } catch (error) {
+    feedback.className = "error";
+    feedback.innerText = getExecutionErrorMessage(error);
+  }
 }
 
 function resetQuery() {
-    const lesson = getCurrentLesson();
-    if (!lesson || lesson.type !== "challenge") return;
-
-    const queryBox = document.getElementById("query");
-    const feedback = document.getElementById("feedback");
-    const output = document.getElementById("output");
-
-    if (queryBox) queryBox.value = lesson.starterQuery || "";
-    if (feedback) feedback.innerHTML = "";
-    if (output) output.innerHTML = "";
-
-    attempts = 0;
-    lastRunQuery = "";
-    clearQueryDraft(lesson.id);
-    highlightRelevantSchema(lesson.relevantTables || []);
-    renderHintBox(lesson);
+  const lesson = getCurrentLesson();
+  const queryBox = document.getElementById("query");
+  if (lesson && lesson.type === "challenge" && queryBox) queryBox.value = lesson.starterQuery || "";
 }
 
 function submitScenario() {
-    const lesson = getCurrentLesson();
-    if (!lesson || lesson.type !== "scenario") return;
-
-    const responseEl = document.getElementById("scenario-response");
-    const feedback = document.getElementById("scenario-feedback");
-    if (!responseEl || !feedback) return;
-
-    const response = (responseEl.value || "").trim().toLowerCase();
-    const expected = (lesson.content?.expectedAnswer || "").trim().toLowerCase();
-
-    if (!response) {
-        feedback.innerHTML = "<p style='color:#dc2626; font-weight:700;'>Please enter a response.</p>";
-        return;
-    }
-
-    if (response.includes(expected) || expected.includes(response)) {
-        feedback.innerHTML = "<p style='color:#16a34a; font-weight:700;'>✅ Scenario completed.</p>";
-        markLessonComplete(lesson.id);
-        renderAchievements();
-        renderCurriculumNav();
-        updateDashboard();
-        renderTrackOverview();
-        saveProgress();
-    } else {
-        feedback.innerHTML = "<p style='color:#dc2626; font-weight:700;'>Not quite. Re-read the prompt and think about which table or action best fits the question.</p>";
-    }
+  const lesson = getCurrentLesson();
+  const box = document.getElementById("scenario-response");
+  const feedback = document.getElementById("scenario-feedback");
+  if (!lesson || lesson.type !== "scenario" || !box || !feedback) return;
+  const answer = box.value.trim().toLowerCase();
+  const keywords = (lesson.content.expectedKeywords || []).filter(k => answer.includes(String(k).toLowerCase()));
+  const passed = answer.length > 60 || keywords.length >= 2;
+  const grade = passed ? { score: 95, tier: "Strong" } : { score: 55, tier: "Developing" };
+  updateLessonStatsOnGrade(lesson.id, grade, passed);
+  if (passed) {
+    markLessonCompleted(lesson.id, attempts === 0);
+    feedback.className = "success";
+    feedback.innerText = "Good response. You connected the data to interpretation and action.";
+    saveProgress();
+    renderAll();
+  } else {
+    feedback.className = "error";
+    feedback.innerText = "Add more detail on the data source, the interpretation, and the recommended action.";
+    saveProgress();
+  }
 }
 
 function resetScenario() {
-    const lesson = getCurrentLesson();
-    if (!lesson || lesson.type !== "scenario") return;
-
-    const responseEl = document.getElementById("scenario-response");
-    const feedback = document.getElementById("scenario-feedback");
-
-    if (responseEl) responseEl.value = "";
-    if (feedback) feedback.innerHTML = "";
+  const box = document.getElementById("scenario-response");
+  const feedback = document.getElementById("scenario-feedback");
+  if (box) box.value = "";
+  if (feedback) feedback.innerText = "";
 }
 
-// ======================
-// LESSON NAVIGATION
-// ======================
-function currentLessonIndex() {
-    return getAllLessons().findIndex(item => item.lesson.id === appState.currentLessonId);
+function markConceptComplete() {
+  const lesson = getCurrentLesson();
+  if (!lesson || lesson.type !== "concept") return;
+  updateLessonStatsOnGrade(lesson.id, { score: 100, tier: "Perfect" }, true);
+  markLessonCompleted(lesson.id, true);
+  saveProgress();
+  renderAll();
 }
 
 function nextLesson() {
-    const all = getAllLessons();
-    const idx = currentLessonIndex();
-
-    if (idx >= 0 && idx < all.length - 1) {
-        loadLesson(all[idx + 1].lesson.id);
-    }
+  const lessons = getAllLessons();
+  const idx = lessons.findIndex(item => item.id === appState.currentLessonId);
+  if (idx >= 0 && idx < lessons.length - 1) {
+    appState.currentLessonId = lessons[idx + 1].id;
+    appState.currentCategoryId = getAllCategories().find(cat => cat.lessons.some(l => l.id === appState.currentLessonId))?.id || appState.currentCategoryId;
+    attempts = 0;
+    saveProgress();
+    renderAll();
+  }
 }
 
 function prevLesson() {
-    const all = getAllLessons();
-    const idx = currentLessonIndex();
-
-    if (idx > 0) {
-        loadLesson(all[idx - 1].lesson.id);
-    }
-}
-
-// ======================
-// RESET ALL PROGRESS
-// ======================
-function resetAllProgress() {
-    localStorage.removeItem(STORAGE_KEY);
-
-    const firstTrack = curriculum[0];
-    const firstCategory = firstTrack.categories[0];
-    const firstLesson = firstCategory.lessons[0];
-
-    appState = {
-        currentTrackId: firstTrack.id,
-        currentCategoryId: firstCategory.id,
-        currentLessonId: firstLesson.id,
-        completedLessonIds: [],
-        firstTryLessonIds: [],
-        schemaPanelWidth: 320,
-        lessonStats: {}
-    };
-
+  const lessons = getAllLessons();
+  const idx = lessons.findIndex(item => item.id === appState.currentLessonId);
+  if (idx > 0) {
+    appState.currentLessonId = lessons[idx - 1].id;
+    appState.currentCategoryId = getAllCategories().find(cat => cat.lessons.some(l => l.id === appState.currentLessonId))?.id || appState.currentCategoryId;
     attempts = 0;
-    lastRunQuery = "";
-
-    Object.keys(localStorage)
-        .filter(key => key.startsWith(QUERY_DRAFT_PREFIX))
-        .forEach(key => localStorage.removeItem(key));
-
-    applySchemaPanelWidth();
-    renderSchema();
-    renderAchievements();
-    renderCurriculumNav();
-    updateDashboard();
-    renderTrackOverview();
-    showTrackOverview();
     saveProgress();
+    renderAll();
+  }
 }
 
-// ======================
-// QUERY DRAFTS
-// ======================
-const QUERY_DRAFT_PREFIX = "careops_query_draft_";
-
-function saveQueryDraft(lessonId, query) {
-    try {
-        localStorage.setItem(`${QUERY_DRAFT_PREFIX}${lessonId}`, query);
-    } catch (error) {
-        console.warn("Failed to save query draft:", error);
-    }
+function resetAllProgress() {
+  if (!window.confirm("Reset all progress for CareOps SQL Analyst?")) return;
+  appState.completedLessonIds = [];
+  appState.firstTryLessonIds = [];
+  appState.lessonStats = {};
+  attempts = 0;
+  saveProgress();
+  renderAll();
+  showOverview();
 }
 
-function loadQueryDraft(lessonId) {
-    try {
-        return localStorage.getItem(`${QUERY_DRAFT_PREFIX}${lessonId}`) || "";
-    } catch (error) {
-        console.warn("Failed to load query draft:", error);
-        return "";
-    }
+function openTableModal(tableName) {
+  const overlay = document.getElementById("table-modal-overlay");
+  const table = schema.tables.find(item => item.name === tableName);
+  if (!overlay || !table) return;
+  document.getElementById("table-modal-title").innerText = table.name;
+  document.getElementById("table-modal-description").innerText = table.description;
+  document.getElementById("table-modal-keys").innerText = table.keyColumns.join(", ");
+  document.getElementById("table-modal-columns").innerText = table.notableColumns.join(", ");
+  const relWrap = document.getElementById("table-modal-relationships");
+  relWrap.innerHTML = "";
+  schema.relationships.filter(item => item.includes(table.name + ".")).forEach(item => {
+    const chip = document.createElement("div");
+    chip.className = "modal-relationship-chip";
+    chip.innerText = item;
+    relWrap.appendChild(chip);
+  });
+  const previewContent = document.getElementById("table-modal-preview-content");
+  const headers = table.notableColumns;
+  let html = '<table><thead><tr>';
+  headers.forEach(col => html += `<th>${col}</th>`);
+  html += '</tr></thead><tbody>';
+  table.sampleRows.forEach(row => {
+    html += '<tr>';
+    headers.forEach(col => html += `<td>${row[col] ?? ""}</td>`);
+    html += '</tr>';
+  });
+  html += '</tbody></table>';
+  previewContent.innerHTML = html;
+  overlay.classList.remove("hidden");
 }
 
-function clearQueryDraft(lessonId) {
-    try {
-        localStorage.removeItem(`${QUERY_DRAFT_PREFIX}${lessonId}`);
-    } catch (error) {
-        console.warn("Failed to clear query draft:", error);
-    }
+function closeTableModal(event) {
+  if (event && event.target && event.target.id && event.target.id !== "table-modal-overlay") return;
+  const overlay = document.getElementById("table-modal-overlay");
+  if (overlay) overlay.classList.add("hidden");
 }
 
-const originalRenderChallengeLesson = renderChallengeLesson;
-renderChallengeLesson = function (lesson) {
-    originalRenderChallengeLesson(lesson);
-
-    const queryBox = document.getElementById("query");
-    if (!queryBox) return;
-
-    const savedDraft = loadQueryDraft(lesson.id);
-    if (savedDraft) {
-        queryBox.value = savedDraft;
-    }
-
-    queryBox.oninput = function () {
-        saveQueryDraft(lesson.id, queryBox.value);
-
-        const detectedTables = detectTablesFromSql(queryBox.value);
-        if (detectedTables.length) {
-            highlightRelevantSchema(detectedTables);
-        } else {
-            highlightRelevantSchema(lesson.relevantTables || []);
-        }
+function initUiActions() {
+  const openOverviewBtn = document.getElementById("open-overview-btn");
+  if (openOverviewBtn) openOverviewBtn.onclick = () => { showOverview(); renderAll(); };
+  const toggleBtn = document.getElementById("toggle-levels-panel-btn");
+  const panel = document.getElementById("levels-panel");
+  if (toggleBtn && panel) {
+    toggleBtn.onclick = () => {
+      panel.classList.toggle("collapsed");
+      toggleBtn.innerText = panel.classList.contains("collapsed") ? "Expand" : "Collapse";
+      toggleBtn.setAttribute("aria-expanded", panel.classList.contains("collapsed") ? "false" : "true");
     };
-};
+  }
+}
 
-// ======================
-// KEYBOARD SHORTCUTS
-// ======================
-document.addEventListener("keydown", function (event) {
-    const lesson = getCurrentLesson();
-
-    if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
-        if (lesson && lesson.type === "challenge") {
-            event.preventDefault();
-            runQuery();
-        }
-    }
-
-    if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key === "Enter") {
-        if (lesson && lesson.type === "challenge") {
-            event.preventDefault();
-            checkAnswer();
-        }
-    }
-
-    if (event.altKey && event.key === "ArrowRight") {
-        event.preventDefault();
-        nextLesson();
-    }
-
-    if (event.altKey && event.key === "ArrowLeft") {
-        event.preventDefault();
-        prevLesson();
-    }
-
-    if (event.key === "Escape") {
-        const overlay = document.getElementById("table-modal-overlay");
-        if (overlay && !overlay.classList.contains("hidden")) {
-            overlay.classList.add("hidden");
-        }
-    }
+document.addEventListener("DOMContentLoaded", async function () {
+  normalizeCurriculum();
+  loadProgress();
+  if (!appState.currentCategoryId) appState.currentCategoryId = getTrack().categories[0]?.id || null;
+  if (!appState.currentLessonId) appState.currentLessonId = getTrack().categories[0]?.lessons[0]?.id || null;
+  initUiActions();
+  initSchemaResizer();
+  await initDatabase();
+  renderAll();
 });
 
-// ======================
-// INIT
-// ======================
-window.onload = async function () {
-    loadProgress();
-    initializeStateDefaults();
-    applySchemaPanelWidth();
-    initSchemaResizer();
-    renderSchema();
-    renderAchievements();
-    renderCurriculumNav();
-    updateDashboard();
-    bindOverviewButtons();
-    bindLevelsPanelToggle();
-    renderTrackOverview();
-    showTrackOverview();
-
-    try {
-        await initializeSqlEngine();
-        console.log("SQL engine initialized successfully.");
-    } catch (error) {
-        console.error("Failed to initialize SQL engine:", error);
-        const banner = document.getElementById("js-error-banner");
-        if (banner) {
-            banner.classList.remove("hidden");
-            banner.textContent =
-                `SQL Engine Initialization Error:\n${String(error.message || error)}`;
-        }
-    }
-
-    window.addEventListener("resize", applySchemaPanelWidth);
-};
-
-// ======================
-// GLOBALS FOR HTML
-// ======================
-window.runQuery = runQuery;
-window.checkAnswer = checkAnswer;
-window.resetQuery = resetQuery;
-window.nextLesson = nextLesson;
-window.prevLesson = prevLesson;
-window.markConceptComplete = markConceptComplete;
-window.submitScenario = submitScenario;
-window.resetScenario = resetScenario;
-window.resetAllProgress = resetAllProgress;
-window.openTableModal = openTableModal;
-window.closeTableModal = closeTableModal;
-window.showTrackOverview = showTrackOverview;
-window.showLessonWorkspace = showLessonWorkspace;
-
-// ======================
-// FINAL LOG
-// ======================
-console.log("CareOps SQL Analyst - Track 1 initialized successfully.");
