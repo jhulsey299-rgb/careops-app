@@ -5882,25 +5882,79 @@ function runQuery() {
   const output = document.getElementById("output");
   const feedback = document.getElementById("feedback");
   const queryBox = document.getElementById("query");
+
   if (!lesson || lesson.type !== "challenge" || !queryBox) return;
+
   const query = queryBox.value.trim();
   lastRunQuery = query;
+
+  if (!query) {
+    setFeedbackState(feedback, "error", "Please enter a query before running it.");
+    if (output) output.innerHTML = "";
+    return;
+  }
+
   try {
     const result = queryToResult(query);
     if (output) output.innerHTML = formatResultTable(result);
-    if (feedback) {
-      feedback.className = "";
-      feedback.innerText = "Query ran successfully.";
+
+    const solutionResult = queryToResult(lesson.solutionQuery);
+    const passed = normalizeResult(result) === normalizeResult(solutionResult);
+
+    if (passed) {
+      markLessonCompleted(lesson.id, attempts === 0);
+
+      setFeedbackState(
+        feedback,
+        "success",
+        "Correct — your query returned the expected result."
+      );
+
+      saveProgress();
+      refreshLessonChrome();
+      return;
     }
+
+    attempts += 1;
+
+    const hintOne =
+      lesson.hint ||
+      "Start with the correct table and make sure you are selecting the required fields.";
+
+    const hintTwo =
+      lesson.smartHint ||
+      lesson.secondHint ||
+      "Double-check the exact columns, filters, joins, or grouping needed to match the lesson objective.";
+
+    const hintThree =
+      lesson.thirdHint ||
+      "Compare your result to what the lesson is asking for. Make sure the grain of the data is correct and that you are not missing a required field or condition.";
+
+    if (attempts === 1) {
+      setFeedbackState(feedback, "warning", `Not correct yet. Hint 1: ${hintOne}`);
+    } else if (attempts === 2) {
+      setFeedbackState(feedback, "warning", `Still not correct. Hint 2: ${hintTwo}`);
+    } else if (attempts === 3) {
+      setFeedbackState(feedback, "warning", `Still not correct. Hint 3: ${hintThree}`);
+    } else {
+      const explanation =
+        lesson.explanation ||
+        "This answer is correct because it uses the right table, selects the required fields, and returns the expected result for the lesson objective.";
+
+      setFeedbackState(
+        feedback,
+        "error",
+        `You have used all 3 attempts.\n\nCorrect Answer:\n${lesson.solutionQuery}\n\nExplanation:\n${explanation}`
+      );
+    }
+
+    saveProgress();
+    refreshLessonChrome();
   } catch (error) {
     if (output) output.innerHTML = "";
-    if (feedback) {
-      feedback.className = "error";
-      feedback.innerText = getExecutionErrorMessage(error);
-    }
+    setFeedbackState(feedback, "error", getExecutionErrorMessage(error));
   }
 }
-
 function normalizeResult(result) {
   return JSON.stringify({
     columns: result.columns,
