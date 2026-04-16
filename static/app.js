@@ -5555,6 +5555,7 @@ function renderAchievements() {
     chip.innerText = `${achievement.emoji} ${achievement.label}`;
     chip.title = achievement.description || "";
     chip.setAttribute("aria-label", `${achievement.label}: ${achievement.description || ""}`);
+    attachAchievementTooltip(chip, achievement.description || "");
     container.appendChild(chip);
   });
 }
@@ -5926,94 +5927,144 @@ function escapeHtml(str) {
 function renderLesson() {
   const lesson = getCurrentLesson();
   if (!lesson) return;
-  showLessonWorkspace();
-  document.getElementById("track-title-display").innerText = getCurrentCategory()?.title || "Category";
-  document.getElementById("lesson-title").innerText = lesson.title;
-  document.getElementById("lesson-objective").innerText = lesson.objective;
-  document.getElementById("lesson-tables").innerHTML = `<strong>Relevant Tables:</strong> ${lesson.relevantTables.join(", ") || "—"}`;
-  document.getElementById("lesson-join-hint").innerHTML = `<strong>Join Hint:</strong> ${lesson.joinHint || "—"}`;
-  document.getElementById("lesson-sql-focus").innerHTML = `<strong>SQL Focus:</strong> ${(lesson.sql_focus || []).join(", ") || "—"}`;
 
+  showLessonWorkspace();
+
+  const category = getCurrentCategory();
+  const trackLevel = levelForTrack(appState.currentTrackId);
+
+  const trackTitleDisplay = document.getElementById("track-title-display");
+  const lessonTitle = document.getElementById("lesson-title");
+  const lessonObjective = document.getElementById("lesson-objective");
+  const lessonTables = document.getElementById("lesson-tables");
+  const lessonJoinHint = document.getElementById("lesson-join-hint");
+  const lessonSqlFocus = document.getElementById("lesson-sql-focus");
   const typeBadge = document.getElementById("current-lesson-type-badge");
   const catBadge = document.getElementById("current-category-badge");
+
+  if (trackTitleDisplay) trackTitleDisplay.innerText = category?.title || "Category";
+  if (lessonTitle) lessonTitle.innerText = lesson.title;
+  if (lessonObjective) lessonObjective.innerText = lesson.objective || "";
+  if (lessonTables) {
+    lessonTables.innerHTML = `<strong>Relevant Tables:</strong> ${escapeHtml((lesson.relevantTables || []).join(", ") || "—")}`;
+  }
+  if (lessonJoinHint) {
+    lessonJoinHint.innerHTML = `<strong>Join Hint:</strong> ${escapeHtml(lesson.joinHint || "—")}`;
+  }
+  if (lessonSqlFocus) {
+    lessonSqlFocus.innerHTML = `<strong>SQL Focus:</strong> ${escapeHtml((lesson.sql_focus || []).join(", ") || "—")}`;
+  }
+
   if (typeBadge) {
     typeBadge.className = "lesson-type-badge lesson-type-" + lesson.type;
     typeBadge.innerText = lesson.type.charAt(0).toUpperCase() + lesson.type.slice(1);
   }
-  const level = levelForTrack(appState.currentTrackId);
-  if (catBadge && level) {
-    const map = { foundations: "difficulty-easy", core: "difficulty-intermediate", applied: "difficulty-hard", advanced: "difficulty-advanced", expert: "difficulty-advanced" };
-    catBadge.className = "difficulty-badge " + (map[level.key] || "difficulty-intermediate");
-    catBadge.innerText = level.label;
+
+  if (catBadge && trackLevel) {
+    const map = {
+      foundations: "difficulty-easy",
+      core: "difficulty-intermediate",
+      applied: "difficulty-hard",
+      advanced: "difficulty-advanced",
+      expert: "difficulty-advanced"
+    };
+    catBadge.className = "difficulty-badge " + (map[trackLevel.key] || "difficulty-intermediate");
+    catBadge.innerText = trackLevel.label;
   }
 
-  ["concept-content","challenge-content","scenario-content","executive-takeaway"].forEach(id => {
+  ["concept-content", "challenge-content", "scenario-content", "executive-takeaway"].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.classList.add("hidden");
   });
 
+  const legacyHintWrap = document.getElementById("level-hint");
+  if (legacyHintWrap && legacyHintWrap.closest(".schema-section")) {
+    legacyHintWrap.closest(".schema-section").style.display = "none";
+  }
+
   if (lesson.type === "concept") {
-    document.getElementById("concept-content").classList.remove("hidden");
-    document.getElementById("concept-summary").innerText = lesson.content.summary;
+    const wrap = document.getElementById("concept-content");
+    const summaryEl = document.getElementById("concept-summary");
     const bullets = document.getElementById("concept-bullets");
-    bullets.innerHTML = "";
-    (lesson.content.bullets || []).forEach(item => {
-      const li = document.createElement("li");
-      li.innerText = item;
-      bullets.appendChild(li);
-    });
-    document.getElementById("concept-example").innerText = lesson.content.example || "";
+    const exampleEl = document.getElementById("concept-example");
+
+    if (wrap) wrap.classList.remove("hidden");
+    if (summaryEl) summaryEl.innerText = lesson.content?.summary || lesson.summary || "";
+    if (bullets) {
+      bullets.innerHTML = "";
+      ((lesson.content?.bullets) || lesson.bullets || []).forEach(item => {
+        const li = document.createElement("li");
+        li.innerText = item;
+        bullets.appendChild(li);
+      });
+    }
+    if (exampleEl) {
+      exampleEl.innerText =
+        lesson.content?.example ||
+        lesson.content?.hospitalExample ||
+        lesson.example ||
+        "";
+    }
   }
 
   if (lesson.type === "challenge") {
     const challengeContent = document.getElementById("challenge-content");
-    challengeContent.classList.remove("hidden");
-
-let criteriaBox = document.getElementById("challenge-criteria");
-
-if (!criteriaBox) {
-  criteriaBox = document.createElement("div");
-  criteriaBox.id = "challenge-criteria";
-  criteriaBox.className = "concept-card";
-  const firstLabel = challengeContent.querySelector(".query-label");
-  if (firstLabel && firstLabel.parentNode) {
-    challengeContent.insertBefore(criteriaBox, firstLabel);
-  } else {
-    challengeContent.insertBefore(criteriaBox, challengeContent.firstChild);
-  }
-}
-
-criteriaBox.innerHTML = `
-  <h4>Your Task</h4>
-  <p>${escapeHtml(lesson.challengeCriteria || lesson.objective || "")}</p>
-`;
-
-    criteriaBox.innerHTML = `
-      <h4>Your Task</h4>
-      <p>${escapeHtml(buildChallengePrompt(lesson))}</p>
-    `;
-
+    const criteriaBox = document.getElementById("challenge-criteria");
+    const criteriaText = document.getElementById("challenge-criteria-text");
     const query = document.getElementById("query");
-    query.value = lesson.starterQuery || "";
-    document.getElementById("feedback").innerText = "";
-    document.getElementById("feedback").classList.remove("success","error","warning");
-    document.getElementById("output").innerHTML = "";
+    const feedback = document.getElementById("feedback");
+    const output = document.getElementById("output");
+
+    if (challengeContent) challengeContent.classList.remove("hidden");
+
+    if (criteriaBox && criteriaText) {
+      criteriaBox.classList.remove("hidden");
+      criteriaText.innerText = buildChallengePrompt(lesson);
+    }
+
+    if (query) query.value = lesson.starterQuery || "";
+    if (feedback) {
+      feedback.innerText = "";
+      feedback.classList.remove("success", "error", "warning");
+    }
+    if (output) output.innerHTML = "";
+
+    document.querySelectorAll("#challenge-content button").forEach(btn => {
+      if ((btn.innerText || "").trim().toLowerCase() === "check answer") {
+        btn.style.display = "none";
+      }
+    });
   }
 
   if (lesson.type === "scenario") {
-    document.getElementById("scenario-content").classList.remove("hidden");
-    document.getElementById("scenario-summary").innerText = lesson.content.summary || "";
-    document.getElementById("scenario-prompt").innerText = lesson.content.prompt || "";
-    document.getElementById("scenario-response").value = "";
-    document.getElementById("scenario-feedback").innerText = "";
+    const wrap = document.getElementById("scenario-content");
+    const summaryEl = document.getElementById("scenario-summary");
+    const promptEl = document.getElementById("scenario-prompt");
+    const responseEl = document.getElementById("scenario-response");
+    const scenarioFeedbackEl = document.getElementById("scenario-feedback");
+
+    if (wrap) wrap.classList.remove("hidden");
+    if (summaryEl) summaryEl.innerText = lesson.content?.summary || lesson.summary || "";
+    if (promptEl) promptEl.innerText = lesson.content?.prompt || lesson.prompt || "";
+    if (responseEl) responseEl.value = "";
+    if (scenarioFeedbackEl) {
+      scenarioFeedbackEl.innerText = "";
+      scenarioFeedbackEl.classList.remove("success", "error", "warning");
+    }
   }
 
   if (shouldShowExecutiveTakeaway(lesson)) {
-    document.getElementById("executive-takeaway").classList.remove("hidden");
-    document.getElementById("exec-metric").innerHTML = `<strong>Metric:</strong> ${lesson.executiveTakeaway.metric}`;
-    document.getElementById("exec-why").innerHTML = `<strong>Why it matters:</strong> ${lesson.executiveTakeaway.whyItMatters}`;
-    document.getElementById("exec-share").innerHTML = `<strong>What to share:</strong> ${lesson.executiveTakeaway.whatToShare}`;
-    document.getElementById("exec-action").innerHTML = `<strong>Recommended action:</strong> ${lesson.executiveTakeaway.action}`;
+    const execWrap = document.getElementById("executive-takeaway");
+    const metricEl = document.getElementById("exec-metric");
+    const whyEl = document.getElementById("exec-why");
+    const shareEl = document.getElementById("exec-share");
+    const actionEl = document.getElementById("exec-action");
+
+    if (execWrap) execWrap.classList.remove("hidden");
+    if (metricEl) metricEl.innerHTML = `<strong>Metric:</strong> ${escapeHtml(lesson.executiveTakeaway.metric || "—")}`;
+    if (whyEl) whyEl.innerHTML = `<strong>Why it matters:</strong> ${escapeHtml(lesson.executiveTakeaway.whyItMatters || "—")}`;
+    if (shareEl) shareEl.innerHTML = `<strong>What to share:</strong> ${escapeHtml(lesson.executiveTakeaway.whatToShare || "—")}`;
+    if (actionEl) actionEl.innerHTML = `<strong>Recommended action:</strong> ${escapeHtml(lesson.executiveTakeaway.action || "—")}`;
   }
 }
 
