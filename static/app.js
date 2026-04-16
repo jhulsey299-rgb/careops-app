@@ -6364,13 +6364,14 @@ function runQuery() {
   const feedback = document.getElementById("feedback");
   const queryBox = document.getElementById("query");
 
-  if (!lesson || lesson.kind !== "challenge" || !queryBox) return;
+  // 🔥 SUPPORT BOTH STRUCTURES
+  if (!lesson || (lesson.kind !== "challenge" && lesson.type !== "challenge")) return;
 
   const query = queryBox.value.trim();
   lastRunQuery = query;
 
   if (!query) {
-    setFeedbackState(feedback, "error", "Please enter a query before running it.");
+    setFeedbackState(feedback, "error", "Please enter a query.");
     if (output) output.innerHTML = "";
     return;
   }
@@ -6390,53 +6391,45 @@ function runQuery() {
         "success",
         "Correct — your query returned the expected result."
       );
-
-      markLessonComplete(lesson.id, attempts === 0);
-      saveProgress();
-      refreshLessonChrome();
       return;
     }
 
-    // ❌ Incorrect → increment attempts
+    // 🔥 MAKE SURE THIS EXISTS GLOBALLY
+    if (typeof attempts === "undefined") window.attempts = 0;
+
     attempts++;
 
-    // 1️⃣ First failure
     if (attempts === 1) {
       setFeedbackState(
         feedback,
         "warning",
-        `Hint: ${lesson.hint || "Review the required table and SQL clause."}`
+        "Hint: " + (lesson.hint || "Check your table and SELECT statement.")
       );
       return;
     }
 
-    // 2️⃣ Second failure
     if (attempts === 2) {
       setFeedbackState(
         feedback,
         "warning",
-        `Smart Hint: ${lesson.smartHint || "Focus on exact columns, table, and filtering logic."}`
+        "Smart Hint: " + (lesson.smartHint || "Focus on exact syntax and columns.")
       );
       return;
     }
 
-    // 3️⃣ Third failure → GIVE ANSWER
     setFeedbackState(
       feedback,
       "error",
-      `Answer: ${lesson.solutionQuery}
-
-Explanation: ${
-        lesson.explanation ||
-        "This works because it correctly uses the required table, fields, and SQL logic."
-      }`
+      "Answer: " + lesson.solutionQuery + "\n\nExplanation: " +
+        (lesson.explanation || "Review the expected SQL structure.")
     );
 
   } catch (error) {
     if (output) output.innerHTML = "";
-    setFeedbackState(feedback, "error", getExecutionErrorMessage(error));
+    setFeedbackState(feedback, "error", error.message);
   }
 }
+
 function normalizeResult(result) {
   return JSON.stringify({
     columns: result.columns,
