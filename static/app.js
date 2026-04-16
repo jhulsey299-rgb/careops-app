@@ -5641,18 +5641,29 @@ function attachAchievementTooltip(node, text) {
 function renderAchievements() {
   const container = document.getElementById("badges-container");
   if (!container) return;
+
   container.innerHTML = "";
-  achievements().forEach(achievement => {
+
+  achievements().forEach((achievement) => {
     const chip = document.createElement("div");
-    chip.className = achievement.earned ? "badge-chip" : "badge-chip locked";
+
+    chip.className = achievement.earned
+      ? "badge-chip"
+      : "badge-chip locked";
+
     chip.innerText = `${achievement.emoji} ${achievement.label}`;
-    chip.title = achievement.description || "";
-    chip.setAttribute("aria-label", `${achievement.label}: ${achievement.description || ""}`);
-    attachAchievementTooltip(chip, achievement.description || "");
+
+    // 🚨 THIS FIXES YOUR DOUBLE TOOLTIP ISSUE
+    chip.removeAttribute("title"); // removes white box
+    chip.setAttribute("data-tooltip", achievement.description || "");
+    chip.setAttribute(
+      "aria-label",
+      `${achievement.label}: ${achievement.description || ""}`
+    );
+
     container.appendChild(chip);
   });
 }
-
 function updateDashboard() {
   const total = totalLessonCount();
   const completed = completedLessonCount();
