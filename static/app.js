@@ -6270,7 +6270,7 @@ function runQuery() {
   const feedback = document.getElementById("feedback");
   const queryBox = document.getElementById("query");
 
-  if (!lesson || lesson.type !== "challenge" || !queryBox) return;
+  if (!lesson || (lesson.kind !== "challenge" && lesson.type !== "challenge") || !queryBox) return;
 
   const query = queryBox.value.trim();
   lastRunQuery = query;
@@ -6280,6 +6280,19 @@ function runQuery() {
     if (output) output.innerHTML = "";
     return;
   }
+
+  const hintOne =
+    lesson.hint ||
+    "Start with the correct table and make sure you are selecting the required fields.";
+
+  const hintTwo =
+    lesson.smartHint ||
+    lesson.secondHint ||
+    "Double-check the exact columns, filters, joins, or grouping needed to match the lesson objective.";
+
+  const finalExplanation =
+    lesson.explanation ||
+    "This answer is correct because it uses the right table, selects the required fields, and returns the expected result for the lesson objective.";
 
   try {
     const result = queryToResult(query);
@@ -6303,19 +6316,6 @@ function runQuery() {
 
     attempts += 1;
 
-    const hintOne =
-      lesson.hint ||
-      "Start with the correct table and make sure you are selecting the required fields.";
-
-    const hintTwo =
-      lesson.smartHint ||
-      lesson.secondHint ||
-      "Double-check the exact columns, filters, joins, or grouping needed to match the lesson objective.";
-
-    const explanation =
-      lesson.explanation ||
-      "This answer is correct because it uses the right table, selects the required fields, and returns the expected result for the lesson objective.";
-
     if (attempts === 1) {
       setFeedbackState(feedback, "warning", `Not correct yet. Hint 1: ${hintOne}`);
     } else if (attempts === 2) {
@@ -6324,7 +6324,7 @@ function runQuery() {
       setFeedbackState(
         feedback,
         "error",
-        `You have used all 3 attempts.\n\nCorrect Answer:\n${lesson.solutionQuery}\n\nExplanation:\n${explanation}`
+        `You have used all 3 attempts.\n\nCorrect Answer:\n${lesson.solutionQuery}\n\nExplanation:\n${finalExplanation}`
       );
     }
 
@@ -6332,7 +6332,33 @@ function runQuery() {
     refreshLessonChrome();
   } catch (error) {
     if (output) output.innerHTML = "";
-    setFeedbackState(feedback, "error", getExecutionErrorMessage(error));
+
+    attempts += 1;
+
+    const executionMessage = getExecutionErrorMessage(error);
+
+    if (attempts === 1) {
+      setFeedbackState(
+        feedback,
+        "warning",
+        `Not correct yet. Hint 1: ${executionMessage} ${hintOne}`
+      );
+    } else if (attempts === 2) {
+      setFeedbackState(
+        feedback,
+        "warning",
+        `Still not correct. Hint 2: ${executionMessage} ${hintTwo}`
+      );
+    } else {
+      setFeedbackState(
+        feedback,
+        "error",
+        `You have used all 3 attempts.\n\nCorrect Answer:\n${lesson.solutionQuery}\n\nExplanation:\n${finalExplanation}`
+      );
+    }
+
+    saveProgress();
+    refreshLessonChrome();
   }
 }
 function normalizeResult(result) {
