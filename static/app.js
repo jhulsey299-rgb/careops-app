@@ -5973,18 +5973,24 @@ function renderLesson() {
     const challengeContent = document.getElementById("challenge-content");
     challengeContent.classList.remove("hidden");
 
-    let criteriaBox = document.getElementById("challenge-criteria");
-    if (!criteriaBox) {
-      criteriaBox = document.createElement("div");
-      criteriaBox.id = "challenge-criteria";
-      criteriaBox.className = "concept-card";
-      const firstLabel = challengeContent.querySelector(".query-label");
-      if (firstLabel && firstLabel.parentNode) {
-        challengeContent.insertBefore(criteriaBox, firstLabel);
-      } else {
-        challengeContent.insertBefore(criteriaBox, challengeContent.firstChild);
-      }
-    }
+let criteriaBox = document.getElementById("challenge-criteria");
+
+if (!criteriaBox) {
+  criteriaBox = document.createElement("div");
+  criteriaBox.id = "challenge-criteria";
+  criteriaBox.className = "concept-card";
+  const firstLabel = challengeContent.querySelector(".query-label");
+  if (firstLabel && firstLabel.parentNode) {
+    challengeContent.insertBefore(criteriaBox, firstLabel);
+  } else {
+    challengeContent.insertBefore(criteriaBox, challengeContent.firstChild);
+  }
+}
+
+criteriaBox.innerHTML = `
+  <h4>Your Task</h4>
+  <p>${escapeHtml(lesson.challengeCriteria || lesson.objective || "")}</p>
+`;
 
     criteriaBox.innerHTML = `
       <h4>Your Task</h4>
