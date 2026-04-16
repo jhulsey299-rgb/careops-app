@@ -5653,13 +5653,15 @@ function renderAchievements() {
 
     chip.innerText = `${achievement.emoji} ${achievement.label}`;
 
-    // 🚨 THIS FIXES YOUR DOUBLE TOOLTIP ISSUE
-    chip.removeAttribute("title"); // removes white box
-    chip.setAttribute("data-tooltip", achievement.description || "");
-    chip.setAttribute(
-      "aria-label",
-      `${achievement.label}: ${achievement.description || ""}`
-    );
+    // REMOVE browser tooltip
+    chip.removeAttribute("title");
+
+    // 👇 CREATE CUSTOM TOOLTIP ELEMENT
+    const tooltip = document.createElement("div");
+    tooltip.className = "custom-tooltip";
+    tooltip.innerText = achievement.description || "";
+
+    chip.appendChild(tooltip);
 
     container.appendChild(chip);
   });
