@@ -6471,11 +6471,12 @@ function resetQuery() {
   const output = document.getElementById("output");
 
   if (queryBox) queryBox.value = "";
-  if (feedback) {
-    feedback.classList.remove("success", "error", "warning");
-    feedback.innerText = "";
-  }
   if (output) output.innerHTML = "";
+
+  if (feedback) {
+    feedback.innerText = "";
+    feedback.className = "";
+  }
 
   attempts = 0;
   lastRunQuery = "";
