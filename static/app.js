@@ -5289,12 +5289,16 @@ function challengeLesson(spec) {
     type: "challenge",
     title: spec.title,
     objective: spec.objective,
+    challengeCriteria: spec.challengeCriteria || "",
     sql_focus: spec.sql_focus || [],
     relevantTables: spec.relevantTables || [],
     joinHint: spec.joinHint || "Think carefully about the reporting grain and join path.",
     starterQuery: spec.starterQuery || "",
     solutionQuery: spec.solutionQuery || "",
     hint: spec.hint || "",
+    smartHint: spec.smartHint || spec.secondHint || "",
+    thirdHint: spec.thirdHint || "",
+    explanation: spec.explanation || "",
     executiveTakeaway: spec.executiveTakeaway || null
   };
 }
@@ -5311,14 +5315,103 @@ function scenarioLesson(spec) {
     content: {
       summary: spec.summary || "",
       prompt: spec.prompt || "",
-      expectedKeywords: spec.expectedKeywords || []
+      expectedKeywords: spec.expectedKeywords || [],
+      minLength: spec.minLength || 80,
+      minimumKeywordMatches: spec.minimumKeywordMatches || Math.min(2, (spec.expectedKeywords || []).length),
+      feedbackGuide: spec.feedbackGuide || ""
     },
     executiveTakeaway: spec.executiveTakeaway || null
   };
 }
 
+function createTrackIntroCategory(track) {
+  const introMap = {
+    track_core: {
+      categoryId: "core_sql_patterns_introduction",
+      title: "Core SQL Patterns Introduction",
+      objective: "Understand the purpose of the Core module and how aggregations, joins, and grouped reporting support hospital analytics.",
+      summary: "The Core module introduces grouped summaries, joins, and reporting patterns that analysts use to move from raw tables to operational and financial insights.",
+      bullets: [
+        "Core lessons build on foundational SELECT and WHERE skills.",
+        "You will learn how to summarize data, compare groups, and connect related tables correctly.",
+        "These skills support common hospital reporting needs such as volume by department, payer mix, and provider productivity.",
+        "As questions become more business-focused, query grain and join quality become even more important."
+      ],
+      example: "Hospital example: to compare encounter volume by department or summarize charges by payer, you move beyond simple row-level queries into grouped, joined reporting."
+    },
+    track_applied: {
+      categoryId: "applied_hospital_use_cases_introduction",
+      title: "Applied Hospital Use Cases Introduction",
+      objective: "Understand how the Applied module turns SQL skills into practical hospital analytics workflows.",
+      summary: "The Applied module focuses on realistic healthcare use cases such as throughput, readmissions, observation, quality, and operational reporting.",
+      bullets: [
+        "Applied lessons connect SQL directly to hospital decision-making.",
+        "You will practice using SQL to answer questions leaders actually ask.",
+        "These lessons emphasize interpreting the business meaning of the output, not just writing syntax.",
+        "Good applied analytics balances correct SQL, correct grain, and correct operational framing."
+      ],
+      example: "Hospital example: a throughput query is only useful if the SQL is correct and the result is framed in a way leaders can use to improve discharge efficiency."
+    },
+    track_advanced: {
+      categoryId: "advanced_analytics_design_introduction",
+      title: "Advanced Analytics Design Introduction",
+      objective: "Understand how the Advanced module expands SQL into more complex analytical design patterns for healthcare reporting.",
+      summary: "The Advanced module introduces more complex logic, advanced calculations, and layered query patterns used in deeper hospital analytics.",
+      bullets: [
+        "Advanced lessons often combine multiple SQL concepts in one workflow.",
+        "You will build stronger logic around exceptions, comparative performance, and multi-step transformations.",
+        "These lessons support more nuanced decision support and operational monitoring.",
+        "As complexity rises, clarity, structure, and documentation become increasingly important."
+      ],
+      example: "Hospital example: an advanced denial analysis may require layered filtering, derived fields, and grouped comparisons to isolate the true operational drivers."
+    },
+    track_expert: {
+      categoryId: "expert_sql_strategy_introduction",
+      title: "Expert SQL Strategy Introduction",
+      objective: "Understand how the Expert module prepares analysts to tackle high-complexity, executive-facing healthcare analytics problems.",
+      summary: "The Expert module focuses on high-complexity SQL patterns, executive-level framing, and multi-step analyses that support strategic healthcare decisions.",
+      bullets: [
+        "Expert lessons are designed for analysts solving ambiguous and high-impact business problems.",
+        "You will use advanced SQL to generate insights that support leadership action.",
+        "These lessons emphasize both technical precision and executive communication.",
+        "At the expert level, the goal is not only the right answer, but the right answer explained clearly."
+      ],
+      example: "Hospital example: an executive dashboard analysis may require advanced SQL logic, careful validation, and a final takeaway that translates the data into action."
+    }
+  };
+
+  const config = introMap[track.id];
+  if (!config) return null;
+
+  return {
+    id: config.categoryId,
+    title: config.title,
+    order: 0,
+    lessons: [
+      {
+        kind: "concept",
+        id: `${track.id}_intro_concept`,
+        title: config.title,
+        objective: config.objective,
+        sql_focus: ["Concept"],
+        relevantTables: ["patients", "encounters", "claims", "charges"],
+        joinHint: "No join required unless you choose to connect related data for context.",
+        summary: config.summary,
+        bullets: config.bullets,
+        example: config.example,
+        executiveTakeaway: { show: false }
+      }
+    ]
+  };
+}
+
 function normalizeCurriculum() {
   curriculum.forEach(track => {
+    const introCategory = createTrackIntroCategory(track);
+    if (introCategory && (!track.categories.length || track.categories[0].id !== introCategory.id)) {
+      track.categories.unshift(introCategory);
+    }
+
     track.categories.forEach(category => {
       category.lessons = category.lessons.map(lesson => {
         if (lesson.kind === "concept") return conceptLesson(lesson);
@@ -5927,144 +6020,88 @@ function escapeHtml(str) {
 function renderLesson() {
   const lesson = getCurrentLesson();
   if (!lesson) return;
-
   showLessonWorkspace();
+  document.getElementById("track-title-display").innerText = getCurrentCategory()?.title || "Category";
+  document.getElementById("lesson-title").innerText = lesson.title;
+  document.getElementById("lesson-objective").innerText = lesson.objective;
+  document.getElementById("lesson-tables").innerHTML = `<strong>Relevant Tables:</strong> ${lesson.relevantTables.join(", ") || "—"}`;
+  document.getElementById("lesson-join-hint").innerHTML = `<strong>Join Hint:</strong> ${lesson.joinHint || "—"}`;
+  document.getElementById("lesson-sql-focus").innerHTML = `<strong>SQL Focus:</strong> ${(lesson.sql_focus || []).join(", ") || "—"}`;
 
-  const category = getCurrentCategory();
-  const trackLevel = levelForTrack(appState.currentTrackId);
-
-  const trackTitleDisplay = document.getElementById("track-title-display");
-  const lessonTitle = document.getElementById("lesson-title");
-  const lessonObjective = document.getElementById("lesson-objective");
-  const lessonTables = document.getElementById("lesson-tables");
-  const lessonJoinHint = document.getElementById("lesson-join-hint");
-  const lessonSqlFocus = document.getElementById("lesson-sql-focus");
   const typeBadge = document.getElementById("current-lesson-type-badge");
   const catBadge = document.getElementById("current-category-badge");
-
-  if (trackTitleDisplay) trackTitleDisplay.innerText = category?.title || "Category";
-  if (lessonTitle) lessonTitle.innerText = lesson.title;
-  if (lessonObjective) lessonObjective.innerText = lesson.objective || "";
-  if (lessonTables) {
-    lessonTables.innerHTML = `<strong>Relevant Tables:</strong> ${escapeHtml((lesson.relevantTables || []).join(", ") || "—")}`;
-  }
-  if (lessonJoinHint) {
-    lessonJoinHint.innerHTML = `<strong>Join Hint:</strong> ${escapeHtml(lesson.joinHint || "—")}`;
-  }
-  if (lessonSqlFocus) {
-    lessonSqlFocus.innerHTML = `<strong>SQL Focus:</strong> ${escapeHtml((lesson.sql_focus || []).join(", ") || "—")}`;
-  }
-
   if (typeBadge) {
     typeBadge.className = "lesson-type-badge lesson-type-" + lesson.type;
     typeBadge.innerText = lesson.type.charAt(0).toUpperCase() + lesson.type.slice(1);
   }
-
-  if (catBadge && trackLevel) {
-    const map = {
-      foundations: "difficulty-easy",
-      core: "difficulty-intermediate",
-      applied: "difficulty-hard",
-      advanced: "difficulty-advanced",
-      expert: "difficulty-advanced"
-    };
-    catBadge.className = "difficulty-badge " + (map[trackLevel.key] || "difficulty-intermediate");
-    catBadge.innerText = trackLevel.label;
+  const level = levelForTrack(appState.currentTrackId);
+  if (catBadge && level) {
+    const map = { foundations: "difficulty-easy", core: "difficulty-intermediate", applied: "difficulty-hard", advanced: "difficulty-advanced", expert: "difficulty-advanced" };
+    catBadge.className = "difficulty-badge " + (map[level.key] || "difficulty-intermediate");
+    catBadge.innerText = level.label;
   }
 
-  ["concept-content", "challenge-content", "scenario-content", "executive-takeaway"].forEach(id => {
+  ["concept-content","challenge-content","scenario-content","executive-takeaway"].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.classList.add("hidden");
   });
 
-  const legacyHintWrap = document.getElementById("level-hint");
-  if (legacyHintWrap && legacyHintWrap.closest(".schema-section")) {
-    legacyHintWrap.closest(".schema-section").style.display = "none";
-  }
-
   if (lesson.type === "concept") {
-    const wrap = document.getElementById("concept-content");
-    const summaryEl = document.getElementById("concept-summary");
+    document.getElementById("concept-content").classList.remove("hidden");
+    document.getElementById("concept-summary").innerText = lesson.content.summary;
     const bullets = document.getElementById("concept-bullets");
-    const exampleEl = document.getElementById("concept-example");
-
-    if (wrap) wrap.classList.remove("hidden");
-    if (summaryEl) summaryEl.innerText = lesson.content?.summary || lesson.summary || "";
-    if (bullets) {
-      bullets.innerHTML = "";
-      ((lesson.content?.bullets) || lesson.bullets || []).forEach(item => {
-        const li = document.createElement("li");
-        li.innerText = item;
-        bullets.appendChild(li);
-      });
-    }
-    if (exampleEl) {
-      exampleEl.innerText =
-        lesson.content?.example ||
-        lesson.content?.hospitalExample ||
-        lesson.example ||
-        "";
-    }
+    bullets.innerHTML = "";
+    (lesson.content.bullets || []).forEach(item => {
+      const li = document.createElement("li");
+      li.innerText = item;
+      bullets.appendChild(li);
+    });
+    document.getElementById("concept-example").innerText = lesson.content.example || "";
   }
 
   if (lesson.type === "challenge") {
     const challengeContent = document.getElementById("challenge-content");
-    const criteriaBox = document.getElementById("challenge-criteria");
-    const criteriaText = document.getElementById("challenge-criteria-text");
-    const query = document.getElementById("query");
-    const feedback = document.getElementById("feedback");
-    const output = document.getElementById("output");
+    challengeContent.classList.remove("hidden");
 
-    if (challengeContent) challengeContent.classList.remove("hidden");
-
-    if (criteriaBox && criteriaText) {
-      criteriaBox.classList.remove("hidden");
-      criteriaText.innerText = buildChallengePrompt(lesson);
-    }
-
-    if (query) query.value = lesson.starterQuery || "";
-    if (feedback) {
-      feedback.innerText = "";
-      feedback.classList.remove("success", "error", "warning");
-    }
-    if (output) output.innerHTML = "";
-
-    document.querySelectorAll("#challenge-content button").forEach(btn => {
-      if ((btn.innerText || "").trim().toLowerCase() === "check answer") {
-        btn.style.display = "none";
+    let criteriaBox = document.getElementById("challenge-criteria");
+    if (!criteriaBox) {
+      criteriaBox = document.createElement("div");
+      criteriaBox.id = "challenge-criteria";
+      criteriaBox.className = "concept-card";
+      const firstLabel = challengeContent.querySelector(".query-label");
+      if (firstLabel && firstLabel.parentNode) {
+        challengeContent.insertBefore(criteriaBox, firstLabel);
+      } else {
+        challengeContent.insertBefore(criteriaBox, challengeContent.firstChild);
       }
-    });
+    }
+
+    criteriaBox.innerHTML = `
+      <h4>Your Task</h4>
+      <p>${escapeHtml(buildChallengePrompt(lesson))}</p>
+    `;
+
+    const query = document.getElementById("query");
+    query.value = lesson.starterQuery || "";
+    document.getElementById("feedback").innerText = "";
+    document.getElementById("feedback").classList.remove("success","error","warning");
+    document.getElementById("output").innerHTML = "";
   }
 
   if (lesson.type === "scenario") {
-    const wrap = document.getElementById("scenario-content");
-    const summaryEl = document.getElementById("scenario-summary");
-    const promptEl = document.getElementById("scenario-prompt");
-    const responseEl = document.getElementById("scenario-response");
-    const scenarioFeedbackEl = document.getElementById("scenario-feedback");
-
-    if (wrap) wrap.classList.remove("hidden");
-    if (summaryEl) summaryEl.innerText = lesson.content?.summary || lesson.summary || "";
-    if (promptEl) promptEl.innerText = lesson.content?.prompt || lesson.prompt || "";
-    if (responseEl) responseEl.value = "";
-    if (scenarioFeedbackEl) {
-      scenarioFeedbackEl.innerText = "";
-      scenarioFeedbackEl.classList.remove("success", "error", "warning");
-    }
+    document.getElementById("scenario-content").classList.remove("hidden");
+    document.getElementById("scenario-summary").innerText = lesson.content.summary || "";
+    document.getElementById("scenario-prompt").innerText = lesson.content.prompt || "";
+    document.getElementById("scenario-response").value = "";
+    document.getElementById("scenario-feedback").innerText = "";
   }
 
   if (shouldShowExecutiveTakeaway(lesson)) {
-    const execWrap = document.getElementById("executive-takeaway");
-    const metricEl = document.getElementById("exec-metric");
-    const whyEl = document.getElementById("exec-why");
-    const shareEl = document.getElementById("exec-share");
-    const actionEl = document.getElementById("exec-action");
-
-    if (execWrap) execWrap.classList.remove("hidden");
-    if (metricEl) metricEl.innerHTML = `<strong>Metric:</strong> ${escapeHtml(lesson.executiveTakeaway.metric || "—")}`;
-    if (whyEl) whyEl.innerHTML = `<strong>Why it matters:</strong> ${escapeHtml(lesson.executiveTakeaway.whyItMatters || "—")}`;
-    if (shareEl) shareEl.innerHTML = `<strong>What to share:</strong> ${escapeHtml(lesson.executiveTakeaway.whatToShare || "—")}`;
-    if (actionEl) actionEl.innerHTML = `<strong>Recommended action:</strong> ${escapeHtml(lesson.executiveTakeaway.action || "—")}`;
+    document.getElementById("executive-takeaway").classList.remove("hidden");
+    document.getElementById("exec-metric").innerHTML = `<strong>Metric:</strong> ${lesson.executiveTakeaway.metric}`;
+    document.getElementById("exec-why").innerHTML = `<strong>Why it matters:</strong> ${lesson.executiveTakeaway.whyItMatters}`;
+    document.getElementById("exec-share").innerHTML = `<strong>What to share:</strong> ${lesson.executiveTakeaway.whatToShare}`;
+    document.getElementById("exec-action").innerHTML = `<strong>Recommended action:</strong> ${lesson.executiveTakeaway.action}`;
   }
 }
 
@@ -6647,3 +6684,6 @@ document.addEventListener("DOMContentLoaded", async function () {
   window.addEventListener("scroll", hideAchievementTooltip, true);
   window.addEventListener("resize", hideAchievementTooltip);
 });
+
+
+
