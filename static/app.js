@@ -5548,17 +5548,20 @@ function attachAchievementTooltip(node, text) {
 function renderAchievements() {
   const container = document.getElementById("badges-container");
   if (!container) return;
+
   ensureAchievementTooltipStyles();
   container.innerHTML = "";
-  achievements().forEach(achievement => {
+
+  achievements().forEach((achievement) => {
     const chip = document.createElement("div");
     chip.className = achievement.earned ? "badge-chip" : "badge-chip locked";
     chip.innerText = `${achievement.emoji} ${achievement.label}`;
     chip.setAttribute("tabindex", "0");
-    chip.removeAttribute("title");
     chip.setAttribute("aria-label", `${achievement.label}: ${achievement.description || ""}`);
     chip.dataset.unlockDescription = achievement.description || "";
+
     attachAchievementTooltip(chip, achievement.description || "");
+
     container.appendChild(chip);
   });
 }
