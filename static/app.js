@@ -298,11 +298,9 @@ const curriculum = [
             "joinHint": "Use the base table that matches the reporting grain, then join outward only when needed.",
             "starterQuery": "SELECT * FROM patients;",
             "solutionQuery": "SELECT * FROM patients;",
-            "hint": "Use SELECT * FROM patients;",
-
-            "smartHint": "Use the patients table only. Do not list columns manually for this lesson—use the asterisk.",
-
-            "thirdHint": "The correct pattern is SELECT * FROM patients; with no WHERE clause, no JOIN, and no LIMIT.",
+            hint: "Start with a basic SELECT query against the patients table. This lesson is asking for every row and every column.",
+smartHint: "You only need one table for this lesson, and you should use the wildcard symbol to return every column.",
+thirdHint: "The correct pattern is SELECT * FROM patients; with no WHERE clause, no JOIN, and no LIMIT.",
 
             "explanation": "This answer is correct because SELECT * returns the full dataset from the table. In this lesson, the goal is to understand what the complete patients table looks like before narrowing queries.",
             "executiveTakeaway": {
