@@ -6458,8 +6458,8 @@ function refreshLessonChrome() {
 
 function setFeedbackState(element, state, message) {
   if (!element) return;
-  element.classList.remove("success", "error", "warning");
-  if (state) element.classList.add(state);
+  element.className = "";
+  element.classList.add(state);
   element.innerText = message;
 }
 function checkAnswer() {
