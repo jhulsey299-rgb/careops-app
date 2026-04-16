@@ -34,12 +34,6 @@
             <div id="schema-relationships"></div>
         </section>
 
-        <section class="schema-section">
-            <h3>Hints / Guidance</h3>
-            <div id="level-hint" class="hint-box">
-                Lesson guidance and SQL hints will appear here.
-            </div>
-        </section>
     </aside>
 
     <div id="schema-resizer" aria-hidden="true"></div>
@@ -49,6 +43,7 @@
             <div class="hero-copy">
                 <div class="hero-kicker">Healthcare SQL Training Simulator</div>
                 <h1>CareOps: SQL Analyst</h1>
+                <p class="hero-tagline">Clinical Analytics for Revenue, Efficiency, and Operational Performance Solutions</p>
                 <p>Learn SQL through hospital analytics scenarios focused on operations, quality, finance, and executive communication.</p>
             </div>
         </section>
@@ -184,12 +179,16 @@
                             <p>Write your SQL query and validate it against the lesson objective.</p>
                         </div>
 
+                        <div id="challenge-criteria" class="concept-card hidden">
+                            <h4>Your Task</h4>
+                            <p id="challenge-criteria-text"></p>
+                        </div>
+
                         <label for="query" class="query-label">Write your SQL query:</label>
                         <textarea id="query" rows="8" cols="80" spellcheck="false" autocomplete="off" autocapitalize="off"></textarea>
 
                         <div class="button-row">
                             <button type="button" onclick="runQuery()">Run Query</button>
-                            <button type="button" onclick="checkAnswer()">Check Answer</button>
                             <button type="button" onclick="resetQuery()">Reset Query</button>
                         </div>
 
@@ -338,6 +337,6 @@ window.addEventListener('unhandledrejection', function (event) {
 </script>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/sql-wasm.min.js"></script>
-<script src="/static/app.js?v=12"></script>
+<script src="/static/app.js?v=13"></script>
 </body>
 </html>
