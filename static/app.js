@@ -6474,9 +6474,7 @@ function resetQuery() {
   }
 
   attempts = 0;
-  lastRunQuery = "";
 }
-
 function submitScenario() {
   const lesson = getCurrentLesson();
   const box = document.getElementById("scenario-response");
