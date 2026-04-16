@@ -419,6 +419,14 @@ body.resizing-schema #schema-resizer::before {
     max-width: 760px;
 }
 
+.hero-tagline {
+    margin: 2px 0 10px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    color: rgba(255, 255, 255, 0.92);
+}
+
 .hero-kicker {
     display: inline-block;
     font-size: 0.78rem;
@@ -582,6 +590,33 @@ body.resizing-schema #schema-resizer::before {
     background: #f8fafc;
     border-color: #e2e8f0;
     color: #94a3b8;
+}
+
+.badge-chip {
+    position: relative;
+    cursor: help;
+}
+
+.achievement-tooltip {
+    position: fixed;
+    z-index: 4000;
+    max-width: 320px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: rgba(15, 23, 42, 0.96);
+    color: #ffffff;
+    font-size: 0.82rem;
+    line-height: 1.4;
+    box-shadow: 0 14px 30px rgba(15, 23, 42, 0.24);
+    pointer-events: none;
+    opacity: 0;
+    transform: translateY(4px);
+    transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.achievement-tooltip.visible {
+    opacity: 1;
+    transform: translateY(0);
 }
 
 /* ================= Track Overview ================= */
@@ -1575,3 +1610,38 @@ body.resizing-schema #schema-resizer::before {
         padding: 22px 20px 20px;
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#level-hint { display: none; }
