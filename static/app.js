@@ -6290,13 +6290,11 @@ function runQuery() {
 
     if (passed) {
       markLessonCompleted(lesson.id, attempts === 0);
-
       setFeedbackState(
         feedback,
         "success",
         "Correct — your query returned the expected result."
       );
-
       attempts = 0;
       saveProgress();
       refreshLessonChrome();
