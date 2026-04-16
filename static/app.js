@@ -5289,16 +5289,12 @@ function challengeLesson(spec) {
     type: "challenge",
     title: spec.title,
     objective: spec.objective,
-    challengeCriteria: spec.challengeCriteria || "",
     sql_focus: spec.sql_focus || [],
     relevantTables: spec.relevantTables || [],
     joinHint: spec.joinHint || "Think carefully about the reporting grain and join path.",
     starterQuery: spec.starterQuery || "",
     solutionQuery: spec.solutionQuery || "",
     hint: spec.hint || "",
-    smartHint: spec.smartHint || spec.secondHint || "",
-    thirdHint: spec.thirdHint || "",
-    explanation: spec.explanation || "",
     executiveTakeaway: spec.executiveTakeaway || null
   };
 }
@@ -5315,103 +5311,14 @@ function scenarioLesson(spec) {
     content: {
       summary: spec.summary || "",
       prompt: spec.prompt || "",
-      expectedKeywords: spec.expectedKeywords || [],
-      minLength: spec.minLength || 80,
-      minimumKeywordMatches: spec.minimumKeywordMatches || Math.min(2, (spec.expectedKeywords || []).length),
-      feedbackGuide: spec.feedbackGuide || ""
+      expectedKeywords: spec.expectedKeywords || []
     },
     executiveTakeaway: spec.executiveTakeaway || null
   };
 }
 
-function createTrackIntroCategory(track) {
-  const introMap = {
-    track_core: {
-      categoryId: "core_sql_patterns_introduction",
-      title: "Core SQL Patterns Introduction",
-      objective: "Understand the purpose of the Core module and how aggregations, joins, and grouped reporting support hospital analytics.",
-      summary: "The Core module introduces grouped summaries, joins, and reporting patterns that analysts use to move from raw tables to operational and financial insights.",
-      bullets: [
-        "Core lessons build on foundational SELECT and WHERE skills.",
-        "You will learn how to summarize data, compare groups, and connect related tables correctly.",
-        "These skills support common hospital reporting needs such as volume by department, payer mix, and provider productivity.",
-        "As questions become more business-focused, query grain and join quality become even more important."
-      ],
-      example: "Hospital example: to compare encounter volume by department or summarize charges by payer, you move beyond simple row-level queries into grouped, joined reporting."
-    },
-    track_applied: {
-      categoryId: "applied_hospital_use_cases_introduction",
-      title: "Applied Hospital Use Cases Introduction",
-      objective: "Understand how the Applied module turns SQL skills into practical hospital analytics workflows.",
-      summary: "The Applied module focuses on realistic healthcare use cases such as throughput, readmissions, observation, quality, and operational reporting.",
-      bullets: [
-        "Applied lessons connect SQL directly to hospital decision-making.",
-        "You will practice using SQL to answer questions leaders actually ask.",
-        "These lessons emphasize interpreting the business meaning of the output, not just writing syntax.",
-        "Good applied analytics balances correct SQL, correct grain, and correct operational framing."
-      ],
-      example: "Hospital example: a throughput query is only useful if the SQL is correct and the result is framed in a way leaders can use to improve discharge efficiency."
-    },
-    track_advanced: {
-      categoryId: "advanced_analytics_design_introduction",
-      title: "Advanced Analytics Design Introduction",
-      objective: "Understand how the Advanced module expands SQL into more complex analytical design patterns for healthcare reporting.",
-      summary: "The Advanced module introduces more complex logic, advanced calculations, and layered query patterns used in deeper hospital analytics.",
-      bullets: [
-        "Advanced lessons often combine multiple SQL concepts in one workflow.",
-        "You will build stronger logic around exceptions, comparative performance, and multi-step transformations.",
-        "These lessons support more nuanced decision support and operational monitoring.",
-        "As complexity rises, clarity, structure, and documentation become increasingly important."
-      ],
-      example: "Hospital example: an advanced denial analysis may require layered filtering, derived fields, and grouped comparisons to isolate the true operational drivers."
-    },
-    track_expert: {
-      categoryId: "expert_sql_strategy_introduction",
-      title: "Expert SQL Strategy Introduction",
-      objective: "Understand how the Expert module prepares analysts to tackle high-complexity, executive-facing healthcare analytics problems.",
-      summary: "The Expert module focuses on high-complexity SQL patterns, executive-level framing, and multi-step analyses that support strategic healthcare decisions.",
-      bullets: [
-        "Expert lessons are designed for analysts solving ambiguous and high-impact business problems.",
-        "You will use advanced SQL to generate insights that support leadership action.",
-        "These lessons emphasize both technical precision and executive communication.",
-        "At the expert level, the goal is not only the right answer, but the right answer explained clearly."
-      ],
-      example: "Hospital example: an executive dashboard analysis may require advanced SQL logic, careful validation, and a final takeaway that translates the data into action."
-    }
-  };
-
-  const config = introMap[track.id];
-  if (!config) return null;
-
-  return {
-    id: config.categoryId,
-    title: config.title,
-    order: 0,
-    lessons: [
-      {
-        kind: "concept",
-        id: `${track.id}_intro_concept`,
-        title: config.title,
-        objective: config.objective,
-        sql_focus: ["Concept"],
-        relevantTables: ["patients", "encounters", "claims", "charges"],
-        joinHint: "No join required unless you choose to connect related data for context.",
-        summary: config.summary,
-        bullets: config.bullets,
-        example: config.example,
-        executiveTakeaway: { show: false }
-      }
-    ]
-  };
-}
-
 function normalizeCurriculum() {
   curriculum.forEach(track => {
-    const introCategory = createTrackIntroCategory(track);
-    if (introCategory && (!track.categories.length || track.categories[0].id !== introCategory.id)) {
-      track.categories.unshift(introCategory);
-    }
-
     track.categories.forEach(category => {
       category.lessons = category.lessons.map(lesson => {
         if (lesson.kind === "concept") return conceptLesson(lesson);
@@ -5641,31 +5548,21 @@ function attachAchievementTooltip(node, text) {
 function renderAchievements() {
   const container = document.getElementById("badges-container");
   if (!container) return;
-
+  ensureAchievementTooltipStyles();
   container.innerHTML = "";
-
-  achievements().forEach((achievement) => {
+  achievements().forEach(achievement => {
     const chip = document.createElement("div");
-
-    chip.className = achievement.earned
-      ? "badge-chip"
-      : "badge-chip locked";
-
+    chip.className = achievement.earned ? "badge-chip" : "badge-chip locked";
     chip.innerText = `${achievement.emoji} ${achievement.label}`;
-
-    // REMOVE browser tooltip
+    chip.setAttribute("tabindex", "0");
     chip.removeAttribute("title");
-
-    // 👇 CREATE CUSTOM TOOLTIP ELEMENT
-    const tooltip = document.createElement("div");
-    tooltip.className = "custom-tooltip";
-    tooltip.innerText = achievement.description || "";
-
-    chip.appendChild(tooltip);
-
+    chip.setAttribute("aria-label", `${achievement.label}: ${achievement.description || ""}`);
+    chip.dataset.unlockDescription = achievement.description || "";
+    attachAchievementTooltip(chip, achievement.description || "");
     container.appendChild(chip);
   });
 }
+
 function updateDashboard() {
   const total = totalLessonCount();
   const completed = completedLessonCount();
@@ -6076,18 +5973,24 @@ function renderLesson() {
     const challengeContent = document.getElementById("challenge-content");
     challengeContent.classList.remove("hidden");
 
-    let criteriaBox = document.getElementById("challenge-criteria");
-    if (!criteriaBox) {
-      criteriaBox = document.createElement("div");
-      criteriaBox.id = "challenge-criteria";
-      criteriaBox.className = "concept-card";
-      const firstLabel = challengeContent.querySelector(".query-label");
-      if (firstLabel && firstLabel.parentNode) {
-        challengeContent.insertBefore(criteriaBox, firstLabel);
-      } else {
-        challengeContent.insertBefore(criteriaBox, challengeContent.firstChild);
-      }
-    }
+let criteriaBox = document.getElementById("challenge-criteria");
+
+if (!criteriaBox) {
+  criteriaBox = document.createElement("div");
+  criteriaBox.id = "challenge-criteria";
+  criteriaBox.className = "concept-card";
+  const firstLabel = challengeContent.querySelector(".query-label");
+  if (firstLabel && firstLabel.parentNode) {
+    challengeContent.insertBefore(criteriaBox, firstLabel);
+  } else {
+    challengeContent.insertBefore(criteriaBox, challengeContent.firstChild);
+  }
+}
+
+criteriaBox.innerHTML = `
+  <h4>Your Task</h4>
+  <p>${escapeHtml(lesson.challengeCriteria || lesson.objective || "")}</p>
+`;
 
     criteriaBox.innerHTML = `
       <h4>Your Task</h4>
@@ -6364,72 +6267,70 @@ function runQuery() {
   const feedback = document.getElementById("feedback");
   const queryBox = document.getElementById("query");
 
-  // 🔥 SUPPORT BOTH STRUCTURES
-  if (!lesson || (lesson.kind !== "challenge" && lesson.type !== "challenge")) return;
+  if (!lesson || lesson.type !== "challenge" || !queryBox) return;
 
   const query = queryBox.value.trim();
   lastRunQuery = query;
 
   if (!query) {
-    setFeedbackState(feedback, "error", "Please enter a query.");
+    setFeedbackState(feedback, "error", "Please enter a query before running it.");
     if (output) output.innerHTML = "";
     return;
   }
 
   try {
-    const userResult = queryToResult(query);
-    if (output) output.innerHTML = formatResultTable(userResult);
+    const result = queryToResult(query);
+    if (output) output.innerHTML = formatResultTable(result);
 
     const solutionResult = queryToResult(lesson.solutionQuery);
+    const passed = normalizeResult(result) === normalizeResult(solutionResult);
 
-    const isCorrect =
-      normalizeResult(userResult) === normalizeResult(solutionResult);
-
-    if (isCorrect) {
+    if (passed) {
+      markLessonCompleted(lesson.id, attempts === 0);
       setFeedbackState(
         feedback,
         "success",
         "Correct — your query returned the expected result."
       );
+      saveProgress();
+      refreshLessonChrome();
       return;
     }
 
-    // 🔥 MAKE SURE THIS EXISTS GLOBALLY
-    if (typeof attempts === "undefined") window.attempts = 0;
+    attempts += 1;
 
-    attempts++;
+    const hintOne =
+      lesson.hint ||
+      "Start with the correct table and make sure you are selecting the required fields.";
+
+    const hintTwo =
+      lesson.smartHint ||
+      lesson.secondHint ||
+      "Double-check the exact columns, filters, joins, or grouping needed to match the lesson objective.";
+
+    const explanation =
+      lesson.explanation ||
+      "This answer is correct because it uses the right table, selects the required fields, and returns the expected result for the lesson objective.";
 
     if (attempts === 1) {
+      setFeedbackState(feedback, "warning", `Hint: ${hintOne}`);
+    } else if (attempts === 2) {
+      setFeedbackState(feedback, "warning", `Smart Hint: ${hintTwo}`);
+    } else {
       setFeedbackState(
         feedback,
-        "warning",
-        "Hint: " + (lesson.hint || "Check your table and SELECT statement.")
+        "error",
+        `Answer:\n${lesson.solutionQuery}\n\nExplanation:\n${explanation}`
       );
-      return;
     }
 
-    if (attempts === 2) {
-      setFeedbackState(
-        feedback,
-        "warning",
-        "Smart Hint: " + (lesson.smartHint || "Focus on exact syntax and columns.")
-      );
-      return;
-    }
-
-    setFeedbackState(
-      feedback,
-      "error",
-      "Answer: " + lesson.solutionQuery + "\n\nExplanation: " +
-        (lesson.explanation || "Review the expected SQL structure.")
-    );
-
+    saveProgress();
+    refreshLessonChrome();
   } catch (error) {
     if (output) output.innerHTML = "";
-    setFeedbackState(feedback, "error", error.message);
+    setFeedbackState(feedback, "error", getExecutionErrorMessage(error));
   }
 }
-
 function normalizeResult(result) {
   return JSON.stringify({
     columns: result.columns,
@@ -6453,8 +6354,8 @@ function refreshLessonChrome() {
 
 function setFeedbackState(element, state, message) {
   if (!element) return;
-  element.className = "";
-  element.classList.add(state);
+  element.classList.remove("success", "error", "warning");
+  if (state) element.classList.add(state);
   element.innerText = message;
 }
 function checkAnswer() {
@@ -6466,15 +6367,16 @@ function resetQuery() {
   const output = document.getElementById("output");
 
   if (queryBox) queryBox.value = "";
+  if (feedback) {
+    feedback.classList.remove("success", "error", "warning");
+    feedback.innerText = "";
+  }
   if (output) output.innerHTML = "";
 
-  if (feedback) {
-    feedback.innerText = "";
-    feedback.className = "";
-  }
-
   attempts = 0;
+  lastRunQuery = "";
 }
+
 function submitScenario() {
   const lesson = getCurrentLesson();
   const box = document.getElementById("scenario-response");
@@ -6690,6 +6592,3 @@ document.addEventListener("DOMContentLoaded", async function () {
   window.addEventListener("scroll", hideAchievementTooltip, true);
   window.addEventListener("resize", hideAchievementTooltip);
 });
-
-
-
