@@ -6290,11 +6290,14 @@ function runQuery() {
 
     if (passed) {
       markLessonCompleted(lesson.id, attempts === 0);
+
       setFeedbackState(
         feedback,
         "success",
         "Correct — your query returned the expected result."
       );
+
+      attempts = 0;
       saveProgress();
       refreshLessonChrome();
       return;
@@ -6316,14 +6319,14 @@ function runQuery() {
       "This answer is correct because it uses the right table, selects the required fields, and returns the expected result for the lesson objective.";
 
     if (attempts === 1) {
-      setFeedbackState(feedback, "warning", `Hint: ${hintOne}`);
+      setFeedbackState(feedback, "warning", `Not correct yet. Hint 1: ${hintOne}`);
     } else if (attempts === 2) {
-      setFeedbackState(feedback, "warning", `Smart Hint: ${hintTwo}`);
+      setFeedbackState(feedback, "warning", `Still not correct. Hint 2: ${hintTwo}`);
     } else {
       setFeedbackState(
         feedback,
         "error",
-        `Answer:\n${lesson.solutionQuery}\n\nExplanation:\n${explanation}`
+        `You have used all 3 attempts.\n\nCorrect Answer:\n${lesson.solutionQuery}\n\nExplanation:\n${explanation}`
       );
     }
 
