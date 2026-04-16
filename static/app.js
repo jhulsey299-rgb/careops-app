@@ -285,7 +285,7 @@ const curriculum = [
             "title": "Selecting All Columns with SELECT *",
             "objective": "Retrieve complete datasets from a table.",
 
-            "challengeCriteria": "Return every column and every row from the patients table using SELECT *. This lesson is specifically about learning when SELECT * returns the full structure of a single table.",
+            "challengeCriteria": "Write a SQL query that pulls all columns and all patient records from the patients table. Use SELECT * and only the patients table for this lesson.",
             "sql_focus": [
               "SELECT",
               "WHERE",
@@ -5555,6 +5555,7 @@ function renderAchievements() {
     chip.className = achievement.earned ? "badge-chip" : "badge-chip locked";
     chip.innerText = `${achievement.emoji} ${achievement.label}`;
     chip.setAttribute("tabindex", "0");
+    chip.setAttribute("title", achievement.description || "");
     chip.setAttribute("aria-label", `${achievement.label}: ${achievement.description || ""}`);
     chip.dataset.unlockDescription = achievement.description || "";
     attachAchievementTooltip(chip, achievement.description || "");
