@@ -6362,7 +6362,7 @@ function runQuery() {
   const feedback = document.getElementById("feedback");
   const queryBox = document.getElementById("query");
 
-  if (!lesson || lesson.type !== "challenge" || !queryBox) return;
+  if (!lesson || lesson.kind !== "challenge" || !queryBox) return;
 
   const query = queryBox.value.trim();
   lastRunQuery = query;
@@ -6374,61 +6374,62 @@ function runQuery() {
   }
 
   try {
-    const result = queryToResult(query);
-    if (output) output.innerHTML = formatResultTable(result);
+    const userResult = queryToResult(query);
+    if (output) output.innerHTML = formatResultTable(userResult);
 
     const solutionResult = queryToResult(lesson.solutionQuery);
-    const passed = normalizeResult(result) === normalizeResult(solutionResult);
 
-    if (passed) {
-      markLessonCompleted(lesson.id, attempts === 0);
+    const isCorrect =
+      normalizeResult(userResult) === normalizeResult(solutionResult);
 
+    if (isCorrect) {
       setFeedbackState(
         feedback,
         "success",
         "Correct — your query returned the expected result."
       );
 
+      markLessonComplete(lesson.id, attempts === 0);
       saveProgress();
       refreshLessonChrome();
       return;
     }
 
-    attempts += 1;
+    // ❌ Incorrect → increment attempts
+    attempts++;
 
-    const hintOne =
-      lesson.hint ||
-      "Start with the correct table and make sure you are selecting the required fields.";
-
-    const hintTwo =
-      lesson.smartHint ||
-      lesson.secondHint ||
-      "Double-check the exact columns, filters, joins, or grouping needed to match the lesson objective.";
-
-    const hintThree =
-      lesson.thirdHint ||
-      "Compare your result to what the lesson is asking for. Make sure the grain of the data is correct and that you are not missing a required field or condition.";
-
+    // 1️⃣ First failure
     if (attempts === 1) {
-      setFeedbackState(feedback, "warning", `Not correct yet. Hint 1: ${hintOne}`);
-    } else if (attempts === 2) {
-      setFeedbackState(feedback, "warning", `Still not correct. Hint 2: ${hintTwo}`);
-    } else if (attempts === 3) {
-      setFeedbackState(feedback, "warning", `Still not correct. Hint 3: ${hintThree}`);
-    } else {
-      const explanation =
-        lesson.explanation ||
-        "This answer is correct because it uses the right table, selects the required fields, and returns the expected result for the lesson objective.";
-
       setFeedbackState(
         feedback,
-        "error",
-        `You have used all 3 attempts.\n\nCorrect Answer:\n${lesson.solutionQuery}\n\nExplanation:\n${explanation}`
+        "warning",
+        `Hint: ${lesson.hint || "Review the required table and SQL clause."}`
       );
+      return;
     }
 
-    saveProgress();
-    refreshLessonChrome();
+    // 2️⃣ Second failure
+    if (attempts === 2) {
+      setFeedbackState(
+        feedback,
+        "warning",
+        `Smart Hint: ${lesson.smartHint || "Focus on exact columns, table, and filtering logic."}`
+      );
+      return;
+    }
+
+    // 3️⃣ Third failure → GIVE ANSWER
+    setFeedbackState(
+      feedback,
+      "error",
+      `Answer: ${lesson.solutionQuery}
+
+Explanation: ${
+        lesson.explanation ||
+        "This works because it correctly uses the required table, fields, and SQL logic."
+      }`
+    );
+
   } catch (error) {
     if (output) output.innerHTML = "";
     setFeedbackState(feedback, "error", getExecutionErrorMessage(error));
