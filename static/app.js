@@ -5901,6 +5901,91 @@ function extractLimitValue(query) {
   const match = String(query || "").match(/limit\s+(\d+)/i);
   return match ? match[1] : "";
 }
+function buildChallengePrompt(lesson) {
+  if (!lesson) return "Write a SQL query that satisfies the lesson objective.";
+  const direct = (lesson.challengeCriteria || "").trim();
+  if (direct) return direct;
+
+  const query = String(lesson.solutionQuery || lesson.starterQuery || "").trim();
+  const tables = (lesson.relevantTables || []).filter(Boolean);
+  const tableList = tables.join(", ");
+  const firstTable = tables[0] || "relevant table";
+
+  if (/^SELECT\s+\*\s+FROM\s+([a-zA-Z_][\w]*)\s*;?$/i.test(query)) {
+    const table = query.match(/^SELECT\s+\*\s+FROM\s+([a-zA-Z_][\w]*)\s*;?$/i)[1];
+    return `Write a SQL query that returns all columns and all rows from the ${table} table.`;
+  }
+
+  if (/SELECT\s+DISTINCT\s+.+\s+FROM\s+([a-zA-Z_][\w]*)/i.test(query)) {
+    return `Use the ${firstTable} table to return unique values only. Follow the lesson objective and remove duplicates with DISTINCT.`;
+  }
+
+  if (/\sWHERE\s/i.test(query) && /\sIN\s*\(/i.test(query)) {
+    return `Use the ${firstTable} table to return only rows where the filter matches one of several allowed values. Follow the lesson objective and use an IN filter.`;
+  }
+
+  if (/\sWHERE\s/i.test(query) && /\sBETWEEN\s/i.test(query)) {
+    return `Use the ${firstTable} table to return only rows that fall within the requested range. Follow the lesson objective and use BETWEEN for the filter.`;
+  }
+
+  if (/\sWHERE\s/i.test(query) && /\sLIKE\s/i.test(query)) {
+    return `Use the ${firstTable} table to return only rows that match the requested text pattern. Follow the lesson objective and use LIKE with the appropriate wildcard.`;
+  }
+
+  if (/\sWHERE\s/i.test(query) && /\sIS\s+NULL/i.test(query)) {
+    return `Use the ${firstTable} table to return only rows where the requested field is missing. Follow the lesson objective and use IS NULL correctly.`;
+  }
+
+  if (/\sWHERE\s/i.test(query)) {
+    return `Use the ${firstTable} table to return only the rows that match the requested filter condition in the lesson objective.`;
+  }
+
+  if (/\sGROUP\s+BY\s/i.test(query) && /\sHAVING\s/i.test(query)) {
+    return `Use the ${firstTable} table to summarize records at the requested grouped level, then filter the grouped results with HAVING.`;
+  }
+
+  if (/\sGROUP\s+BY\s/i.test(query)) {
+    return `Use the ${firstTable} table to group the data at the requested level and return the summary requested in the lesson objective.`;
+  }
+
+  if (/\sORDER\s+BY\s/i.test(query) && /\sLIMIT\s/i.test(query)) {
+    return `Use the ${firstTable} table to return the requested result, sort it in the correct order, and limit the number of rows returned.`;
+  }
+
+  if (/\sORDER\s+BY\s/i.test(query)) {
+    return `Use the ${firstTable} table to return the requested rows and sort them in the correct order.`;
+  }
+
+  if (/\sLIMIT\s/i.test(query)) {
+    return `Use the ${firstTable} table to return the requested fields and limit the result to the requested number of rows.`;
+  }
+
+  if (/\sJOIN\s/i.test(query)) {
+    return `Use ${tableList || "the relevant tables"} to write a SQL query that joins the needed tables and returns the fields requested in the lesson objective.`;
+  }
+
+  if (/\bCASE\b/i.test(query)) {
+    return `Use the ${firstTable} table to create a derived field with CASE that matches the business rule described in the lesson objective.`;
+  }
+
+  if (/\bCAST\s*\(/i.test(query)) {
+    return `Use the ${firstTable} table to convert the requested field to a new data type and return it with the requested alias.`;
+  }
+
+  if (/\bUPPER\s*\(|\bLOWER\s*\(|\bSUBSTR\s*\(/i.test(query)) {
+    return `Use the ${firstTable} table to apply the requested string function and return the transformed value.`;
+  }
+
+  if (/\bjulianday\s*\(/i.test(query)) {
+    return `Use the ${firstTable} table to calculate the requested date difference and return it with the requested alias.`;
+  }
+
+  if (/^SELECT\s+/i.test(query)) {
+    return `Use the ${firstTable} table to write a SQL query that returns exactly the fields or calculation described in the lesson objective.`;
+  }
+
+  return lesson.objective || "Write a SQL query that satisfies the lesson objective.";
+}
 
 function escapeHtml(str) {
   if (str === null || str === undefined) return '';
