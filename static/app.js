@@ -5987,6 +5987,71 @@ function buildChallengePrompt(lesson) {
   return lesson.objective || "Write a SQL query that satisfies the lesson objective.";
 }
 
+// ✅ ADD THIS BLOCK HERE
+function enforceChallengeCriteria(curriculum) {
+  curriculum.forEach(track => {
+    track.categories.forEach(category => {
+      category.lessons.forEach(lesson => {
+        if (lesson.kind !== "challenge") return;
+
+        if (lesson.challengeCriteria && lesson.challengeCriteria.trim()) return;
+
+        const query = (lesson.solutionQuery || "").toLowerCase();
+        const table = (lesson.relevantTables || [])[0] || "the table";
+
+        if (query.includes("count(") || query.includes("avg(") || query.includes("sum(")) {
+          lesson.challengeCriteria = `Using the ${table} table, write a SQL query that:
+- calculates the requested aggregate values (such as COUNT, AVG, or SUM)
+- returns clearly labeled columns using aliases
+- matches the calculation described in the lesson objective`;
+          return;
+        }
+
+        if (query.includes("group by")) {
+          lesson.challengeCriteria = `Using the ${table} table, write a SQL query that:
+- groups the data at the correct level
+- calculates the required aggregate values
+- returns one row per group as described in the lesson objective`;
+          return;
+        }
+
+        if (query.includes("order by") && query.includes("limit")) {
+          lesson.challengeCriteria = `Using the ${table} table, write a SQL query that:
+- returns the requested fields
+- sorts the results correctly
+- limits the output to the required number of rows`;
+          return;
+        }
+
+        if (query.includes("where")) {
+          lesson.challengeCriteria = `Using the ${table} table, write a SQL query that:
+- filters the data based on the required condition
+- returns only rows that meet the criteria described in the lesson`;
+          return;
+        }
+
+        if (query.includes("distinct")) {
+          lesson.challengeCriteria = `Using the ${table} table, write a SQL query that:
+- returns unique values only
+- removes duplicate records for the specified field`;
+          return;
+        }
+
+        if (query.includes("join")) {
+          lesson.challengeCriteria = `Using the relevant tables, write a SQL query that:
+- joins the necessary tables correctly
+- returns the requested fields
+- avoids duplicate or inflated results`;
+          return;
+        }
+
+        lesson.challengeCriteria = `Using the ${table} table, write a SQL query that:
+- returns exactly the fields or calculations described in the lesson objective
+- follows proper SQL structure and syntax`;
+      });
+    });
+  });
+}
 function escapeHtml(str) {
   if (str === null || str === undefined) return '';
   return String(str)
