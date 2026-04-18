@@ -5202,7 +5202,7 @@ thirdHint: "The correct pattern is SELECT * FROM patients; with no WHERE clause,
     ]
   }
 ];
-
+enforceChallengeCriteria(curriculum);
 function saveProgress() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
 }
