@@ -5996,58 +5996,181 @@ function enforceChallengeCriteria(curriculum) {
 
         if (lesson.challengeCriteria && lesson.challengeCriteria.trim()) return;
 
-        const query = (lesson.solutionQuery || "").toLowerCase();
-        const table = (lesson.relevantTables || [])[0] || "the table";
+        const solution = String(lesson.solutionQuery || lesson.starterQuery || "").trim();
+        const normalized = solution.replace(/\s+/g, " ").trim();
+        const lower = normalized.toLowerCase();
+        const tables = Array.isArray(lesson.relevantTables) ? lesson.relevantTables.filter(Boolean) : [];
+        const firstTable = tables[0] || "the relevant table";
 
-        if (query.includes("count(") || query.includes("avg(") || query.includes("sum(")) {
-          lesson.challengeCriteria = `Using the ${table} table, write a SQL query that:
-- calculates the requested aggregate values (such as COUNT, AVG, or SUM)
-- returns clearly labeled columns using aliases
-- matches the calculation described in the lesson objective`;
+        const selectMatch = normalized.match(/select\s+(.+?)\s+from\s+/i);
+        const fromMatch = normalized.match(/from\s+([a-zA-Z_][\w]*)/i);
+        const limitMatch = normalized.match(/limit\s+(\d+)/i);
+        const orderMatch = normalized.match(/order\s+by\s+(.+?)(?:\s+limit|;|$)/i);
+        const whereMatch = normalized.match(/where\s+(.+?)(?:\s+group\s+by|\s+order\s+by|\s+limit|;|$)/i);
+        const groupMatch = normalized.match(/group\s+by\s+(.+?)(?:\s+having|\s+order\s+by|\s+limit|;|$)/i);
+        const havingMatch = normalized.match(/having\s+(.+?)(?:\s+order\s+by|\s+limit|;|$)/i);
+
+        const joinTables = [];
+        const joinRegex = /\bjoin\s+([a-zA-Z_][\w]*)/gi;
+        let joinHit;
+        while ((joinHit = joinRegex.exec(normalized)) !== null) {
+          joinTables.push(joinHit[1]);
+        }
+
+        function cleanExpression(expr) {
+          return expr
+            .replace(/\s+as\s+/gi, " as ")
+            .replace(/\s+/g, " ")
+            .trim()
+            .replace(/;$/, "");
+        }
+
+        function splitSelectColumns(selectClause) {
+          if (!selectClause) return [];
+          const parts = [];
+          let current = "";
+          let depth = 0;
+
+          for (const char of selectClause) {
+            if (char === "(") depth++;
+            if (char === ")") depth--;
+            if (char === "," && depth === 0) {
+              parts.push(current.trim());
+              current = "";
+            } else {
+              current += char;
+            }
+          }
+          if (current.trim()) parts.push(current.trim());
+          return parts;
+        }
+
+        const selectColumns = splitSelectColumns(selectMatch ? selectMatch[1] : "");
+        const formattedColumns = selectColumns.map(cleanExpression);
+
+        function bulletify(lines) {
+          return lines.filter(Boolean).join("\n- ");
+        }
+
+        if (lower.includes(" join ")) {
+          const baseTable = fromMatch ? fromMatch[1] : firstTable;
+          const allTables = [baseTable, ...joinTables].filter(Boolean);
+
+          let joinInstruction = `Using ${allTables.join(", ")}, write a SQL query that:`;
+
+          const bullets = [];
+
+          bullets.push(`joins ${allTables.join(" and ")} correctly`);
+
+          if (formattedColumns.length) {
+            bullets.push(`returns these fields: ${formattedColumns.join(", ")}`);
+          }
+
+          if (whereMatch) {
+            bullets.push(`filters the results where ${cleanExpression(whereMatch[1])}`);
+          }
+
+          if (orderMatch) {
+            bullets.push(`sorts the output by ${cleanExpression(orderMatch[1])}`);
+          }
+
+          if (limitMatch) {
+            bullets.push(`limits the results to ${limitMatch[1]} rows`);
+          }
+
+          bullets.push(`avoids duplicate or inflated results`);
+
+          lesson.challengeCriteria = `${joinInstruction}\n- ${bulletify(bullets)}`;
           return;
         }
 
-        if (query.includes("group by")) {
-          lesson.challengeCriteria = `Using the ${table} table, write a SQL query that:
-- groups the data at the correct level
-- calculates the required aggregate values
-- returns one row per group as described in the lesson objective`;
+        if (groupMatch || lower.includes("count(") || lower.includes("avg(") || lower.includes("sum(") || lower.includes("min(") || lower.includes("max(")) {
+          const bullets = [];
+
+          if (groupMatch) {
+            bullets.push(`groups the data by ${cleanExpression(groupMatch[1])}`);
+          }
+
+          if (formattedColumns.length) {
+            bullets.push(`returns these calculations or fields: ${formattedColumns.join(", ")}`);
+          }
+
+          if (whereMatch) {
+            bullets.push(`filters the source rows where ${cleanExpression(whereMatch[1])}`);
+          }
+
+          if (havingMatch) {
+            bullets.push(`filters the grouped results where ${cleanExpression(havingMatch[1])}`);
+          }
+
+          if (orderMatch) {
+            bullets.push(`sorts the output by ${cleanExpression(orderMatch[1])}`);
+          }
+
+          if (limitMatch) {
+            bullets.push(`limits the results to ${limitMatch[1]} rows`);
+          }
+
+          lesson.challengeCriteria = `Using the ${fromMatch ? fromMatch[1] : firstTable} table, write a SQL query that:\n- ${bulletify(bullets)}`;
           return;
         }
 
-        if (query.includes("order by") && query.includes("limit")) {
-          lesson.challengeCriteria = `Using the ${table} table, write a SQL query that:
-- returns the requested fields
-- sorts the results correctly
-- limits the output to the required number of rows`;
+        if (whereMatch) {
+          const bullets = [];
+
+          if (formattedColumns.length) {
+            bullets.push(`returns these fields: ${formattedColumns.join(", ")}`);
+          }
+
+          bullets.push(`filters the rows where ${cleanExpression(whereMatch[1])}`);
+
+          if (orderMatch) {
+            bullets.push(`sorts the output by ${cleanExpression(orderMatch[1])}`);
+          }
+
+          if (limitMatch) {
+            bullets.push(`limits the results to ${limitMatch[1]} rows`);
+          }
+
+          lesson.challengeCriteria = `Using the ${fromMatch ? fromMatch[1] : firstTable} table, write a SQL query that:\n- ${bulletify(bullets)}`;
           return;
         }
 
-        if (query.includes("where")) {
-          lesson.challengeCriteria = `Using the ${table} table, write a SQL query that:
-- filters the data based on the required condition
-- returns only rows that meet the criteria described in the lesson`;
+        if (lower.includes("distinct")) {
+          const bullets = [];
+
+          if (formattedColumns.length) {
+            bullets.push(`returns unique values for: ${formattedColumns.join(", ")}`);
+          }
+
+          if (orderMatch) {
+            bullets.push(`sorts the output by ${cleanExpression(orderMatch[1])}`);
+          }
+
+          if (limitMatch) {
+            bullets.push(`limits the results to ${limitMatch[1]} rows`);
+          }
+
+          lesson.challengeCriteria = `Using the ${fromMatch ? fromMatch[1] : firstTable} table, write a SQL query that:\n- ${bulletify(bullets)}`;
           return;
         }
 
-        if (query.includes("distinct")) {
-          lesson.challengeCriteria = `Using the ${table} table, write a SQL query that:
-- returns unique values only
-- removes duplicate records for the specified field`;
+        if (formattedColumns.length) {
+          const bullets = [`returns these fields or calculations: ${formattedColumns.join(", ")}`];
+
+          if (orderMatch) {
+            bullets.push(`sorts the output by ${cleanExpression(orderMatch[1])}`);
+          }
+
+          if (limitMatch) {
+            bullets.push(`limits the results to ${limitMatch[1]} rows`);
+          }
+
+          lesson.challengeCriteria = `Using the ${fromMatch ? fromMatch[1] : firstTable} table, write a SQL query that:\n- ${bulletify(bullets)}`;
           return;
         }
 
-        if (query.includes("join")) {
-          lesson.challengeCriteria = `Using the relevant tables, write a SQL query that:
-- joins the necessary tables correctly
-- returns the requested fields
-- avoids duplicate or inflated results`;
-          return;
-        }
-
-        lesson.challengeCriteria = `Using the ${table} table, write a SQL query that:
-- returns exactly the fields or calculations described in the lesson objective
-- follows proper SQL structure and syntax`;
+        lesson.challengeCriteria = lesson.objective || `Write a SQL query using ${firstTable} that satisfies the lesson objective.`;
       });
     });
   });
