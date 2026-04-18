@@ -26,6 +26,108 @@ const LEARNING_LEVELS = [
   { label: "Expert", key: "expert", color: "#7c3aed", trackId: "track_expert" }
 ];
 
+
+const BUSINESS_LOGIC_MAP = {
+  revenue_net_vs_gross: {
+    analystFrame: "You are preparing a board-facing revenue cycle summary.",
+    promptIntro: "Using the charges table, write a SQL query that:",
+    rules: [
+      {
+        match: /sum\s*\(\s*amount\s*\)\s*\*\s*0?\.82/i,
+        explanation: "estimates net revenue by assuming the organization realizes 82% of gross charges"
+      },
+      {
+        match: /sum\s*\(\s*amount\s*\)\s+as\s+gross_charges/i,
+        explanation: "calculates total gross charges"
+      },
+      {
+        match: /sum\s*\(\s*amount\s*\)/i,
+        explanation: "calculates total gross charges"
+      }
+    ],
+    executiveQuestion: "How much gross billed value is likely to convert into collectible net revenue?"
+  },
+  los_summary: {
+    analystFrame: "You are preparing a board-facing throughput and capacity summary.",
+    promptIntro: "Using the encounters table, write a SQL query that:",
+    rules: [
+      {
+        match: /count\s*\(\s*\*\s*\)\s+as\s+encounter_count/i,
+        explanation: "returns total encounter volume"
+      },
+      {
+        match: /avg\s*\(\s*length_of_stay\s*\)/i,
+        explanation: "calculates average length of stay (LOS)"
+      }
+    ],
+    executiveQuestion: "Is patient flow trending efficiently, or are longer stays creating operational pressure?"
+  },
+  departmental_utilization: {
+    analystFrame: "You are summarizing service-line and department utilization for leadership.",
+    promptIntro: "Using the encounters table, write a SQL query that:",
+    rules: [
+      {
+        match: /group\s+by\s+department/i,
+        explanation: "summarizes encounter activity by department"
+      },
+      {
+        match: /count\s*\(\s*\*\s*\)/i,
+        explanation: "returns encounter volume for each department"
+      }
+    ],
+    executiveQuestion: "Which departments are driving the highest utilization and where should leaders focus throughput review?"
+  },
+  facility_rollup: {
+    analystFrame: "You are preparing a facility-level operating summary for executives.",
+    promptIntro: "Using the encounters table, write a SQL query that:",
+    rules: [
+      {
+        match: /group\s+by\s+facility/i,
+        explanation: "summarizes results at the facility level"
+      },
+      {
+        match: /group\s+by\s+facility\s*,\s*department/i,
+        explanation: "summarizes results by facility and department"
+      },
+      {
+        match: /count\s*\(\s*\*\s*\)/i,
+        explanation: "returns encounter volume for each reporting group"
+      }
+    ],
+    executiveQuestion: "How is volume distributed across facilities and operational units?"
+  },
+  payer_mix: {
+    analystFrame: "You are preparing a payer-mix summary for financial leadership.",
+    promptIntro: "Using the patients or claims table, write a SQL query that:",
+    rules: [
+      {
+        match: /distinct\s+insurance_type/i,
+        explanation: "identifies the payer categories represented in the data"
+      },
+      {
+        match: /group\s+by\s+.*payer|group\s+by\s+.*insurance_type/i,
+        explanation: "summarizes the population by payer category"
+      },
+      {
+        match: /count\s*\(\s*\*\s*\)/i,
+        explanation: "returns the population size for each payer segment"
+      }
+    ],
+    executiveQuestion: "What payer categories shape reimbursement risk and financial exposure?"
+  },
+  join_population_enrichment: {
+    analystFrame: "You are combining operational and demographic data for executive reporting.",
+    promptIntro: "Using the related hospital tables, write a SQL query that:",
+    rules: [
+      {
+        match: /\bjoin\b/i,
+        explanation: "links the necessary tables so leaders can view the complete business picture"
+      }
+    ],
+    executiveQuestion: "What additional patient, provider, or financial context is needed to interpret the operational results?"
+  }
+};
+
 const schema = {
   tables: [
     { name: "patients", description: "Patient demographic, insurance, and risk information.", keyColumns: ["patient_id"], notableColumns: ["patient_id","first_name","last_name","age","gender","insurance_type","risk_score","city"], sampleRows: [] },
@@ -5202,6 +5304,7 @@ thirdHint: "The correct pattern is SELECT * FROM patients; with no WHERE clause,
     ]
   }
 ];
+backfillChallengeCriteria(curriculum);
 enforceChallengeCriteria(curriculum);
 function saveProgress() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
@@ -5299,6 +5402,7 @@ function challengeLesson(spec) {
     secondHint: spec.secondHint || spec.smartHint || "",
     thirdHint: spec.thirdHint || "",
     explanation: spec.explanation || "",
+    businessContext: spec.businessContext || null,
     executiveTakeaway: spec.executiveTakeaway || null
   };
 }
@@ -5901,422 +6005,291 @@ function extractLimitValue(query) {
   const match = String(query || "").match(/limit\s+(\d+)/i);
   return match ? match[1] : "";
 }
+
+function cleanExpression(expr) {
+  return String(expr || "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/;$/, "");
+}
+
+function splitSelectColumns(selectClause) {
+  if (!selectClause) return [];
+  const parts = [];
+  let current = "";
+  let depth = 0;
+
+  for (const char of selectClause) {
+    if (char === "(") depth++;
+    if (char === ")") depth--;
+    if (char === "," && depth === 0) {
+      parts.push(current.trim());
+      current = "";
+    } else {
+      current += char;
+    }
+  }
+
+  if (current.trim()) parts.push(current.trim());
+  return parts;
+}
+
+function extractAlias(expr) {
+  const asMatch = String(expr).match(/\bAS\s+([a-zA-Z_][\w]*)$/i);
+  if (asMatch) return asMatch[1];
+
+  const trimmed = String(expr).trim();
+  const parts = trimmed.split(/\s+/);
+  if (parts.length >= 2 && !/[()*/+-]/.test(parts[parts.length - 2])) {
+    return parts[parts.length - 1];
+  }
+  return null;
+}
+
+function prettifyFieldName(name) {
+  return String(name || "")
+    .replace(/\bavg\b/gi, "average")
+    .replace(/\bqty\b/gi, "quantity")
+    .replace(/\bnum\b/gi, "number")
+    .replace(/_/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function inferMetricType(lesson, normalizedQuery) {
+  const query = String(normalizedQuery || "").toLowerCase();
+  const tables = Array.isArray(lesson?.relevantTables) ? lesson.relevantTables : [];
+  const firstTable = tables[0] || "";
+
+  if (/sum\s*\(\s*amount\s*\)\s*\*\s*0?\.82/i.test(query)) return "revenue_net_vs_gross";
+  if (/avg\s*\(\s*length_of_stay\s*\)/i.test(query) || /encounter_count/i.test(query)) return "los_summary";
+  if (/group\s+by\s+facility\s*,\s*department/i.test(query)) return "facility_rollup";
+  if (/group\s+by\s+department/i.test(query)) return "departmental_utilization";
+  if (/insurance_type|payer/i.test(query) || /insurance_type|payer/i.test(firstTable)) return "payer_mix";
+  if (/\bjoin\b/i.test(query)) return "join_population_enrichment";
+  return null;
+}
+
+function getBusinessLogicConfig(lesson, normalizedQuery) {
+  if (lesson?.businessContext?.metricType && BUSINESS_LOGIC_MAP[lesson.businessContext.metricType]) {
+    return BUSINESS_LOGIC_MAP[lesson.businessContext.metricType];
+  }
+  const inferred = inferMetricType(lesson, normalizedQuery);
+  return inferred ? BUSINESS_LOGIC_MAP[inferred] : null;
+}
+
+function describeConditionExecutive(condition) {
+  const clean = cleanExpression(condition).replace(/_/g, " ");
+  if (!clean) return "";
+
+  if (/\bis null\b/i.test(clean)) return `${clean.replace(/\bis null\b/i, "is blank")}`;
+  if (/\blike\b/i.test(clean)) return clean;
+  if (/\bbetween\b/i.test(clean)) return clean;
+  if (/\bin\s*\(/i.test(clean)) return clean;
+
+  return clean;
+}
+
+function describeSelectExpressionExecutive(expr) {
+  const clean = cleanExpression(expr);
+  const alias = extractAlias(clean);
+  const lowerExpr = clean.toLowerCase();
+
+  if (lowerExpr.includes("count(")) {
+    if (alias === "encounter_count") return "returns total encounter volume";
+    if (alias) return `returns a count labeled \`${alias}\``;
+    return "returns a count of records";
+  }
+
+  if (lowerExpr.includes("avg(")) {
+    const fieldMatch = clean.match(/avg\s*\((.+?)\)/i);
+    const field = prettifyFieldName(fieldMatch ? fieldMatch[1] : "the requested measure");
+    if (/length_of_stay/i.test(clean)) {
+      if (alias) return `calculates average length of stay (LOS) and labels it \`${alias}\``;
+      return "calculates average length of stay (LOS)";
+    }
+    if (alias) return `calculates the average ${field} and labels it \`${alias}\``;
+    return `calculates the average ${field}`;
+  }
+
+  if (lowerExpr.includes("sum(")) {
+    const fieldMatch = clean.match(/sum\s*\((.+?)\)/i);
+    const field = prettifyFieldName(fieldMatch ? fieldMatch[1] : "the requested measure");
+    const multiplierMatch = clean.match(/\*\s*(0?\.\d+)/);
+    const multiplier = multiplierMatch ? Number(multiplierMatch[1]) : null;
+
+    if (multiplier !== null) {
+      const percent = Math.round(multiplier * 100);
+      if (/estimated_net_revenue/i.test(alias || "")) {
+        return `estimates net revenue by applying a ${percent}% realization assumption and labels it \`${alias}\``;
+      }
+      if (alias) return `calculates a derived ${field} value using a ${percent}% assumption and labels it \`${alias}\``;
+      return `calculates a derived ${field} value using a ${percent}% assumption`;
+    }
+
+    if (/gross_charges/i.test(alias || "")) {
+      return "calculates total gross charges";
+    }
+    if (alias) return `calculates the total ${field} and labels it \`${alias}\``;
+    return `calculates the total ${field}`;
+  }
+
+  if (lowerExpr.includes("min(")) {
+    const fieldMatch = clean.match(/min\s*\((.+?)\)/i);
+    const field = prettifyFieldName(fieldMatch ? fieldMatch[1] : "the requested measure");
+    if (alias) return `returns the lowest ${field} value and labels it \`${alias}\``;
+    return `returns the lowest ${field} value`;
+  }
+
+  if (lowerExpr.includes("max(")) {
+    const fieldMatch = clean.match(/max\s*\((.+?)\)/i);
+    const field = prettifyFieldName(fieldMatch ? fieldMatch[1] : "the requested measure");
+    if (alias) return `returns the highest ${field} value and labels it \`${alias}\``;
+    return `returns the highest ${field} value`;
+  }
+
+  if (lowerExpr.includes("distinct")) {
+    const distinctField = prettifyFieldName(clean.replace(/^distinct\s+/i, "").replace(/\s+as\s+.+$/i, "").trim());
+    return `returns unique values for ${distinctField}`;
+  }
+
+  if (lowerExpr.includes("case ")) {
+    if (alias) return `creates a derived category labeled \`${alias}\``;
+    return "creates a derived category using business logic";
+  }
+
+  if (lowerExpr.includes("cast(")) {
+    if (alias) return `converts a field to a new data type and labels it \`${alias}\``;
+    return "converts a field to a new data type";
+  }
+
+  if (lowerExpr.includes("julianday(")) {
+    if (alias && /los/i.test(alias)) return `calculates a length-of-stay time metric and labels it \`${alias}\``;
+    if (alias) return `calculates a date-based metric and labels it \`${alias}\``;
+    return "calculates a date-based metric";
+  }
+
+  if (lowerExpr.includes("upper(") || lowerExpr.includes("lower(") || lowerExpr.includes("substr(") || lowerExpr.includes("trim(")) {
+    if (alias) return `returns a transformed text field labeled \`${alias}\``;
+    return "returns a transformed text field";
+  }
+
+  if (alias) {
+    return `returns ${prettifyFieldName(clean.replace(/\s+AS\s+[a-zA-Z_][\w]*$/i, ""))} labeled \`${alias}\``;
+  }
+
+  return `returns ${prettifyFieldName(clean)}`;
+}
+
+function buildPromptWithBullets(title, bullets) {
+  const cleaned = bullets.filter(Boolean);
+  return `${title}\n- ${cleaned.join("\n- ")}`;
+}
+
+function buildBoardLevelChallengePrompt(lesson) {
+  if (!lesson) return "Write a SQL query that satisfies the lesson objective.";
+
+  const solution = String(lesson.solutionQuery || lesson.starterQuery || "").trim();
+  const normalized = cleanExpression(solution);
+  const lower = normalized.toLowerCase();
+
+  const tables = Array.isArray(lesson.relevantTables) ? lesson.relevantTables.filter(Boolean) : [];
+  const firstTable = tables[0] || "the relevant table";
+
+  const selectMatch = normalized.match(/select\s+(.+?)\s+from\s+/i);
+  const fromMatch = normalized.match(/from\s+([a-zA-Z_][\w]*)/i);
+  const whereMatch = normalized.match(/where\s+(.+?)(?:\s+group\s+by|\s+having|\s+order\s+by|\s+limit|;|$)/i);
+  const groupMatch = normalized.match(/group\s+by\s+(.+?)(?:\s+having|\s+order\s+by|\s+limit|;|$)/i);
+  const havingMatch = normalized.match(/having\s+(.+?)(?:\s+order\s+by|\s+limit|;|$)/i);
+  const orderMatch = normalized.match(/order\s+by\s+(.+?)(?:\s+limit|;|$)/i);
+  const limitMatch = normalized.match(/limit\s+(\d+)/i);
+
+  const joinTables = [];
+  const joinRegex = /\bjoin\s+([a-zA-Z_][\w]*)/gi;
+  let joinHit;
+  while ((joinHit = joinRegex.exec(normalized)) !== null) {
+    joinTables.push(joinHit[1]);
+  }
+
+  const config = getBusinessLogicConfig(lesson, normalized);
+  const selectColumns = splitSelectColumns(selectMatch ? selectMatch[1] : "");
+  const baseTable = fromMatch ? fromMatch[1] : firstTable;
+
+  const bullets = [];
+  if (config?.analystFrame) bullets.push(config.analystFrame);
+
+  if (config?.rules?.length) {
+    config.rules.forEach(rule => {
+      if (rule.match.test(normalized)) bullets.push(rule.explanation);
+    });
+  }
+
+  selectColumns
+    .map(describeSelectExpressionExecutive)
+    .forEach(item => {
+      if (item && !bullets.includes(item)) bullets.push(item);
+    });
+
+  if (whereMatch) bullets.push(`keeps only rows where ${describeConditionExecutive(whereMatch[1])}`);
+  if (groupMatch) bullets.push(`summarizes the data by ${prettifyFieldName(cleanExpression(groupMatch[1]))}`);
+  if (havingMatch) bullets.push(`keeps only grouped results where ${describeConditionExecutive(havingMatch[1])}`);
+  if (orderMatch) bullets.push(`sorts the output by ${prettifyFieldName(cleanExpression(orderMatch[1]))}`);
+  if (limitMatch) bullets.push(`limits the result to ${limitMatch[1]} rows`);
+
+  if (lesson?.businessContext?.assumptions?.length) {
+    lesson.businessContext.assumptions.forEach(item => bullets.push(item));
+  }
+
+  const executiveQuestion =
+    lesson?.businessContext?.executiveQuestion ||
+    config?.executiveQuestion ||
+    "";
+  if (executiveQuestion) bullets.push(`answers this executive question: ${executiveQuestion}`);
+
+  if (/\bjoin\b/i.test(lower)) {
+    const allTables = [baseTable, ...joinTables].filter(Boolean);
+    bullets.unshift(`combines data from ${allTables.join(" and ")}`);
+    bullets.push("uses the correct join path so results are not duplicated or inflated");
+  }
+
+  const intro =
+    lesson?.businessContext?.promptIntro ||
+    config?.promptIntro ||
+    `Using the ${baseTable} table, write a SQL query that:`;
+
+  return buildPromptWithBullets(intro, bullets);
+}
+
 function buildChallengePrompt(lesson) {
   if (!lesson) return "Write a SQL query that satisfies the lesson objective.";
   const direct = (lesson.challengeCriteria || "").trim();
   if (direct) return direct;
-
-  const query = String(lesson.solutionQuery || lesson.starterQuery || "").trim();
-  const tables = (lesson.relevantTables || []).filter(Boolean);
-  const tableList = tables.join(", ");
-  const firstTable = tables[0] || "relevant table";
-
-  if (/^SELECT\s+\*\s+FROM\s+([a-zA-Z_][\w]*)\s*;?$/i.test(query)) {
-    const table = query.match(/^SELECT\s+\*\s+FROM\s+([a-zA-Z_][\w]*)\s*;?$/i)[1];
-    return `Write a SQL query that returns all columns and all rows from the ${table} table.`;
-  }
-
-  if (/SELECT\s+DISTINCT\s+.+\s+FROM\s+([a-zA-Z_][\w]*)/i.test(query)) {
-    return `Use the ${firstTable} table to return unique values only. Follow the lesson objective and remove duplicates with DISTINCT.`;
-  }
-
-  if (/\sWHERE\s/i.test(query) && /\sIN\s*\(/i.test(query)) {
-    return `Use the ${firstTable} table to return only rows where the filter matches one of several allowed values. Follow the lesson objective and use an IN filter.`;
-  }
-
-  if (/\sWHERE\s/i.test(query) && /\sBETWEEN\s/i.test(query)) {
-    return `Use the ${firstTable} table to return only rows that fall within the requested range. Follow the lesson objective and use BETWEEN for the filter.`;
-  }
-
-  if (/\sWHERE\s/i.test(query) && /\sLIKE\s/i.test(query)) {
-    return `Use the ${firstTable} table to return only rows that match the requested text pattern. Follow the lesson objective and use LIKE with the appropriate wildcard.`;
-  }
-
-  if (/\sWHERE\s/i.test(query) && /\sIS\s+NULL/i.test(query)) {
-    return `Use the ${firstTable} table to return only rows where the requested field is missing. Follow the lesson objective and use IS NULL correctly.`;
-  }
-
-  if (/\sWHERE\s/i.test(query)) {
-    return `Use the ${firstTable} table to return only the rows that match the requested filter condition in the lesson objective.`;
-  }
-
-  if (/\sGROUP\s+BY\s/i.test(query) && /\sHAVING\s/i.test(query)) {
-    return `Use the ${firstTable} table to summarize records at the requested grouped level, then filter the grouped results with HAVING.`;
-  }
-
-  if (/\sGROUP\s+BY\s/i.test(query)) {
-    return `Use the ${firstTable} table to group the data at the requested level and return the summary requested in the lesson objective.`;
-  }
-
-  if (/\sORDER\s+BY\s/i.test(query) && /\sLIMIT\s/i.test(query)) {
-    return `Use the ${firstTable} table to return the requested result, sort it in the correct order, and limit the number of rows returned.`;
-  }
-
-  if (/\sORDER\s+BY\s/i.test(query)) {
-    return `Use the ${firstTable} table to return the requested rows and sort them in the correct order.`;
-  }
-
-  if (/\sLIMIT\s/i.test(query)) {
-    return `Use the ${firstTable} table to return the requested fields and limit the result to the requested number of rows.`;
-  }
-
-  if (/\sJOIN\s/i.test(query)) {
-    return `Use ${tableList || "the relevant tables"} to write a SQL query that joins the needed tables and returns the fields requested in the lesson objective.`;
-  }
-
-  if (/\bCASE\b/i.test(query)) {
-    return `Use the ${firstTable} table to create a derived field with CASE that matches the business rule described in the lesson objective.`;
-  }
-
-  if (/\bCAST\s*\(/i.test(query)) {
-    return `Use the ${firstTable} table to convert the requested field to a new data type and return it with the requested alias.`;
-  }
-
-  if (/\bUPPER\s*\(|\bLOWER\s*\(|\bSUBSTR\s*\(/i.test(query)) {
-    return `Use the ${firstTable} table to apply the requested string function and return the transformed value.`;
-  }
-
-  if (/\bjulianday\s*\(/i.test(query)) {
-    return `Use the ${firstTable} table to calculate the requested date difference and return it with the requested alias.`;
-  }
-
-  if (/^SELECT\s+/i.test(query)) {
-    return `Use the ${firstTable} table to write a SQL query that returns exactly the fields or calculation described in the lesson objective.`;
-  }
-
-  return lesson.objective || "Write a SQL query that satisfies the lesson objective.";
+  return buildBoardLevelChallengePrompt(lesson) || lesson.objective || "Write a SQL query that satisfies the lesson objective.";
 }
 
-// ✅ ADD THIS BLOCK HERE
-function enforceChallengeCriteria(curriculum) {
+function backfillChallengeCriteria(curriculum) {
   curriculum.forEach(track => {
     track.categories.forEach(category => {
       category.lessons.forEach(lesson => {
         if (lesson.kind !== "challenge") return;
         if (lesson.challengeCriteria && lesson.challengeCriteria.trim()) return;
-
-        const solution = String(lesson.solutionQuery || lesson.starterQuery || "").trim();
-        const normalized = solution.replace(/\s+/g, " ").trim();
-        const lower = normalized.toLowerCase();
-
-        const tables = Array.isArray(lesson.relevantTables)
-          ? lesson.relevantTables.filter(Boolean)
-          : [];
-        const firstTable = tables[0] || "the relevant table";
-
-        const selectMatch = normalized.match(/select\s+(.+?)\s+from\s+/i);
-        const fromMatch = normalized.match(/from\s+([a-zA-Z_][\w]*)/i);
-        const limitMatch = normalized.match(/limit\s+(\d+)/i);
-        const orderMatch = normalized.match(/order\s+by\s+(.+?)(?:\s+limit|;|$)/i);
-        const whereMatch = normalized.match(/where\s+(.+?)(?:\s+group\s+by|\s+order\s+by|\s+limit|;|$)/i);
-        const groupMatch = normalized.match(/group\s+by\s+(.+?)(?:\s+having|\s+order\s+by|\s+limit|;|$)/i);
-        const havingMatch = normalized.match(/having\s+(.+?)(?:\s+order\s+by|\s+limit|;|$)/i);
-
-        const joinTables = [];
-        const joinRegex = /\bjoin\s+([a-zA-Z_][\w]*)/gi;
-        let joinHit;
-        while ((joinHit = joinRegex.exec(normalized)) !== null) {
-          joinTables.push(joinHit[1]);
-        }
-
-        function cleanExpression(expr) {
-          return String(expr || "")
-            .replace(/\s+as\s+/gi, " AS ")
-            .replace(/\s+/g, " ")
-            .trim()
-            .replace(/;$/, "");
-        }
-
-        function splitSelectColumns(selectClause) {
-          if (!selectClause) return [];
-          const parts = [];
-          let current = "";
-          let depth = 0;
-
-          for (const char of selectClause) {
-            if (char === "(") depth++;
-            if (char === ")") depth--;
-            if (char === "," && depth === 0) {
-              parts.push(current.trim());
-              current = "";
-            } else {
-              current += char;
-            }
-          }
-          if (current.trim()) parts.push(current.trim());
-          return parts;
-        }
-
-        function extractAlias(expr) {
-          const asMatch = expr.match(/\bAS\s+([a-zA-Z_][\w]*)$/i);
-          if (asMatch) return asMatch[1];
-
-          const trimmed = expr.trim();
-          const parts = trimmed.split(/\s+/);
-          if (parts.length >= 2 && !/[()*/+-]/.test(parts[parts.length - 2])) {
-            return parts[parts.length - 1];
-          }
-          return null;
-        }
-
-        function titleFromAlias(alias) {
-          return String(alias || "")
-            .replace(/_/g, " ")
-            .replace(/\bavg\b/gi, "average")
-            .replace(/\bqty\b/gi, "quantity")
-            .replace(/\bnum\b/gi, "number")
-            .trim();
-        }
-
-        function describeSelectExpression(expr) {
-          const clean = cleanExpression(expr);
-          const alias = extractAlias(clean);
-          const lowerExpr = clean.toLowerCase();
-
-          if (lowerExpr.includes("count(")) {
-            if (alias) {
-              return `returns a count labeled \`${alias}\``;
-            }
-            return "returns a count of records";
-          }
-
-          if (lowerExpr.includes("avg(")) {
-            const fieldMatch = clean.match(/avg\s*\((.+?)\)/i);
-            const field = fieldMatch ? fieldMatch[1].trim() : "the requested measure";
-            if (alias) {
-              return `calculates the average ${field.replace(/_/g, " ")} and labels it \`${alias}\``;
-            }
-            return `calculates the average ${field.replace(/_/g, " ")}`;
-          }
-
-          if (lowerExpr.includes("sum(")) {
-            const fieldMatch = clean.match(/sum\s*\((.+?)\)/i);
-            const field = fieldMatch ? fieldMatch[1].trim() : "the requested measure";
-            if (alias) {
-              return `calculates the total ${field.replace(/_/g, " ")} and labels it \`${alias}\``;
-            }
-            return `calculates the total ${field.replace(/_/g, " ")}`;
-          }
-
-          if (lowerExpr.includes("min(")) {
-            const fieldMatch = clean.match(/min\s*\((.+?)\)/i);
-            const field = fieldMatch ? fieldMatch[1].trim() : "the requested measure";
-            if (alias) {
-              return `returns the minimum ${field.replace(/_/g, " ")} and labels it \`${alias}\``;
-            }
-            return `returns the minimum ${field.replace(/_/g, " ")}`;
-          }
-
-          if (lowerExpr.includes("max(")) {
-            const fieldMatch = clean.match(/max\s*\((.+?)\)/i);
-            const field = fieldMatch ? fieldMatch[1].trim() : "the requested measure";
-            if (alias) {
-              return `returns the maximum ${field.replace(/_/g, " ")} and labels it \`${alias}\``;
-            }
-            return `returns the maximum ${field.replace(/_/g, " ")}`;
-          }
-
-          if (lowerExpr.includes("distinct")) {
-            const distinctField = clean
-              .replace(/^distinct\s+/i, "")
-              .replace(/\s+AS\s+.+$/i, "")
-              .trim();
-            return `returns unique values for ${distinctField.replace(/_/g, " ")}`;
-          }
-
-          if (lowerExpr.includes("case ")) {
-            if (alias) {
-              return `creates a derived field labeled \`${alias}\``;
-            }
-            return "creates a derived field based on business logic";
-          }
-
-          if (lowerExpr.includes("cast(")) {
-            if (alias) {
-              return `converts a field to a new data type and labels it \`${alias}\``;
-            }
-            return "converts a field to a new data type";
-          }
-
-          if (lowerExpr.includes("julianday(")) {
-            if (alias) {
-              return `calculates a date-based metric and labels it \`${alias}\``;
-            }
-            return "calculates a date-based metric";
-          }
-
-          if (lowerExpr.includes("upper(") || lowerExpr.includes("lower(") || lowerExpr.includes("substr(") || lowerExpr.includes("trim(")) {
-            if (alias) {
-              return `returns a transformed text field labeled \`${alias}\``;
-            }
-            return "returns a transformed text field";
-          }
-
-          if (alias) {
-            return `returns ${clean.replace(/\s+AS\s+[a-zA-Z_][\w]*$/i, "").replace(/_/g, " ")} labeled \`${alias}\``;
-          }
-
-          return `returns ${clean.replace(/_/g, " ")}`;
-        }
-
-        function describeCondition(condition) {
-          const clean = cleanExpression(condition);
-
-          if (/\bis null\b/i.test(clean)) {
-            return clean.replace(/_/g, " ").replace(/\bis null\b/i, "is blank");
-          }
-
-          if (/\blike\b/i.test(clean)) {
-            return clean.replace(/_/g, " ");
-          }
-
-          if (/\bin\s*\(/i.test(clean)) {
-            return clean.replace(/_/g, " ");
-          }
-
-          if (/\bbetween\b/i.test(clean)) {
-            return clean.replace(/_/g, " ");
-          }
-
-          return clean.replace(/_/g, " ");
-        }
-
-        function buildPrompt(title, bullets) {
-          return `${title}\n- ${bullets.filter(Boolean).join("\n- ")}`;
-        }
-
-        const selectColumns = splitSelectColumns(selectMatch ? selectMatch[1] : "");
-        const selectBullets = selectColumns.map(describeSelectExpression);
-        const baseTable = fromMatch ? fromMatch[1] : firstTable;
-
-        if (lower.includes(" join ")) {
-          const allTables = [baseTable, ...joinTables].filter(Boolean);
-          const bullets = [
-            `combines data from ${allTables.join(" and ")}`,
-            ...selectBullets
-          ];
-
-          if (whereMatch) {
-            bullets.push(`keeps only rows where ${describeCondition(whereMatch[1])}`);
-          }
-
-          if (groupMatch) {
-            bullets.push(`groups the results by ${cleanExpression(groupMatch[1]).replace(/_/g, " ")}`);
-          }
-
-          if (havingMatch) {
-            bullets.push(`filters the grouped results where ${describeCondition(havingMatch[1])}`);
-          }
-
-          if (orderMatch) {
-            bullets.push(`sorts the output by ${cleanExpression(orderMatch[1]).replace(/_/g, " ")}`);
-          }
-
-          if (limitMatch) {
-            bullets.push(`limits the result to ${limitMatch[1]} rows`);
-          }
-
-          bullets.push("uses the correct join so the results are not duplicated or inflated");
-
-          lesson.challengeCriteria = buildPrompt(
-            `You are analyzing hospital data across multiple related tables. Using ${allTables.join(", ")}, write a SQL query that:`,
-            bullets
-          );
-          return;
-        }
-
-        if (groupMatch || /\bcount\(/i.test(lower) || /\bavg\(/i.test(lower) || /\bsum\(/i.test(lower) || /\bmin\(/i.test(lower) || /\bmax\(/i.test(lower)) {
-          const bullets = [...selectBullets];
-
-          if (whereMatch) {
-            bullets.push(`starts with rows where ${describeCondition(whereMatch[1])}`);
-          }
-
-          if (groupMatch) {
-            bullets.push(`summarizes the data by ${cleanExpression(groupMatch[1]).replace(/_/g, " ")}`);
-          }
-
-          if (havingMatch) {
-            bullets.push(`keeps only grouped results where ${describeCondition(havingMatch[1])}`);
-          }
-
-          if (orderMatch) {
-            bullets.push(`sorts the output by ${cleanExpression(orderMatch[1]).replace(/_/g, " ")}`);
-          }
-
-          if (limitMatch) {
-            bullets.push(`limits the result to ${limitMatch[1]} rows`);
-          }
-
-          lesson.challengeCriteria = buildPrompt(
-            `You are summarizing hospital performance data. Using the ${baseTable} table, write a SQL query that:`,
-            bullets
-          );
-          return;
-        }
-
-        if (whereMatch) {
-          const bullets = [...selectBullets];
-          bullets.push(`keeps only rows where ${describeCondition(whereMatch[1])}`);
-
-          if (orderMatch) {
-            bullets.push(`sorts the output by ${cleanExpression(orderMatch[1]).replace(/_/g, " ")}`);
-          }
-
-          if (limitMatch) {
-            bullets.push(`limits the result to ${limitMatch[1]} rows`);
-          }
-
-          lesson.challengeCriteria = buildPrompt(
-            `You are narrowing the dataset to the right patient, encounter, or financial population. Using the ${baseTable} table, write a SQL query that:`,
-            bullets
-          );
-          return;
-        }
-
-        if (lower.includes("distinct")) {
-          const bullets = [...selectBullets];
-
-          if (orderMatch) {
-            bullets.push(`sorts the output by ${cleanExpression(orderMatch[1]).replace(/_/g, " ")}`);
-          }
-
-          if (limitMatch) {
-            bullets.push(`limits the result to ${limitMatch[1]} rows`);
-          }
-
-          lesson.challengeCriteria = buildPrompt(
-            `You are identifying unique values in hospital data. Using the ${baseTable} table, write a SQL query that:`,
-            bullets
-          );
-          return;
-        }
-
-        if (selectBullets.length) {
-          const bullets = [...selectBullets];
-
-          if (orderMatch) {
-            bullets.push(`sorts the output by ${cleanExpression(orderMatch[1]).replace(/_/g, " ")}`);
-          }
-
-          if (limitMatch) {
-            bullets.push(`limits the result to ${limitMatch[1]} rows`);
-          }
-
-          lesson.challengeCriteria = buildPrompt(
-            `Using the ${baseTable} table, write a SQL query that:`,
-            bullets
-          );
-          return;
-        }
-
-        lesson.challengeCriteria =
-          lesson.objective ||
-          `Write a SQL query using ${baseTable} that satisfies the lesson objective.`;
+        lesson.challengeCriteria = buildBoardLevelChallengePrompt(lesson);
       });
     });
   });
 }
+
+function enforceChallengeCriteria(curriculum) {
+  curriculum.forEach(track => {
+    track.categories.forEach(category => {
+      category.lessons.forEach(lesson => {
+        if (lesson.kind !== "challenge") return;
+        lesson.challengeCriteria = (lesson.challengeCriteria || "").trim() || buildBoardLevelChallengePrompt(lesson);
+      });
+    });
+  });
+}
+
 function escapeHtml(str) {
   if (str === null || str === undefined) return '';
   return String(str)
@@ -7291,6 +7264,8 @@ function initUiActions() {
 
 document.addEventListener("DOMContentLoaded", async function () {
   normalizeCurriculum();
+  backfillChallengeCriteria(curriculum);
+  enforceChallengeCriteria(curriculum);
   loadProgress();
   if (!appState.currentCategoryId) appState.currentCategoryId = getTrack().categories[0]?.id || null;
   if (!appState.currentLessonId) appState.currentLessonId = getTrack().categories[0]?.lessons[0]?.id || null;
