@@ -7077,6 +7077,22 @@ function showLessonWorkspace() {
   showSection("lesson-workspace");
 }
 
+function ensureCurrentLesson() {
+  if (appState.currentLessonId) return;
+  const firstTrack = getTrack();
+  const firstCategory = firstTrack?.categories?.[0] || null;
+  const firstLesson = firstCategory?.lessons?.[0] || null;
+  if (firstCategory) appState.currentCategoryId = firstCategory.id;
+  if (firstLesson) appState.currentLessonId = firstLesson.id;
+}
+
+function showLessonsWorkspace() {
+  ensureCurrentLesson();
+  appState.currentView = "lesson";
+  showSection("lesson-workspace");
+  document.getElementById("lesson-workspace")?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
 function showOverview() {
   appState.currentView = "overview";
   showSection("track-overview");
@@ -7310,6 +7326,8 @@ function renderAll() {
     showOverview();
   }
   updateAiContextBanner();
+  initUiActions();
+  attachPersistentNavigationDelegates();
 }
 
 function initUiActions() {
@@ -7319,6 +7337,20 @@ function initUiActions() {
       appState.currentView = "overview";
       attempts = 0;
       showOverview();
+      saveProgress();
+      renderAll();
+      document.getElementById("track-overview")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    };
+  }
+
+  const openLessonsBtn =
+    document.getElementById("open-lessons-btn") ||
+    document.getElementById("jump-to-lessons-btn") ||
+    document.getElementById("show-lessons-btn");
+  if (openLessonsBtn) {
+    openLessonsBtn.onclick = () => {
+      attempts = 0;
+      showLessonsWorkspace();
       saveProgress();
       renderAll();
     };
@@ -7391,20 +7423,35 @@ function attachPersistentNavigationDelegates() {
     const button = event.target.closest("button");
     if (!button) return;
 
-    if (button.id === "open-overview-btn") {
+    const label = (button.textContent || "").replace(/\s+/g, " ").trim().toLowerCase();
+    const isOverview = button.id === "open-overview-btn" || label === "track overview";
+    const isLessons = button.id === "open-lessons-btn" || button.id === "jump-to-lessons-btn" || button.id === "show-lessons-btn" || label === "lessons";
+    const isSandbox = button.id === "open-sandbox-btn" || label === "sandbox" || label === "sql sandbox";
+    const isAi = button.id === "jump-to-ai-btn" || label === "ai companion";
+
+    if (isOverview) {
       event.preventDefault();
-      appState.currentView = "overview";
       attempts = 0;
+      appState.currentView = "overview";
       saveProgress();
       renderAll();
       document.getElementById("track-overview")?.scrollIntoView({ behavior: "smooth", block: "start" });
       return;
     }
 
-    if (button.id === "open-sandbox-btn") {
+    if (isLessons) {
       event.preventDefault();
-      appState.currentView = "sandbox";
       attempts = 0;
+      showLessonsWorkspace();
+      saveProgress();
+      renderAll();
+      return;
+    }
+
+    if (isSandbox) {
+      event.preventDefault();
+      attempts = 0;
+      appState.currentView = "sandbox";
       saveProgress();
       renderAll();
       document.getElementById("sandbox-workspace")?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -7412,7 +7459,7 @@ function attachPersistentNavigationDelegates() {
       return;
     }
 
-    if (button.id === "jump-to-ai-btn") {
+    if (isAi) {
       event.preventDefault();
       scrollToAiCompanion();
       return;
@@ -7423,6 +7470,13 @@ function attachPersistentNavigationDelegates() {
 window.showCareopsOverview = function () {
   appState.currentView = "overview";
   attempts = 0;
+  saveProgress();
+  renderAll();
+};
+
+window.showCareopsLessons = function () {
+  attempts = 0;
+  showLessonsWorkspace();
   saveProgress();
   renderAll();
 };
