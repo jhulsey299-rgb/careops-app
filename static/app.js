@@ -5993,13 +5993,15 @@ function enforceChallengeCriteria(curriculum) {
     track.categories.forEach(category => {
       category.lessons.forEach(lesson => {
         if (lesson.kind !== "challenge") return;
-
         if (lesson.challengeCriteria && lesson.challengeCriteria.trim()) return;
 
         const solution = String(lesson.solutionQuery || lesson.starterQuery || "").trim();
         const normalized = solution.replace(/\s+/g, " ").trim();
         const lower = normalized.toLowerCase();
-        const tables = Array.isArray(lesson.relevantTables) ? lesson.relevantTables.filter(Boolean) : [];
+
+        const tables = Array.isArray(lesson.relevantTables)
+          ? lesson.relevantTables.filter(Boolean)
+          : [];
         const firstTable = tables[0] || "the relevant table";
 
         const selectMatch = normalized.match(/select\s+(.+?)\s+from\s+/i);
@@ -6018,8 +6020,8 @@ function enforceChallengeCriteria(curriculum) {
         }
 
         function cleanExpression(expr) {
-          return expr
-            .replace(/\s+as\s+/gi, " as ")
+          return String(expr || "")
+            .replace(/\s+as\s+/gi, " AS ")
             .replace(/\s+/g, " ")
             .trim()
             .replace(/;$/, "");
@@ -6045,132 +6047,272 @@ function enforceChallengeCriteria(curriculum) {
           return parts;
         }
 
-        const selectColumns = splitSelectColumns(selectMatch ? selectMatch[1] : "");
-        const formattedColumns = selectColumns.map(cleanExpression);
+        function extractAlias(expr) {
+          const asMatch = expr.match(/\bAS\s+([a-zA-Z_][\w]*)$/i);
+          if (asMatch) return asMatch[1];
 
-        function bulletify(lines) {
-          return lines.filter(Boolean).join("\n- ");
+          const trimmed = expr.trim();
+          const parts = trimmed.split(/\s+/);
+          if (parts.length >= 2 && !/[()*/+-]/.test(parts[parts.length - 2])) {
+            return parts[parts.length - 1];
+          }
+          return null;
         }
+
+        function titleFromAlias(alias) {
+          return String(alias || "")
+            .replace(/_/g, " ")
+            .replace(/\bavg\b/gi, "average")
+            .replace(/\bqty\b/gi, "quantity")
+            .replace(/\bnum\b/gi, "number")
+            .trim();
+        }
+
+        function describeSelectExpression(expr) {
+          const clean = cleanExpression(expr);
+          const alias = extractAlias(clean);
+          const lowerExpr = clean.toLowerCase();
+
+          if (lowerExpr.includes("count(")) {
+            if (alias) {
+              return `returns a count labeled \`${alias}\``;
+            }
+            return "returns a count of records";
+          }
+
+          if (lowerExpr.includes("avg(")) {
+            const fieldMatch = clean.match(/avg\s*\((.+?)\)/i);
+            const field = fieldMatch ? fieldMatch[1].trim() : "the requested measure";
+            if (alias) {
+              return `calculates the average ${field.replace(/_/g, " ")} and labels it \`${alias}\``;
+            }
+            return `calculates the average ${field.replace(/_/g, " ")}`;
+          }
+
+          if (lowerExpr.includes("sum(")) {
+            const fieldMatch = clean.match(/sum\s*\((.+?)\)/i);
+            const field = fieldMatch ? fieldMatch[1].trim() : "the requested measure";
+            if (alias) {
+              return `calculates the total ${field.replace(/_/g, " ")} and labels it \`${alias}\``;
+            }
+            return `calculates the total ${field.replace(/_/g, " ")}`;
+          }
+
+          if (lowerExpr.includes("min(")) {
+            const fieldMatch = clean.match(/min\s*\((.+?)\)/i);
+            const field = fieldMatch ? fieldMatch[1].trim() : "the requested measure";
+            if (alias) {
+              return `returns the minimum ${field.replace(/_/g, " ")} and labels it \`${alias}\``;
+            }
+            return `returns the minimum ${field.replace(/_/g, " ")}`;
+          }
+
+          if (lowerExpr.includes("max(")) {
+            const fieldMatch = clean.match(/max\s*\((.+?)\)/i);
+            const field = fieldMatch ? fieldMatch[1].trim() : "the requested measure";
+            if (alias) {
+              return `returns the maximum ${field.replace(/_/g, " ")} and labels it \`${alias}\``;
+            }
+            return `returns the maximum ${field.replace(/_/g, " ")}`;
+          }
+
+          if (lowerExpr.includes("distinct")) {
+            const distinctField = clean
+              .replace(/^distinct\s+/i, "")
+              .replace(/\s+AS\s+.+$/i, "")
+              .trim();
+            return `returns unique values for ${distinctField.replace(/_/g, " ")}`;
+          }
+
+          if (lowerExpr.includes("case ")) {
+            if (alias) {
+              return `creates a derived field labeled \`${alias}\``;
+            }
+            return "creates a derived field based on business logic";
+          }
+
+          if (lowerExpr.includes("cast(")) {
+            if (alias) {
+              return `converts a field to a new data type and labels it \`${alias}\``;
+            }
+            return "converts a field to a new data type";
+          }
+
+          if (lowerExpr.includes("julianday(")) {
+            if (alias) {
+              return `calculates a date-based metric and labels it \`${alias}\``;
+            }
+            return "calculates a date-based metric";
+          }
+
+          if (lowerExpr.includes("upper(") || lowerExpr.includes("lower(") || lowerExpr.includes("substr(") || lowerExpr.includes("trim(")) {
+            if (alias) {
+              return `returns a transformed text field labeled \`${alias}\``;
+            }
+            return "returns a transformed text field";
+          }
+
+          if (alias) {
+            return `returns ${clean.replace(/\s+AS\s+[a-zA-Z_][\w]*$/i, "").replace(/_/g, " ")} labeled \`${alias}\``;
+          }
+
+          return `returns ${clean.replace(/_/g, " ")}`;
+        }
+
+        function describeCondition(condition) {
+          const clean = cleanExpression(condition);
+
+          if (/\bis null\b/i.test(clean)) {
+            return clean.replace(/_/g, " ").replace(/\bis null\b/i, "is blank");
+          }
+
+          if (/\blike\b/i.test(clean)) {
+            return clean.replace(/_/g, " ");
+          }
+
+          if (/\bin\s*\(/i.test(clean)) {
+            return clean.replace(/_/g, " ");
+          }
+
+          if (/\bbetween\b/i.test(clean)) {
+            return clean.replace(/_/g, " ");
+          }
+
+          return clean.replace(/_/g, " ");
+        }
+
+        function buildPrompt(title, bullets) {
+          return `${title}\n- ${bullets.filter(Boolean).join("\n- ")}`;
+        }
+
+        const selectColumns = splitSelectColumns(selectMatch ? selectMatch[1] : "");
+        const selectBullets = selectColumns.map(describeSelectExpression);
+        const baseTable = fromMatch ? fromMatch[1] : firstTable;
 
         if (lower.includes(" join ")) {
-          const baseTable = fromMatch ? fromMatch[1] : firstTable;
           const allTables = [baseTable, ...joinTables].filter(Boolean);
-
-          let joinInstruction = `Using ${allTables.join(", ")}, write a SQL query that:`;
-
-          const bullets = [];
-
-          bullets.push(`joins ${allTables.join(" and ")} correctly`);
-
-          if (formattedColumns.length) {
-            bullets.push(`returns these fields: ${formattedColumns.join(", ")}`);
-          }
+          const bullets = [
+            `combines data from ${allTables.join(" and ")}`,
+            ...selectBullets
+          ];
 
           if (whereMatch) {
-            bullets.push(`filters the results where ${cleanExpression(whereMatch[1])}`);
+            bullets.push(`keeps only rows where ${describeCondition(whereMatch[1])}`);
           }
-
-          if (orderMatch) {
-            bullets.push(`sorts the output by ${cleanExpression(orderMatch[1])}`);
-          }
-
-          if (limitMatch) {
-            bullets.push(`limits the results to ${limitMatch[1]} rows`);
-          }
-
-          bullets.push(`avoids duplicate or inflated results`);
-
-          lesson.challengeCriteria = `${joinInstruction}\n- ${bulletify(bullets)}`;
-          return;
-        }
-
-        if (groupMatch || lower.includes("count(") || lower.includes("avg(") || lower.includes("sum(") || lower.includes("min(") || lower.includes("max(")) {
-          const bullets = [];
 
           if (groupMatch) {
-            bullets.push(`groups the data by ${cleanExpression(groupMatch[1])}`);
-          }
-
-          if (formattedColumns.length) {
-            bullets.push(`returns these calculations or fields: ${formattedColumns.join(", ")}`);
-          }
-
-          if (whereMatch) {
-            bullets.push(`filters the source rows where ${cleanExpression(whereMatch[1])}`);
+            bullets.push(`groups the results by ${cleanExpression(groupMatch[1]).replace(/_/g, " ")}`);
           }
 
           if (havingMatch) {
-            bullets.push(`filters the grouped results where ${cleanExpression(havingMatch[1])}`);
+            bullets.push(`filters the grouped results where ${describeCondition(havingMatch[1])}`);
           }
 
           if (orderMatch) {
-            bullets.push(`sorts the output by ${cleanExpression(orderMatch[1])}`);
+            bullets.push(`sorts the output by ${cleanExpression(orderMatch[1]).replace(/_/g, " ")}`);
           }
 
           if (limitMatch) {
-            bullets.push(`limits the results to ${limitMatch[1]} rows`);
+            bullets.push(`limits the result to ${limitMatch[1]} rows`);
           }
 
-          lesson.challengeCriteria = `Using the ${fromMatch ? fromMatch[1] : firstTable} table, write a SQL query that:\n- ${bulletify(bullets)}`;
+          bullets.push("uses the correct join so the results are not duplicated or inflated");
+
+          lesson.challengeCriteria = buildPrompt(
+            `You are analyzing hospital data across multiple related tables. Using ${allTables.join(", ")}, write a SQL query that:`,
+            bullets
+          );
+          return;
+        }
+
+        if (groupMatch || /\bcount\(/i.test(lower) || /\bavg\(/i.test(lower) || /\bsum\(/i.test(lower) || /\bmin\(/i.test(lower) || /\bmax\(/i.test(lower)) {
+          const bullets = [...selectBullets];
+
+          if (whereMatch) {
+            bullets.push(`starts with rows where ${describeCondition(whereMatch[1])}`);
+          }
+
+          if (groupMatch) {
+            bullets.push(`summarizes the data by ${cleanExpression(groupMatch[1]).replace(/_/g, " ")}`);
+          }
+
+          if (havingMatch) {
+            bullets.push(`keeps only grouped results where ${describeCondition(havingMatch[1])}`);
+          }
+
+          if (orderMatch) {
+            bullets.push(`sorts the output by ${cleanExpression(orderMatch[1]).replace(/_/g, " ")}`);
+          }
+
+          if (limitMatch) {
+            bullets.push(`limits the result to ${limitMatch[1]} rows`);
+          }
+
+          lesson.challengeCriteria = buildPrompt(
+            `You are summarizing hospital performance data. Using the ${baseTable} table, write a SQL query that:`,
+            bullets
+          );
           return;
         }
 
         if (whereMatch) {
-          const bullets = [];
-
-          if (formattedColumns.length) {
-            bullets.push(`returns these fields: ${formattedColumns.join(", ")}`);
-          }
-
-          bullets.push(`filters the rows where ${cleanExpression(whereMatch[1])}`);
+          const bullets = [...selectBullets];
+          bullets.push(`keeps only rows where ${describeCondition(whereMatch[1])}`);
 
           if (orderMatch) {
-            bullets.push(`sorts the output by ${cleanExpression(orderMatch[1])}`);
+            bullets.push(`sorts the output by ${cleanExpression(orderMatch[1]).replace(/_/g, " ")}`);
           }
 
           if (limitMatch) {
-            bullets.push(`limits the results to ${limitMatch[1]} rows`);
+            bullets.push(`limits the result to ${limitMatch[1]} rows`);
           }
 
-          lesson.challengeCriteria = `Using the ${fromMatch ? fromMatch[1] : firstTable} table, write a SQL query that:\n- ${bulletify(bullets)}`;
+          lesson.challengeCriteria = buildPrompt(
+            `You are narrowing the dataset to the right patient, encounter, or financial population. Using the ${baseTable} table, write a SQL query that:`,
+            bullets
+          );
           return;
         }
 
         if (lower.includes("distinct")) {
-          const bullets = [];
-
-          if (formattedColumns.length) {
-            bullets.push(`returns unique values for: ${formattedColumns.join(", ")}`);
-          }
+          const bullets = [...selectBullets];
 
           if (orderMatch) {
-            bullets.push(`sorts the output by ${cleanExpression(orderMatch[1])}`);
+            bullets.push(`sorts the output by ${cleanExpression(orderMatch[1]).replace(/_/g, " ")}`);
           }
 
           if (limitMatch) {
-            bullets.push(`limits the results to ${limitMatch[1]} rows`);
+            bullets.push(`limits the result to ${limitMatch[1]} rows`);
           }
 
-          lesson.challengeCriteria = `Using the ${fromMatch ? fromMatch[1] : firstTable} table, write a SQL query that:\n- ${bulletify(bullets)}`;
+          lesson.challengeCriteria = buildPrompt(
+            `You are identifying unique values in hospital data. Using the ${baseTable} table, write a SQL query that:`,
+            bullets
+          );
           return;
         }
 
-        if (formattedColumns.length) {
-          const bullets = [`returns these fields or calculations: ${formattedColumns.join(", ")}`];
+        if (selectBullets.length) {
+          const bullets = [...selectBullets];
 
           if (orderMatch) {
-            bullets.push(`sorts the output by ${cleanExpression(orderMatch[1])}`);
+            bullets.push(`sorts the output by ${cleanExpression(orderMatch[1]).replace(/_/g, " ")}`);
           }
 
           if (limitMatch) {
-            bullets.push(`limits the results to ${limitMatch[1]} rows`);
+            bullets.push(`limits the result to ${limitMatch[1]} rows`);
           }
 
-          lesson.challengeCriteria = `Using the ${fromMatch ? fromMatch[1] : firstTable} table, write a SQL query that:\n- ${bulletify(bullets)}`;
+          lesson.challengeCriteria = buildPrompt(
+            `Using the ${baseTable} table, write a SQL query that:`,
+            bullets
+          );
           return;
         }
 
-        lesson.challengeCriteria = lesson.objective || `Write a SQL query using ${firstTable} that satisfies the lesson objective.`;
+        lesson.challengeCriteria =
+          lesson.objective ||
+          `Write a SQL query using ${baseTable} that satisfies the lesson objective.`;
       });
     });
   });
