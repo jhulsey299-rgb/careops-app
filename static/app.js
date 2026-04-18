@@ -6056,6 +6056,7 @@ function prettifyFieldName(name) {
     .trim();
 }
 
+
 function inferMetricType(lesson, normalizedQuery) {
   const query = String(normalizedQuery || "").toLowerCase();
   const tables = Array.isArray(lesson?.relevantTables) ? lesson.relevantTables : [];
@@ -6078,131 +6079,51 @@ function getBusinessLogicConfig(lesson, normalizedQuery) {
   return inferred ? BUSINESS_LOGIC_MAP[inferred] : null;
 }
 
-function describeConditionExecutive(condition) {
-  const clean = cleanExpression(condition).replace(/_/g, " ");
-  if (!clean) return "";
-
-  if (/\bis null\b/i.test(clean)) return `${clean.replace(/\bis null\b/i, "is blank")}`;
-  if (/\blike\b/i.test(clean)) return clean;
-  if (/\bbetween\b/i.test(clean)) return clean;
-  if (/\bin\s*\(/i.test(clean)) return clean;
-
-  return clean;
+function formatFieldForPrompt(value) {
+  return prettifyFieldName(String(value || "").replace(/\b[a-zA-Z_][\w]*\./g, ""));
 }
 
-function describeSelectExpressionExecutive(expr) {
-  const clean = cleanExpression(expr);
-  const alias = extractAlias(clean);
-  const lowerExpr = clean.toLowerCase();
-
-  if (lowerExpr.includes("count(")) {
-    if (alias === "encounter_count") return "returns total encounter volume";
-    if (alias) return `returns a count labeled \`${alias}\``;
-    return "returns a count of records";
-  }
-
-  if (lowerExpr.includes("avg(")) {
-    const fieldMatch = clean.match(/avg\s*\((.+?)\)/i);
-    const field = prettifyFieldName(fieldMatch ? fieldMatch[1] : "the requested measure");
-    if (/length_of_stay/i.test(clean)) {
-      if (alias) return `calculates average length of stay (LOS) and labels it \`${alias}\``;
-      return "calculates average length of stay (LOS)";
-    }
-    if (alias) return `calculates the average ${field} and labels it \`${alias}\``;
-    return `calculates the average ${field}`;
-  }
-
-  if (lowerExpr.includes("sum(")) {
-    const fieldMatch = clean.match(/sum\s*\((.+?)\)/i);
-    const field = prettifyFieldName(fieldMatch ? fieldMatch[1] : "the requested measure");
-    const multiplierMatch = clean.match(/\*\s*(0?\.\d+)/);
-    const multiplier = multiplierMatch ? Number(multiplierMatch[1]) : null;
-
-    if (multiplier !== null) {
-      const percent = Math.round(multiplier * 100);
-      if (/estimated_net_revenue/i.test(alias || "")) {
-        return `estimates net revenue by applying a ${percent}% realization assumption and labels it \`${alias}\``;
-      }
-      if (alias) return `calculates a derived ${field} value using a ${percent}% assumption and labels it \`${alias}\``;
-      return `calculates a derived ${field} value using a ${percent}% assumption`;
-    }
-
-    if (/gross_charges/i.test(alias || "")) {
-      return "calculates total gross charges";
-    }
-    if (alias) return `calculates the total ${field} and labels it \`${alias}\``;
-    return `calculates the total ${field}`;
-  }
-
-  if (lowerExpr.includes("min(")) {
-    const fieldMatch = clean.match(/min\s*\((.+?)\)/i);
-    const field = prettifyFieldName(fieldMatch ? fieldMatch[1] : "the requested measure");
-    if (alias) return `returns the lowest ${field} value and labels it \`${alias}\``;
-    return `returns the lowest ${field} value`;
-  }
-
-  if (lowerExpr.includes("max(")) {
-    const fieldMatch = clean.match(/max\s*\((.+?)\)/i);
-    const field = prettifyFieldName(fieldMatch ? fieldMatch[1] : "the requested measure");
-    if (alias) return `returns the highest ${field} value and labels it \`${alias}\``;
-    return `returns the highest ${field} value`;
-  }
-
-  if (lowerExpr.includes("distinct")) {
-    const distinctField = prettifyFieldName(clean.replace(/^distinct\s+/i, "").replace(/\s+as\s+.+$/i, "").trim());
-    return `returns unique values for ${distinctField}`;
-  }
-
-  if (lowerExpr.includes("case ")) {
-    if (alias) return `creates a derived category labeled \`${alias}\``;
-    return "creates a derived category using business logic";
-  }
-
-  if (lowerExpr.includes("cast(")) {
-    if (alias) return `converts a field to a new data type and labels it \`${alias}\``;
-    return "converts a field to a new data type";
-  }
-
-  if (lowerExpr.includes("julianday(")) {
-    if (alias && /los/i.test(alias)) return `calculates a length-of-stay time metric and labels it \`${alias}\``;
-    if (alias) return `calculates a date-based metric and labels it \`${alias}\``;
-    return "calculates a date-based metric";
-  }
-
-  if (lowerExpr.includes("upper(") || lowerExpr.includes("lower(") || lowerExpr.includes("substr(") || lowerExpr.includes("trim(")) {
-    if (alias) return `returns a transformed text field labeled \`${alias}\``;
-    return "returns a transformed text field";
-  }
-
-  if (alias) {
-    return `returns ${prettifyFieldName(clean.replace(/\s+AS\s+[a-zA-Z_][\w]*$/i, ""))} labeled \`${alias}\``;
-  }
-
-  return `returns ${prettifyFieldName(clean)}`;
+function cleanIdentifier(value) {
+  return String(value || "").replace(/\b[a-zA-Z_][\w]*\./g, "").trim();
 }
 
-function buildPromptWithBullets(title, bullets) {
-  const cleaned = bullets.filter(Boolean);
-  return `${title}\n- ${cleaned.join("\n- ")}`;
+function extractFunctionArg(expr, fnName) {
+  const re = new RegExp(fnName + "\\s*\\((.+?)\\)", "i");
+  const match = String(expr || "").match(re);
+  return match ? cleanIdentifier(match[1]) : "";
 }
 
-function buildBoardLevelChallengePrompt(lesson) {
-  if (!lesson) return "Write a SQL query that satisfies the lesson objective.";
+function parseSelectExpressions(query) {
+  const selectMatch = String(query || "").match(/select\s+(.+?)\s+from\s+/i);
+  return splitSelectColumns(selectMatch ? selectMatch[1] : "");
+}
 
-  const solution = String(lesson.solutionQuery || lesson.starterQuery || "").trim();
-  const normalized = cleanExpression(solution);
+function sentenceCase(text) {
+  const s = String(text || "").trim();
+  return s ? s.charAt(0).toUpperCase() + s.slice(1) : "";
+}
+
+function buildWhyItMatters(lesson, config) {
+  if (lesson?.businessContext?.businessGoal) return lesson.businessContext.businessGoal;
+  if (lesson?.executiveTakeaway?.whyItMatters) return lesson.executiveTakeaway.whyItMatters;
+  if (config?.executiveQuestion) return config.executiveQuestion;
+  return "";
+}
+
+function buildExplicitTaskFromQuery(lesson) {
+  const query = String(lesson?.solutionQuery || lesson?.starterQuery || "").trim();
+  const normalized = cleanExpression(query);
+  if (!normalized) return lesson?.objective || "Write a SQL query that satisfies the lesson objective.";
+
   const lower = normalized.toLowerCase();
-
-  const tables = Array.isArray(lesson.relevantTables) ? lesson.relevantTables.filter(Boolean) : [];
-  const firstTable = tables[0] || "the relevant table";
-
-  const selectMatch = normalized.match(/select\s+(.+?)\s+from\s+/i);
-  const fromMatch = normalized.match(/from\s+([a-zA-Z_][\w]*)/i);
-  const whereMatch = normalized.match(/where\s+(.+?)(?:\s+group\s+by|\s+having|\s+order\s+by|\s+limit|;|$)/i);
-  const groupMatch = normalized.match(/group\s+by\s+(.+?)(?:\s+having|\s+order\s+by|\s+limit|;|$)/i);
-  const havingMatch = normalized.match(/having\s+(.+?)(?:\s+order\s+by|\s+limit|;|$)/i);
-  const orderMatch = normalized.match(/order\s+by\s+(.+?)(?:\s+limit|;|$)/i);
-  const limitMatch = normalized.match(/limit\s+(\d+)/i);
+  const baseTableMatch = normalized.match(/from\s+([a-zA-Z_][\w]*)/i);
+  const baseTable = baseTableMatch ? baseTableMatch[1] : (lesson?.relevantTables?.[0] || "the relevant table");
+  const selectExpressions = parseSelectExpressions(normalized);
+  const whereClause = extractWhereClause(normalized);
+  const groupByClause = extractGroupByClause(normalized);
+  const havingClause = extractHavingClause(normalized);
+  const orderByClause = extractOrderByClause(normalized);
+  const limitValue = extractLimitValue(normalized);
 
   const joinTables = [];
   const joinRegex = /\bjoin\s+([a-zA-Z_][\w]*)/gi;
@@ -6211,53 +6132,173 @@ function buildBoardLevelChallengePrompt(lesson) {
     joinTables.push(joinHit[1]);
   }
 
-  const config = getBusinessLogicConfig(lesson, normalized);
-  const selectColumns = splitSelectColumns(selectMatch ? selectMatch[1] : "");
-  const baseTable = fromMatch ? fromMatch[1] : firstTable;
-
-  const bullets = [];
-  if (config?.analystFrame) bullets.push(config.analystFrame);
-
-  if (config?.rules?.length) {
-    config.rules.forEach(rule => {
-      if (rule.match.test(normalized)) bullets.push(rule.explanation);
-    });
+  if (/\bwhere\b[\s\S]*\bin\s*\(\s*select\b/i.test(lower)) {
+    const subFrom = normalized.match(/\(\s*select[\s\S]*?\bfrom\s+([a-zA-Z_][\w]*)/i);
+    const nestedTable = subFrom ? subFrom[1] : "the related table";
+    const nestedWhere = normalized.match(/\(\s*select[\s\S]*?\bwhere\s+(.+?)\s*\)/i);
+    const subCondition = nestedWhere ? cleanInstructionExpression(nestedWhere[1]) : "the requested condition";
+    return `Return all records from the \`${baseTable}\` table for rows that match a subquery against \`${nestedTable}\`, where ${subCondition}.`;
   }
-
-  selectColumns
-    .map(describeSelectExpressionExecutive)
-    .forEach(item => {
-      if (item && !bullets.includes(item)) bullets.push(item);
-    });
-
-  if (whereMatch) bullets.push(`keeps only rows where ${describeConditionExecutive(whereMatch[1])}`);
-  if (groupMatch) bullets.push(`summarizes the data by ${prettifyFieldName(cleanExpression(groupMatch[1]))}`);
-  if (havingMatch) bullets.push(`keeps only grouped results where ${describeConditionExecutive(havingMatch[1])}`);
-  if (orderMatch) bullets.push(`sorts the output by ${prettifyFieldName(cleanExpression(orderMatch[1]))}`);
-  if (limitMatch) bullets.push(`limits the result to ${limitMatch[1]} rows`);
-
-  if (lesson?.businessContext?.assumptions?.length) {
-    lesson.businessContext.assumptions.forEach(item => bullets.push(item));
-  }
-
-  const executiveQuestion =
-    lesson?.businessContext?.executiveQuestion ||
-    config?.executiveQuestion ||
-    "";
-  if (executiveQuestion) bullets.push(`answers this executive question: ${executiveQuestion}`);
 
   if (/\bjoin\b/i.test(lower)) {
     const allTables = [baseTable, ...joinTables].filter(Boolean);
-    bullets.unshift(`combines data from ${allTables.join(" and ")}`);
-    bullets.push("uses the correct join path so results are not duplicated or inflated");
+    const selectedFields = selectExpressions
+      .map(expr => formatFieldForPrompt(expr.replace(/\s+AS\s+[a-zA-Z_][\w]*$/i, "")))
+      .filter(Boolean);
+    let task = `Join \`${allTables.join("\`, \`")}\` and return `;
+    if (selectedFields.length === 1) {
+      task += `${selectedFields[0]}.`;
+    } else if (selectedFields.length > 1) {
+      task += `${selectedFields.slice(0, -1).join(", ")} and ${selectedFields.slice(-1)[0]}.`;
+    } else {
+      task += "the requested fields.";
+    }
+    if (whereClause) task += ` Keep only rows where ${cleanInstructionExpression(whereClause)}.`;
+    return task;
   }
 
-  const intro =
-    lesson?.businessContext?.promptIntro ||
-    config?.promptIntro ||
-    `Using the ${baseTable} table, write a SQL query that:`;
+  const countExpr = selectExpressions.find(expr => /\bcount\s*\(/i.test(expr));
+  const avgExpr = selectExpressions.find(expr => /\bavg\s*\(/i.test(expr));
+  const sumExprs = selectExpressions.filter(expr => /\bsum\s*\(/i.test(expr));
+  const minExpr = selectExpressions.find(expr => /\bmin\s*\(/i.test(expr));
+  const maxExpr = selectExpressions.find(expr => /\bmax\s*\(/i.test(expr));
+  const distinctExpr = selectExpressions.find(expr => /\bdistinct\b/i.test(expr));
+  const caseExpr = selectExpressions.find(expr => /\bcase\b/i.test(expr));
+  const castExpr = selectExpressions.find(expr => /\bcast\s*\(/i.test(expr));
+  const dateDiffExpr = selectExpressions.find(expr => /\bjulianday\s*\(/i.test(expr));
+  const textTransformExpr = selectExpressions.find(expr => /\bupper\s*\(|\blower\s*\(|\bsubstr\s*\(|\btrim\s*\(/i.test(expr));
 
-  return buildPromptWithBullets(intro, bullets);
+  if (groupByClause && countExpr) {
+    const groupFields = formatFieldForPrompt(groupByClause);
+    const countAlias = extractAlias(countExpr) || "count";
+    let task = `Return ${countAlias.replace(/_/g, " ")} by ${groupFields} from the \`${baseTable}\` table. Group the results by ${groupFields}.`;
+    if (havingClause) task += ` Keep only groups where ${cleanInstructionExpression(havingClause)}.`;
+    if (orderByClause) task += ` Sort the output by ${cleanInstructionExpression(orderByClause)}.`;
+    return sentenceCase(task);
+  }
+
+  if (countExpr && avgExpr && !groupByClause) {
+    const countAlias = extractAlias(countExpr) || "count";
+    const avgField = formatFieldForPrompt(extractFunctionArg(avgExpr, "avg"));
+    const avgAlias = extractAlias(avgExpr) || "average";
+    return `Return total ${countAlias.replace(/_/g, " ")} and average ${avgField} from the \`${baseTable}\` table. Label the results \`${countAlias}\` and \`${avgAlias}\`.`;
+  }
+
+  if (sumExprs.length >= 2 && /0?\.82/.test(lower)) {
+    const aliases = sumExprs.map(extractAlias).filter(Boolean);
+    const grossAlias = aliases.find(a => /gross/i.test(a)) || aliases[0] || "gross_total";
+    const netAlias = aliases.find(a => /net/i.test(a)) || aliases[1] || "estimated_net";
+    return `Return total gross charges and estimated net revenue from the \`${baseTable}\` table. Assume net revenue equals 82% of gross charges and label the results \`${grossAlias}\` and \`${netAlias}\`.`;
+  }
+
+  if (sumExprs.length === 1 && !groupByClause) {
+    const sumExpr = sumExprs[0];
+    const field = formatFieldForPrompt(extractFunctionArg(sumExpr, "sum"));
+    const alias = extractAlias(sumExpr);
+    const multiplierMatch = sumExpr.match(/\*\s*(0?\.\d+)/);
+    if (multiplierMatch) {
+      const percent = Math.round(parseFloat(multiplierMatch[1]) * 100);
+      const aliasText = alias ? ` and label the result \`${alias}\`` : "";
+      return `Calculate a derived total based on ${field} from the \`${baseTable}\` table using a ${percent}% assumption${aliasText}.`;
+    }
+    if (alias) return `Return total ${field} from the \`${baseTable}\` table and label the result \`${alias}\`.`;
+    return `Return total ${field} from the \`${baseTable}\` table.`;
+  }
+
+  if (minExpr && maxExpr) {
+    const field = formatFieldForPrompt(extractFunctionArg(minExpr, "min") || extractFunctionArg(maxExpr, "max"));
+    const minAlias = extractAlias(minExpr) || "minimum_value";
+    const maxAlias = extractAlias(maxExpr) || "maximum_value";
+    return `Return the lowest and highest ${field} from the \`${baseTable}\` table. Label the results \`${minAlias}\` and \`${maxAlias}\`.`;
+  }
+
+  if (distinctExpr) {
+    const field = formatFieldForPrompt(distinctExpr.replace(/^distinct\s+/i, "").replace(/\s+AS\s+.+$/i, ""));
+    let task = `Return each unique ${field} from the \`${baseTable}\` table one time only.`;
+    if (orderByClause) task += ` Sort the results by ${cleanInstructionExpression(orderByClause)}.`;
+    if (limitValue) task += ` Limit the output to ${limitValue} rows.`;
+    return task;
+  }
+
+  if (caseExpr) {
+    const alias = extractAlias(caseExpr) || "derived_value";
+    return `Return the requested base fields from the \`${baseTable}\` table and create a derived field labeled \`${alias}\` using CASE logic that matches the lesson rule.`;
+  }
+
+  if (castExpr) {
+    const alias = extractAlias(castExpr) || "converted_value";
+    const castArg = extractFunctionArg(castExpr, "cast");
+    const field = formatFieldForPrompt(castArg.split(/\s+as\s+/i)[0]);
+    return `Return the requested fields from the \`${baseTable}\` table and convert ${field} into a new data type labeled \`${alias}\`.`;
+  }
+
+  if (dateDiffExpr) {
+    const alias = extractAlias(dateDiffExpr) || "date_metric";
+    return `Return the requested identifier from the \`${baseTable}\` table and calculate the date difference metric labeled \`${alias}\`.`;
+  }
+
+  if (textTransformExpr) {
+    const alias = extractAlias(textTransformExpr) || "transformed_text";
+    return `Return the requested text transformation from the \`${baseTable}\` table and label it \`${alias}\`.`;
+  }
+
+  if (whereClause && /^select\s+\*/i.test(lower)) {
+    let task = `Return all rows from the \`${baseTable}\` table where ${cleanInstructionExpression(whereClause)}.`;
+    if (orderByClause) task += ` Sort the output by ${cleanInstructionExpression(orderByClause)}.`;
+    if (limitValue) task += ` Limit the output to ${limitValue} rows.`;
+    return task;
+  }
+
+  if (whereClause) {
+    const fieldLabels = selectExpressions.map(expr => {
+      const bare = expr.replace(/\s+AS\s+[a-zA-Z_][\w]*$/i, "");
+      return formatFieldForPrompt(bare);
+    }).filter(Boolean);
+    let selected = "the requested fields";
+    if (fieldLabels.length === 1) selected = fieldLabels[0];
+    if (fieldLabels.length > 1) selected = `${fieldLabels.slice(0, -1).join(", ")} and ${fieldLabels.slice(-1)[0]}`;
+    let task = `Return ${selected} from the \`${baseTable}\` table where ${cleanInstructionExpression(whereClause)}.`;
+    if (orderByClause) task += ` Sort the output by ${cleanInstructionExpression(orderByClause)}.`;
+    if (limitValue) task += ` Limit the output to ${limitValue} rows.`;
+    return task;
+  }
+
+  if (/^select\s+\*/i.test(lower)) {
+    let task = `Return all columns from the \`${baseTable}\` table.`;
+    if (orderByClause) task += ` Sort the output by ${cleanInstructionExpression(orderByClause)}.`;
+    if (limitValue) task += ` Limit the output to ${limitValue} rows.`;
+    return task;
+  }
+
+  if (selectExpressions.length) {
+    const aliasLabels = selectExpressions.map(expr => extractAlias(expr)).filter(Boolean);
+    if (aliasLabels.length) {
+      let task = `Return the requested result from the \`${baseTable}\` table.`;
+      task += ` Label the output columns ${aliasLabels.map(a => `\`${a}\``).join(", ")}.`;
+      if (orderByClause) task += ` Sort the output by ${cleanInstructionExpression(orderByClause)}.`;
+      if (limitValue) task += ` Limit the output to ${limitValue} rows.`;
+      return task;
+    }
+  }
+
+  return lesson?.objective || `Write a SQL query using the \`${baseTable}\` table that satisfies the lesson objective.`;
+}
+
+function buildBoardLevelChallengePrompt(lesson) {
+  if (!lesson) return "Write a SQL query that satisfies the lesson objective.";
+
+  const direct = (lesson.challengeCriteria || "").trim();
+  if (direct) return direct;
+
+  const config = getBusinessLogicConfig(lesson, cleanExpression(lesson.solutionQuery || lesson.starterQuery || ""));
+  const task = buildExplicitTaskFromQuery(lesson);
+  const why = buildWhyItMatters(lesson, config);
+
+  if (why) {
+    return `${task}\n\nWhy this matters: ${why}`;
+  }
+
+  return task;
 }
 
 function buildChallengePrompt(lesson) {
