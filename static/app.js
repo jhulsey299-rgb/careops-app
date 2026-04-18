@@ -5820,6 +5820,7 @@ function renderTrackCategoryCards() {
       attempts = 0;
       saveProgress();
       renderAll();
+  initUiActions();
     });
 
     return card;
@@ -6138,13 +6139,30 @@ function buildExplicitTaskFromQuery(lesson) {
   if (!normalized) return lesson?.objective || "Write a SQL query that satisfies the lesson objective.";
 
   const lower = normalized.toLowerCase();
-  const baseTableMatch = normalized.match(/from\s+([a-zA-Z_][\w]*)/i);
+  const baseTableMatch = normalized.match(/\bfrom\s+([a-zA-Z_][\w]*)/i);
   const baseTable = baseTableMatch ? baseTableMatch[1] : (lesson?.relevantTables?.[0] || "the relevant table");
   const selectExpressions = parseSelectExpressions(normalized);
-  const whereClause = extractWhereClause(normalized);
-  const groupByClause = extractGroupByClause(normalized);
-  const havingClause = extractHavingClause(normalized);
-  const orderByClause = extractOrderByClause(normalized);
+
+  const whereClause = (() => {
+    const m = normalized.match(/\bwhere\s+([\s\S]+?)(?:\s+group\s+by\s+|\s+having\s+|\s+order\s+by\s+|\s+limit\s+|;|$)/i);
+    return m ? m[1].trim() : "";
+  })();
+
+  const groupByClause = (() => {
+    const m = normalized.match(/\bgroup\s+by\s+([\s\S]+?)(?:\s+having\s+|\s+order\s+by\s+|\s+limit\s+|;|$)/i);
+    return m ? m[1].trim() : "";
+  })();
+
+  const havingClause = (() => {
+    const m = normalized.match(/\bhaving\s+([\s\S]+?)(?:\s+order\s+by\s+|\s+limit\s+|;|$)/i);
+    return m ? m[1].trim() : "";
+  })();
+
+  const orderByClause = (() => {
+    const m = normalized.match(/\border\s+by\s+([\s\S]+?)(?:\s+limit\s+|;|$)/i);
+    return m ? m[1].trim() : "";
+  })();
+
   const limitValue = extractLimitValue(normalized);
 
   const joinTables = [];
@@ -7364,6 +7382,62 @@ function initUiActions() {
   }
 }
 
+
+function attachPersistentNavigationDelegates() {
+  if (window.__careopsNavDelegatesAttached) return;
+  window.__careopsNavDelegatesAttached = true;
+
+  document.addEventListener("click", function (event) {
+    const button = event.target.closest("button");
+    if (!button) return;
+
+    if (button.id === "open-overview-btn") {
+      event.preventDefault();
+      appState.currentView = "overview";
+      attempts = 0;
+      saveProgress();
+      renderAll();
+      document.getElementById("track-overview")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      return;
+    }
+
+    if (button.id === "open-sandbox-btn") {
+      event.preventDefault();
+      appState.currentView = "sandbox";
+      attempts = 0;
+      saveProgress();
+      renderAll();
+      document.getElementById("sandbox-workspace")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      document.getElementById("sandbox-query")?.focus();
+      return;
+    }
+
+    if (button.id === "jump-to-ai-btn") {
+      event.preventDefault();
+      scrollToAiCompanion();
+      return;
+    }
+  });
+}
+
+window.showCareopsOverview = function () {
+  appState.currentView = "overview";
+  attempts = 0;
+  saveProgress();
+  renderAll();
+};
+
+window.showCareopsSandbox = function () {
+  appState.currentView = "sandbox";
+  attempts = 0;
+  saveProgress();
+  renderAll();
+};
+
+window.showCareopsAiCompanion = function () {
+  scrollToAiCompanion();
+};
+
 document.addEventListener("DOMContentLoaded", async function () {
   normalizeCurriculum();
   backfillChallengeCriteria(curriculum);
@@ -7373,6 +7447,7 @@ document.addEventListener("DOMContentLoaded", async function () {
   if (!appState.currentLessonId) appState.currentLessonId = getTrack().categories[0]?.lessons[0]?.id || null;
   if (!appState.currentView) appState.currentView = "overview";
   initUiActions();
+  attachPersistentNavigationDelegates();
   initSchemaResizer();
   await initDatabase();
   await initializeSandboxDatabase();
