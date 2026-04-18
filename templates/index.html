@@ -69,10 +69,9 @@
  
         
         <div class="dashboard-actions main-nav-actions">
-            <button type="button" id="nav-overview-btn">Track Overview</button>
-            <button type="button" id="nav-lessons-btn">Lessons</button>
-            <button type="button" id="nav-sandbox-btn">Sandbox</button>
-            <button type="button" id="nav-ai-btn">AI Companion</button>
+            <button type="button" id="open-overview-btn">Track Overview</button>
+            <button type="button" id="open-lessons-btn">Lessons</button>
+            <button type="button" id="open-sandbox-btn">Sandbox</button>
             <button type="button" onclick="resetAllProgress()">Reset Progress</button>
         </div>
  
@@ -271,52 +270,41 @@
                         <label for="sandbox-query" class="query-label">Sandbox SQL</label>
                         <textarea id="sandbox-query" rows="10" cols="80" spellcheck="false" autocomplete="off" autocapitalize="off"></textarea>
                         <div class="button-row">
-                            <button type="button" id="sandbox-load-selected-btn">Load Selected Prompt</button>
-                            <button type="button" id="sandbox-send-ai-btn">Ask AI About This Query</button>
+                            <button type="button" id="load-lesson-query-btn">Load Selected Prompt</button>
+                            <button type="button" id="run-sandbox-btn">Run Sandbox Query</button>
+                            <button type="button" id="reset-sandbox-btn">Reset</button>
                         </div>
                         <div id="sandbox-feedback" aria-live="polite"></div>
                         <div id="sandbox-output" aria-live="polite"></div>
                     </div>
+
+                    <section id="ai-companion-section" class="query-section sandbox-ai-embedded">
+                        <div class="section-header">
+                            <h3>AI Companion</h3>
+                            <p>Ask for hints, rewrites, debugging help, schema answers, or executive framing right from the sandbox.</p>
+                        </div>
+
+                        <div class="concept-card ai-inline-card">
+                            <div class="ai-inline-header">
+                                <span id="ai-status-pill" class="ai-status-chip">Ready</span>
+                            </div>
+                            <label for="ai-input" class="query-label">Prompt</label>
+                            <textarea id="ai-input" rows="6" cols="80" placeholder="Ask for a hint, schema help, query rewrite, error explanation, or executive summary."></textarea>
+                            <div class="button-row ai-inline-actions">
+                                <button type="button" id="send-ai-btn">Ask AI</button>
+                                <button type="button" class="quick-ai-btn" data-ai-prompt="Give me a hint for this SQL query.">Hint</button>
+                                <button type="button" class="quick-ai-btn" data-ai-prompt="Explain what is wrong with this SQL query.">Debug</button>
+                                <button type="button" class="quick-ai-btn" data-ai-prompt="Rewrite this SQL query more cleanly.">Rewrite</button>
+                                <button type="button" class="quick-ai-btn" data-ai-prompt="Give me an executive-facing interpretation of this query and result.">Executive Summary</button>
+                                <button type="button" id="clear-ai-btn">Clear</button>
+                            </div>
+                            <div id="ai-messages" class="ai-inline-messages" aria-live="polite"></div>
+                        </div>
+                    </section>
                 </section>
  
             </section>
- 
-            
-            <aside class="levels-panel ai-companion-panel" id="ai-companion-panel">
-                <div class="levels-panel-header">
-                    <div class="levels-panel-title-row">
-                        <div>
-                            <h3>AI Companion</h3>
-                            <p>Hints, rewrites, schema answers, scoring, and guided SQL help.</p>
-                        </div>
-                    </div>
-                </div>
- 
-                <div class="concept-card ai-status-card">
-                    <h4>Connection</h4>
-                    <p id="ai-connection-status">Ready. Calls will be sent to <code>/api/ai-companion</code> with local fallback if unavailable.</p>
-                </div>
- 
-                <div class="concept-card">
-                    <h4>Ask the Companion</h4>
-                    <label for="ai-companion-input" class="query-label">Prompt</label>
-                    <textarea id="ai-companion-input" rows="8" cols="40" placeholder="Ask for a hint, schema help, query rewrite, error explanation, or scenario scoring."></textarea>
-                    <div class="ai-actions-grid">
-                        <button type="button" id="ai-general-btn">Ask</button>
-                        <button type="button" id="ai-hint-btn">Give Hint</button>
-                        <button type="button" id="ai-explain-btn">Explain Error</button>
-                        <button type="button" id="ai-rewrite-btn">Rewrite Query</button>
-                        <button type="button" id="ai-schema-btn">Schema Help</button>
-                        <button type="button" id="ai-score-btn">Score Scenario</button>
-                    </div>
-                </div>
- 
-                <div class="concept-card">
-                    <h4>Response</h4>
-                    <div id="ai-companion-output" class="ai-output">Nothing yet.</div>
-                </div>
-            </aside>
- 
+
             <aside class="levels-panel" id="levels-panel">
                 <div class="levels-panel-header">
                     <div class="levels-panel-title-row">
@@ -417,3 +405,7 @@ window.addEventListener('unhandledrejection', function (event) {
 <script src="/static/app.js?v=optionA"></script>
 </body>
 </html>
+
+
+
+
