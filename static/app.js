@@ -1,5 +1,5 @@
 const STORAGE_KEY = "careops_curriculum_master_v2";
-
+ 
 let appState = {
   currentTrackId: "track_foundations",
   currentCategoryId: null,
@@ -10,14 +10,14 @@ let appState = {
   schemaPanelWidth: 320,
   lessonStats: {}
 };
-
+ 
 let SQL = null;
 let sqlDb = null;
 let sqlEngineReady = false;
 let attempts = 0;
 let lastRunQuery = "";
 let activeDifficultyFilter = null;
-
+ 
 const LEARNING_LEVELS = [
   { label: "Foundations", key: "foundations", color: "#22c55e", trackId: "track_foundations" },
   { label: "Core", key: "core", color: "#2563eb", trackId: "track_core" },
@@ -25,7 +25,7 @@ const LEARNING_LEVELS = [
   { label: "Advanced", key: "advanced", color: "#ef4444", trackId: "track_advanced" },
   { label: "Expert", key: "expert", color: "#7c3aed", trackId: "track_expert" }
 ];
-
+ 
 const schema = {
   tables: [
     { name: "patients", description: "Patient demographic, insurance, and risk information.", keyColumns: ["patient_id"], notableColumns: ["patient_id","first_name","last_name","age","gender","insurance_type","risk_score","city"], sampleRows: [] },
@@ -55,7 +55,7 @@ const schema = {
     "observations.encounter_id = encounters.encounter_id"
   ]
 };
-
+ 
 const curriculum = [
   {
     "id": "track_foundations",
@@ -221,7 +221,7 @@ const curriculum = [
             "id": "l_006",
             "title": "Introduction to SQL Syntax",
             "objective": "Use a basic SELECT statement to inspect a table and return the exact columns requested.",
-
+ 
             "challengeCriteria": "From the patients table, return exactly these four columns: patient_id, first_name, last_name, and insurance_type. Limit the result to the first 5 rows so you can inspect the table structure without returning the full dataset.",
             "sql_focus": [
               "SELECT",
@@ -235,11 +235,11 @@ const curriculum = [
             "starterQuery": "SELECT patient_id, first_name, last_name, insurance_type\nFROM patients\nLIMIT 5;",
             "solutionQuery": "SELECT patient_id, first_name, last_name, insurance_type\nFROM patients\nLIMIT 5;",
             "hint": "Use SELECT to list four columns from patients, then use LIMIT 5 to inspect the first few rows.",
-
+ 
             "smartHint": "Use patients as the only table. Select patient_id, first_name, last_name, and insurance_type in that order, then add LIMIT 5.",
-
+ 
             "thirdHint": "You do not need a WHERE clause or a JOIN. The expected pattern is SELECT column1, column2, column3, column4 FROM patients LIMIT 5;",
-
+ 
             "explanation": "This answer is correct because the lesson asks you to inspect one table, not combine tables. It returns the exact four requested columns from patients and limits the result to 5 rows for quick inspection.",
             "executiveTakeaway": {
               "show": false
@@ -284,7 +284,7 @@ const curriculum = [
             "id": "l_008",
             "title": "Selecting All Columns with SELECT *",
             "objective": "Retrieve complete datasets from a table.",
-
+ 
             "challengeCriteria": "Write a SQL query that pulls all columns and all patient records from the patients table. Use SELECT * and only the patients table for this lesson.",
             "sql_focus": [
               "SELECT",
@@ -301,7 +301,7 @@ const curriculum = [
             hint: "Start with a basic SELECT query against the patients table. This lesson is asking for every row and every column.",
 smartHint: "You only need one table for this lesson, and you should use the wildcard symbol to return every column.",
 thirdHint: "The correct pattern is SELECT * FROM patients; with no WHERE clause, no JOIN, and no LIMIT.",
-
+ 
             "explanation": "This answer is correct because SELECT * returns the full dataset from the table. In this lesson, the goal is to understand what the complete patients table looks like before narrowing queries.",
             "executiveTakeaway": {
               "show": true,
@@ -316,7 +316,7 @@ thirdHint: "The correct pattern is SELECT * FROM patients; with no WHERE clause,
             "id": "l_009",
             "title": "Selecting Specific Columns",
             "objective": "Extract only relevant fields for analysis.",
-
+ 
             "challengeCriteria": "Return only these three columns from the patients table: patient_id, first_name, and last_name. Do not return any other columns.",
             "sql_focus": [
               "SELECT",
@@ -331,11 +331,11 @@ thirdHint: "The correct pattern is SELECT * FROM patients; with no WHERE clause,
             "starterQuery": "SELECT patient_id, first_name, last_name FROM patients;",
             "solutionQuery": "SELECT patient_id, first_name, last_name FROM patients;",
             "hint": "Select three columns from patients.",
-
+ 
             "smartHint": "List the three requested columns after SELECT and use patients in the FROM clause.",
-
+ 
             "thirdHint": "The structure should be SELECT patient_id, first_name, last_name FROM patients;",
-
+ 
             "explanation": "This answer is correct because it pulls only the three requested fields from patients. It teaches how selecting specific columns reduces noise and keeps the output focused on the business question.",
             "executiveTakeaway": {
               "show": true,
@@ -350,7 +350,7 @@ thirdHint: "The correct pattern is SELECT * FROM patients; with no WHERE clause,
             "id": "l_010",
             "title": "Using Column Aliases",
             "objective": "Improve readability of query results.",
-
+ 
             "challengeCriteria": "Return patient_id and first_name from the patients table, but rename patient_id to id and first_name to fname using column aliases.",
             "sql_focus": [
               "SELECT",
@@ -365,11 +365,11 @@ thirdHint: "The correct pattern is SELECT * FROM patients; with no WHERE clause,
             "starterQuery": "SELECT patient_id AS id, first_name AS fname FROM patients;",
             "solutionQuery": "SELECT patient_id AS id, first_name AS fname FROM patients;",
             "hint": "Use AS to rename selected columns.",
-
+ 
             "smartHint": "Use AS to rename each selected field after the original column name.",
-
+ 
             "thirdHint": "The expected pattern is SELECT patient_id AS id, first_name AS fname FROM patients;",
-
+ 
             "explanation": "This answer is correct because it selects the requested columns and uses aliases to make the output labels easier to read. Aliases are useful when preparing a clean report for analysts or leaders.",
             "executiveTakeaway": {
               "show": true,
@@ -384,7 +384,7 @@ thirdHint: "The correct pattern is SELECT * FROM patients; with no WHERE clause,
             "id": "l_011",
             "title": "Removing Duplicates with DISTINCT",
             "objective": "Identify unique values in healthcare datasets.",
-
+ 
             "challengeCriteria": "Return each unique insurance_type value from the patients table one time only. This lesson is about removing duplicates from a single column.",
             "sql_focus": [
               "SELECT",
@@ -399,11 +399,11 @@ thirdHint: "The correct pattern is SELECT * FROM patients; with no WHERE clause,
             "starterQuery": "SELECT DISTINCT insurance_type FROM patients;",
             "solutionQuery": "SELECT DISTINCT insurance_type FROM patients;",
             "hint": "Use DISTINCT on insurance_type.",
-
+ 
             "smartHint": "Use DISTINCT directly after SELECT and before insurance_type.",
-
+ 
             "thirdHint": "The expected query is SELECT DISTINCT insurance_type FROM patients;",
-
+ 
             "explanation": "This answer is correct because DISTINCT removes duplicate insurance_type values and returns only the unique payer categories present in patients.",
             "executiveTakeaway": {
               "show": true,
@@ -418,7 +418,7 @@ thirdHint: "The correct pattern is SELECT * FROM patients; with no WHERE clause,
             "id": "l_012",
             "title": "Limiting Results with LIMIT/TOP",
             "objective": "Restrict the number of rows returned.",
-
+ 
             "challengeCriteria": "Return all columns from the encounters table, but limit the result to 10 rows so you can preview a small sample instead of the full table.",
             "sql_focus": [
               "SELECT",
@@ -433,11 +433,11 @@ thirdHint: "The correct pattern is SELECT * FROM patients; with no WHERE clause,
             "starterQuery": "SELECT * FROM encounters LIMIT 10;",
             "solutionQuery": "SELECT * FROM encounters LIMIT 10;",
             "hint": "Use LIMIT to restrict rows.",
-
+ 
             "smartHint": "Use encounters as the base table and add LIMIT 10 at the end.",
-
+ 
             "thirdHint": "The pattern should be SELECT * FROM encounters LIMIT 10;",
-
+ 
             "explanation": "This answer is correct because it previews the encounters table without returning the full dataset. LIMIT is useful when validating table contents before building larger queries.",
             "executiveTakeaway": {
               "show": true,
@@ -452,7 +452,7 @@ thirdHint: "The correct pattern is SELECT * FROM patients; with no WHERE clause,
             "id": "l_013",
             "title": "Sorting Results with ORDER BY",
             "objective": "Organize data for better interpretation.",
-
+ 
             "challengeCriteria": "Return all columns from the encounters table and sort the results by admit_date in descending order so the most recent admissions appear first.",
             "sql_focus": [
               "SELECT",
@@ -467,11 +467,11 @@ thirdHint: "The correct pattern is SELECT * FROM patients; with no WHERE clause,
             "starterQuery": "SELECT * FROM encounters ORDER BY admit_date DESC;",
             "solutionQuery": "SELECT * FROM encounters ORDER BY admit_date DESC;",
             "hint": "Sort by admit_date descending.",
-
+ 
             "smartHint": "Use ORDER BY admit_date DESC after selecting from encounters.",
-
+ 
             "thirdHint": "The expected structure is SELECT * FROM encounters ORDER BY admit_date DESC;",
-
+ 
             "explanation": "This answer is correct because it sorts encounters from most recent to oldest admission date. ORDER BY helps analysts review data in a meaningful sequence.",
             "executiveTakeaway": {
               "show": true,
@@ -486,7 +486,7 @@ thirdHint: "The correct pattern is SELECT * FROM patients; with no WHERE clause,
             "id": "l_014",
             "title": "Combining SELECT Features",
             "objective": "Construct queries using multiple clauses.",
-
+ 
             "challengeCriteria": "Return the first 5 unique department names from the encounters table in alphabetical order. Use DISTINCT to avoid duplicates, ORDER BY to sort, and LIMIT to cap the output.",
             "sql_focus": [
               "SELECT",
@@ -501,11 +501,11 @@ thirdHint: "The correct pattern is SELECT * FROM patients; with no WHERE clause,
             "starterQuery": "SELECT DISTINCT department FROM encounters ORDER BY department LIMIT 5;",
             "solutionQuery": "SELECT DISTINCT department FROM encounters ORDER BY department LIMIT 5;",
             "hint": "Combine DISTINCT, ORDER BY, and LIMIT.",
-
+ 
             "smartHint": "Select DISTINCT department, sort by department, and limit to 5 rows.",
-
+ 
             "thirdHint": "The expected pattern is SELECT DISTINCT department FROM encounters ORDER BY department LIMIT 5;",
-
+ 
             "explanation": "This answer is correct because it combines three core SQL features: DISTINCT removes duplicates, ORDER BY sorts alphabetically, and LIMIT restricts the output to 5 rows.",
             "executiveTakeaway": {
               "show": true,
@@ -527,7 +527,7 @@ thirdHint: "The correct pattern is SELECT * FROM patients; with no WHERE clause,
             "id": "l_015",
             "title": "Filtering with WHERE",
             "objective": "Retrieve records that meet specific criteria.",
-
+ 
             "challengeCriteria": "Use the encounters table to return only rows where status equals 'Discharged'. Do not join to any other table for this lesson.",
             "sql_focus": [
               "SELECT",
@@ -542,11 +542,11 @@ thirdHint: "The correct pattern is SELECT * FROM patients; with no WHERE clause,
             "starterQuery": "SELECT * FROM encounters WHERE status = 'Discharged';",
             "solutionQuery": "SELECT * FROM encounters WHERE status = 'Discharged';",
             "hint": "Filter encounters by status.",
-
+ 
             "smartHint": "Start with encounters, then use WHERE status = 'Discharged'.",
-
+ 
             "thirdHint": "The expected query is SELECT * FROM encounters WHERE status = 'Discharged';",
-
+ 
             "explanation": "This answer is correct because it filters encounters down to only discharged visits. WHERE is used when you need records that meet a specific condition.",
             "executiveTakeaway": {
               "show": true,
@@ -561,7 +561,7 @@ thirdHint: "The correct pattern is SELECT * FROM patients; with no WHERE clause,
             "id": "l_016",
             "title": "Comparison Operators",
             "objective": "Apply conditional logic to filter healthcare data.",
-
+ 
             "challengeCriteria": "Use the charges table to return only rows where amount is greater than 1000. This lesson is about comparison operators such as >, <, >=, and <=.",
             "sql_focus": [
               "SELECT",
@@ -576,11 +576,11 @@ thirdHint: "The correct pattern is SELECT * FROM patients; with no WHERE clause,
             "starterQuery": "SELECT * FROM charges WHERE amount > 1000;",
             "solutionQuery": "SELECT * FROM charges WHERE amount > 1000;",
             "hint": "Use a comparison operator on amount.",
-
+ 
             "smartHint": "Filter charges using WHERE amount > 1000.",
-
+ 
             "thirdHint": "The expected pattern is SELECT * FROM charges WHERE amount > 1000;",
-
+ 
             "explanation": "This answer is correct because it uses a comparison operator to restrict the result to higher-dollar charges. Comparison logic is foundational for identifying thresholds and exceptions.",
             "executiveTakeaway": {
               "show": true,
@@ -595,7 +595,7 @@ thirdHint: "The correct pattern is SELECT * FROM patients; with no WHERE clause,
             "id": "l_017",
             "title": "Logical Operators",
             "objective": "Combine multiple filtering conditions.",
-
+ 
             "challengeCriteria": "Use the patients table to return only rows where age is 65 or older and insurance_type is Medicare. You must combine both conditions in the same WHERE clause.",
             "sql_focus": [
               "SELECT",
@@ -610,11 +610,11 @@ thirdHint: "The correct pattern is SELECT * FROM patients; with no WHERE clause,
             "starterQuery": "SELECT * FROM patients WHERE age >= 65 AND insurance_type = 'Medicare';",
             "solutionQuery": "SELECT * FROM patients WHERE age >= 65 AND insurance_type = 'Medicare';",
             "hint": "Use AND or OR to combine filters.",
-
+ 
             "smartHint": "Use AND to connect age >= 65 with insurance_type = 'Medicare'.",
-
+ 
             "thirdHint": "The expected query is SELECT * FROM patients WHERE age >= 65 AND insurance_type = 'Medicare';",
-
+ 
             "explanation": "This answer is correct because it combines two filters in one query. Logical operators let you narrow the result to the exact business population you want.",
             "executiveTakeaway": {
               "show": true,
@@ -629,7 +629,7 @@ thirdHint: "The correct pattern is SELECT * FROM patients; with no WHERE clause,
             "id": "l_018",
             "title": "Using BETWEEN for Range Filtering",
             "objective": "Analyze metrics within defined ranges.",
-
+ 
             "challengeCriteria": "Use the encounters table to return only rows where length_of_stay is between 2 and 5 days, inclusive.",
             "sql_focus": [
               "SELECT",
@@ -644,11 +644,11 @@ thirdHint: "The correct pattern is SELECT * FROM patients; with no WHERE clause,
             "starterQuery": "SELECT * FROM encounters WHERE length_of_stay BETWEEN 2 AND 5;",
             "solutionQuery": "SELECT * FROM encounters WHERE length_of_stay BETWEEN 2 AND 5;",
             "hint": "Use BETWEEN on length_of_stay.",
-
+ 
             "smartHint": "Use BETWEEN 2 AND 5 on length_of_stay.",
-
+ 
             "thirdHint": "The expected query is SELECT * FROM encounters WHERE length_of_stay BETWEEN 2 AND 5;",
-
+ 
             "explanation": "This answer is correct because BETWEEN is designed for inclusive range filtering. It is often used when identifying patients or encounters within a defined threshold.",
             "executiveTakeaway": {
               "show": true,
@@ -663,7 +663,7 @@ thirdHint: "The correct pattern is SELECT * FROM patients; with no WHERE clause,
             "id": "l_019",
             "title": "Using IN for Multiple Values",
             "objective": "Filter datasets by multiple categories.",
-
+ 
             "challengeCriteria": "Use the claims table to return only rows where payer is either Medicare or Medicaid. This lesson is about filtering for more than one allowed value.",
             "sql_focus": [
               "SELECT",
@@ -678,11 +678,11 @@ thirdHint: "The correct pattern is SELECT * FROM patients; with no WHERE clause,
             "starterQuery": "SELECT * FROM claims WHERE payer IN ('Medicare','Medicaid');",
             "solutionQuery": "SELECT * FROM claims WHERE payer IN ('Medicare','Medicaid');",
             "hint": "Use IN with payer values.",
-
+ 
             "smartHint": "Use WHERE payer IN ('Medicare','Medicaid').",
-
+ 
             "thirdHint": "The expected query is SELECT * FROM claims WHERE payer IN ('Medicare','Medicaid');",
-
+ 
             "explanation": "This answer is correct because IN is the cleanest way to filter a column for multiple accepted values without writing repeated OR conditions.",
             "executiveTakeaway": {
               "show": true,
@@ -697,7 +697,7 @@ thirdHint: "The correct pattern is SELECT * FROM patients; with no WHERE clause,
             "id": "l_020",
             "title": "Handling Missing Data with IS NULL",
             "objective": "Identify incomplete healthcare records.",
-
+ 
             "challengeCriteria": "Use the patients table to return only rows where city is missing. This lesson is about identifying null values correctly.",
             "sql_focus": [
               "SELECT",
@@ -712,11 +712,11 @@ thirdHint: "The correct pattern is SELECT * FROM patients; with no WHERE clause,
             "starterQuery": "SELECT * FROM patients WHERE city IS NULL;",
             "solutionQuery": "SELECT * FROM patients WHERE city IS NULL;",
             "hint": "Use IS NULL on a nullable field.",
-
+ 
             "smartHint": "Use IS NULL rather than = NULL.",
-
+ 
             "thirdHint": "The expected query is SELECT * FROM patients WHERE city IS NULL;",
-
+ 
             "explanation": "This answer is correct because SQL uses IS NULL to detect missing values. This is important when auditing data quality or incomplete records.",
             "executiveTakeaway": {
               "show": true,
@@ -731,7 +731,7 @@ thirdHint: "The correct pattern is SELECT * FROM patients; with no WHERE clause,
             "id": "l_021",
             "title": "Pattern Matching with LIKE",
             "objective": "Search for text patterns in patient or provider data.",
-
+ 
             "challengeCriteria": "Use the providers table to return only rows where provider_name starts with the letter A. This lesson is about pattern matching with LIKE and wildcards.",
             "sql_focus": [
               "SELECT",
@@ -746,11 +746,11 @@ thirdHint: "The correct pattern is SELECT * FROM patients; with no WHERE clause,
             "starterQuery": "SELECT * FROM providers WHERE provider_name LIKE 'A%';",
             "solutionQuery": "SELECT * FROM providers WHERE provider_name LIKE 'A%';",
             "hint": "Use LIKE with a wildcard.",
-
+ 
             "smartHint": "Use LIKE with the pattern 'A%'.",
-
+ 
             "thirdHint": "The expected query is SELECT * FROM providers WHERE provider_name LIKE 'A%';",
-
+ 
             "explanation": "This answer is correct because LIKE supports text pattern searches. The A% pattern returns provider names that begin with A.",
             "executiveTakeaway": {
               "show": true,
@@ -802,7 +802,7 @@ thirdHint: "The correct pattern is SELECT * FROM patients; with no WHERE clause,
             "id": "l_023",
             "title": "Working with Numeric Calculations",
             "objective": "Perform arithmetic operations within queries.",
-
+ 
             "challengeCriteria": "From the charges table, return charge_id, amount, and a new calculated column called adjusted_amount that multiplies amount by 1.05.",
             "sql_focus": [
               "SELECT",
@@ -817,11 +817,11 @@ thirdHint: "The correct pattern is SELECT * FROM patients; with no WHERE clause,
             "starterQuery": "SELECT charge_id, amount, amount * 1.05 AS adjusted_amount FROM charges;",
             "solutionQuery": "SELECT charge_id, amount, amount * 1.05 AS adjusted_amount FROM charges;",
             "hint": "Create a derived numeric column.",
-
+ 
             "smartHint": "Select charge_id and amount, then create amount * 1.05 AS adjusted_amount.",
-
+ 
             "thirdHint": "The expected query is SELECT charge_id, amount, amount * 1.05 AS adjusted_amount FROM charges;",
-
+ 
             "explanation": "This answer is correct because it demonstrates arithmetic inside a SELECT statement and creates a derived numeric column with an alias.",
             "executiveTakeaway": {
               "show": true,
@@ -836,7 +836,7 @@ thirdHint: "The correct pattern is SELECT * FROM patients; with no WHERE clause,
             "id": "l_024",
             "title": "String Manipulation Functions",
             "objective": "Format and clean textual healthcare data.",
-
+ 
             "challengeCriteria": "From the patients table, return the last_name column in uppercase and rename the result last_name_upper.",
             "sql_focus": [
               "SELECT",
@@ -851,11 +851,11 @@ thirdHint: "The correct pattern is SELECT * FROM patients; with no WHERE clause,
             "starterQuery": "SELECT UPPER(last_name) AS last_name_upper FROM patients;",
             "solutionQuery": "SELECT UPPER(last_name) AS last_name_upper FROM patients;",
             "hint": "Use a string function like UPPER.",
-
+ 
             "smartHint": "Use the UPPER() function around last_name and alias the result.",
-
+ 
             "thirdHint": "The expected query is SELECT UPPER(last_name) AS last_name_upper FROM patients;",
-
+ 
             "explanation": "This answer is correct because it uses a string function to standardize text formatting, which is helpful when cleaning or comparing names.",
             "executiveTakeaway": {
               "show": true,
@@ -870,7 +870,7 @@ thirdHint: "The correct pattern is SELECT * FROM patients; with no WHERE clause,
             "id": "l_025",
             "title": "Date and Time Functions",
             "objective": "Analyze time-based healthcare events.",
-
+ 
             "challengeCriteria": "From the encounters table, return encounter_id and a new column called los_days that calculates the difference between discharge_date and admit_date in days using SQLite syntax.",
             "sql_focus": [
               "SELECT",
@@ -885,11 +885,11 @@ thirdHint: "The correct pattern is SELECT * FROM patients; with no WHERE clause,
             "starterQuery": "SELECT encounter_id, julianday(discharge_date) - julianday(admit_date) AS los_days FROM encounters;",
             "solutionQuery": "SELECT encounter_id, julianday(discharge_date) - julianday(admit_date) AS los_days FROM encounters;",
             "hint": "Calculate date difference in SQLite syntax.",
-
+ 
             "smartHint": "Use julianday(discharge_date) - julianday(admit_date) and alias it los_days.",
-
+ 
             "thirdHint": "The expected query is SELECT encounter_id, julianday(discharge_date) - julianday(admit_date) AS los_days FROM encounters;",
-
+ 
             "explanation": "This answer is correct because it calculates a date difference in SQLite and labels the result clearly. Date functions are essential for operational measures like LOS.",
             "executiveTakeaway": {
               "show": true,
@@ -904,7 +904,7 @@ thirdHint: "The correct pattern is SELECT * FROM patients; with no WHERE clause,
             "id": "l_026",
             "title": "Using CAST and CONVERT",
             "objective": "Transform data types for accurate analysis.",
-
+ 
             "challengeCriteria": "From the patients table, return patient_id and a new column called age_text that casts age to text.",
             "sql_focus": [
               "SELECT",
@@ -919,11 +919,11 @@ thirdHint: "The correct pattern is SELECT * FROM patients; with no WHERE clause,
             "starterQuery": "SELECT patient_id, CAST(age AS TEXT) AS age_text FROM patients;",
             "solutionQuery": "SELECT patient_id, CAST(age AS TEXT) AS age_text FROM patients;",
             "hint": "Use CAST on age.",
-
+ 
             "smartHint": "Use CAST(age AS TEXT) AS age_text.",
-
+ 
             "thirdHint": "The expected query is SELECT patient_id, CAST(age AS TEXT) AS age_text FROM patients;",
-
+ 
             "explanation": "This answer is correct because it transforms age from its numeric type into text using CAST, which is useful when formatting or combining fields.",
             "executiveTakeaway": {
               "show": true,
@@ -938,7 +938,7 @@ thirdHint: "The correct pattern is SELECT * FROM patients; with no WHERE clause,
             "id": "l_027",
             "title": "Conditional Logic with CASE Statements",
             "objective": "Create derived categorical fields.",
-
+ 
             "challengeCriteria": "From the patients table, return patient_id and a derived column called age_group that labels patients age 65 or older as Senior and everyone else as Adult.",
             "sql_focus": [
               "SELECT",
@@ -953,11 +953,11 @@ thirdHint: "The correct pattern is SELECT * FROM patients; with no WHERE clause,
             "starterQuery": "SELECT patient_id, CASE WHEN age >= 65 THEN 'Senior' ELSE 'Adult' END AS age_group FROM patients;",
             "solutionQuery": "SELECT patient_id, CASE WHEN age >= 65 THEN 'Senior' ELSE 'Adult' END AS age_group FROM patients;",
             "hint": "Use CASE to create a grouped label.",
-
+ 
             "smartHint": "Use CASE WHEN age >= 65 THEN 'Senior' ELSE 'Adult' END AS age_group.",
-
+ 
             "thirdHint": "The expected query is SELECT patient_id, CASE WHEN age >= 65 THEN 'Senior' ELSE 'Adult' END AS age_group FROM patients;",
-
+ 
             "explanation": "This answer is correct because CASE lets you create business-friendly categories directly in SQL from existing numeric fields.",
             "executiveTakeaway": {
               "show": true,
@@ -972,7 +972,7 @@ thirdHint: "The correct pattern is SELECT * FROM patients; with no WHERE clause,
             "id": "l_028",
             "title": "Creating Derived Columns",
             "objective": "Build new analytical fields from existing data.",
-
+ 
             "challengeCriteria": "From the encounters table, return encounter_id and a new column called los_hours that converts length_of_stay from days to hours by multiplying by 24.",
             "sql_focus": [
               "SELECT",
@@ -987,11 +987,11 @@ thirdHint: "The correct pattern is SELECT * FROM patients; with no WHERE clause,
             "starterQuery": "SELECT encounter_id, length_of_stay * 24 AS los_hours FROM encounters;",
             "solutionQuery": "SELECT encounter_id, length_of_stay * 24 AS los_hours FROM encounters;",
             "hint": "Create a new derived metric.",
-
+ 
             "smartHint": "Multiply length_of_stay by 24 and alias the result los_hours.",
-
+ 
             "thirdHint": "The expected query is SELECT encounter_id, length_of_stay * 24 AS los_hours FROM encounters;",
-
+ 
             "explanation": "This answer is correct because it creates a derived operational metric from an existing field. Derived columns help translate raw data into more useful business measures.",
             "executiveTakeaway": {
               "show": true,
@@ -5202,11 +5202,11 @@ thirdHint: "The correct pattern is SELECT * FROM patients; with no WHERE clause,
     ]
   }
 ];
-
+ 
 function saveProgress() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
 }
-
+ 
 function loadProgress() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -5225,7 +5225,7 @@ function loadProgress() {
     console.error("Could not load progress:", error);
   }
 }
-
+ 
 function applySchemaPanelWidth() {
   const panel = document.getElementById("schema-panel");
   const shell = document.querySelector(".app-shell");
@@ -5234,7 +5234,7 @@ function applySchemaPanelWidth() {
   panel.style.width = `${width}px`;
   shell.style.gridTemplateColumns = `${width}px 14px 1fr`;
 }
-
+ 
 function initSchemaResizer() {
   const resizer = document.getElementById("schema-resizer");
   const shell = document.querySelector(".app-shell");
@@ -5262,7 +5262,7 @@ function initSchemaResizer() {
     saveProgress();
   });
 }
-
+ 
 function conceptLesson(spec) {
   return {
     id: spec.id,
@@ -5280,7 +5280,7 @@ function conceptLesson(spec) {
     executiveTakeaway: spec.executiveTakeaway || null
   };
 }
-
+ 
 function challengeLesson(spec) {
   return {
     id: spec.id,
@@ -5296,7 +5296,7 @@ function challengeLesson(spec) {
     executiveTakeaway: spec.executiveTakeaway || null
   };
 }
-
+ 
 function scenarioLesson(spec) {
   return {
     id: spec.id,
@@ -5314,7 +5314,7 @@ function scenarioLesson(spec) {
     executiveTakeaway: spec.executiveTakeaway || null
   };
 }
-
+ 
 function normalizeCurriculum() {
   curriculum.forEach(track => {
     track.categories.forEach(category => {
@@ -5326,39 +5326,39 @@ function normalizeCurriculum() {
     });
   });
 }
-
+ 
 function getTrack() {
   return curriculum.find(track => track.id === appState.currentTrackId) || curriculum[0];
 }
-
+ 
 function getAllCategories() {
   return getTrack().categories || [];
 }
-
+ 
 function getCurrentCategory() {
   return getAllCategories().find(category => category.id === appState.currentCategoryId) || getAllCategories()[0] || null;
 }
-
+ 
 function getAllLessons() {
   return getAllCategories().flatMap(category => category.lessons);
 }
-
+ 
 function getCurrentLesson() {
   return getAllLessons().find(lesson => lesson.id === appState.currentLessonId) || null;
 }
-
+ 
 function totalLessonCount() {
   return getAllLessons().length;
 }
-
+ 
 function completedLessonCount() {
   return appState.completedLessonIds.length;
 }
-
+ 
 function isLessonCompleted(lessonId) {
   return appState.completedLessonIds.includes(lessonId);
 }
-
+ 
 function markLessonCompleted(lessonId, firstTry = false) {
   if (!isLessonCompleted(lessonId)) {
     appState.completedLessonIds.push(lessonId);
@@ -5368,7 +5368,7 @@ function markLessonCompleted(lessonId, firstTry = false) {
   }
   saveProgress();
 }
-
+ 
 function getLessonStats(lessonId) {
   if (!appState.lessonStats[lessonId]) {
     appState.lessonStats[lessonId] = {
@@ -5383,7 +5383,7 @@ function getLessonStats(lessonId) {
   }
   return appState.lessonStats[lessonId];
 }
-
+ 
 function tierRank(tier) {
   return {
     "Not Started": 0,
@@ -5393,7 +5393,7 @@ function tierRank(tier) {
     "Perfect": 4
   }[tier] || 0;
 }
-
+ 
 function updateLessonStatsOnGrade(lessonId, gradeResult, passed) {
   const stats = getLessonStats(lessonId);
   stats.attempts += 1;
@@ -5404,26 +5404,26 @@ function updateLessonStatsOnGrade(lessonId, gradeResult, passed) {
   if (tierRank(gradeResult.tier) > tierRank(stats.bestTier)) stats.bestTier = gradeResult.tier;
   if (gradeResult.score >= 90 || gradeResult.tier === "Perfect") stats.mastered = true;
 }
-
+ 
 function masteryCount() {
   return Object.values(appState.lessonStats).filter(stat => stat && stat.mastered).length;
 }
-
+ 
 function categoryComplete(category) {
   return category.lessons.every(lesson => isLessonCompleted(lesson.id));
 }
-
+ 
 function categoryBadgeCount() {
   return getAllCategories().filter(categoryComplete).length;
 }
-
+ 
 function levelBadgeCount() {
   return LEARNING_LEVELS.filter(level => {
     const track = curriculum.find(item => item.id === level.trackId);
     return !!track && track.categories.every(categoryComplete);
   }).length;
 }
-
+ 
 function achievements() {
   const completed = completedLessonCount();
   const firstTry = appState.firstTryLessonIds.length;
@@ -5455,9 +5455,9 @@ function achievements() {
     { label: "Executive Whisperer", earned: catComplete("executive_communication_and_insights"), emoji: "🗣️", description: "Unlock by completing every lesson in Executive Communication and Insights." }
   ];
 }
-
+ 
 let achievementTooltipEl = null;
-
+ 
 function ensureAchievementTooltipStyles() {
   if (document.getElementById("achievement-tooltip-style")) return;
   const style = document.createElement("style");
@@ -5491,7 +5491,7 @@ function ensureAchievementTooltipStyles() {
   `;
   document.head.appendChild(style);
 }
-
+ 
 function ensureAchievementTooltip() {
   ensureAchievementTooltipStyles();
   if (achievementTooltipEl && document.body.contains(achievementTooltipEl)) return achievementTooltipEl;
@@ -5501,25 +5501,25 @@ function ensureAchievementTooltip() {
   document.body.appendChild(achievementTooltipEl);
   return achievementTooltipEl;
 }
-
+ 
 function positionAchievementTooltip(event) {
   const tooltip = ensureAchievementTooltip();
   const offset = 14;
   const rect = tooltip.getBoundingClientRect();
   let left = event.clientX + offset;
   let top = event.clientY + offset;
-
+ 
   if (left + rect.width > window.innerWidth - 12) {
     left = Math.max(12, window.innerWidth - rect.width - 12);
   }
   if (top + rect.height > window.innerHeight - 12) {
     top = Math.max(12, event.clientY - rect.height - offset);
   }
-
+ 
   tooltip.style.left = left + "px";
   tooltip.style.top = top + "px";
 }
-
+ 
 function showAchievementTooltip(event, text) {
   if (!text) return;
   const tooltip = ensureAchievementTooltip();
@@ -5527,12 +5527,12 @@ function showAchievementTooltip(event, text) {
   tooltip.classList.add("visible");
   positionAchievementTooltip(event);
 }
-
+ 
 function hideAchievementTooltip() {
   if (!achievementTooltipEl) return;
   achievementTooltipEl.classList.remove("visible");
 }
-
+ 
 function attachAchievementTooltip(node, text) {
   if (!node || !text) return;
   node.dataset.unlockDescription = text;
@@ -5542,14 +5542,14 @@ function attachAchievementTooltip(node, text) {
   node.addEventListener("blur", hideAchievementTooltip);
   node.addEventListener("focus", event => showAchievementTooltip(event, text));
 }
-
+ 
 function renderAchievements() {
   const container = document.getElementById("badges-container");
   if (!container) return;
-
+ 
   ensureAchievementTooltipStyles();
   container.innerHTML = "";
-
+ 
   achievements().forEach((achievement) => {
     const chip = document.createElement("div");
     chip.className = achievement.earned ? "badge-chip" : "badge-chip locked";
@@ -5557,13 +5557,13 @@ function renderAchievements() {
     chip.setAttribute("tabindex", "0");
     chip.setAttribute("aria-label", `${achievement.label}: ${achievement.description || ""}`);
     chip.dataset.unlockDescription = achievement.description || "";
-
+ 
     attachAchievementTooltip(chip, achievement.description || "");
-
+ 
     container.appendChild(chip);
   });
 }
-
+ 
 function updateDashboard() {
   const total = totalLessonCount();
   const completed = completedLessonCount();
@@ -5587,19 +5587,19 @@ function updateDashboard() {
   if (trackTitle) trackTitle.innerText = track.title;
   if (trackDescription) trackDescription.innerText = "Curriculum, learning levels, completion, and mastery tracking.";
 }
-
+ 
 function renderSchema() {
   const tablesWrap = document.getElementById("schema-tables");
   const relationshipsWrap = document.getElementById("schema-relationships");
-
+ 
   const activeLesson = appState.currentView === "lesson" ? getCurrentLesson() : null;
   const relevantTables = new Set(
     (activeLesson?.relevantTables || []).map(name => String(name).toLowerCase())
   );
-
+ 
   if (tablesWrap) {
     tablesWrap.innerHTML = "";
-
+ 
     schema.tables.forEach(table => {
       const details = document.createElement("details");
       details.className = "schema-card";
@@ -5607,30 +5607,30 @@ function renderSchema() {
         appState.currentView === "lesson" &&
         relevantTables.size > 0 &&
         relevantTables.has(String(table.name).toLowerCase());
-
+ 
       const summary = document.createElement("summary");
       summary.textContent = table.name;
       details.appendChild(summary);
-
+ 
       const p = document.createElement("p");
       p.innerHTML = `<strong>Description:</strong> ${table.description}<br><strong>Columns:</strong> ${table.notableColumns.join(", ")}`;
       details.appendChild(p);
-
+ 
       const actions = document.createElement("div");
       actions.className = "schema-table-actions";
-
+ 
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "schema-table-view-btn";
       btn.textContent = "Open Table Viewer";
       btn.addEventListener("click", () => openTableModal(table.name));
-
+ 
       actions.appendChild(btn);
       details.appendChild(actions);
       tablesWrap.appendChild(details);
     });
   }
-
+ 
   if (relationshipsWrap) {
     relationshipsWrap.innerHTML = "";
     schema.relationships.forEach(item => {
@@ -5641,12 +5641,12 @@ function renderSchema() {
     });
   }
 }
-
-
+ 
+ 
 function levelForTrack(trackId) {
   return LEARNING_LEVELS.find(level => level.trackId === trackId);
 }
-
+ 
 function shouldShowExecutiveTakeaway(lesson) {
   const levelKey = levelForTrack(appState.currentTrackId)?.key;
   return Boolean(
@@ -5659,21 +5659,21 @@ function shouldShowExecutiveTakeaway(lesson) {
     )
   );
 }
-
-
+ 
+ 
 function getVisibleCategories() {
   return getAllCategories();
 }
-
+ 
 function renderTrackCategoryCards() {
   const container = document.getElementById("track-category-cards");
   if (!container) return;
-
+ 
   container.innerHTML = "";
   container.style.display = "grid";
   container.style.gridTemplateColumns = "repeat(3, minmax(220px, 1fr))";
   container.style.gap = "18px";
-
+ 
   const cards = LEARNING_LEVELS.map(level => {
     const track = curriculum.find(item => item.id === level.trackId);
     const totalCategories = track.categories.length;
@@ -5681,12 +5681,12 @@ function renderTrackCategoryCards() {
     const totalLessons = track.categories.flatMap(c => c.lessons).length;
     const doneLessons = track.categories.flatMap(c => c.lessons).filter(lesson => isLessonCompleted(lesson.id)).length;
     const percent = totalLessons ? Math.round((doneLessons / totalLessons) * 100) : 0;
-
+ 
     const card = document.createElement("button");
     card.type = "button";
     card.className = "track-badge-card level-card" + (appState.currentTrackId === track.id ? " active" : "");
     card.style.borderColor = level.color;
-
+ 
     card.innerHTML = `
       <div class="track-badge-icon-wrap">
         <div class="track-badge-ring" style="--badge-progress: ${percent}%; background: conic-gradient(${level.color} ${percent}%, #e2e8f0 0);">
@@ -5697,7 +5697,7 @@ function renderTrackCategoryCards() {
       <div class="track-badge-stats">${doneCategories} / ${totalCategories} curriculum complete<br>${doneLessons} / ${totalLessons} lessons completed</div>
       <div class="track-badge-helper">Click to view this learning level</div>
     `;
-
+ 
     card.addEventListener("click", () => {
       appState.currentTrackId = track.id;
       appState.currentCategoryId = track.categories[0]?.id || null;
@@ -5707,12 +5707,12 @@ function renderTrackCategoryCards() {
       saveProgress();
       renderAll();
     });
-
+ 
     return card;
   });
-
+ 
   cards.slice(0, 3).forEach(card => container.appendChild(card));
-
+ 
   if (cards.length > 3) {
     const bottomRow = document.createElement("div");
     bottomRow.style.gridColumn = "1 / -1";
@@ -5720,18 +5720,18 @@ function renderTrackCategoryCards() {
     bottomRow.style.justifyContent = "center";
     bottomRow.style.gap = "18px";
     bottomRow.style.flexWrap = "wrap";
-
+ 
     cards.slice(3).forEach(card => {
       card.style.width = "calc((100% - 36px) / 3)";
       card.style.maxWidth = "340px";
       card.style.minWidth = "220px";
       bottomRow.appendChild(card);
     });
-
+ 
     container.appendChild(bottomRow);
   }
 }
-
+ 
 function renderCurriculumNav() {
   const list = document.getElementById("category-list");
   if (!list) return;
@@ -5771,7 +5771,7 @@ function renderCurriculumNav() {
     list.appendChild(wrap);
   });
 }
-
+ 
 function renderOverview() {
   const track = getTrack();
   const cats = track.categories;
@@ -5815,7 +5815,7 @@ function renderOverview() {
     renderAll();
   };
 }
-
+ 
 function showLessonWorkspace() {
   appState.currentView = "lesson";
   const overview = document.getElementById("track-overview");
@@ -5823,7 +5823,7 @@ function showLessonWorkspace() {
   if (overview) overview.classList.add("hidden");
   if (workspace) workspace.classList.remove("hidden");
 }
-
+ 
 function showOverview() {
   appState.currentView = "overview";
   const overview = document.getElementById("track-overview");
@@ -5831,94 +5831,94 @@ function showOverview() {
   if (overview) overview.classList.remove("hidden");
   if (workspace) workspace.classList.add("hidden");
 }
-
-
+ 
+ 
 function buildChallengePrompt(lesson) {
   if (!lesson) return "Write a SQL query that satisfies the lesson objective.";
   const direct = (lesson.challengeCriteria || "").trim();
   if (direct) return direct;
-
+ 
   const query = String(lesson.solutionQuery || lesson.starterQuery || "").trim();
   const tables = (lesson.relevantTables || []).filter(Boolean);
   const tableList = tables.join(", ");
   const firstTable = tables[0] || "relevant table";
-
+ 
   if (/^SELECT\s+\*\s+FROM\s+([a-zA-Z_][\w]*)\s*;?$/i.test(query)) {
     const table = query.match(/^SELECT\s+\*\s+FROM\s+([a-zA-Z_][\w]*)\s*;?$/i)[1];
     return `Write a SQL query that returns all columns and all rows from the ${table} table.`;
   }
-
+ 
   if (/SELECT\s+DISTINCT\s+.+\s+FROM\s+([a-zA-Z_][\w]*)/i.test(query)) {
     return `Use the ${firstTable} table to return unique values only. Follow the lesson objective and remove duplicates with DISTINCT.`;
   }
-
+ 
   if (/\sWHERE\s/i.test(query) && /\sIN\s*\(/i.test(query)) {
     return `Use the ${firstTable} table to return only rows where the filter matches one of several allowed values. Follow the lesson objective and use an IN filter.`;
   }
-
+ 
   if (/\sWHERE\s/i.test(query) && /\sBETWEEN\s/i.test(query)) {
     return `Use the ${firstTable} table to return only rows that fall within the requested range. Follow the lesson objective and use BETWEEN for the filter.`;
   }
-
+ 
   if (/\sWHERE\s/i.test(query) && /\sLIKE\s/i.test(query)) {
     return `Use the ${firstTable} table to return only rows that match the requested text pattern. Follow the lesson objective and use LIKE with the appropriate wildcard.`;
   }
-
+ 
   if (/\sWHERE\s/i.test(query) && /\sIS\s+NULL/i.test(query)) {
     return `Use the ${firstTable} table to return only rows where the requested field is missing. Follow the lesson objective and use IS NULL correctly.`;
   }
-
+ 
   if (/\sWHERE\s/i.test(query)) {
     return `Use the ${firstTable} table to return only the rows that match the requested filter condition in the lesson objective.`;
   }
-
+ 
   if (/\sGROUP\s+BY\s/i.test(query) && /\sHAVING\s/i.test(query)) {
     return `Use the ${firstTable} table to summarize records at the requested grouped level, then filter the grouped results with HAVING.`;
   }
-
+ 
   if (/\sGROUP\s+BY\s/i.test(query)) {
     return `Use the ${firstTable} table to group the data at the requested level and return the summary requested in the lesson objective.`;
   }
-
+ 
   if (/\sORDER\s+BY\s/i.test(query) && /\sLIMIT\s/i.test(query)) {
     return `Use the ${firstTable} table to return the requested result, sort it in the correct order, and limit the number of rows returned.`;
   }
-
+ 
   if (/\sORDER\s+BY\s/i.test(query)) {
     return `Use the ${firstTable} table to return the requested rows and sort them in the correct order.`;
   }
-
+ 
   if (/\sLIMIT\s/i.test(query)) {
     return `Use the ${firstTable} table to return the requested fields and limit the result to the requested number of rows.`;
   }
-
+ 
   if (/\sJOIN\s/i.test(query)) {
     return `Use ${tableList || "the relevant tables"} to write a SQL query that joins the needed tables and returns the fields requested in the lesson objective.`;
   }
-
+ 
   if (/\bCASE\b/i.test(query)) {
     return `Use the ${firstTable} table to create a derived field with CASE that matches the business rule described in the lesson objective.`;
   }
-
+ 
   if (/\bCAST\s*\(/i.test(query)) {
     return `Use the ${firstTable} table to convert the requested field to a new data type and return it with the requested alias.`;
   }
-
+ 
   if (/\bUPPER\s*\(|\bLOWER\s*\(|\bSUBSTR\s*\(/i.test(query)) {
     return `Use the ${firstTable} table to apply the requested string function and return the transformed value.`;
   }
-
+ 
   if (/\bjulianday\s*\(/i.test(query)) {
     return `Use the ${firstTable} table to calculate the requested date difference and return it with the requested alias.`;
   }
-
+ 
   if (/^SELECT\s+/i.test(query)) {
     return `Use the ${firstTable} table to write a SQL query that returns exactly the fields or calculation described in the lesson objective.`;
   }
-
+ 
   return lesson.objective || "Write a SQL query that satisfies the lesson objective.";
 }
-
+ 
 function escapeHtml(str) {
   if (str === null || str === undefined) return '';
   return String(str)
@@ -5938,7 +5938,7 @@ function renderLesson() {
   document.getElementById("lesson-tables").innerHTML = `<strong>Relevant Tables:</strong> ${lesson.relevantTables.join(", ") || "—"}`;
   document.getElementById("lesson-join-hint").innerHTML = `<strong>Join Hint:</strong> ${lesson.joinHint || "—"}`;
   document.getElementById("lesson-sql-focus").innerHTML = `<strong>SQL Focus:</strong> ${(lesson.sql_focus || []).join(", ") || "—"}`;
-
+ 
   const typeBadge = document.getElementById("current-lesson-type-badge");
   const catBadge = document.getElementById("current-category-badge");
   if (typeBadge) {
@@ -5951,12 +5951,12 @@ function renderLesson() {
     catBadge.className = "difficulty-badge " + (map[level.key] || "difficulty-intermediate");
     catBadge.innerText = level.label;
   }
-
+ 
   ["concept-content","challenge-content","scenario-content","executive-takeaway"].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.classList.add("hidden");
   });
-
+ 
   if (lesson.type === "concept") {
     document.getElementById("concept-content").classList.remove("hidden");
     document.getElementById("concept-summary").innerText = lesson.content.summary;
@@ -5969,13 +5969,13 @@ function renderLesson() {
     });
     document.getElementById("concept-example").innerText = lesson.content.example || "";
   }
-
+ 
   if (lesson.type === "challenge") {
     const challengeContent = document.getElementById("challenge-content");
     challengeContent.classList.remove("hidden");
-
+ 
 let criteriaBox = document.getElementById("challenge-criteria");
-
+ 
 if (!criteriaBox) {
   criteriaBox = document.createElement("div");
   criteriaBox.id = "challenge-criteria";
@@ -5987,24 +5987,24 @@ if (!criteriaBox) {
     challengeContent.insertBefore(criteriaBox, challengeContent.firstChild);
   }
 }
-
+ 
 criteriaBox.innerHTML = `
   <h4>Your Task</h4>
   <p>${escapeHtml(lesson.challengeCriteria || lesson.objective || "")}</p>
 `;
-
+ 
     criteriaBox.innerHTML = `
       <h4>Your Task</h4>
       <p>${escapeHtml(buildChallengePrompt(lesson))}</p>
     `;
-
+ 
     const query = document.getElementById("query");
     query.value = lesson.starterQuery || "";
     document.getElementById("feedback").innerText = "";
     document.getElementById("feedback").classList.remove("success","error","warning");
     document.getElementById("output").innerHTML = "";
   }
-
+ 
   if (lesson.type === "scenario") {
     document.getElementById("scenario-content").classList.remove("hidden");
     document.getElementById("scenario-summary").innerText = lesson.content.summary || "";
@@ -6012,7 +6012,7 @@ criteriaBox.innerHTML = `
     document.getElementById("scenario-response").value = "";
     document.getElementById("scenario-feedback").innerText = "";
   }
-
+ 
   if (shouldShowExecutiveTakeaway(lesson)) {
     document.getElementById("executive-takeaway").classList.remove("hidden");
     document.getElementById("exec-metric").innerHTML = `<strong>Metric:</strong> ${lesson.executiveTakeaway.metric}`;
@@ -6021,7 +6021,7 @@ criteriaBox.innerHTML = `
     document.getElementById("exec-action").innerHTML = `<strong>Recommended action:</strong> ${lesson.executiveTakeaway.action}`;
   }
 }
-
+ 
 function renderAll() {
   applySchemaPanelWidth();
   renderSchema();
@@ -6036,7 +6036,7 @@ function renderAll() {
     showOverview();
   }
 }
-
+ 
 function generateMockData() {
   const patients = [];
   const providers = [];
@@ -6099,7 +6099,7 @@ function generateMockData() {
       discharge_date: dischargeDate
     };
     encounters.push(encounter);
-
+ 
     appointments.push({
       appointment_id: appointmentId++,
       patient_id: patientId,
@@ -6110,7 +6110,7 @@ function generateMockData() {
       status: i % 9 === 0 ? "No Show" : "Completed",
       date: admitDate
     });
-
+ 
     const amount = 500 + (i * 37);
     charges.push({
       charge_id: chargeId++,
@@ -6128,7 +6128,7 @@ function generateMockData() {
       payer: ["Medicare","Medicaid","Commercial","Self Pay"][i % 4],
       charge_type: i % 2 === 0 ? "Professional" : "Ancillary"
     });
-
+ 
     claims.push({
       claim_id: claimId++,
       patient_id: patientId,
@@ -6137,7 +6137,7 @@ function generateMockData() {
       claim_status: i % 7 === 0 ? "Denied" : "Paid",
       billed_amount: amount * 1.4
     });
-
+ 
     discharges.push({
       discharge_id: dischargeId++,
       encounter_id: i,
@@ -6149,7 +6149,7 @@ function generateMockData() {
       departure_minutes: 60 + (i % 240),
       delayed_for_transport: i % 8 === 0 ? 1 : 0
     });
-
+ 
     if (encounter.encounter_type === "Observation") {
       observations.push({
         observation_id: observationId++,
@@ -6163,7 +6163,7 @@ function generateMockData() {
       });
     }
   }
-
+ 
   for (let i = 1; i <= 30; i++) {
     readmissions.push({
       readmission_id: readmissionId++,
@@ -6175,15 +6175,15 @@ function generateMockData() {
       days_to_readmit: 5 + (i % 25)
     });
   }
-
+ 
   schema.tables.forEach(table => {
     const rows = {patients, providers, departments, encounters, appointments, charges, claims, discharges, readmissions, observations}[table.name];
     table.sampleRows = rows.slice(0, 5);
   });
-
+ 
   return { patients, providers, departments, encounters, appointments, charges, claims, discharges, readmissions, observations };
 }
-
+ 
 function initDatabase() {
   return new Promise((resolve, reject) => {
     if (sqlEngineReady) return resolve();
@@ -6210,7 +6210,7 @@ function initDatabase() {
       .catch(reject);
   });
 }
-
+ 
 function createTables() {
   sqlDb.run(`CREATE TABLE patients (patient_id INTEGER, first_name TEXT, last_name TEXT, age INTEGER, gender TEXT, insurance_type TEXT, risk_score INTEGER, city TEXT);`);
   sqlDb.run(`CREATE TABLE providers (provider_id INTEGER, provider_name TEXT, specialty TEXT, facility TEXT);`);
@@ -6223,7 +6223,7 @@ function createTables() {
   sqlDb.run(`CREATE TABLE readmissions (readmission_id INTEGER, index_encounter_id INTEGER, readmit_encounter_id INTEGER, patient_id INTEGER, facility TEXT, readmit_within_30_days INTEGER, days_to_readmit INTEGER);`);
   sqlDb.run(`CREATE TABLE observations (observation_id INTEGER, encounter_id INTEGER, patient_id INTEGER, facility TEXT, department TEXT, obs_hours INTEGER, converted_to_inpatient INTEGER, code_44_flag INTEGER);`);
 }
-
+ 
 function seedTable(tableName, rows) {
   if (!rows.length) return;
   const cols = Object.keys(rows[0]);
@@ -6231,13 +6231,13 @@ function seedTable(tableName, rows) {
   rows.forEach(row => stmt.run(cols.map(col => row[col])));
   stmt.free();
 }
-
+ 
 function queryToResult(query) {
   const result = sqlDb.exec(query);
   if (!result.length) return { columns: [], values: [] };
   return { columns: result[0].columns, values: result[0].values };
 }
-
+ 
 function formatResultTable(result) {
   if (!result.columns.length) return "<p>No rows returned.</p>";
   let html = '<div class="query-results-table-wrap"><table class="preview-table"><thead><tr>';
@@ -6251,7 +6251,7 @@ function formatResultTable(result) {
   html += "</tbody></table></div>";
   return html;
 }
-
+ 
 function getExecutionErrorMessage(error) {
   const raw = String(error && error.message ? error.message : error || "");
   const message = raw.toLowerCase();
@@ -6261,44 +6261,44 @@ function getExecutionErrorMessage(error) {
   if (message.includes("ambiguous")) return "A column reference is ambiguous. Add the table alias or full table.column reference.";
   return raw || "The query could not be executed.";
 }
-
+ 
 function runQuery() {
   const lesson = getCurrentLesson();
   const output = document.getElementById("output");
   const feedback = document.getElementById("feedback");
   const queryBox = document.getElementById("query");
-
+ 
   if (!lesson || (lesson.kind !== "challenge" && lesson.type !== "challenge") || !queryBox) return;
-
+ 
   const query = queryBox.value.trim();
   lastRunQuery = query;
-
+ 
   if (!query) {
     setFeedbackState(feedback, "error", "Please enter a query before running it.");
     if (output) output.innerHTML = "";
     return;
   }
-
+ 
   const hintOne =
     lesson.hint ||
     "Start with the correct table and make sure you are selecting the required fields.";
-
+ 
   const hintTwo =
     lesson.smartHint ||
     lesson.secondHint ||
     "Double-check the exact columns, filters, joins, or grouping needed to match the lesson objective.";
-
+ 
   const finalExplanation =
     lesson.explanation ||
     "This answer is correct because it uses the right table, selects the required fields, and returns the expected result for the lesson objective.";
-
+ 
   try {
     const result = queryToResult(query);
     if (output) output.innerHTML = formatResultTable(result);
-
+ 
     const solutionResult = queryToResult(lesson.solutionQuery);
     const passed = normalizeResult(result) === normalizeResult(solutionResult);
-
+ 
     if (passed) {
       markLessonCompleted(lesson.id, attempts === 0);
       setFeedbackState(
@@ -6311,9 +6311,9 @@ function runQuery() {
       refreshLessonChrome();
       return;
     }
-
+ 
     attempts += 1;
-
+ 
     if (attempts === 1) {
       setFeedbackState(feedback, "warning", `Not correct yet. Hint 1: ${hintOne}`);
     } else if (attempts === 2) {
@@ -6325,16 +6325,16 @@ function runQuery() {
         `You have used all 3 attempts.\n\nCorrect Answer:\n${lesson.solutionQuery}\n\nExplanation:\n${finalExplanation}`
       );
     }
-
+ 
     saveProgress();
     refreshLessonChrome();
   } catch (error) {
     if (output) output.innerHTML = "";
-
+ 
     attempts += 1;
-
+ 
     const executionMessage = getExecutionErrorMessage(error);
-
+ 
     if (attempts === 1) {
       setFeedbackState(
         feedback,
@@ -6354,7 +6354,7 @@ function runQuery() {
         `You have used all 3 attempts.\n\nCorrect Answer:\n${lesson.solutionQuery}\n\nExplanation:\n${finalExplanation}`
       );
     }
-
+ 
     saveProgress();
     refreshLessonChrome();
   }
@@ -6365,7 +6365,7 @@ function normalizeResult(result) {
     values: result.values
   });
 }
-
+ 
 function gradePass() {
   if (attempts === 0) return { score: 100, tier: "Perfect" };
   if (attempts === 1) return { score: 92, tier: "Strong" };
@@ -6379,7 +6379,7 @@ function refreshLessonChrome() {
   renderCurriculumNav();
   renderTrackCategoryCards();
 }
-
+ 
 function setFeedbackState(element, state, message) {
   if (!element) return;
   element.classList.remove("success", "error", "warning");
@@ -6393,117 +6393,117 @@ function resetQuery() {
   const queryBox = document.getElementById("query");
   const feedback = document.getElementById("feedback");
   const output = document.getElementById("output");
-
+ 
   if (queryBox) queryBox.value = "";
   if (feedback) {
     feedback.classList.remove("success", "error", "warning");
     feedback.innerText = "";
   }
   if (output) output.innerHTML = "";
-
+ 
   attempts = 0;
   lastRunQuery = "";
 }
-
+ 
 function submitScenario() {
   const lesson = getCurrentLesson();
   const box = document.getElementById("scenario-response");
   const feedback = document.getElementById("scenario-feedback");
-
+ 
   if (!lesson || lesson.type !== "scenario" || !box || !feedback) return;
-
+ 
   attempts += 1;
-
+ 
   const rawAnswer = box.value.trim();
   const answer = rawAnswer.toLowerCase();
-
+ 
   if (!rawAnswer) {
     setFeedbackState(feedback, "error", "Please enter a response before submitting.");
     return;
   }
-
+ 
   const expectedKeywords = lesson.content.expectedKeywords || [];
   const minLength = lesson.content.minLength || 80;
   const minimumKeywordMatches =
     lesson.content.minimumKeywordMatches || Math.min(2, expectedKeywords.length);
-
+ 
   const matchedKeywords = expectedKeywords.filter(k =>
     answer.includes(String(k).toLowerCase())
   );
   const missingKeywords = expectedKeywords.filter(k =>
     !answer.includes(String(k).toLowerCase())
   );
-
+ 
   const passed =
     rawAnswer.length >= minLength &&
     matchedKeywords.length >= minimumKeywordMatches;
-
+ 
   const partial =
     !passed &&
     rawAnswer.length >= Math.max(50, Math.floor(minLength * 0.6)) &&
     matchedKeywords.length >= 1;
-
+ 
   if (passed) {
     const perfect = matchedKeywords.length >= expectedKeywords.length;
     const grade = perfect
       ? { score: 100, tier: "Perfect" }
       : { score: 92, tier: "Strong" };
-
+ 
     updateLessonStatsOnGrade(lesson.id, grade, true);
     markLessonCompleted(lesson.id, attempts === 1);
-
+ 
     setFeedbackState(
       feedback,
       "success",
       `Correct — ${lesson.content.feedbackGuide || "You covered the right business context, likely data source, and practical action."}`
     );
-
+ 
     saveProgress();
     refreshLessonChrome();
     return;
   }
-
+ 
   if (partial) {
     updateLessonStatsOnGrade(lesson.id, { score: 72, tier: "Partial" }, false);
-
+ 
     const missingText = missingKeywords.length
       ? `Missing ideas to mention: ${missingKeywords.slice(0, 4).join(", ")}.`
       : "Add more specificity to the response.";
-
+ 
     setFeedbackState(
       feedback,
       "warning",
       `Partially correct — you are on the right track, but the response needs more specificity. ${missingText}`
     );
-
+ 
     saveProgress();
     refreshLessonChrome();
     return;
   }
-
+ 
   updateLessonStatsOnGrade(lesson.id, { score: 55, tier: "Developing" }, false);
-
+ 
   const missingText = missingKeywords.length
     ? `Missing ideas to mention: ${missingKeywords.slice(0, 4).join(", ")}.`
     : "";
-
+ 
   setFeedbackState(
     feedback,
     "error",
     `Not correct yet. Build the response around the likely table or data source, the business meaning, and one practical action. ${missingText}`.trim()
   );
-
+ 
   saveProgress();
   refreshLessonChrome();
 }
-
+ 
 function resetScenario() {
   const box = document.getElementById("scenario-response");
   const feedback = document.getElementById("scenario-feedback");
   if (box) box.value = "";
   if (feedback) feedback.innerText = "";
 }
-
+ 
 function markConceptComplete() {
   const lesson = getCurrentLesson();
   if (!lesson || lesson.type !== "concept") return;
@@ -6512,7 +6512,7 @@ function markConceptComplete() {
   saveProgress();
   renderAll();
 }
-
+ 
 function nextLesson() {
   const lessons = getAllLessons();
   const idx = lessons.findIndex(item => item.id === appState.currentLessonId);
@@ -6525,7 +6525,7 @@ function nextLesson() {
     renderAll();
   }
 }
-
+ 
 function prevLesson() {
   const lessons = getAllLessons();
   const idx = lessons.findIndex(item => item.id === appState.currentLessonId);
@@ -6538,7 +6538,7 @@ function prevLesson() {
     renderAll();
   }
 }
-
+ 
 function resetAllProgress() {
   if (!window.confirm("Reset all progress for CareOps SQL Analyst?")) return;
   appState.completedLessonIds = [];
@@ -6550,7 +6550,7 @@ function resetAllProgress() {
   showOverview();
   renderAll();
 }
-
+ 
 function openTableModal(tableName) {
   const overlay = document.getElementById("table-modal-overlay");
   const table = schema.tables.find(item => item.name === tableName);
@@ -6581,13 +6581,13 @@ function openTableModal(tableName) {
   previewContent.innerHTML = html;
   overlay.classList.remove("hidden");
 }
-
+ 
 function closeTableModal(event) {
   if (event && event.target && event.target.id && event.target.id !== "table-modal-overlay") return;
   const overlay = document.getElementById("table-modal-overlay");
   if (overlay) overlay.classList.add("hidden");
 }
-
+ 
 function initUiActions() {
   const openOverviewBtn = document.getElementById("open-overview-btn");
  if (openOverviewBtn) openOverviewBtn.onclick = () => {
@@ -6606,7 +6606,7 @@ function initUiActions() {
     };
   }
 }
-
+ 
 document.addEventListener("DOMContentLoaded", async function () {
   normalizeCurriculum();
   loadProgress();
@@ -6620,3 +6620,362 @@ document.addEventListener("DOMContentLoaded", async function () {
   window.addEventListener("scroll", hideAchievementTooltip, true);
   window.addEventListener("resize", hideAchievementTooltip);
 });
+ 
+ 
+ 
+ 
+ 
+const AI_COMPANION_ENDPOINT = "/api/ai-companion";
+const SANDBOX_PROMPTS = [
+  {
+    id: "p1",
+    title: "High-dollar charges by payer",
+    description: "Summarize charge dollars by payer and flag the biggest driver.",
+    query: "SELECT payer, ROUND(SUM(amount), 2) AS total_amount\nFROM charges\nGROUP BY payer\nORDER BY total_amount DESC;"
+  },
+  {
+    id: "p2",
+    title: "Observation stays over 48 hours",
+    description: "Find prolonged observation encounters for throughput review.",
+    query: "SELECT facility, department, COUNT(*) AS long_obs_cases\nFROM observations\nWHERE obs_hours > 48\nGROUP BY facility, department\nORDER BY long_obs_cases DESC;"
+  },
+  {
+    id: "p3",
+    title: "Readmission trend check",
+    description: "Look for readmissions inside the 30-day window.",
+    query: "SELECT facility, COUNT(*) AS readmit_cases, ROUND(AVG(days_to_readmit), 1) AS avg_days\nFROM readmissions\nWHERE readmit_within_30_days = 1\nGROUP BY facility\nORDER BY readmit_cases DESC;"
+  },
+  {
+    id: "p4",
+    title: "Discharges delayed for transport",
+    description: "Measure discharge delay minutes where transport held the patient up.",
+    query: "SELECT facility, department, ROUND(AVG(departure_minutes - discharge_order_minutes), 1) AS avg_delay_minutes\nFROM discharges\nWHERE delayed_for_transport = 1\nGROUP BY facility, department\nORDER BY avg_delay_minutes DESC;"
+  }
+];
+ 
+function ensureExtendedState() {
+  if (!appState.sandbox) {
+    appState.sandbox = {
+      mode: "free",
+      selectedPromptId: SANDBOX_PROMPTS[0].id,
+      query: SANDBOX_PROMPTS[0].query,
+      lastResult: ""
+    };
+  }
+  if (!appState.aiCompanionHistory) appState.aiCompanionHistory = [];
+}
+ 
+function hideAllWorkspaces() {
+  ["track-overview", "lesson-workspace", "sandbox-workspace"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.add("hidden");
+  });
+}
+ 
+function setMainView(view) {
+  appState.currentView = view;
+  hideAllWorkspaces();
+  if (view === "lesson") {
+    const el = document.getElementById("lesson-workspace");
+    if (el) el.classList.remove("hidden");
+  } else if (view === "sandbox") {
+    const el = document.getElementById("sandbox-workspace");
+    if (el) el.classList.remove("hidden");
+  } else {
+    const el = document.getElementById("track-overview");
+    if (el) el.classList.remove("hidden");
+  }
+  syncPrimaryNav();
+}
+ 
+function showLessonWorkspace() { setMainView("lesson"); }
+function showOverview() { setMainView("overview"); }
+function showSandboxWorkspace() { setMainView("sandbox"); }
+ 
+function syncPrimaryNav() {
+  const map = {
+    overview: "nav-overview-btn",
+    lesson: "nav-lessons-btn",
+    sandbox: "nav-sandbox-btn"
+  };
+  ["nav-overview-btn", "nav-lessons-btn", "nav-sandbox-btn", "nav-ai-btn"].forEach(id => {
+    const btn = document.getElementById(id);
+    if (btn) btn.classList.remove("active");
+  });
+  const activeId = map[appState.currentView] || "nav-overview-btn";
+  const activeBtn = document.getElementById(activeId);
+  if (activeBtn) activeBtn.classList.add("active");
+}
+ 
+function renderSandboxPromptLibrary() {
+  ensureExtendedState();
+  const list = document.getElementById("sandbox-prompt-list");
+  if (!list) return;
+  list.innerHTML = "";
+  SANDBOX_PROMPTS.forEach(prompt => {
+    const card = document.createElement("button");
+    card.type = "button";
+    card.className = "sandbox-prompt-card" + (appState.sandbox.selectedPromptId === prompt.id ? " active" : "");
+    card.innerHTML = `<strong>${escapeHtml(prompt.title)}</strong><div style="margin-top:6px;color:#58708d;">${escapeHtml(prompt.description)}</div>`;
+    card.onclick = () => {
+      appState.sandbox.selectedPromptId = prompt.id;
+      renderSandboxPromptLibrary();
+    };
+    list.appendChild(card);
+  });
+}
+ 
+function loadSelectedSandboxPrompt() {
+  ensureExtendedState();
+  const selected = SANDBOX_PROMPTS.find(item => item.id === appState.sandbox.selectedPromptId) || SANDBOX_PROMPTS[0];
+  const queryEl = document.getElementById("sandbox-query");
+  if (queryEl) queryEl.value = selected.query;
+  appState.sandbox.query = selected.query;
+  const feedback = document.getElementById("sandbox-feedback");
+  if (feedback) {
+    feedback.className = "";
+    feedback.innerText = `Loaded prompt: ${selected.title}`;
+  }
+}
+ 
+function renderSandbox() {
+  ensureExtendedState();
+  showSandboxWorkspace();
+  const guided = document.getElementById("sandbox-guided-panel");
+  const freeBtn = document.getElementById("sandbox-free-btn");
+  const guidedBtn = document.getElementById("sandbox-guided-btn");
+  const queryEl = document.getElementById("sandbox-query");
+  if (guided) guided.classList.toggle("hidden", appState.sandbox.mode !== "guided");
+  if (freeBtn) freeBtn.classList.toggle("active", appState.sandbox.mode === "free");
+  if (guidedBtn) guidedBtn.classList.toggle("active", appState.sandbox.mode === "guided");
+  if (queryEl && !queryEl.value) queryEl.value = appState.sandbox.query || SANDBOX_PROMPTS[0].query;
+  renderSandboxPromptLibrary();
+  syncPrimaryNav();
+}
+ 
+function renderSqlResultSet(targetId, resultSets) {
+  const target = document.getElementById(targetId);
+  if (!target) return;
+  if (!resultSets || !resultSets.length) {
+    target.innerHTML = "<div>No rows returned.</div>";
+    return;
+  }
+  const first = resultSets[0];
+  let html = "<table><thead><tr>";
+  first.columns.forEach(col => html += `<th>${escapeHtml(col)}</th>`);
+  html += "</tr></thead><tbody>";
+  first.values.forEach(row => {
+    html += "<tr>";
+    row.forEach(cell => html += `<td>${escapeHtml(cell)}</td>`);
+    html += "</tr>";
+  });
+  html += "</tbody></table>";
+  target.innerHTML = html;
+}
+ 
+function setFeedbackMessage(id, kind, message) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.className = kind || "";
+  el.innerText = message;
+}
+ 
+function runSandboxQuery() {
+  const queryEl = document.getElementById("sandbox-query");
+  const sql = (queryEl?.value || "").trim();
+  appState.sandbox.query = sql;
+  if (!sql) {
+    setFeedbackMessage("sandbox-feedback", "warning", "Enter a query before running the sandbox.");
+    return;
+  }
+  if (!sqlDb) {
+    setFeedbackMessage("sandbox-feedback", "error", "SQL engine is not ready yet.");
+    return;
+  }
+  try {
+    const results = sqlDb.exec(sql);
+    renderSqlResultSet("sandbox-output", results);
+    setFeedbackMessage("sandbox-feedback", "success", "Sandbox query ran successfully.");
+  } catch (err) {
+    setFeedbackMessage("sandbox-feedback", "error", `Sandbox error: ${err.message}`);
+    const out = document.getElementById("sandbox-output");
+    if (out) out.innerHTML = "";
+  }
+}
+ 
+function resetSandboxQuery() {
+  const queryEl = document.getElementById("sandbox-query");
+  if (queryEl) queryEl.value = "";
+  const out = document.getElementById("sandbox-output");
+  if (out) out.innerHTML = "";
+  setFeedbackMessage("sandbox-feedback", "", "Sandbox cleared.");
+}
+ 
+function buildAiPayload(action, promptText) {
+  const lesson = getCurrentLesson();
+  const queryText = document.getElementById("query")?.value || document.getElementById("sandbox-query")?.value || "";
+  const scenarioText = document.getElementById("scenario-response")?.value || "";
+  return {
+    action,
+    prompt: promptText,
+    currentTrackId: appState.currentTrackId,
+    currentCategoryId: appState.currentCategoryId,
+    currentLessonId: appState.currentLessonId,
+    lessonTitle: lesson?.title || null,
+    lessonObjective: lesson?.objective || null,
+    lessonType: lesson?.type || null,
+    query: queryText,
+    scenarioResponse: scenarioText,
+    schema: {
+      tables: schema.tables.map(t => ({ name: t.name, columns: t.notableColumns, keys: t.keyColumns })),
+      relationships: schema.relationships
+    }
+  };
+}
+ 
+function localAiCompanionFallback(action, payload) {
+  const lesson = getCurrentLesson();
+  const q = payload.query || "";
+  if (action === "hint") {
+    if (lesson?.smartHint) return { mode: "fallback", content: lesson.smartHint };
+    return { mode: "fallback", content: "Start with the table that matches the reporting grain, then add only the fields or logic the prompt asked for." };
+  }
+  if (action === "explain_error") {
+    return { mode: "fallback", content: q ? `Check the table and column names first, then verify commas, aliases, and whether each selected non-aggregated field is grouped correctly. Query under review:\n\n${q}` : "Paste a query or run one in the sandbox and I’ll explain the likely error path." };
+  }
+  if (action === "rewrite_query") {
+    return { mode: "fallback", content: q ? `Try rewriting from the base table first, then layer clauses in this order: SELECT -> FROM -> JOIN -> WHERE -> GROUP BY -> HAVING -> ORDER BY -> LIMIT.\n\nYour current query:\n${q}` : "Paste the SQL you want rewritten." };
+  }
+  if (action === "schema_help") {
+    return { mode: "fallback", content: `Core tables available: ${schema.tables.map(t => t.name).join(", ")}. Use patient_id to connect patient-level records and encounter_id to connect encounter-level financial and operational records.` };
+  }
+  if (action === "score_scenario") {
+    const response = payload.scenarioResponse || payload.prompt || "";
+    const lengthScore = Math.min(100, response.length / 2.5);
+    return { mode: "fallback", content: `Provisional scenario score: ${Math.round(lengthScore)}/100. Strong answers should name the data source, define the business meaning, and end with a practical action.` };
+  }
+  return { mode: "fallback", content: payload.prompt || "Ask a question about the current lesson, schema, or SQL query." };
+}
+ 
+async function callAiCompanion(action, promptText) {
+  const payload = buildAiPayload(action, promptText);
+  const output = document.getElementById("ai-companion-output");
+  const status = document.getElementById("ai-connection-status");
+  if (output) output.innerText = "Thinking...";
+  try {
+    const response = await fetch(AI_COMPANION_ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    if (!response.ok) throw new Error(`API returned ${response.status}`);
+    const data = await response.json();
+    const content = data.reply || data.content || JSON.stringify(data, null, 2);
+    if (output) output.innerText = content;
+    if (status) status.innerHTML = 'Connected successfully to <code>/api/ai-companion</code>.';
+    appState.aiCompanionHistory.push({ action, prompt: promptText, reply: content, ts: Date.now(), mode: "api" });
+    saveProgress();
+    return;
+  } catch (err) {
+    const fallback = localAiCompanionFallback(action, payload);
+    if (output) output.innerText = fallback.content;
+    if (status) status.innerHTML = `API unavailable, using local fallback behavior. Last error: ${escapeHtml(err.message)}`;
+    appState.aiCompanionHistory.push({ action, prompt: promptText, reply: fallback.content, ts: Date.now(), mode: fallback.mode });
+    saveProgress();
+  }
+}
+ 
+function primeAiCompanionPrompt(fromSource) {
+  const input = document.getElementById("ai-companion-input");
+  if (!input) return;
+  if (fromSource === "sandbox") {
+    input.value = `Review this sandbox query and tell me what is strong, what is risky, and how to improve it:\n\n${document.getElementById("sandbox-query")?.value || ""}`;
+  } else {
+    const lesson = getCurrentLesson();
+    input.value = `Help me with the current lesson${lesson ? `: ${lesson.title}` : ""}.`;
+  }
+}
+ 
+const originalRenderAll = renderAll;
+renderAll = function () {
+  ensureExtendedState();
+  applySchemaPanelWidth();
+  renderSchema();
+  renderAchievements();
+  updateDashboard();
+  renderCurriculumNav();
+  renderTrackCategoryCards();
+  renderOverview();
+  if (appState.currentView === "lesson" && appState.currentLessonId) {
+    renderLesson();
+  } else if (appState.currentView === "sandbox") {
+    renderSandbox();
+  } else {
+    showOverview();
+  }
+  syncPrimaryNav();
+};
+ 
+const originalInitUiActions = initUiActions;
+initUiActions = function () {
+  if (typeof originalInitUiActions === "function") originalInitUiActions();
+  ensureExtendedState();
+  const overviewBtn = document.getElementById("nav-overview-btn");
+  const lessonsBtn = document.getElementById("nav-lessons-btn");
+  const sandboxBtn = document.getElementById("nav-sandbox-btn");
+  const aiBtn = document.getElementById("nav-ai-btn");
+  if (overviewBtn) overviewBtn.onclick = () => { attempts = 0; showOverview(); renderAll(); };
+  if (lessonsBtn) lessonsBtn.onclick = () => {
+    if (!appState.currentLessonId) {
+      appState.currentCategoryId = getTrack().categories[0]?.id || null;
+      appState.currentLessonId = getTrack().categories[0]?.lessons[0]?.id || null;
+    }
+    attempts = 0;
+    showLessonWorkspace();
+    renderAll();
+  };
+  if (sandboxBtn) sandboxBtn.onclick = () => { attempts = 0; showSandboxWorkspace(); renderAll(); };
+  if (aiBtn) aiBtn.onclick = () => {
+    document.getElementById("ai-companion-input")?.focus();
+    primeAiCompanionPrompt(appState.currentView === "sandbox" ? "sandbox" : "lesson");
+  };
+ 
+  const freeBtn = document.getElementById("sandbox-free-btn");
+  const guidedBtn = document.getElementById("sandbox-guided-btn");
+  const runBtn = document.getElementById("sandbox-run-btn");
+  const resetBtn = document.getElementById("sandbox-reset-btn");
+  const loadPromptBtn = document.getElementById("sandbox-load-selected-btn");
+  const sendAiBtn = document.getElementById("sandbox-send-ai-btn");
+  if (freeBtn) freeBtn.onclick = () => { appState.sandbox.mode = "free"; renderSandbox(); };
+  if (guidedBtn) guidedBtn.onclick = () => { appState.sandbox.mode = "guided"; renderSandbox(); };
+  if (runBtn) runBtn.onclick = runSandboxQuery;
+  if (resetBtn) resetBtn.onclick = resetSandboxQuery;
+  if (loadPromptBtn) loadPromptBtn.onclick = loadSelectedSandboxPrompt;
+  if (sendAiBtn) sendAiBtn.onclick = () => {
+    primeAiCompanionPrompt("sandbox");
+    callAiCompanion("rewrite_query", document.getElementById("ai-companion-input")?.value || "");
+  };
+ 
+  const input = document.getElementById("ai-companion-input");
+  document.getElementById("ai-general-btn")?.addEventListener("click", () => callAiCompanion("general", input?.value || ""));
+  document.getElementById("ai-hint-btn")?.addEventListener("click", () => callAiCompanion("hint", input?.value || ""));
+  document.getElementById("ai-explain-btn")?.addEventListener("click", () => callAiCompanion("explain_error", input?.value || ""));
+  document.getElementById("ai-rewrite-btn")?.addEventListener("click", () => callAiCompanion("rewrite_query", input?.value || ""));
+  document.getElementById("ai-schema-btn")?.addEventListener("click", () => callAiCompanion("schema_help", input?.value || ""));
+  document.getElementById("ai-score-btn")?.addEventListener("click", () => callAiCompanion("score_scenario", input?.value || ""));
+  syncPrimaryNav();
+};
+ 
+const originalResetAllProgress = resetAllProgress;
+resetAllProgress = function () {
+  if (!window.confirm("Reset all progress for CareOps SQL Analyst?")) return;
+  appState.completedLessonIds = [];
+  appState.firstTryLessonIds = [];
+  appState.lessonStats = {};
+  appState.aiCompanionHistory = [];
+  appState.sandbox = { mode: "free", selectedPromptId: SANDBOX_PROMPTS[0].id, query: SANDBOX_PROMPTS[0].query, lastResult: "" };
+  attempts = 0;
+  showOverview();
+  saveProgress();
+  renderAll();
+};
