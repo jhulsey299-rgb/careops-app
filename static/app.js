@@ -7102,6 +7102,8 @@ function showSandboxWorkspace() {
   appState.currentView = "sandbox";
   showSection("sandbox-workspace");
   syncSandboxStarterQuery();
+  renderAiMessages();
+  setAiStatus("Ready", false);
 }
 
 function setMessageState(elementId, state, message) {
@@ -7295,6 +7297,7 @@ function clearAiChat() {
 }
 
 function scrollToAiCompanion() {
+  showSandboxWorkspace();
   const target =
     document.getElementById("ai-companion-section") ||
     document.getElementById("ai-input")?.closest("section") ||
@@ -7375,13 +7378,13 @@ function initUiActions() {
     };
   }
 
-  const runSandboxBtn = document.getElementById("run-sandbox-btn");
+  const runSandboxBtn = document.getElementById("run-sandbox-btn") || document.getElementById("sandbox-run-btn");
   if (runSandboxBtn) runSandboxBtn.onclick = runSandboxQuery;
 
-  const resetSandboxBtn = document.getElementById("reset-sandbox-btn");
+  const resetSandboxBtn = document.getElementById("reset-sandbox-btn") || document.getElementById("sandbox-reset-btn");
   if (resetSandboxBtn) resetSandboxBtn.onclick = resetSandbox;
 
-  const loadLessonBtn = document.getElementById("load-lesson-query-btn");
+  const loadLessonBtn = document.getElementById("load-lesson-query-btn") || document.getElementById("sandbox-load-selected-btn");
   if (loadLessonBtn) {
     loadLessonBtn.onclick = () => {
       syncSandboxStarterQuery();
