@@ -6001,6 +6001,28 @@ function extractOrderByFields(query) {
   return cleanInstructionExpression(match[1]);
 }
 
+
+function extractWhereClause(query) {
+  const match = String(query || "").match(/\bwhere\s+([\s\S]+?)(?:\s+group\s+by\s+|\s+having\s+|\s+order\s+by\s+|\s+limit\s+|;|$)/i);
+  return match ? match[1].trim() : "";
+}
+
+function extractGroupByClause(query) {
+  const match = String(query || "").match(/\bgroup\s+by\s+([\s\S]+?)(?:\s+having\s+|\s+order\s+by\s+|\s+limit\s+|;|$)/i);
+  return match ? match[1].trim() : "";
+}
+
+function extractHavingClause(query) {
+  const match = String(query || "").match(/\bhaving\s+([\s\S]+?)(?:\s+order\s+by\s+|\s+limit\s+|;|$)/i);
+  return match ? match[1].trim() : "";
+}
+
+function extractOrderByClause(query) {
+  const match = String(query || "").match(/\border\s+by\s+([\s\S]+?)(?:\s+limit\s+|;|$)/i);
+  return match ? match[1].trim() : "";
+}
+
+
 function extractLimitValue(query) {
   const match = String(query || "").match(/limit\s+(\d+)/i);
   return match ? match[1] : "";
@@ -7239,7 +7261,13 @@ function clearAiChat() {
 }
 
 function scrollToAiCompanion() {
-  document.getElementById("ai-companion-section")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  const target =
+    document.getElementById("ai-companion-section") ||
+    document.getElementById("ai-input")?.closest("section") ||
+    document.getElementById("ai-input") ||
+    document.getElementById("send-ai-btn");
+  target?.scrollIntoView({ behavior: "smooth", block: "start" });
+  document.getElementById("ai-input")?.focus();
 }
 
 function updateAiContextBanner() {
@@ -7268,29 +7296,62 @@ function renderAll() {
 
 function initUiActions() {
   const openOverviewBtn = document.getElementById("open-overview-btn");
-  if (openOverviewBtn) openOverviewBtn.onclick = () => {
-    attempts = 0;
-    showOverview();
-    renderAll();
-  };
+  if (openOverviewBtn) {
+    openOverviewBtn.onclick = () => {
+      appState.currentView = "overview";
+      attempts = 0;
+      showOverview();
+      saveProgress();
+      renderAll();
+    };
+  }
+
   const openSandboxBtn = document.getElementById("open-sandbox-btn");
-  if (openSandboxBtn) openSandboxBtn.onclick = () => {
-    showSandboxWorkspace();
-    renderAll();
-  };
+  if (openSandboxBtn) {
+    openSandboxBtn.onclick = () => {
+      appState.currentView = "sandbox";
+      attempts = 0;
+      showSandboxWorkspace();
+      saveProgress();
+      renderAll();
+      document.getElementById("sandbox-workspace")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    };
+  }
+
   const jumpToAiBtn = document.getElementById("jump-to-ai-btn");
-  if (jumpToAiBtn) jumpToAiBtn.onclick = scrollToAiCompanion;
+  if (jumpToAiBtn) {
+    jumpToAiBtn.onclick = () => {
+      scrollToAiCompanion();
+    };
+  }
+
   const runSandboxBtn = document.getElementById("run-sandbox-btn");
   if (runSandboxBtn) runSandboxBtn.onclick = runSandboxQuery;
+
   const resetSandboxBtn = document.getElementById("reset-sandbox-btn");
   if (resetSandboxBtn) resetSandboxBtn.onclick = resetSandbox;
+
   const loadLessonBtn = document.getElementById("load-lesson-query-btn");
-  if (loadLessonBtn) loadLessonBtn.onclick = syncSandboxStarterQuery;
+  if (loadLessonBtn) {
+    loadLessonBtn.onclick = () => {
+      syncSandboxStarterQuery();
+      const sandboxInput = document.getElementById("sandbox-query");
+      if (sandboxInput) sandboxInput.focus();
+    };
+  }
+
   const sendAiBtn = document.getElementById("send-ai-btn");
   if (sendAiBtn) sendAiBtn.onclick = () => sendAiMessage();
+
   const clearAiBtn = document.getElementById("clear-ai-btn");
   if (clearAiBtn) clearAiBtn.onclick = clearAiChat;
-  document.querySelectorAll(".quick-ai-btn").forEach((btn) => btn.onclick = () => sendAiMessage(btn.dataset.aiPrompt || ""));
+
+  document.querySelectorAll(".quick-ai-btn").forEach((btn) => {
+    btn.onclick = () => {
+      scrollToAiCompanion();
+      sendAiMessage(btn.dataset.aiPrompt || "");
+    };
+  });
 
   const toggleBtn = document.getElementById("toggle-levels-panel-btn");
   const panel = document.getElementById("levels-panel");
