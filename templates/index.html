@@ -261,15 +261,14 @@
                                 </div>
                             </div>
 
-                            <div class="concept-card sandbox-lesson-context" id="sandbox-lesson-context">
+                            <div class="concept-card sandbox-lesson-context hidden" id="sandbox-lesson-context">
                                 <div class="sandbox-context-header">
                                     <div>
-                                        <div class="table-modal-kicker">Current Lesson Context</div>
-                                        <h4 id="sandbox-lesson-title">No lesson selected.</h4>
+                                        <div class="table-modal-kicker">Guided Prompt Context</div>
+                                        <h4 id="sandbox-lesson-title">Choose a guided prompt.</h4>
                                     </div>
-                                    <button type="button" id="load-lesson-query-btn" class="schema-table-view-btn">Load Current Lesson Query</button>
                                 </div>
-                                <p id="sandbox-lesson-objective">Open a lesson, then come back here to work with its SQL pattern and relevant tables.</p>
+                                <p id="sandbox-lesson-objective">Select a guided prompt to load its objective, SQL starter pattern, and related tables.</p>
                                 <div id="sandbox-lesson-tables" class="sandbox-schema-list"></div>
                             </div>
 
@@ -293,23 +292,14 @@
                         <aside class="sandbox-ai-panel concept-card" id="ai-companion-section">
                             <div class="section-header">
                                 <h3>AI Companion</h3>
-                                <p>Get hints, rewrites, debugging help, schema answers, or an executive summary tied to the sandbox query.</p>
+                                <p>Ask for SQL help, working code, or analytics guidance just like a chat. You can also ask broader questions like why readmissions matter and where to investigate if they are high.</p>
                             </div>
 
-                            <div class="ai-status-row">
-                                <span id="ai-status-pill" class="ai-status-chip">Fallback mode</span>
-                            </div>
-
-                            <label for="ai-input" class="query-label">Prompt</label>
-                            <textarea id="ai-input" rows="8" cols="40" placeholder="Ask for a hint, schema help, query rewrite, error explanation, or executive summary."></textarea>
+                            <label for="ai-input" class="query-label">Message</label>
+                            <textarea id="ai-input" rows="8" cols="40" placeholder="Ask for SQL code, query debugging, or analytics guidance. Press Enter to send, or use Send. Shift+Enter adds a new line."></textarea>
 
                             <div class="ai-actions-wrap">
-                                <button type="button" id="send-ai-btn">Ask AI</button>
-                                <button type="button" class="quick-ai-btn" data-template="Give me a focused hint for this query.">Hint</button>
-                                <button type="button" class="quick-ai-btn" data-template="Debug this SQL and tell me what is wrong.">Debug</button>
-                                <button type="button" class="quick-ai-btn" data-template="Rewrite this query more clearly without changing the result.">Rewrite</button>
-                                <button type="button" class="quick-ai-btn" data-template="Write an executive summary of what this query is trying to show.">Executive Summary</button>
-                                <button type="button" id="clear-ai-btn" class="panel-toggle-btn">Clear</button>
+                                <button type="button" id="send-ai-btn">Send</button>
                             </div>
 
                             <div id="ai-messages" class="ai-messages"></div>
