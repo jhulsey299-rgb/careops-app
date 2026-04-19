@@ -1819,166 +1819,147 @@ body.resizing-schema #schema-resizer::before {
 }
 
 
+/* ================= Embedded AI + Sandbox Context ================= */
+.sandbox-lesson-context {
+    margin-bottom: 16px;
+}
 
+#sandbox-lesson-title {
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 6px;
+}
 
+#sandbox-lesson-objective {
+    margin-bottom: 12px;
+}
 
+.ai-embedded-panel {
+    margin-top: 16px;
+}
 
+.ai-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 12px;
+    align-items: center;
+}
 
+.ai-quick-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
 
+.ai-quick-actions button {
+    background: #ffffff;
+    color: var(--primary-dark);
+    border: 1px solid #bfdbfe;
+    box-shadow: none;
+}
 
+.ai-quick-actions button:hover {
+    background: var(--primary-soft);
+    color: var(--primary-dark);
+}
 
+.ai-message-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 14px;
+}
 
+.ai-message {
+    border-radius: 14px;
+    padding: 14px 16px;
+    border: 1px solid var(--border);
+    background: #ffffff;
+}
 
+.ai-message.user {
+    background: #eff6ff;
+    border-color: #bfdbfe;
+}
 
+.ai-message.assistant {
+    background: #f8fbff;
+    border-color: #dbeafe;
+}
 
+.ai-message-role {
+    font-size: 0.74rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    margin-bottom: 8px;
+}
 
+.ai-message-body {
+    color: var(--text-soft);
+    line-height: 1.6;
+}
 
+.ai-message-body strong {
+    color: var(--text);
+}
 
-
-
-
-
-
-
-
-
-
-/* ================= Layout Refresh: Embedded AI + Right Curriculum ================= */
 .main-nav-actions {
     display: flex;
     flex-wrap: wrap;
     gap: 10px;
 }
 
-.workspace-layout {
-    grid-template-columns: minmax(0, 1fr) 290px;
+.main-nav-actions button {
+    background: white;
+    color: var(--danger);
+    border: 1px solid #fecaca;
 }
 
-.sandbox-ai-embedded {
-    margin-top: 16px;
+.main-nav-actions button:hover {
+    background: var(--danger-soft);
+    color: #991b1b;
+    border-color: #fca5a5;
 }
 
-.ai-inline-card {
-    margin-bottom: 0;
-}
-
-.ai-inline-header {
-    display: flex;
-    justify-content: flex-start;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 10px;
-}
-
-.ai-inline-actions {
-    align-items: center;
-}
-
-.ai-inline-messages {
-    margin-top: 14px;
-    display: grid;
-    gap: 10px;
-}
-
-.ai-message {
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 12px 14px;
-    background: #ffffff;
-}
-
-.ai-message.assistant {
-    background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
-    border-color: #dbeafe;
-}
-
-.ai-message.user {
-    background: #f8fafc;
-}
-
-.ai-message-role {
-    font-weight: 700;
-    font-size: 0.8rem;
-    color: var(--text-faint);
-    margin-bottom: 6px;
-}
-
-@media (max-width: 1100px) {
-    .hero-banner {
-        padding: 22px 20px 18px;
-    }
-
-    .top-dashboard {
-        grid-template-columns: 1fr;
-    }
-}
-
-@media (max-width: 980px) {
+/* ================= Stronger Mobile Layout ================= */
+@media (max-width: 900px) {
     body {
         padding: 10px;
-        overflow-x: hidden;
     }
 
     .app-shell {
         display: flex;
         flex-direction: column;
         gap: 12px;
-        max-width: 100%;
-        overflow-x: hidden;
-    }
-
-    .schema-panel,
-    .main-content,
-    .levels-panel {
-        width: 100% !important;
-        max-width: 100% !important;
-        min-width: 0 !important;
-    }
-
-    .schema-panel,
-    .levels-panel {
-        position: static;
-        max-height: none;
-        overflow: visible;
     }
 
     #schema-resizer {
-        display: none !important;
+        display: none;
+    }
+
+    .schema-panel {
+        order: 3;
+        width: 100% !important;
+        min-width: 0;
+        max-height: none;
+        position: static;
+        overflow: visible;
     }
 
     .main-content {
+        order: 1;
         padding-left: 0;
-    }
-
-    .hero-banner {
-        padding: 18px 16px 16px;
-        margin-bottom: 14px;
-    }
-
-    .hero-title {
-        font-size: 1.8rem;
-    }
-
-    .hero-tagline,
-    .hero-description {
-        font-size: 0.95rem;
-    }
-
-    .dashboard-actions.main-nav-actions {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 8px;
-    }
-
-    .dashboard-actions.main-nav-actions button {
         width: 100%;
-        padding: 10px 12px;
     }
 
     .workspace-layout {
         display: flex;
         flex-direction: column;
-        gap: 14px;
+        gap: 16px;
     }
 
     .play-area {
@@ -1987,113 +1968,46 @@ body.resizing-schema #schema-resizer::before {
 
     #levels-panel {
         order: 2;
+        width: 100%;
+        min-width: 0;
+        max-width: none;
+        position: static;
     }
 
-    .levels-panel {
-        padding: 14px 12px;
+    .main-nav-actions button,
+    .button-row button,
+    .sandbox-actions-inline button {
+        width: 100%;
     }
 
-    .levels-panel.collapsed {
-        width: 100% !important;
-        min-width: 0 !important;
-        max-width: 100% !important;
-        padding: 14px 12px;
+    .main-nav-actions,
+    .button-row,
+    .sandbox-actions-inline,
+    .ai-quick-actions {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
     }
 
-    .levels-panel.collapsed #track-title {
-        writing-mode: initial;
-        transform: none;
-        white-space: normal;
-    }
-
-    .levels-panel.collapsed #track-description,
-    .levels-panel.collapsed .side-panel-actions,
-    .levels-panel.collapsed .levels-list {
-        display: block;
-    }
-
+    .top-dashboard,
     .track-overview-grid,
     .track-category-cards,
     .table-modal-meta {
         grid-template-columns: 1fr;
     }
 
-    .badges-container {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 10px;
-    }
-
-    .badge-chip {
-        justify-content: center;
-        text-align: center;
-    }
-
-    .schema-section,
-    .dashboard-card,
-    .badges-section,
-    .mission-box,
-    .query-section,
-    .concept-card,
-    .track-overview-panel,
-    .levels-panel {
-        border-radius: 14px;
-    }
-
-    .lesson-nav-row {
-        flex-direction: column;
-    }
-
-    .lesson-nav-row button {
-        width: 100%;
+    .hero-banner {
+        padding: 20px 16px;
     }
 
     textarea {
         min-height: 160px;
-    }
-}
-
-@media (max-width: 640px) {
-    body {
-        padding: 8px;
+        font-size: 15px;
     }
 
-    .schema-header h2,
-    .hero-title {
-        font-size: 1.6rem;
-    }
-
-    .dashboard-actions.main-nav-actions {
-        grid-template-columns: 1fr;
-    }
-
-    .button-row {
-        flex-direction: column;
-    }
-
-    .button-row button {
-        width: 100%;
-    }
-
-    .badges-container {
-        grid-template-columns: 1fr;
-    }
-
-    .track-badge-card {
-        min-height: auto;
-        padding: 16px 12px;
-    }
-
-    .schema-card summary,
-    .relationship-item,
-    .lesson-button,
-    .curriculum-category-header {
-        padding: 10px 12px;
-    }
-
+    .sandbox-output table,
     .preview-table,
-    .table-modal-preview table,
-    .sandbox-results table {
+    .table-modal-preview table {
         min-width: 640px;
     }
 }
