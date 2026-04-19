@@ -7037,12 +7037,67 @@ function closeTableModal(event) {
 
 function initUiActions() {
   const openOverviewBtn = document.getElementById("open-overview-btn");
- if (openOverviewBtn) openOverviewBtn.onclick = () => {
-  appState.currentView = "overview";
-  attempts = 0;
-  showOverview();
-  renderAll();
-};
+  if (openOverviewBtn) {
+    openOverviewBtn.onclick = () => {
+      appState.currentView = "overview";
+      attempts = 0;
+      saveProgress();
+      renderAll();
+    };
+  }
+
+  const navOverviewBtn = document.getElementById("nav-overview-btn");
+  if (navOverviewBtn) {
+    navOverviewBtn.onclick = () => {
+      appState.currentView = "overview";
+      attempts = 0;
+      saveProgress();
+      renderAll();
+      document.getElementById("track-overview")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    };
+  }
+
+  const navSandboxBtn = document.getElementById("nav-sandbox-btn");
+  if (navSandboxBtn) {
+    navSandboxBtn.onclick = () => {
+      appState.currentView = "sandbox";
+      attempts = 0;
+      saveProgress();
+      renderAll();
+      document.getElementById("sandbox-workspace")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      document.getElementById("sandbox-query")?.focus();
+    };
+  }
+
+  const runSandboxBtn = document.getElementById("run-sandbox-btn");
+  if (runSandboxBtn) runSandboxBtn.onclick = runSandboxQuery;
+
+  const resetSandboxBtn = document.getElementById("reset-sandbox-btn");
+  if (resetSandboxBtn) resetSandboxBtn.onclick = resetSandbox;
+
+  const loadLessonBtn = document.getElementById("load-lesson-query-btn");
+  if (loadLessonBtn) {
+    loadLessonBtn.onclick = () => {
+      syncSandboxStarterQuery();
+      const sandboxInput = document.getElementById("sandbox-query");
+      if (sandboxInput) sandboxInput.focus();
+      setMessageState("sandbox-feedback", "success", "Loaded the current lesson query into the sandbox.");
+    };
+  }
+
+  const sendAiBtn = document.getElementById("send-ai-btn");
+  if (sendAiBtn) sendAiBtn.onclick = () => sendAiMessage();
+
+  const clearAiBtn = document.getElementById("clear-ai-btn");
+  if (clearAiBtn) clearAiBtn.onclick = clearAiChat;
+
+  document.querySelectorAll(".quick-ai-btn").forEach((btn) => {
+    btn.onclick = () => {
+      scrollToAiCompanion();
+      sendAiMessage(btn.dataset.aiPrompt || "");
+    };
+  });
+
   const toggleBtn = document.getElementById("toggle-levels-panel-btn");
   const panel = document.getElementById("levels-panel");
   if (toggleBtn && panel) {
@@ -7053,8 +7108,6 @@ function initUiActions() {
     };
   }
 }
-
-
 
 const AI_API_CONFIG = {
   endpoint: "/api/ai-companion",
@@ -7102,8 +7155,7 @@ function showSandboxWorkspace() {
   appState.currentView = "sandbox";
   showSection("sandbox-workspace");
   syncSandboxStarterQuery();
-  renderAiMessages();
-  setAiStatus("Ready", false);
+  document.getElementById("sandbox-query")?.focus();
 }
 
 function setMessageState(elementId, state, message) {
@@ -7159,11 +7211,37 @@ async function resetSandbox() {
 
 function syncSandboxStarterQuery() {
   const box = document.getElementById("sandbox-query");
-  if (!box) return;
   const lesson = getCurrentLesson();
-  if (lesson && (lesson.starterQuery || lesson.solutionQuery)) {
-    box.value = lesson.starterQuery || lesson.solutionQuery;
+  if (box) {
+    if (lesson && (lesson.starterQuery || lesson.solutionQuery)) {
+      box.value = lesson.starterQuery || lesson.solutionQuery;
+    } else if (!box.value) {
+      box.value = "";
+    }
   }
+  renderSandboxLessonContext();
+}
+
+function renderSandboxLessonContext() {
+  const lesson = getCurrentLesson();
+  const titleEl = document.getElementById("sandbox-lesson-title");
+  const objectiveEl = document.getElementById("sandbox-lesson-objective");
+  const tablesEl = document.getElementById("sandbox-lesson-tables");
+  if (!titleEl || !objectiveEl || !tablesEl) return;
+
+  if (!lesson) {
+    titleEl.textContent = "No lesson selected.";
+    objectiveEl.textContent = "Open a lesson, then come back here to work with its SQL pattern and relevant tables.";
+    tablesEl.innerHTML = "";
+    return;
+  }
+
+  titleEl.textContent = lesson.title || "Current lesson";
+  objectiveEl.textContent = lesson.challengeCriteria || lesson.objective || "Use the current lesson as your sandbox context.";
+  const tables = Array.isArray(lesson.relevantTables) ? lesson.relevantTables : [];
+  tablesEl.innerHTML = tables.length
+    ? tables.map((table) => `<div class="sandbox-schema-pill"><span>${escapeHtml(table)}</span><code>${escapeHtml(table)}</code></div>`).join("")
+    : '<p class="sandbox-note">No table list was supplied for this lesson.</p>';
 }
 
 function runSandboxQuery() {
@@ -7177,9 +7255,12 @@ function runSandboxQuery() {
     return;
   }
   try {
-    const result = sandboxDb.exec(query);
-    document.getElementById("sandbox-output").innerHTML = formatResultTable(result);
-    setMessageState("sandbox-feedback", "success", result.length ? "Sandbox query ran successfully." : "Query executed successfully. No result rows were returned.");
+    const execResult = sandboxDb.exec(query);
+    const normalized = execResult.length
+      ? { columns: execResult[0].columns || [], values: execResult[0].values || [] }
+      : { columns: [], values: [] };
+    document.getElementById("sandbox-output").innerHTML = formatResultTable(normalized);
+    setMessageState("sandbox-feedback", "success", execResult.length ? "Sandbox query ran successfully." : "Query executed successfully. No result rows were returned.");
   } catch (error) {
     setMessageState("sandbox-feedback", "error", getExecutionErrorMessage(error));
   }
@@ -7209,13 +7290,13 @@ function renderAiMessages() {
   const holder = document.getElementById("ai-messages");
   if (!holder) return;
   if (!aiThread.length) {
-    holder.innerHTML = `<div class="ai-message assistant"><div class="ai-message-role">AI companion</div><div>I can help with SQL hints, debugging, executive summaries, and next-step practice. Ask about the current lesson or use a quick action.</div></div>`;
+    holder.innerHTML = `<div class="ai-message assistant"><div class="ai-message-role">AI companion</div><div class="ai-message-body"><strong>How I can help</strong><br>I can give a hint, debug your SQL, rewrite a query more cleanly, or frame the result for an executive audience.</div></div>`;
     return;
   }
   holder.innerHTML = aiThread.map((msg) => `
     <div class="ai-message ${msg.role}">
       <div class="ai-message-role">${msg.role === "user" ? "You" : "AI companion"}</div>
-      <div>${escapeHtml(msg.content).replace(/\n/g, "<br>")}</div>
+      <div class="ai-message-body">${escapeHtml(msg.content).replace(/\n/g, "<br>")}</div>
     </div>
   `).join("");
   holder.scrollTop = holder.scrollHeight;
@@ -7232,24 +7313,77 @@ function fallbackAiResponse(userMessage) {
   const lesson = getCurrentLesson();
   const prompt = userMessage.toLowerCase();
   if (!lesson) {
-    return "Start or resume a lesson first so I can tailor the guidance to the objective, tables, and SQL pattern you are practicing.";
+    return [
+      "Summary",
+      "Start or resume a lesson first so I can tailor the guidance to the correct objective, tables, and SQL pattern.",
+      "",
+      "Next step",
+      "Open a lesson, then return to the sandbox and load the current lesson query."
+    ].join("\n");
   }
+
+  const relevantTables = lesson.relevantTables?.length ? lesson.relevantTables.join(", ") : "the lesson tables";
+  const sqlFocus = lesson.sql_focus?.length ? lesson.sql_focus.join(", ") : "the requested SQL pattern";
+
   if (prompt.includes("hint")) {
     return [
+      "Hint",
       `Focus on the lesson objective: ${lesson.objective}`,
-      lesson.joinHint ? `Join hint: ${lesson.joinHint}` : null,
-      lesson.relevantTables?.length ? `Relevant tables: ${lesson.relevantTables.join(", ")}.` : null,
-      lesson.sql_focus?.length ? `SQL focus: ${lesson.sql_focus.join(", ")}.` : null,
-      "Try solving it without copying the full solution first."
-    ].filter(Boolean).join("\n");
+      `Relevant tables: ${relevantTables}`,
+      `SQL focus: ${sqlFocus}`,
+      "",
+      "What to try next",
+      "Start with the base table, return only the requested fields, then add the filter, grouping, or ordering in the same sequence the lesson asks for."
+    ].join("\n");
   }
+
   if (prompt.includes("executive")) {
-    return `Executive framing for ${lesson.title}: highlight the metric or operational pattern being studied, explain why it matters to quality, revenue, or throughput, and recommend one action a leader should take next.`;
+    return [
+      "Executive framing",
+      `For ${lesson.title}, explain the metric or operational pattern being studied, why it matters to throughput, revenue, quality, or patient flow, and one action leadership should consider next.`,
+      "",
+      "Suggested structure",
+      "1. What the metric says",
+      "2. Why it matters operationally",
+      "3. What leaders should do next"
+    ].join("\n");
   }
-  if (prompt.includes("debug") || prompt.includes("wrong")) {
-    return "Check four things in order: the base table, the exact columns requested, filter logic, and whether the result grain matches the business question. If a join is involved, verify the key and whether you created duplicate rows.";
+
+  if (prompt.includes("debug") || prompt.includes("wrong") || prompt.includes("error")) {
+    return [
+      "Debug checklist",
+      "1. Confirm the base table matches the lesson grain.",
+      "2. Confirm the selected columns match the lesson prompt exactly.",
+      "3. Check the filter logic, GROUP BY, HAVING, ORDER BY, and aliases.",
+      "4. Confirm the result grain is not duplicated by a bad join.",
+      "",
+      `Lesson context: ${lesson.title}`,
+      `Relevant tables: ${relevantTables}`
+    ].join("\n");
   }
-  return `For ${lesson.title}, start by matching the request to the right grain, then use ${lesson.relevantTables?.[0] || "the relevant table"} as your anchor. If you want, ask me for a hint, a debug pass, or an executive summary.`;
+
+  if (prompt.includes("rewrite")) {
+    return [
+      "Rewrite guidance",
+      "I would rewrite the query to keep one clear base table, short aliases, and only the clauses needed for the lesson objective.",
+      "",
+      "Focus",
+      `Use ${relevantTables} and keep the query aligned to ${sqlFocus}.`
+    ].join("\n");
+  }
+
+  return [
+    "Support summary",
+    `You are working on ${lesson.title}.`,
+    `Objective: ${lesson.objective}`,
+    `Relevant tables: ${relevantTables}`,
+    "",
+    "Ask me for",
+    "- a hint",
+    "- a debug pass",
+    "- a cleaner rewrite",
+    "- an executive summary"
+  ].join("\n");
 }
 
 async function requestAiCompanion(userMessage) {
@@ -7297,7 +7431,6 @@ function clearAiChat() {
 }
 
 function scrollToAiCompanion() {
-  showSandboxWorkspace();
   const target =
     document.getElementById("ai-companion-section") ||
     document.getElementById("ai-input")?.closest("section") ||
@@ -7325,6 +7458,7 @@ function renderAll() {
     renderLesson();
   } else if (appState.currentView === "sandbox") {
     showSandboxWorkspace();
+    renderSandboxLessonContext();
   } else {
     showOverview();
   }
@@ -7378,13 +7512,13 @@ function initUiActions() {
     };
   }
 
-  const runSandboxBtn = document.getElementById("run-sandbox-btn") || document.getElementById("sandbox-run-btn");
+  const runSandboxBtn = document.getElementById("run-sandbox-btn");
   if (runSandboxBtn) runSandboxBtn.onclick = runSandboxQuery;
 
-  const resetSandboxBtn = document.getElementById("reset-sandbox-btn") || document.getElementById("sandbox-reset-btn");
+  const resetSandboxBtn = document.getElementById("reset-sandbox-btn");
   if (resetSandboxBtn) resetSandboxBtn.onclick = resetSandbox;
 
-  const loadLessonBtn = document.getElementById("load-lesson-query-btn") || document.getElementById("sandbox-load-selected-btn");
+  const loadLessonBtn = document.getElementById("load-lesson-query-btn");
   if (loadLessonBtn) {
     loadLessonBtn.onclick = () => {
       syncSandboxStarterQuery();
@@ -7427,10 +7561,8 @@ function attachPersistentNavigationDelegates() {
     if (!button) return;
 
     const label = (button.textContent || "").replace(/\s+/g, " ").trim().toLowerCase();
-    const isOverview = button.id === "open-overview-btn" || label === "track overview";
-    const isLessons = button.id === "open-lessons-btn" || button.id === "jump-to-lessons-btn" || button.id === "show-lessons-btn" || label === "lessons";
-    const isSandbox = button.id === "open-sandbox-btn" || label === "sandbox" || label === "sql sandbox";
-    const isAi = button.id === "jump-to-ai-btn" || label === "ai companion";
+    const isOverview = button.id === "open-overview-btn" || button.id === "nav-overview-btn" || label === "track overview";
+    const isSandbox = button.id === "open-sandbox-btn" || button.id === "nav-sandbox-btn" || label === "sandbox" || label === "sql sandbox";
 
     if (isOverview) {
       event.preventDefault();
@@ -7442,15 +7574,6 @@ function attachPersistentNavigationDelegates() {
       return;
     }
 
-    if (isLessons) {
-      event.preventDefault();
-      attempts = 0;
-      showLessonsWorkspace();
-      saveProgress();
-      renderAll();
-      return;
-    }
-
     if (isSandbox) {
       event.preventDefault();
       attempts = 0;
@@ -7459,12 +7582,6 @@ function attachPersistentNavigationDelegates() {
       renderAll();
       document.getElementById("sandbox-workspace")?.scrollIntoView({ behavior: "smooth", block: "start" });
       document.getElementById("sandbox-query")?.focus();
-      return;
-    }
-
-    if (isAi) {
-      event.preventDefault();
-      scrollToAiCompanion();
       return;
     }
   });
@@ -7491,9 +7608,6 @@ window.showCareopsSandbox = function () {
   renderAll();
 };
 
-window.showCareopsAiCompanion = function () {
-  scrollToAiCompanion();
-};
 
 document.addEventListener("DOMContentLoaded", async function () {
   normalizeCurriculum();
