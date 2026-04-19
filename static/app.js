@@ -7627,3 +7627,342 @@ document.addEventListener("DOMContentLoaded", async function () {
   window.addEventListener("scroll", hideAchievementTooltip, true);
   window.addEventListener("resize", hideAchievementTooltip);
 });
+
+/* ================= PATCHED SANDBOX / AI / MOBILE BEHAVIOR ================= */
+
+function setSandboxModeUi(isSandbox) {
+  document.body.classList.toggle("sandbox-mode", !!isSandbox);
+}
+
+function renderSandboxPromptList() {
+  const holder = document.getElementById("sandbox-prompt-list");
+  if (!holder) return;
+
+  const current = getCurrentLesson();
+  const lessons = (getAllLessons ? getAllLessons() : []).filter((lesson) => lesson && (lesson.starterQuery || lesson.solutionQuery));
+  const prompts = [];
+
+  if (current && (current.starterQuery || current.solutionQuery)) {
+    prompts.push({
+      id: current.id,
+      title: current.title || "Current lesson",
+      objective: current.challengeCriteria || current.objective || "Use this lesson's SQL pattern.",
+      query: current.starterQuery || current.solutionQuery || "",
+      tables: Array.isArray(current.relevantTables) ? current.relevantTables : []
+    });
+  }
+
+  lessons.slice(0, 8).forEach((lesson) => {
+    if (current && lesson.id === current.id) return;
+    prompts.push({
+      id: lesson.id,
+      title: lesson.title || "Guided prompt",
+      objective: lesson.challengeCriteria || lesson.objective || "Use this lesson's SQL pattern.",
+      query: lesson.starterQuery || lesson.solutionQuery || "",
+      tables: Array.isArray(lesson.relevantTables) ? lesson.relevantTables : []
+    });
+  });
+
+  if (!prompts.length) {
+    holder.innerHTML = '<p class="sandbox-note">No lesson-based prompts are available yet. Open a lesson first, then return to the sandbox.</p>';
+    return;
+  }
+
+  holder.innerHTML = prompts.map((prompt, index) => `
+    <div class="sandbox-prompt-card ${index === 0 ? "active" : ""}" data-prompt-id="${escapeHtml(prompt.id)}">
+      <h5>${escapeHtml(prompt.title)}</h5>
+      <p>${escapeHtml(prompt.objective)}</p>
+      <div class="sandbox-prompt-meta">
+        ${(prompt.tables || []).map((table) => `<span class="helper-chip">${escapeHtml(table)}</span>`).join("")}
+      </div>
+    </div>
+  `).join("");
+
+  holder.querySelectorAll(".sandbox-prompt-card").forEach((card, idx) => {
+    card.onclick = () => {
+      holder.querySelectorAll(".sandbox-prompt-card").forEach((node) => node.classList.remove("active"));
+      card.classList.add("active");
+      const prompt = prompts[idx];
+      const box = document.getElementById("sandbox-query");
+      if (box) box.value = prompt.query || "";
+      setMessageState("sandbox-feedback", "success", `Loaded prompt: ${prompt.title}`);
+      const currentLesson = getCurrentLesson();
+      const tableHolder = document.getElementById("sandbox-lesson-tables");
+      if (tableHolder && prompt.tables && prompt.tables.length) {
+        tableHolder.innerHTML = prompt.tables.map((table) => `<div class="sandbox-schema-pill"><span>${escapeHtml(table)}</span><code>${escapeHtml(table)}</code></div>`).join("");
+      }
+    };
+  });
+}
+
+function syncSandboxStarterQuery() {
+  const box = document.getElementById("sandbox-query");
+  const lesson = getCurrentLesson();
+  if (box) {
+    const starter = lesson && (lesson.starterQuery || lesson.solutionQuery)
+      ? (lesson.starterQuery || lesson.solutionQuery)
+      : "SELECT * FROM patients;";
+    box.value = starter;
+  }
+  renderSandboxLessonContext();
+  renderSandboxPromptList();
+}
+
+function showOverview() {
+  appState.currentView = "overview";
+  setSandboxModeUi(false);
+  showSection("track-overview");
+  document.getElementById("track-overview")?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function showLessonsWorkspace() {
+  ensureCurrentLesson();
+  appState.currentView = "lesson";
+  setSandboxModeUi(false);
+  showSection("lesson-workspace");
+  document.getElementById("lesson-workspace")?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function showSandboxWorkspace() {
+  appState.currentView = "sandbox";
+  setSandboxModeUi(true);
+  showSection("sandbox-workspace");
+  syncSandboxStarterQuery();
+  renderAiMessages();
+  document.getElementById("sandbox-workspace")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  document.getElementById("sandbox-query")?.focus();
+}
+
+function formatResultTable(result) {
+  const safeColumns = Array.isArray(result?.columns) ? result.columns : [];
+  const safeValues = Array.isArray(result?.values) ? result.values : [];
+  if (!safeColumns.length) return "<p>No rows returned.</p>";
+  let html = '<div class="query-results-table-wrap"><table class="preview-table"><thead><tr>';
+  safeColumns.forEach((col) => html += `<th>${escapeHtml(String(col))}</th>`);
+  html += "</tr></thead><tbody>";
+  safeValues.forEach((row) => {
+    html += "<tr>";
+    (Array.isArray(row) ? row : []).forEach((cell) => html += `<td>${cell === null || cell === undefined ? "" : escapeHtml(String(cell))}</td>`);
+    html += "</tr>";
+  });
+  html += "</tbody></table></div>";
+  return html;
+}
+
+function runSandboxQuery() {
+  const query = (document.getElementById("sandbox-query")?.value || "").trim();
+  if (!query) {
+    setMessageState("sandbox-feedback", "warning", "Enter a SQL statement before running the sandbox.");
+    return;
+  }
+  if (!sandboxDb) {
+    setMessageState("sandbox-feedback", "warning", "Sandbox database is still loading. Try again in a moment.");
+    return;
+  }
+  try {
+    const execResult = sandboxDb.exec(query);
+    const first = Array.isArray(execResult) && execResult.length ? execResult[0] : null;
+    const normalized = first
+      ? {
+          columns: Array.isArray(first.columns) ? first.columns : [],
+          values: Array.isArray(first.values) ? first.values : []
+        }
+      : { columns: [], values: [] };
+    const output = document.getElementById("sandbox-output");
+    if (output) {
+      output.innerHTML = `
+        <div class="concept-card sandbox-output-card">
+          <h4>Result</h4>
+          ${formatResultTable(normalized)}
+        </div>
+      `;
+    }
+    setMessageState(
+      "sandbox-feedback",
+      "success",
+      normalized.columns.length ? "Sandbox query ran successfully." : "Query executed successfully. No result rows were returned."
+    );
+  } catch (error) {
+    setMessageState("sandbox-feedback", "error", getExecutionErrorMessage(error));
+  }
+}
+
+function renderAiMessages() {
+  const holder = document.getElementById("ai-messages");
+  if (!holder) return;
+  if (!aiThread.length) {
+    holder.innerHTML = `
+      <div class="ai-message assistant">
+        <div class="ai-message-role">AI companion</div>
+        <div class="ai-message-body">
+          <strong>How I can help</strong><br>
+          I can give you a focused hint, debug your SQL, rewrite a query more cleanly, or frame the result for an executive audience.
+        </div>
+      </div>`;
+    return;
+  }
+  holder.innerHTML = aiThread.map((msg) => {
+    const title = msg.role === "user" ? "You" : "AI companion";
+    const body = escapeHtml(String(msg.content || "")).replace(/\n/g, "<br>");
+    return `
+      <div class="ai-message ${msg.role}">
+        <div class="ai-message-role">${title}</div>
+        <div class="ai-message-body">${body}</div>
+      </div>
+    `;
+  }).join("");
+  holder.scrollTop = holder.scrollHeight;
+}
+
+function fallbackAiResponse(userMessage) {
+  const lesson = getCurrentLesson();
+  const prompt = String(userMessage || "").toLowerCase();
+  const query = (document.getElementById("sandbox-query")?.value || document.getElementById("query")?.value || "").trim();
+
+  const sections = [];
+  if (prompt.includes("hint")) {
+    sections.push("**Hint**");
+    if (lesson) {
+      sections.push(`Focus on the lesson objective: ${lesson.objective || lesson.challengeCriteria || lesson.title}.`);
+      if (lesson.joinHint) sections.push(`Join hint: ${lesson.joinHint}`);
+      if (lesson.relevantTables?.length) sections.push(`Relevant tables: ${lesson.relevantTables.join(", ")}.`);
+      if (lesson.sql_focus?.length) sections.push(`SQL focus: ${lesson.sql_focus.join(", ")}.`);
+      sections.push("Try solving it without copying the full solution first.");
+    } else {
+      sections.push("Use one base table that matches the reporting grain, then add filters or joins only when needed.");
+    }
+  } else if (prompt.includes("debug") || prompt.includes("error")) {
+    sections.push("**Debug readout**");
+    if (!query) {
+      sections.push("There is no SQL in the sandbox right now. Add a query first so I can debug it.");
+    } else {
+      sections.push("Start by checking the base table, column names, commas, aliases, and clause order.");
+      sections.push("If the query runs but returns the wrong shape, confirm the reporting grain and whether a join is duplicating rows.");
+    }
+  } else if (prompt.includes("rewrite")) {
+    sections.push("**Rewrite guidance**");
+    if (!query) {
+      sections.push("There is no sandbox query to rewrite yet.");
+    } else {
+      sections.push("I would keep the same logic, use clearer aliases, and make the base table explicit.");
+      sections.push("If helpful, ask again after loading a query and I can rewrite that exact SQL pattern.");
+    }
+  } else if (prompt.includes("executive")) {
+    sections.push("**Executive framing**");
+    if (lesson) {
+      sections.push(`Metric: ${lesson.executiveTakeaway?.metric || lesson.title}.`);
+      sections.push(`Why it matters: ${lesson.executiveTakeaway?.whyItMatters || lesson.objective}.`);
+      sections.push(`What to share: ${lesson.executiveTakeaway?.whatToShare || "Summarize the signal, likely driver, and business impact."}`);
+      sections.push(`Recommended action: ${lesson.executiveTakeaway?.action || "Identify the next operational or financial action leadership should consider."}`);
+    } else {
+      sections.push("Describe what the query measures, why leaders care, the likely driver, and the next action.");
+    }
+  } else {
+    sections.push("**Guidance**");
+    sections.push("Tell me whether you want a hint, a debug pass, a rewrite, or an executive summary.");
+    if (lesson) sections.push(`Current lesson: ${lesson.title}.`);
+  }
+
+  return sections.join("\n");
+}
+
+function initUiActions() {
+  const openOverviewBtn = document.getElementById("open-overview-btn");
+  if (openOverviewBtn) openOverviewBtn.onclick = () => { attempts = 0; showOverview(); saveProgress(); renderAll(); };
+
+  const navOverviewBtn = document.getElementById("nav-overview-btn");
+  if (navOverviewBtn) navOverviewBtn.onclick = () => { attempts = 0; showOverview(); saveProgress(); renderAll(); };
+
+  const navSandboxBtn = document.getElementById("nav-sandbox-btn");
+  if (navSandboxBtn) navSandboxBtn.onclick = () => { attempts = 0; showSandboxWorkspace(); saveProgress(); renderAll(); };
+
+  const openSandboxBtn = document.getElementById("open-sandbox-btn");
+  if (openSandboxBtn) openSandboxBtn.onclick = () => { attempts = 0; showSandboxWorkspace(); saveProgress(); renderAll(); };
+
+  const runSandboxBtn = document.getElementById("run-sandbox-btn");
+  if (runSandboxBtn) runSandboxBtn.onclick = runSandboxQuery;
+
+  const resetSandboxBtn = document.getElementById("reset-sandbox-btn");
+  if (resetSandboxBtn) resetSandboxBtn.onclick = resetSandbox;
+
+  const loadLessonBtn = document.getElementById("load-lesson-query-btn");
+  if (loadLessonBtn) loadLessonBtn.onclick = () => {
+    syncSandboxStarterQuery();
+    const sandboxInput = document.getElementById("sandbox-query");
+    if (sandboxInput) sandboxInput.focus();
+    setMessageState("sandbox-feedback", "success", "Loaded the current lesson query into the sandbox.");
+  };
+
+  const sendAiBtn = document.getElementById("send-ai-btn");
+  if (sendAiBtn) sendAiBtn.onclick = () => sendAiMessage();
+
+  const askAiAboutQueryBtn = document.getElementById("sandbox-send-ai-btn");
+  if (askAiAboutQueryBtn) askAiAboutQueryBtn.onclick = () => {
+    const input = document.getElementById("ai-input");
+    if (input && !input.value.trim()) {
+      input.value = "Help me understand and improve this sandbox query.";
+    }
+    sendAiMessage();
+    document.getElementById("ai-companion-section")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  const clearAiBtn = document.getElementById("clear-ai-btn");
+  if (clearAiBtn) clearAiBtn.onclick = clearAiChat;
+
+  document.querySelectorAll(".quick-ai-btn").forEach((btn) => {
+    btn.onclick = () => {
+      const input = document.getElementById("ai-input");
+      const template = btn.getAttribute("data-template") || "";
+      if (input) input.value = template;
+      sendAiMessage();
+    };
+  });
+
+  const guidedBtn = document.getElementById("sandbox-guided-btn");
+  const freeBtn = document.getElementById("sandbox-free-btn");
+  const guidedPanel = document.getElementById("sandbox-guided-panel");
+
+  if (guidedBtn) guidedBtn.onclick = () => {
+    guidedPanel?.classList.remove("hidden");
+    guidedBtn.classList.add("active");
+    freeBtn?.classList.remove("active");
+    renderSandboxPromptList();
+  };
+  if (freeBtn) freeBtn.onclick = () => {
+    guidedPanel?.classList.add("hidden");
+    freeBtn.classList.add("active");
+    guidedBtn?.classList.remove("active");
+  };
+}
+
+function attachPersistentNavigationDelegates() {
+  if (window.__careopsNavDelegatePatched) return;
+  window.__careopsNavDelegatePatched = true;
+
+  document.addEventListener("click", function (event) {
+    const button = event.target.closest("button");
+    if (!button) return;
+    const label = String(button.textContent || "").trim().toLowerCase();
+
+    const isOverview = button.id === "open-overview-btn" || button.id === "nav-overview-btn" || label === "track overview";
+    const isSandbox = button.id === "open-sandbox-btn" || button.id === "nav-sandbox-btn" || label === "sandbox" || label === "sql sandbox";
+
+    if (isOverview) {
+      event.preventDefault();
+      attempts = 0;
+      showOverview();
+      saveProgress();
+      renderAll();
+      return;
+    }
+
+    if (isSandbox) {
+      event.preventDefault();
+      attempts = 0;
+      showSandboxWorkspace();
+      saveProgress();
+      renderAll();
+      return;
+    }
+  });
+}
