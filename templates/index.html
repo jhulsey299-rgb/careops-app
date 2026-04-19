@@ -238,7 +238,7 @@
                 </section>
  
                 <section id="sandbox-workspace" class="hidden sandbox-workspace">
-                    <div class="mission-box">
+                    <div class="mission-box sandbox-hero-card">
                         <div class="mission-meta-row">
                             <span class="lesson-type-badge lesson-type-challenge">Sandbox</span>
                             <span class="difficulty-badge difficulty-advanced">Free + Guided</span>
@@ -247,33 +247,73 @@
                         <h2>Sandbox SQL Lab</h2>
                         <p>Use the in-browser hospital dataset for free play or load guided prompts tied to real analyst tasks.</p>
                     </div>
- 
-                    <div class="sandbox-toolbar">
-                        <div class="sandbox-mode-group">
-                            <button type="button" id="sandbox-free-btn" class="active">Free Play</button>
-                            <button type="button" id="sandbox-guided-btn">Guided Prompts</button>
+
+                    <div class="sandbox-shell">
+                        <div class="sandbox-main">
+                            <div class="sandbox-toolbar">
+                                <div class="sandbox-mode-group">
+                                    <button type="button" id="sandbox-free-btn" class="active">Free Play</button>
+                                    <button type="button" id="sandbox-guided-btn">Guided Prompts</button>
+                                </div>
+                                <div class="sandbox-actions-inline">
+                                    <button type="button" id="run-sandbox-btn">Run Sandbox Query</button>
+                                    <button type="button" id="reset-sandbox-btn">Reset</button>
+                                </div>
+                            </div>
+
+                            <div class="concept-card sandbox-lesson-context" id="sandbox-lesson-context">
+                                <div class="sandbox-context-header">
+                                    <div>
+                                        <div class="table-modal-kicker">Current Lesson Context</div>
+                                        <h4 id="sandbox-lesson-title">No lesson selected.</h4>
+                                    </div>
+                                    <button type="button" id="load-lesson-query-btn" class="schema-table-view-btn">Load Current Lesson Query</button>
+                                </div>
+                                <p id="sandbox-lesson-objective">Open a lesson, then come back here to work with its SQL pattern and relevant tables.</p>
+                                <div id="sandbox-lesson-tables" class="sandbox-schema-list"></div>
+                            </div>
+
+                            <div id="sandbox-guided-panel" class="concept-card hidden">
+                                <h4>Guided Prompt Library</h4>
+                                <p>Select a prompt card to load a realistic analyst question and starter query into the sandbox.</p>
+                                <div id="sandbox-prompt-list" class="sandbox-prompt-list"></div>
+                            </div>
+
+                            <div class="query-section">
+                                <label for="sandbox-query" class="query-label">Sandbox SQL</label>
+                                <textarea id="sandbox-query" rows="10" cols="80" spellcheck="false" autocomplete="off" autocapitalize="off"></textarea>
+                                <div class="button-row">
+                                    <button type="button" id="sandbox-send-ai-btn">Ask AI About This Query</button>
+                                </div>
+                                <div id="sandbox-feedback" aria-live="polite"></div>
+                                <div id="sandbox-output" aria-live="polite"></div>
+                            </div>
                         </div>
-                        <div class="sandbox-actions-inline">
-                            <button type="button" id="sandbox-run-btn">Run Sandbox Query</button>
-                            <button type="button" id="sandbox-reset-btn">Reset</button>
-                        </div>
-                    </div>
- 
-                    <div id="sandbox-guided-panel" class="concept-card hidden">
-                        <h4>Guided Prompt Library</h4>
-                        <p>Select a prompt to preload a realistic analyst question and starter query.</p>
-                        <div id="sandbox-prompt-list" class="sandbox-prompt-list"></div>
-                    </div>
- 
-                    <div class="query-section">
-                        <label for="sandbox-query" class="query-label">Sandbox SQL</label>
-                        <textarea id="sandbox-query" rows="10" cols="80" spellcheck="false" autocomplete="off" autocapitalize="off"></textarea>
-                        <div class="button-row">
-                            <button type="button" id="sandbox-load-selected-btn">Load Selected Prompt</button>
-                            <button type="button" id="sandbox-send-ai-btn">Ask AI About This Query</button>
-                        </div>
-                        <div id="sandbox-feedback" aria-live="polite"></div>
-                        <div id="sandbox-output" aria-live="polite"></div>
+
+                        <aside class="sandbox-ai-panel concept-card" id="ai-companion-section">
+                            <div class="section-header">
+                                <h3>AI Companion</h3>
+                                <p>Get hints, rewrites, debugging help, schema answers, or an executive summary tied to the sandbox query.</p>
+                            </div>
+
+                            <div class="ai-status-row">
+                                <span id="ai-status-pill" class="ai-status-chip">Fallback mode</span>
+                            </div>
+
+                            <label for="ai-input" class="query-label">Prompt</label>
+                            <textarea id="ai-input" rows="8" cols="40" placeholder="Ask for a hint, schema help, query rewrite, error explanation, or executive summary."></textarea>
+
+                            <div class="ai-actions-wrap">
+                                <button type="button" id="send-ai-btn">Ask AI</button>
+                                <button type="button" class="quick-ai-btn" data-template="Give me a focused hint for this query.">Hint</button>
+                                <button type="button" class="quick-ai-btn" data-template="Debug this SQL and tell me what is wrong.">Debug</button>
+                                <button type="button" class="quick-ai-btn" data-template="Rewrite this query more clearly without changing the result.">Rewrite</button>
+                                <button type="button" class="quick-ai-btn" data-template="Write an executive summary of what this query is trying to show.">Executive Summary</button>
+                                <button type="button" id="clear-ai-btn" class="panel-toggle-btn">Clear</button>
+                            </div>
+
+                            <div id="ai-messages" class="ai-messages"></div>
+                        </aside>
                     </div>
                 </section>
  
