@@ -158,8 +158,7 @@ const schema = {
   ]
 };
 
-const STORAGE_KEY = "careops_curriculum_master_v2";
-
+const curriculum = [
 let appState = {
   currentTrackId: "track_foundations",
   currentCategoryId: null,
@@ -4232,10 +4231,17 @@ function renderCurriculumNav() {
       saveProgress();
       renderAll();
     });
+
+    backfillchallengecriteria(curriculum);
+    enforcechallengecriteria(curriculum);
+
+  function saveprogress(){
     wrap.appendChild(header);
     list.appendChild(wrap);
   });
 }
+
+
 
 function renderOverview() {
   const track = getTrack();
