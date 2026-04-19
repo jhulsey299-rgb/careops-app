@@ -2011,3 +2011,204 @@ body.resizing-schema #schema-resizer::before {
         min-width: 640px;
     }
 }
+
+
+/* ================= SANDBOX + AI REFINEMENTS ================= */
+.sandbox-workspace .sandbox-shell {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 320px;
+    gap: 18px;
+    align-items: start;
+}
+.sandbox-main {
+    min-width: 0;
+}
+.sandbox-ai-panel {
+    position: sticky;
+    top: 16px;
+    padding: 18px;
+}
+.sandbox-lesson-context {
+    margin-bottom: 16px;
+}
+.sandbox-context-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: flex-start;
+    margin-bottom: 10px;
+}
+.sandbox-prompt-list {
+    display: grid;
+    gap: 12px;
+    grid-template-columns: 1fr;
+}
+.sandbox-prompt-card {
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+    padding: 14px;
+    cursor: pointer;
+    transition: border-color var(--transition), box-shadow var(--transition), transform var(--transition);
+}
+.sandbox-prompt-card:hover,
+.sandbox-prompt-card.active {
+    border-color: #93c5fd;
+    box-shadow: var(--shadow-sm);
+    transform: translateY(-1px);
+}
+.sandbox-prompt-card h5 {
+    margin: 0 0 6px;
+    font-size: 0.95rem;
+    color: var(--text);
+}
+.sandbox-prompt-card p {
+    margin: 0 0 8px;
+    font-size: 0.88rem;
+}
+.sandbox-prompt-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.sandbox-output-card {
+    margin-top: 12px;
+}
+.sandbox-output-card h4 {
+    margin-bottom: 8px;
+}
+.ai-status-row {
+    margin-bottom: 10px;
+}
+.ai-actions-wrap {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 14px 0;
+}
+.ai-messages {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-height: 520px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+.ai-message {
+    border-radius: 14px;
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+}
+.ai-message.user {
+    background: #eff6ff;
+    border-color: #bfdbfe;
+}
+.ai-message.assistant {
+    background: #ffffff;
+}
+.ai-message-role {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-faint);
+    margin-bottom: 6px;
+}
+.ai-message-body {
+    color: var(--text-soft);
+    line-height: 1.6;
+}
+.ai-message-body strong {
+    color: var(--text);
+}
+body.sandbox-mode .badges-section,
+body.sandbox-mode #levels-panel {
+    display: none !important;
+}
+body.sandbox-mode .workspace-layout {
+    grid-template-columns: 1fr;
+}
+body.sandbox-mode .sandbox-workspace {
+    display: block !important;
+}
+@media (max-width: 1200px) {
+    .sandbox-workspace .sandbox-shell {
+        grid-template-columns: 1fr;
+    }
+    .sandbox-ai-panel {
+        position: static;
+    }
+}
+@media (max-width: 900px) {
+    body {
+        padding: 10px;
+    }
+    .app-shell {
+        grid-template-columns: 1fr !important;
+        gap: 12px;
+    }
+    #schema-resizer {
+        display: none !important;
+    }
+    .schema-panel {
+        position: static !important;
+        width: 100% !important;
+        max-height: none !important;
+        order: 3;
+        overflow-x: visible;
+    }
+    .main-content {
+        padding-left: 0 !important;
+        order: 1;
+    }
+    .hero-banner,
+    .top-dashboard,
+    .dashboard-actions,
+    .badges-section,
+    .workspace-layout {
+        width: 100%;
+    }
+    .workspace-layout {
+        display: flex !important;
+        flex-direction: column;
+    }
+    .levels-panel,
+    .levels-panel.collapsed {
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: none !important;
+        position: static !important;
+        order: 2;
+    }
+    .levels-panel.collapsed #track-title {
+        writing-mode: initial !important;
+        transform: none !important;
+    }
+    .levels-panel.collapsed .levels-list,
+    .levels-panel.collapsed #track-description,
+    .levels-panel.collapsed .side-panel-actions {
+        display: block !important;
+    }
+    .dashboard-actions.main-nav-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+    }
+    .dashboard-actions.main-nav-actions button {
+        width: 100%;
+        margin: 0;
+        min-height: 44px;
+    }
+    .top-dashboard {
+        grid-template-columns: 1fr !important;
+    }
+    .track-overview-grid,
+    .track-category-cards,
+    .table-modal-meta {
+        grid-template-columns: 1fr !important;
+    }
+    textarea {
+        min-height: 160px;
+        font-size: 14px;
+    }
+}
