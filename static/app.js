@@ -951,6 +951,18 @@ function getAllLessons() {
   return getAllCategories().flatMap(category => category.lessons);
 }
 
+function getGlobalLessons() {
+  return curriculum.flatMap(track =>
+    (track.categories || []).flatMap(category =>
+      (category.lessons || []).map(lesson => ({
+        lesson,
+        trackId: track.id,
+        categoryId: category.id
+      }))
+    )
+  );
+}
+
 function getCurrentLesson() {
   return getAllLessons().find(lesson => lesson.id === appState.currentLessonId) || null;
 }
@@ -1198,7 +1210,6 @@ function updateDashboard() {
 
 function renderSchema() {
   const tablesWrap = document.getElementById("schema-tables");
-  const relationshipsWrap = document.getElementById("schema-relationships");
 
   const activeLesson = appState.currentView === "lesson" ? getCurrentLesson() : null;
   const relevantTables = new Set(
@@ -1220,9 +1231,20 @@ function renderSchema() {
       summary.textContent = table.name;
       details.appendChild(summary);
 
+      const relationshipList = schema.relationships.filter(item =>
+        item.toLowerCase().includes(`${String(table.name).toLowerCase()}.`)
+      );
+
       const p = document.createElement("p");
       p.innerHTML = `<strong>Description:</strong> ${table.description}<br><strong>Columns:</strong> ${table.notableColumns.join(", ")}`;
       details.appendChild(p);
+
+      if (relationshipList.length) {
+        const rel = document.createElement("div");
+        rel.className = "relationship-item";
+        rel.innerHTML = `<strong>Relationships:</strong><br>${relationshipList.join("<br>")}`;
+        details.appendChild(rel);
+      }
 
       const actions = document.createElement("div");
       actions.className = "schema-table-actions";
@@ -1237,16 +1259,6 @@ function renderSchema() {
       details.appendChild(actions);
       tablesWrap.appendChild(details);
     });
-  }
-
-  if (relationshipsWrap) {
-    relationshipsWrap.innerHTML = "";
-    const relationshipsSection = relationshipsWrap.closest(".schema-section");
-    if (relationshipsSection) {
-      relationshipsSection.style.display = "none";
-    } else {
-      relationshipsWrap.style.display = "none";
-    }
   }
 }
 
@@ -2455,26 +2467,13 @@ function markConceptComplete() {
 }
 
 function nextLesson() {
-  const track = getTrack();
-  const lessons = getAllLessons();
-  const idx = lessons.findIndex(item => item.id === appState.currentLessonId);
-
+  const lessons = getGlobalLessons();
+  const idx = lessons.findIndex(item => item.lesson.id === appState.currentLessonId);
   if (idx >= 0 && idx < lessons.length - 1) {
-    appState.currentLessonId = lessons[idx + 1].id;
-    appState.currentCategoryId = getAllCategories().find(cat => cat.lessons.some(l => l.id === appState.currentLessonId))?.id || appState.currentCategoryId;
-    attempts = 0;
-    appState.currentView = "lesson";
-    saveProgress();
-    renderAll();
-    return;
-  }
-
-  const currentTrackIndex = curriculum.findIndex(item => item.id === track.id);
-  const nextTrack = currentTrackIndex >= 0 ? curriculum[currentTrackIndex + 1] : null;
-  if (nextTrack) {
-    appState.currentTrackId = nextTrack.id;
-    appState.currentCategoryId = nextTrack.categories?.[0]?.id || null;
-    appState.currentLessonId = nextTrack.categories?.[0]?.lessons?.[0]?.id || null;
+    const next = lessons[idx + 1];
+    appState.currentTrackId = next.trackId;
+    appState.currentCategoryId = next.categoryId;
+    appState.currentLessonId = next.lesson.id;
     attempts = 0;
     appState.currentView = "lesson";
     saveProgress();
@@ -2483,11 +2482,13 @@ function nextLesson() {
 }
 
 function prevLesson() {
-  const lessons = getAllLessons();
-  const idx = lessons.findIndex(item => item.id === appState.currentLessonId);
+  const lessons = getGlobalLessons();
+  const idx = lessons.findIndex(item => item.lesson.id === appState.currentLessonId);
   if (idx > 0) {
-    appState.currentLessonId = lessons[idx - 1].id;
-    appState.currentCategoryId = getAllCategories().find(cat => cat.lessons.some(l => l.id === appState.currentLessonId))?.id || appState.currentCategoryId;
+    const prev = lessons[idx - 1];
+    appState.currentTrackId = prev.trackId;
+    appState.currentCategoryId = prev.categoryId;
+    appState.currentLessonId = prev.lesson.id;
     attempts = 0;
     appState.currentView = "lesson";
     saveProgress();
