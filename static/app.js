@@ -1403,7 +1403,11 @@ function ensureCurriculumLessonListStyles() {
       border: 0;
       border-radius: 14px;
       padding: 14px 16px;
-      text-align: left;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
       background: linear-gradient(180deg, #3b82f6 0%, #2563eb 100%);
       color: #ffffff;
       cursor: pointer;
@@ -1415,6 +1419,8 @@ function ensureCurriculumLessonListStyles() {
     .curriculum-category-main-btn .curriculum-category-title {
       color: #ffffff;
       display: block;
+      width: 100%;
+      text-align: center;
       font-size: 1.02rem;
       line-height: 1.2;
       margin-bottom: 8px;
@@ -1424,6 +1430,9 @@ function ensureCurriculumLessonListStyles() {
       gap: 10px;
       flex-wrap: wrap;
       align-items: center;
+      justify-content: center;
+      width: 100%;
+      text-align: center;
       color: rgba(255,255,255,0.88);
       font-size: 0.78rem;
       font-weight: 600;
@@ -3621,6 +3630,5 @@ function attachPersistentNavigationDelegates() {
       saveProgress();
       renderAll();
       return;
-    }
-  });
-}
+      }
+      });
