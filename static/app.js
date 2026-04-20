@@ -943,6 +943,13 @@ function getAllCategories() {
   return getTrack().categories || [];
 }
 
+function getTrackByCategoryId(categoryId) {
+  for (const track of curriculum) {
+    if ((track.categories || []).some(category => category.id === categoryId)) return track;
+  }
+  return null;
+}
+
 function getCurrentCategory() {
   return getAllCategories().find(category => category.id === appState.currentCategoryId) || getAllCategories()[0] || null;
 }
@@ -951,20 +958,13 @@ function getAllLessons() {
   return getAllCategories().flatMap(category => category.lessons);
 }
 
-function getGlobalLessons() {
-  return curriculum.flatMap(track =>
-    (track.categories || []).flatMap(category =>
-      (category.lessons || []).map(lesson => ({
-        lesson,
-        trackId: track.id,
-        categoryId: category.id
-      }))
-    )
-  );
-}
-
 function getCurrentLesson() {
   return getAllLessons().find(lesson => lesson.id === appState.currentLessonId) || null;
+}
+
+function lessonsForTrack(trackId = appState.currentTrackId) {
+  const track = curriculum.find(item => item.id === trackId) || curriculum[0];
+  return (track?.categories || []).flatMap(category => category.lessons || []);
 }
 
 function totalLessonCount() {
@@ -973,6 +973,15 @@ function totalLessonCount() {
 
 function completedLessonCount() {
   return appState.completedLessonIds.length;
+}
+
+function currentTrackLessonCount() {
+  return lessonsForTrack(appState.currentTrackId).length;
+}
+
+function currentTrackCompletedLessonCount() {
+  const ids = new Set(lessonsForTrack(appState.currentTrackId).map(lesson => lesson.id));
+  return appState.completedLessonIds.filter(id => ids.has(id)).length;
 }
 
 function isLessonCompleted(lessonId) {
@@ -1049,7 +1058,7 @@ function achievements() {
   const firstTry = appState.firstTryLessonIds.length;
   const mastered = masteryCount();
   const catComplete = categoryId => {
-    const category = getAllCategories().find(item => item.id === categoryId);
+    const category = getTrackByCategoryId(categoryId);
     return !!category && category.lessons.every(lesson => isLessonCompleted(lesson.id));
   };
   return [
@@ -1065,14 +1074,9 @@ function achievements() {
     { label: "Master of Masters", earned: mastered >= 25, emoji: "👑", description: "Unlock by mastering 25 lessons." },
     { label: "Foundations Builder", earned: catComplete("foundations_core"), emoji: "🔗", description: "Unlock by completing every lesson in SQL Foundations for Hospital Data." },
     { label: "Core Analyst", earned: catComplete("core_hospital_analytics"), emoji: "👑", description: "Unlock by completing every lesson in Core Hospital Analytics." },
-    { label: "Trend Tracker", earned: catComplete("applied_trends_investigation"), emoji: "🎯", description: "Unlock by completing every lesson in Applied Analytics: Trends & Investigation." },
-    { label: "Root Cause Hunter", earned: catComplete("advanced_root_cause_analysis"), emoji: "📊", description: "Unlock by completing every lesson in Diagnosis: Root Cause Analysis." },
-    { label: "Executive Whisperer", earned: catComplete("expert_decision_making"), emoji: "🧩", description: "Unlock by completing every lesson in Executive Analytics & Decision Making." },
-    { label: "Expert Finisher", earned: catComplete("expert_decision_making"), emoji: "🧭", description: "Unlock by finishing the expert decision-making track." },
     { label: "Applied Investigator", earned: catComplete("applied_trends_investigation"), emoji: "🏥", description: "Unlock by completing every lesson in Applied Analytics: Trends & Investigation." },
-    { label: "Root Cause Ranger", earned: catComplete("advanced_root_cause_analysis"), emoji: "🔁", description: "Unlock by completing every lesson in Diagnosis: Root Cause Analysis." },
-    { label: "Decision Driver", earned: catComplete("expert_decision_making"), emoji: "💰", description: "Unlock by completing every lesson in Executive Analytics & Decision Making." },
-    { label: "Executive Closer", earned: catComplete("expert_decision_making"), emoji: "🗣️", description: "Unlock by completing every lesson in Executive Analytics & Decision Making." }
+    { label: "Root Cause Hunter", earned: catComplete("advanced_root_cause_analysis"), emoji: "📊", description: "Unlock by completing every lesson in Diagnosis: Root Cause Analysis." },
+    { label: "Executive Whisperer", earned: catComplete("expert_decision_making"), emoji: "🧩", description: "Unlock by completing every lesson in Executive Analytics & Decision Making." }
   ];
 }
 
@@ -1185,8 +1189,8 @@ function renderAchievements() {
 }
 
 function updateDashboard() {
-  const total = totalLessonCount();
-  const completed = completedLessonCount();
+  const total = currentTrackLessonCount();
+  const completed = currentTrackCompletedLessonCount();
   const current = getCurrentLesson();
   const track = getTrack();
   const progressText = document.getElementById("progress-text");
@@ -1206,10 +1210,27 @@ function updateDashboard() {
   }
   if (trackTitle) trackTitle.innerText = track.title;
   if (trackDescription) trackDescription.innerText = "Curriculum, learning levels, completion, and mastery tracking.";
+  updateLevelsPanelTheme(track.id);
+}
+
+function updateLevelsPanelTheme(trackId) {
+  const panel = document.getElementById("levels-panel");
+  if (!panel) return;
+  panel.classList.remove(
+    "track-theme-foundations",
+    "track-theme-core",
+    "track-theme-applied",
+    "track-theme-advanced",
+    "track-theme-expert"
+  );
+  const level = levelForTrack(trackId);
+  if (!level) return;
+  panel.classList.add(`track-theme-${level.key}`);
 }
 
 function renderSchema() {
   const tablesWrap = document.getElementById("schema-tables");
+  const relationshipsWrap = document.getElementById("schema-relationships");
 
   const activeLesson = appState.currentView === "lesson" ? getCurrentLesson() : null;
   const relevantTables = new Set(
@@ -1231,20 +1252,9 @@ function renderSchema() {
       summary.textContent = table.name;
       details.appendChild(summary);
 
-      const relationshipList = schema.relationships.filter(item =>
-        item.toLowerCase().includes(`${String(table.name).toLowerCase()}.`)
-      );
-
       const p = document.createElement("p");
       p.innerHTML = `<strong>Description:</strong> ${table.description}<br><strong>Columns:</strong> ${table.notableColumns.join(", ")}`;
       details.appendChild(p);
-
-      if (relationshipList.length) {
-        const rel = document.createElement("div");
-        rel.className = "relationship-item";
-        rel.innerHTML = `<strong>Relationships:</strong><br>${relationshipList.join("<br>")}`;
-        details.appendChild(rel);
-      }
 
       const actions = document.createElement("div");
       actions.className = "schema-table-actions";
@@ -1259,6 +1269,12 @@ function renderSchema() {
       details.appendChild(actions);
       tablesWrap.appendChild(details);
     });
+  }
+
+  if (relationshipsWrap) {
+    relationshipsWrap.innerHTML = "";
+    const section = relationshipsWrap.closest(".schema-section");
+    if (section) section.style.display = "none";
   }
 }
 
@@ -2467,42 +2483,60 @@ function markConceptComplete() {
 }
 
 function nextLesson() {
-  const lessons = getGlobalLessons();
-  const idx = lessons.findIndex(item => item.lesson.id === appState.currentLessonId);
+  const lessons = getAllLessons();
+  const idx = lessons.findIndex(item => item.id === appState.currentLessonId);
   if (idx >= 0 && idx < lessons.length - 1) {
-    const next = lessons[idx + 1];
-    appState.currentTrackId = next.trackId;
-    appState.currentCategoryId = next.categoryId;
-    appState.currentLessonId = next.lesson.id;
-    attempts = 0;
-    appState.currentView = "lesson";
-    saveProgress();
-    renderAll();
+    appState.currentLessonId = lessons[idx + 1].id;
+    appState.currentCategoryId = getAllCategories().find(cat => cat.lessons.some(l => l.id === appState.currentLessonId))?.id || appState.currentCategoryId;
+  } else {
+    const trackIndex = curriculum.findIndex(track => track.id === appState.currentTrackId);
+    if (trackIndex >= 0 && trackIndex < curriculum.length - 1) {
+      const nextTrack = curriculum[trackIndex + 1];
+      appState.currentTrackId = nextTrack.id;
+      appState.currentCategoryId = nextTrack.categories[0]?.id || null;
+      appState.currentLessonId = nextTrack.categories[0]?.lessons[0]?.id || null;
+    }
   }
+  attempts = 0;
+  appState.currentView = "lesson";
+  saveProgress();
+  renderAll();
 }
 
 function prevLesson() {
-  const lessons = getGlobalLessons();
-  const idx = lessons.findIndex(item => item.lesson.id === appState.currentLessonId);
+  const lessons = getAllLessons();
+  const idx = lessons.findIndex(item => item.id === appState.currentLessonId);
   if (idx > 0) {
-    const prev = lessons[idx - 1];
-    appState.currentTrackId = prev.trackId;
-    appState.currentCategoryId = prev.categoryId;
-    appState.currentLessonId = prev.lesson.id;
-    attempts = 0;
-    appState.currentView = "lesson";
-    saveProgress();
-    renderAll();
+    appState.currentLessonId = lessons[idx - 1].id;
+    appState.currentCategoryId = getAllCategories().find(cat => cat.lessons.some(l => l.id === appState.currentLessonId))?.id || appState.currentCategoryId;
+  } else {
+    const trackIndex = curriculum.findIndex(track => track.id === appState.currentTrackId);
+    if (trackIndex > 0) {
+      const prevTrack = curriculum[trackIndex - 1];
+      const prevLessons = (prevTrack.categories || []).flatMap(category => category.lessons || []);
+      appState.currentTrackId = prevTrack.id;
+      appState.currentLessonId = prevLessons[prevLessons.length - 1]?.id || null;
+      appState.currentCategoryId = prevTrack.categories.find(cat => cat.lessons.some(l => l.id === appState.currentLessonId))?.id || prevTrack.categories[0]?.id || null;
+    }
   }
+  attempts = 0;
+  appState.currentView = "lesson";
+  saveProgress();
+  renderAll();
 }
 
 function resetAllProgress() {
   if (!window.confirm("Reset all progress for CareOps SQL Analyst?")) return;
+  const firstTrack = curriculum[0] || null;
   appState.completedLessonIds = [];
   appState.firstTryLessonIds = [];
   appState.lessonStats = {};
-  attempts = 0;
+  appState.currentTrackId = firstTrack?.id || "track_foundations";
+  appState.currentCategoryId = firstTrack?.categories?.[0]?.id || null;
+  appState.currentLessonId = firstTrack?.categories?.[0]?.lessons?.[0]?.id || null;
   appState.currentView = "overview";
+  activeDifficultyFilter = null;
+  attempts = 0;
   saveProgress();
   showOverview();
   renderAll();
