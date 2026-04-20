@@ -176,7 +176,7 @@ const curriculum = [
             title: "Selecting All Columns with SELECT *",
             objective: "Understand how SELECT * retrieves all columns from a table.",
             sql_focus: ["SELECT", "FROM"],
-            relevantTables: ["patients"],
+            relevantTables: ["providers"],
             joinHint: "No join is needed for this lesson.",
             summary: "SELECT * retrieves all columns from a table.",
             bullets: [
@@ -184,7 +184,7 @@ const curriculum = [
               "It helps validate table structure and available fields.",
               "It is helpful for quick review, but should be used carefully in large production queries."
             ],
-            example: "SELECT * FROM patients;",
+            example: "SELECT * FROM providers;",
             executiveTakeaway: { show: false }
           },
           {
@@ -222,7 +222,7 @@ It should be used carefully in large datasets, but is essential during early exp
             title: "Filtering with WHERE",
             objective: "Understand how WHERE filters records.",
             sql_focus: ["SELECT", "FROM", "WHERE"],
-            relevantTables: ["encounters"],
+            relevantTables: ["claims"],
             joinHint: "No join is needed for this lesson.",
             summary: "The WHERE clause filters records.",
             bullets: [
@@ -230,7 +230,7 @@ It should be used carefully in large datasets, but is essential during early exp
               "Filtering is essential for identifying risk groups and operational exceptions.",
               "It allows leaders to focus on the subset of records that matter."
             ],
-            example: "SELECT * FROM encounters WHERE length_of_stay > 5;",
+            example: "SELECT * FROM claims WHERE claim_status = 'Denied';",
             executiveTakeaway: { show: false }
           },
           {
@@ -265,7 +265,7 @@ High LOS patients are important because they:
             title: "Sorting Results",
             objective: "Understand how ORDER BY sorts query results.",
             sql_focus: ["SELECT", "FROM", "ORDER BY"],
-            relevantTables: ["encounters"],
+            relevantTables: ["charges"],
             joinHint: "No join is needed for this lesson.",
             summary: "ORDER BY sorts your results.",
             bullets: [
@@ -273,7 +273,7 @@ High LOS patients are important because they:
               "Descending order is useful for reviewing biggest drivers.",
               "Leaders often need ranked outputs to prioritize intervention."
             ],
-            example: "SELECT * FROM encounters ORDER BY length_of_stay DESC;",
+            example: "SELECT * FROM charges ORDER BY amount DESC;",
             executiveTakeaway: { show: false }
           },
           {
@@ -323,7 +323,7 @@ Descending order is commonly used to:
             title: "Counting Records",
             objective: "Understand how COUNT() measures volume.",
             sql_focus: ["SELECT", "COUNT"],
-            relevantTables: ["encounters"],
+            relevantTables: ["appointments"],
             joinHint: "No join is needed for this lesson.",
             summary: "COUNT() is used to measure volume.",
             bullets: [
@@ -331,7 +331,7 @@ Descending order is commonly used to:
               "In healthcare, this supports encounter volume and workload measurement.",
               "Volume is one of the most basic operational KPIs."
             ],
-            example: "SELECT COUNT(*) FROM encounters;",
+            example: "SELECT COUNT(*) FROM appointments;",
             executiveTakeaway: { show: false }
           },
           {
@@ -368,7 +368,7 @@ This is a foundational KPI used across:
             title: "Grouping Data",
             objective: "Understand how GROUP BY aggregates data by category.",
             sql_focus: ["SELECT", "COUNT", "GROUP BY"],
-            relevantTables: ["encounters"],
+            relevantTables: ["claims"],
             joinHint: "No join is needed for this lesson.",
             summary: "GROUP BY aggregates data by category.",
             bullets: [
@@ -376,7 +376,7 @@ This is a foundational KPI used across:
               "It is the backbone of summary reporting.",
               "Choose the grouping field that matches the leader’s question."
             ],
-            example: "SELECT department_id, COUNT(*) FROM encounters GROUP BY department_id;",
+            example: "SELECT payer, COUNT(*) FROM claims GROUP BY payer;",
             executiveTakeaway: { show: false }
           },
           {
@@ -412,7 +412,7 @@ This helps:
             title: "Average Metrics",
             objective: "Understand how AVG() calculates averages.",
             sql_focus: ["SELECT", "AVG"],
-            relevantTables: ["encounters"],
+            relevantTables: ["discharges"],
             joinHint: "No join is needed for this lesson.",
             summary: "AVG() calculates averages.",
             bullets: [
@@ -420,7 +420,7 @@ This helps:
               "Averages help evaluate efficiency and performance.",
               "Context matters because outliers can distort interpretation."
             ],
-            example: "SELECT AVG(length_of_stay) FROM encounters;",
+            example: "SELECT AVG(departure_minutes) FROM discharges;",
             executiveTakeaway: { show: false }
           },
           {
@@ -2810,6 +2810,7 @@ async function requestAiCompanion(userMessage) {
   }
 }
 
+async 
 /* duplicate removed during stabilization pass */
 
 
