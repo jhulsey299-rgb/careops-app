@@ -1,4 +1,4 @@
-cons STORAGE_KEY = "careops_curriculum_master_v2";
+const STORAGE_KEY = "careops_curriculum_master_v2";
 
 let appState = {
   currentTrackId: "track_foundations",
