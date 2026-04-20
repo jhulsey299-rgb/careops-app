@@ -2810,7 +2810,6 @@ async function requestAiCompanion(userMessage) {
   }
 }
 
-async 
 /* duplicate removed during stabilization pass */
 
 
