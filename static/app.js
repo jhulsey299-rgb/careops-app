@@ -8,7 +8,8 @@ let appState = {
   completedLessonIds: [],
   firstTryLessonIds: [],
   schemaPanelWidth: 320,
-  lessonStats: {}
+  lessonStats: {},
+  expandedCategoryIds: []
 };
 
 let SQL = null;
@@ -815,7 +816,8 @@ function loadProgress() {
         ...parsed,
         lessonStats: parsed.lessonStats || {},
         completedLessonIds: parsed.completedLessonIds || [],
-        firstTryLessonIds: parsed.firstTryLessonIds || []
+        firstTryLessonIds: parsed.firstTryLessonIds || [],
+        expandedCategoryIds: parsed.expandedCategoryIds || []
       };
     }
   } catch (error) {
@@ -1380,21 +1382,143 @@ function renderTrackCategoryCards() {
   }
 }
 
+function ensureCurriculumLessonListStyles() {
+  if (document.getElementById("curriculum-lesson-list-style")) return;
+  const style = document.createElement("style");
+  style.id = "curriculum-lesson-list-style";
+  style.textContent = `
+    .curriculum-category-body {
+      margin-top: 8px;
+      padding: 8px;
+      border-top: 1px solid #e5e7eb;
+    }
+    .curriculum-lesson-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .curriculum-lesson-row {
+      width: 100%;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      background: #ffffff;
+      padding: 10px 12px;
+      text-align: left;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      cursor: pointer;
+    }
+    .curriculum-lesson-row:hover {
+      background: #f8fafc;
+      border-color: #cbd5e1;
+    }
+    .curriculum-lesson-row.is-active {
+      border-color: #2563eb;
+      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.12);
+    }
+    .curriculum-lesson-row.is-complete .curriculum-lesson-title {
+      color: #0f172a;
+    }
+    .curriculum-lesson-main {
+      min-width: 0;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .curriculum-lesson-title {
+      font-size: 0.92rem;
+      font-weight: 600;
+      color: #111827;
+      white-space: normal;
+    }
+    .curriculum-lesson-meta {
+      font-size: 0.76rem;
+      color: #6b7280;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .curriculum-lesson-status {
+      font-size: 0.76rem;
+      font-weight: 600;
+      color: #16a34a;
+      white-space: nowrap;
+    }
+    .curriculum-lesson-status.is-pending {
+      color: #6b7280;
+    }
+    .curriculum-category-header {
+      align-items: stretch;
+    }
+    .curriculum-category-row {
+      width: 100%;
+    }
+    .curriculum-category-toggle {
+      border: 0;
+      background: transparent;
+      color: #6b7280;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      padding: 4px 6px;
+      border-radius: 8px;
+      flex-shrink: 0;
+    }
+    .curriculum-category-toggle:hover {
+      background: #f3f4f6;
+      color: #111827;
+    }
+  `;
+  document.head.appendChild(style);
+}
+
+function isCategoryExpanded(categoryId) {
+  return (appState.expandedCategoryIds || []).includes(categoryId);
+}
+
+function toggleCategoryExpanded(categoryId) {
+  const expanded = new Set(appState.expandedCategoryIds || []);
+  if (expanded.has(categoryId)) expanded.delete(categoryId);
+  else expanded.add(categoryId);
+  appState.expandedCategoryIds = Array.from(expanded);
+  saveProgress();
+  renderAll();
+}
+
+function ensureCurrentCategoryExpanded() {
+  const categoryId = appState.currentCategoryId;
+  if (!categoryId) return;
+  const expanded = new Set(appState.expandedCategoryIds || []);
+  if (!expanded.has(categoryId)) {
+    expanded.add(categoryId);
+    appState.expandedCategoryIds = Array.from(expanded);
+  }
+}
+
 function renderCurriculumNav() {
+  ensureCurriculumLessonListStyles();
+  ensureCurrentCategoryExpanded();
   const list = document.getElementById("category-list");
   if (!list) return;
   list.innerHTML = "";
+
   getAllCategories().forEach(category => {
     const wrap = document.createElement("div");
     wrap.className = "curriculum-category";
-    const total = category.lessons.length;
-    const done = category.lessons.filter(lesson => isLessonCompleted(lesson.id)).length;
-    const mastered = category.lessons.filter(lesson => getLessonStats(lesson.id).mastered).length;
-    const header = document.createElement("button");
-    header.type = "button";
+
+    const total = (category.lessons || []).length;
+    const done = (category.lessons || []).filter(lesson => isLessonCompleted(lesson.id)).length;
+    const mastered = (category.lessons || []).filter(lesson => getLessonStats(lesson.id).mastered).length;
+    const expanded = isCategoryExpanded(category.id);
+
+    const header = document.createElement("div");
     header.className = "curriculum-category-header" + (done === total ? " is-complete" : "");
     header.innerHTML = `
-      <div class="curriculum-category-row">
+      <button type="button" class="curriculum-category-row curriculum-category-main-btn">
         <div class="curriculum-category-main">
           <span class="curriculum-category-title">${category.title}</span>
           <div class="curriculum-category-header-meta">
@@ -1402,20 +1526,73 @@ function renderCurriculumNav() {
             <span class="curriculum-category-meta">${mastered} mastered</span>
           </div>
         </div>
-        <span class="curriculum-category-arrow">›</span>
-      </div>
+      </button>
+      <button type="button" class="curriculum-category-toggle" aria-label="${expanded ? "Collapse" : "Expand"} ${category.title}" aria-expanded="${expanded ? "true" : "false"}">${expanded ? "⌄" : "›"}</button>
     `;
-    header.addEventListener("click", () => {
+
+    const mainBtn = header.querySelector(".curriculum-category-main-btn");
+    const toggleBtn = header.querySelector(".curriculum-category-toggle");
+
+    mainBtn?.addEventListener("click", () => {
       appState.currentCategoryId = category.id;
-      if (!appState.currentLessonId || !category.lessons.find(lesson => lesson.id === appState.currentLessonId)) {
-        appState.currentLessonId = category.lessons[0]?.id || null;
+      if (!appState.currentLessonId || !(category.lessons || []).find(lesson => lesson.id === appState.currentLessonId)) {
+        appState.currentLessonId = category.lessons?.[0]?.id || null;
       }
       appState.currentView = "lesson";
       attempts = 0;
+      ensureCurrentCategoryExpanded();
       saveProgress();
       renderAll();
     });
+
+    toggleBtn?.addEventListener("click", (event) => {
+      event.stopPropagation();
+      toggleCategoryExpanded(category.id);
+    });
+
     wrap.appendChild(header);
+
+    const body = document.createElement("div");
+    body.className = "curriculum-category-body" + (expanded ? "" : " hidden");
+
+    const lessonList = document.createElement("div");
+    lessonList.className = "curriculum-lesson-list";
+
+    (category.lessons || []).forEach(lesson => {
+      const row = document.createElement("button");
+      row.type = "button";
+      row.className = "curriculum-lesson-row" +
+        (lesson.id === appState.currentLessonId ? " is-active" : "") +
+        (isLessonCompleted(lesson.id) ? " is-complete" : "");
+
+      const typeLabel = lesson.type ? lesson.type.charAt(0).toUpperCase() + lesson.type.slice(1) : "Lesson";
+      const statusLabel = isLessonCompleted(lesson.id) ? "Completed" : "Not started";
+
+      row.innerHTML = `
+        <div class="curriculum-lesson-main">
+          <span class="curriculum-lesson-title">${lesson.title}</span>
+          <div class="curriculum-lesson-meta">
+            <span>${typeLabel}</span>
+          </div>
+        </div>
+        <span class="curriculum-lesson-status ${isLessonCompleted(lesson.id) ? "" : "is-pending"}">${statusLabel}</span>
+      `;
+
+      row.addEventListener("click", () => {
+        appState.currentCategoryId = category.id;
+        appState.currentLessonId = lesson.id;
+        appState.currentView = "lesson";
+        attempts = 0;
+        ensureCurrentCategoryExpanded();
+        saveProgress();
+        renderAll();
+      });
+
+      lessonList.appendChild(row);
+    });
+
+    body.appendChild(lessonList);
+    wrap.appendChild(body);
     list.appendChild(wrap);
   });
 }
