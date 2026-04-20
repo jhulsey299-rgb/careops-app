@@ -3632,3 +3632,4 @@ function attachPersistentNavigationDelegates() {
       return;
       }
       });
+      }
