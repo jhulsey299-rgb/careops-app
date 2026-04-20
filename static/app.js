@@ -1241,12 +1241,12 @@ function renderSchema() {
 
   if (relationshipsWrap) {
     relationshipsWrap.innerHTML = "";
-    schema.relationships.forEach(item => {
-      const div = document.createElement("div");
-      div.className = "relationship-item";
-      div.textContent = item;
-      relationshipsWrap.appendChild(div);
-    });
+    const relationshipsSection = relationshipsWrap.closest(".schema-section");
+    if (relationshipsSection) {
+      relationshipsSection.style.display = "none";
+    } else {
+      relationshipsWrap.style.display = "none";
+    }
   }
 }
 
@@ -2455,11 +2455,26 @@ function markConceptComplete() {
 }
 
 function nextLesson() {
+  const track = getTrack();
   const lessons = getAllLessons();
   const idx = lessons.findIndex(item => item.id === appState.currentLessonId);
+
   if (idx >= 0 && idx < lessons.length - 1) {
     appState.currentLessonId = lessons[idx + 1].id;
     appState.currentCategoryId = getAllCategories().find(cat => cat.lessons.some(l => l.id === appState.currentLessonId))?.id || appState.currentCategoryId;
+    attempts = 0;
+    appState.currentView = "lesson";
+    saveProgress();
+    renderAll();
+    return;
+  }
+
+  const currentTrackIndex = curriculum.findIndex(item => item.id === track.id);
+  const nextTrack = currentTrackIndex >= 0 ? curriculum[currentTrackIndex + 1] : null;
+  if (nextTrack) {
+    appState.currentTrackId = nextTrack.id;
+    appState.currentCategoryId = nextTrack.categories?.[0]?.id || null;
+    appState.currentLessonId = nextTrack.categories?.[0]?.lessons?.[0]?.id || null;
     attempts = 0;
     appState.currentView = "lesson";
     saveProgress();
