@@ -1387,8 +1387,75 @@ function ensureCurriculumLessonListStyles() {
   const style = document.createElement("style");
   style.id = "curriculum-lesson-list-style";
   style.textContent = `
+    .curriculum-category {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .curriculum-category-header {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      align-items: stretch;
+    }
+    .curriculum-category-main-btn {
+      width: 100%;
+      border: 0;
+      border-radius: 14px;
+      padding: 14px 16px;
+      text-align: left;
+      background: linear-gradient(180deg, #3b82f6 0%, #2563eb 100%);
+      color: #ffffff;
+      cursor: pointer;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.06);
+    }
+    .curriculum-category-main-btn:hover {
+      filter: brightness(1.02);
+    }
+    .curriculum-category-main-btn .curriculum-category-title {
+      color: #ffffff;
+      display: block;
+      font-size: 1.02rem;
+      line-height: 1.2;
+      margin-bottom: 8px;
+    }
+    .curriculum-category-main-btn .curriculum-category-header-meta {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+      color: rgba(255,255,255,0.88);
+      font-size: 0.78rem;
+      font-weight: 600;
+    }
+    .curriculum-category-main-btn .curriculum-category-meta {
+      color: rgba(255,255,255,0.88);
+    }
+    .curriculum-category-toggle-wrap {
+      display: flex;
+      justify-content: center;
+      margin-top: -2px;
+    }
+    .curriculum-category-toggle {
+      border: 1px solid #dbe3f0;
+      background: #ffffff;
+      color: #475569;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      padding: 4px 10px;
+      border-radius: 999px;
+      line-height: 1;
+      min-width: 40px;
+      box-shadow: 0 1px 2px rgba(15,23,42,0.04);
+    }
+    .curriculum-category-toggle:hover {
+      background: #f8fafc;
+      color: #111827;
+      border-color: #cbd5e1;
+    }
     .curriculum-category-body {
-      margin-top: 8px;
+      margin-top: 0;
       padding: 8px;
       border-top: 1px solid #e5e7eb;
     }
@@ -1451,27 +1518,6 @@ function ensureCurriculumLessonListStyles() {
     .curriculum-lesson-status.is-pending {
       color: #6b7280;
     }
-    .curriculum-category-header {
-      align-items: stretch;
-    }
-    .curriculum-category-row {
-      width: 100%;
-    }
-    .curriculum-category-toggle {
-      border: 0;
-      background: transparent;
-      color: #6b7280;
-      font-size: 1rem;
-      font-weight: 700;
-      cursor: pointer;
-      padding: 4px 6px;
-      border-radius: 8px;
-      flex-shrink: 0;
-    }
-    .curriculum-category-toggle:hover {
-      background: #f3f4f6;
-      color: #111827;
-    }
   `;
   document.head.appendChild(style);
 }
@@ -1518,7 +1564,7 @@ function renderCurriculumNav() {
     const header = document.createElement("div");
     header.className = "curriculum-category-header" + (done === total ? " is-complete" : "");
     header.innerHTML = `
-      <button type="button" class="curriculum-category-row curriculum-category-main-btn">
+      <button type="button" class="curriculum-category-main-btn" aria-label="Open ${category.title}">
         <div class="curriculum-category-main">
           <span class="curriculum-category-title">${category.title}</span>
           <div class="curriculum-category-header-meta">
@@ -1527,7 +1573,9 @@ function renderCurriculumNav() {
           </div>
         </div>
       </button>
-      <button type="button" class="curriculum-category-toggle" aria-label="${expanded ? "Collapse" : "Expand"} ${category.title}" aria-expanded="${expanded ? "true" : "false"}">${expanded ? "⌄" : "›"}</button>
+      <div class="curriculum-category-toggle-wrap">
+        <button type="button" class="curriculum-category-toggle" aria-label="${expanded ? "Collapse" : "Expand"} ${category.title}" aria-expanded="${expanded ? "true" : "false"}">${expanded ? "⌄" : "›"}</button>
+      </div>
     `;
 
     const mainBtn = header.querySelector(".curriculum-category-main-btn");
