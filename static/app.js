@@ -969,21 +969,29 @@ function lessonsForTrack(trackId = appState.currentTrackId) {
   return (track?.categories || []).flatMap(category => category.lessons || []);
 }
 
+function allCurriculumLessons() {
+  return curriculum.flatMap(track => (track.categories || []).flatMap(category => category.lessons || []));
+}
+
+function allCurriculumLessonIds() {
+  return new Set(allCurriculumLessons().map(lesson => lesson.id));
+}
+
 function totalLessonCount() {
-  return getAllLessons().length;
+  return allCurriculumLessons().length;
 }
 
 function completedLessonCount() {
-  return appState.completedLessonIds.length;
+  const validIds = allCurriculumLessonIds();
+  return [...new Set(appState.completedLessonIds || [])].filter(id => validIds.has(id)).length;
 }
 
 function currentTrackLessonCount() {
-  return lessonsForTrack(appState.currentTrackId).length;
+  return totalLessonCount();
 }
 
 function currentTrackCompletedLessonCount() {
-  const ids = new Set(lessonsForTrack(appState.currentTrackId).map(lesson => lesson.id));
-  return appState.completedLessonIds.filter(id => ids.has(id)).length;
+  return completedLessonCount();
 }
 
 function isLessonCompleted(lessonId) {
@@ -1228,6 +1236,7 @@ function updateLevelsPanelTheme(trackId) {
   const level = levelForTrack(trackId);
   if (!level) return;
   panel.classList.add(`track-theme-${level.key}`);
+  panel.style.borderColor = level.color;
 }
 
 function renderSchema() {
@@ -1893,6 +1902,74 @@ function enforceChallengeCriteria(curriculum) {
       });
     });
   });
+}
+
+
+function sanitizeProgressState() {
+  const firstTrack = curriculum[0] || null;
+  const validTrackIds = new Set(curriculum.map(track => track.id));
+  const validLessonIds = allCurriculumLessonIds();
+
+  appState.completedLessonIds = [...new Set((appState.completedLessonIds || []).filter(id => validLessonIds.has(id)))];
+  appState.firstTryLessonIds = [...new Set((appState.firstTryLessonIds || []).filter(id => validLessonIds.has(id)))];
+
+  const nextStats = {};
+  Object.entries(appState.lessonStats || {}).forEach(([lessonId, stats]) => {
+    if (validLessonIds.has(lessonId)) nextStats[lessonId] = stats;
+  });
+  appState.lessonStats = nextStats;
+
+  if (!validTrackIds.has(appState.currentTrackId)) {
+    appState.currentTrackId = firstTrack?.id || "track_foundations";
+  }
+
+  const activeTrack = getTrack();
+  const validCategories = activeTrack?.categories || [];
+  const validCategoryIds = new Set(validCategories.map(category => category.id));
+
+  if (!validCategoryIds.has(appState.currentCategoryId)) {
+    appState.currentCategoryId = validCategories[0]?.id || null;
+  }
+
+  const validLessonIdsForTrack = new Set(validCategories.flatMap(category => (category.lessons || []).map(lesson => lesson.id)));
+  if (!validLessonIdsForTrack.has(appState.currentLessonId)) {
+    appState.currentLessonId = validCategories[0]?.lessons?.[0]?.id || null;
+  }
+
+  if (!["overview", "lesson", "sandbox"].includes(appState.currentView)) {
+    appState.currentView = "overview";
+  }
+}
+
+function ensurePatchedUiStyles() {
+  if (document.getElementById("careops-patched-ui-styles")) return;
+  const style = document.createElement("style");
+  style.id = "careops-patched-ui-styles";
+  style.textContent = `
+    #levels-panel {
+      border: 2px solid transparent;
+      transition: border-color 0.18s ease, box-shadow 0.18s ease;
+    }
+    #levels-panel.track-theme-foundations { border-color: #22c55e; box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.08); }
+    #levels-panel.track-theme-core { border-color: #2563eb; box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.08); }
+    #levels-panel.track-theme-applied { border-color: #f59e0b; box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.08); }
+    #levels-panel.track-theme-advanced { border-color: #ef4444; box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.08); }
+    #levels-panel.track-theme-expert { border-color: #7c3aed; box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.08); }
+
+    .track-badge-ring .level-icon,
+    .track-badge-icon.level-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
+      text-align: center;
+      font-size: clamp(11px, 1.2vw, 16px);
+      line-height: 1;
+      font-weight: 700;
+    }
+  `;
+  document.head.appendChild(style);
 }
 
 function escapeHtml(str) {
@@ -3156,10 +3233,12 @@ window.showCareopsSandbox = function () {
 
 
 document.addEventListener("DOMContentLoaded", async function () {
+  ensurePatchedUiStyles();
   normalizeCurriculum();
   backfillChallengeCriteria(curriculum);
   enforceChallengeCriteria(curriculum);
   loadProgress();
+  sanitizeProgressState();
   if (!appState.currentCategoryId) appState.currentCategoryId = getTrack().categories[0]?.id || null;
   if (!appState.currentLessonId) appState.currentLessonId = getTrack().categories[0]?.lessons[0]?.id || null;
   if (!appState.currentView) appState.currentView = "overview";
