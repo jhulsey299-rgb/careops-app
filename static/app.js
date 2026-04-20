@@ -1051,7 +1051,7 @@ function categoryBadgeCount() {
 function levelBadgeCount() {
   return LEARNING_LEVELS.filter(level => {
     const track = curriculum.find(item => item.id === level.trackId);
-    return !!track && track.categories.every(categoryComplete);
+    return !!track && (track.categories || []).length > 0 && (track.categories || []).every(categoryComplete);
   }).length;
 }
 
