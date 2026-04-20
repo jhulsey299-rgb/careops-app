@@ -2234,8 +2234,11 @@ body.sandbox-mode .sandbox-workspace {
         grid-template-columns: 1fr !important;
     }
     textarea {
-        min-height: 160px;
+        min-height: 170px;
         font-size: 14px;
+    }
+    .ai-messages {
+        max-height: 360px;
     }
 }
 
@@ -2482,4 +2485,30 @@ body.sandbox-mode .sandbox-workspace {
 
 .track-badge-ring {
     padding: 7px;
+}
+
+/* ================= CURRICULUM BUTTON CENTERING PATCH ================= */
+.curriculum-category-main-btn {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+}
+
+.curriculum-category-main-btn .curriculum-category-title {
+    display: block !important;
+    width: 100% !important;
+    text-align: center !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+}
+
+.curriculum-category-main-btn .curriculum-category-header-meta {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    flex-wrap: wrap !important;
+    width: 100% !important;
+    text-align: center !important;
 }
