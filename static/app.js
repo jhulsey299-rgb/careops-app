@@ -1060,9 +1060,9 @@ function achievements() {
   const firstTry = appState.firstTryLessonIds.length;
   const mastered = masteryCount();
   const catComplete = categoryId => {
-    const category = getTrackByCategoryId(categoryId);
-    return !!category && category.lessons.every(lesson => isLessonCompleted(lesson.id));
-  };
+  const category = getCategoryById(categoryId);
+  return categoryComplete(category);
+};
   return [
     { label: "First Step", earned: completed >= 1, emoji: "🚀", description: "Unlock by completing your first lesson." },
     { label: "Getting the Hang of It", earned: completed >= 5, emoji: "📘", description: "Unlock by completing 5 lessons." },
