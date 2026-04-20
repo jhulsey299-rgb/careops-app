@@ -943,12 +943,14 @@ function getAllCategories() {
   return getTrack().categories || [];
 }
 
-function getTrackByCategoryId(categoryId) {
+function getCategoryById(categoryId) {
   for (const track of curriculum) {
-    if ((track.categories || []).some(category => category.id === categoryId)) return track;
+    const category = (track.categories || []).find(category => category.id === categoryId);
+    if (category) return category;
   }
   return null;
 }
+
 
 function getCurrentCategory() {
   return getAllCategories().find(category => category.id === appState.currentCategoryId) || getAllCategories()[0] || null;
