@@ -1041,7 +1041,7 @@ function masteryCount() {
 }
 
 function categoryComplete(category) {
-  return category.lessons.every(lesson => isLessonCompleted(lesson.id));
+  return !!category && Array.isArray(category.lessons) && category.lessons.every(lesson => isLessonCompleted(lesson.id));
 }
 
 function categoryBadgeCount() {
