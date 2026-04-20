@@ -2447,3 +2447,31 @@ body.sandbox-mode .sandbox-workspace {
         max-height: 360px;
     }
 }
+
+/* ================= Requested polish fixes ================= */
+.track-badge-ring {
+    width: 92px;
+    height: 92px;
+    flex-shrink: 0;
+}
+
+.track-badge-icon {
+    font-size: clamp(1rem, 2vw, 1.35rem);
+    font-weight: 800;
+    line-height: 1;
+    text-align: center;
+    padding: 0;
+    white-space: nowrap;
+}
+
+.track-badge-stats {
+    line-height: 1.45;
+}
+
+#schema-relationships {
+    display: none !important;
+}
+
+#schema-relationships:empty {
+    display: none !important;
+}
