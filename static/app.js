@@ -9,7 +9,9 @@ let appState = {
   firstTryLessonIds: [],
   schemaPanelWidth: 320,
   lessonStats: {},
-  expandedCategoryIds: []
+  expandedCategoryIds: [],
+  glossarySearch: "",
+  glossaryCategory: ""
 };
 
 let SQL = null;
@@ -128,6 +130,61 @@ const BUSINESS_LOGIC_MAP = {
     executiveQuestion: "What additional patient, provider, or financial context is needed to interpret the operational results?"
   }
 };
+
+const GLOSSARY_TERMS = [
+  { term: "SELECT", category: "sql", definition: "Returns the columns you ask for from a table or query.", why: "SELECT is the starting point for almost every SQL query an analyst writes.", example: "SELECT patient_id, insurance_type FROM patients;" },
+  { term: "WHERE", category: "sql", definition: "Filters rows so only matching records are returned.", why: "It lets analysts focus on the exact population or event they need to study.", example: "SELECT * FROM encounters WHERE length_of_stay > 5;" },
+  { term: "GROUP BY", category: "sql", definition: "Bundles rows into groups so you can summarize them.", why: "Most hospital dashboards depend on grouped results by facility, department, payer, or provider.", example: "SELECT facility, COUNT(*) FROM encounters GROUP BY facility;" },
+  { term: "ORDER BY", category: "sql", definition: "Sorts query results in ascending or descending order.", why: "Sorting helps leaders quickly see the highest volume, highest LOS, or biggest denial drivers first.", example: "SELECT * FROM charges ORDER BY amount DESC;" },
+  { term: "JOIN", category: "sql", definition: "Combines related data from multiple tables.", why: "Hospital analysis often requires linking operational, financial, and patient context together.", example: "SELECT * FROM encounters e JOIN claims c ON e.encounter_id = c.encounter_id;" },
+  { term: "COUNT", category: "sql", definition: "Counts rows or non-null values.", why: "It is the foundation of encounter volume, appointment counts, and other basic KPIs.", example: "SELECT COUNT(*) AS encounter_count FROM encounters;" },
+  { term: "AVG", category: "sql", definition: "Calculates the average value for a field.", why: "Analysts use AVG for LOS, delays, payment amounts, and many throughput metrics.", example: "SELECT AVG(length_of_stay) AS avg_los FROM encounters;" },
+  { term: "SUM", category: "sql", definition: "Adds values together across matching rows.", why: "Revenue, charges, denied dollars, and volumes often rely on SUM.", example: "SELECT SUM(billed_amount) AS total_billed FROM claims;" },
+  { term: "DISTINCT", category: "sql", definition: "Returns only unique values and removes duplicates.", why: "Useful when an analyst needs a clean list of facilities, payers, or departments.", example: "SELECT DISTINCT payer FROM claims;" },
+  { term: "NULL", category: "sql", definition: "Represents a missing or unknown value.", why: "Null handling matters when a result may look complete but actually contains missing data.", example: "SELECT * FROM patients WHERE city IS NULL;" },
+  { term: "Primary Key", category: "sql", definition: "A field that uniquely identifies each row in a table.", why: "Primary keys help preserve row-level uniqueness and support correct joins.", example: "patient_id uniquely identifies each patient row." },
+  { term: "Foreign Key", category: "sql", definition: "A field that links one table to another.", why: "Foreign keys let analysts connect patients to encounters, claims, and charges.", example: "encounters.patient_id links back to patients.patient_id." },
+  { term: "Encounter", category: "clinical", definition: "A single patient visit or stay recorded in the system.", why: "Many hospital metrics are encounter-based, not patient-based, so the grain matters.", example: "One patient may have multiple encounters in a year." },
+  { term: "Admission", category: "clinical", definition: "The point when a patient is formally admitted for care.", why: "Admission timing affects LOS, bed usage, and throughput measures.", example: "An inpatient admission usually starts the LOS clock." },
+  { term: "Discharge", category: "clinical", definition: "The point when a patient leaves the hospital or unit.", why: "Discharge delays affect capacity, patient flow, and operational efficiency.", example: "A delayed discharge can increase LOS without changing clinical need." },
+  { term: "Length of Stay (LOS)", category: "clinical", definition: "The amount of time a patient spends in care between admission and discharge.", why: "LOS is one of the most important throughput and capacity metrics in hospital operations.", example: "A patient admitted Monday and discharged Wednesday has a LOS of about 2 days." },
+  { term: "Observation", category: "clinical", definition: "A short-stay status used when a patient needs evaluation or treatment without full inpatient admission.", why: "Observation status affects reimbursement, throughput, and reporting logic.", example: "Observation hours are often tracked separately from inpatient days." },
+  { term: "Readmission", category: "clinical", definition: "A return to the hospital after a recent discharge, often within 30 days.", why: "Readmissions can signal discharge planning, follow-up, or care coordination issues.", example: "A patient discharged Friday and readmitted two weeks later may count as a readmission." },
+  { term: "ED Boarder", category: "clinical", definition: "A patient who remains in the emergency department while waiting for an inpatient or observation bed.", why: "Boarders can signal bed constraints, discharge bottlenecks, or hospital flow problems.", example: "High ED boarding often reflects inpatient capacity pressure." },
+  { term: "Code 44", category: "clinical", definition: "A status change that converts a patient from inpatient to observation when criteria were not met for inpatient admission.", why: "Code 44 affects utilization review, compliance, and observation reporting.", example: "A patient admitted as inpatient may later be changed to observation under Code 44." },
+  { term: "Discharge Disposition", category: "clinical", definition: "The destination or care setting a patient goes to after discharge.", why: "Disposition helps explain follow-up needs, placement delays, and readmission risk.", example: "Common dispositions include home, SNF, rehab, and hospice." },
+  { term: "Provider", category: "clinical", definition: "The clinician or practitioner responsible for the patient visit or service.", why: "Provider-level analysis can reveal performance variation and workflow differences.", example: "A provider may be grouped by specialty, department, or facility." },
+  { term: "Charge", category: "financial", definition: "The billed amount attached to a service or encounter before payment adjustments.", why: "Charges represent gross activity, but not all charges turn into collectible revenue.", example: "Facility and professional charges may both be linked to one encounter." },
+  { term: "Claim", category: "financial", definition: "A request for payment sent to a payer for services rendered.", why: "Claims are the basis for reimbursement tracking, denials, and revenue cycle monitoring.", example: "A denied claim may require correction and resubmission." },
+  { term: "Denial", category: "financial", definition: "A claim or service that a payer refuses to reimburse.", why: "Denials create revenue leakage and often reveal workflow or documentation problems.", example: "Authorization, coding, and coverage issues can all lead to denials." },
+  { term: "Denial Rate", category: "financial", definition: "The share of claims or dollars that are denied by payers.", why: "It helps leaders measure financial leakage and prioritize revenue cycle improvement.", example: "A 9% denial rate means roughly 9 out of 100 claims or claim dollars are denied, depending on the definition used." },
+  { term: "Payer", category: "financial", definition: "The organization or program responsible for reimbursing a claim.", why: "Payer segmentation often explains reimbursement, denial, and LOS variation.", example: "Common payer groups include Medicare, Medicaid, Commercial, and Self Pay." },
+  { term: "Payer Mix", category: "financial", definition: "The distribution of patients, visits, or dollars across payer categories.", why: "Payer mix shapes reimbursement risk, margin, and financial planning.", example: "A facility with more Medicare and Medicaid may have a different financial profile than one with more commercial volume." },
+  { term: "Gross Charges", category: "financial", definition: "The full billed amount before adjustments, write-offs, and collections.", why: "Gross charges show billing activity but usually overstate true realized revenue.", example: "Gross charges are often used as the starting point for estimating net revenue." },
+  { term: "Net Revenue", category: "financial", definition: "The portion of gross charges that the organization expects to realize after contractual adjustments and nonpayment.", why: "Net revenue is a more realistic measure of financial performance than gross charges alone.", example: "Some analyses estimate net revenue as a percentage of gross charges." },
+  { term: "Collections", category: "financial", definition: "Actual cash received from payers or patients.", why: "Collections matter because billed charges alone do not equal money received.", example: "A hospital may bill one amount but collect less after payer adjudication." },
+  { term: "RVU", category: "financial", definition: "Relative Value Unit, a standardized measure of service intensity often used in provider compensation and productivity.", why: "RVUs help compare provider output even when procedures differ.", example: "A provider contract may include RVU-based compensation targets." },
+  { term: "KPI", category: "analytics", definition: "Key Performance Indicator, a metric used to monitor whether performance is on target.", why: "KPIs focus leadership attention on the few measures that matter most.", example: "LOS, readmission rate, and denial rate are common hospital KPIs." },
+  { term: "Benchmark", category: "analytics", definition: "A comparison point used to judge whether performance is strong, average, or weak.", why: "Benchmarks help leaders know whether a number is actually good or bad.", example: "A denial rate may be compared against an internal or industry benchmark." },
+  { term: "Baseline", category: "analytics", definition: "The starting level of performance before changes or interventions are made.", why: "You need a baseline to show whether improvement actually happened.", example: "Average LOS before a throughput initiative becomes the baseline for future comparison." },
+  { term: "Trend", category: "analytics", definition: "The direction a metric moves over time.", why: "One isolated number may be misleading, but a trend shows whether performance is improving or worsening.", example: "Monthly readmission trend lines often reveal sustained deterioration or improvement." },
+  { term: "Variance", category: "analytics", definition: "The difference between expected and actual performance.", why: "Variance helps identify where a process or unit is performing outside normal expectations.", example: "A department may show high LOS variance compared with the organizational average." },
+  { term: "Root Cause", category: "analytics", definition: "The underlying reason a problem is happening.", why: "Without root cause analysis, teams treat symptoms rather than the real operational driver.", example: "High LOS may be caused by placement delays, not physician rounding speed." },
+  { term: "Outlier", category: "analytics", definition: "A value or case that stands out as unusually high, low, or different from the rest.", why: "Outliers can distort averages but also reveal important operational stories.", example: "One department with far higher LOS than others may be an outlier worth investigation." },
+  { term: "Cohort", category: "analytics", definition: "A defined group of records analyzed together because they share a common trait.", why: "Cohorts let analysts study targeted populations with more relevant comparisons.", example: "All Medicare inpatient encounters discharged home can be a cohort." },
+  { term: "Aggregation", category: "analytics", definition: "The process of summarizing data into counts, sums, averages, or grouped outputs.", why: "Aggregation turns row-level data into decision-ready reporting.", example: "Grouping by facility and counting encounters is a simple aggregation." },
+  { term: "Throughput", category: "analytics", definition: "How efficiently patients move through the care process.", why: "Throughput connects LOS, boarding, discharge timing, and capacity.", example: "A rise in discharge delays often harms throughput across the hospital." },
+  { term: "Bottleneck", category: "analytics", definition: "A step in the process that slows down the overall system.", why: "Finding bottlenecks helps leaders know where to intervene first.", example: "Placement delays, pending consults, or transport waits can become bottlenecks." }
+];
+
+function glossaryCategoryLabel(category) {
+  return {
+    sql: "SQL",
+    clinical: "Clinical / Operations",
+    financial: "Financial / Revenue",
+    analytics: "Analytics / Strategy"
+  }[category] || "Reference";
+}
 
 const schema = {
   tables: [
@@ -817,7 +874,9 @@ function loadProgress() {
         lessonStats: parsed.lessonStats || {},
         completedLessonIds: parsed.completedLessonIds || [],
         firstTryLessonIds: parsed.firstTryLessonIds || [],
-        expandedCategoryIds: parsed.expandedCategoryIds || []
+        expandedCategoryIds: parsed.expandedCategoryIds || [],
+        glossarySearch: parsed.glossarySearch || "",
+        glossaryCategory: parsed.glossaryCategory || ""
       };
     }
   } catch (error) {
@@ -2153,7 +2212,7 @@ function sanitizeProgressState() {
     appState.currentLessonId = validCategories[0]?.lessons?.[0]?.id || null;
   }
 
-  if (!["overview", "lesson", "sandbox"].includes(appState.currentView)) {
+  if (!["overview", "lesson", "sandbox", "glossary"].includes(appState.currentView)) {
     appState.currentView = "overview";
   }
 }
@@ -2821,6 +2880,8 @@ function resetAllProgress() {
   appState.currentLessonId = firstTrack?.categories?.[0]?.lessons?.[0]?.id || null;
   appState.currentView = "overview";
   activeDifficultyFilter = null;
+  appState.glossarySearch = "";
+  appState.glossaryCategory = "";
   attempts = 0;
   saveProgress();
   showOverview();
@@ -2878,7 +2939,7 @@ let sandboxDb = null;
 let aiThread = [];
 
 function showSection(sectionId) {
-  ["track-overview", "lesson-workspace", "sandbox-workspace"].forEach((id) => {
+  ["track-overview", "lesson-workspace", "sandbox-workspace", "glossary-workspace"].forEach((id) => {
     const el = document.getElementById(id);
     if (el) el.classList.toggle("hidden", id !== sectionId);
   });
@@ -3079,6 +3140,13 @@ window.showCareopsSandbox = function () {
   renderAll();
 };
 
+window.showCareopsGlossary = function () {
+  appState.currentView = "glossary";
+  attempts = 0;
+  saveProgress();
+  renderAll();
+};
+
 
 document.addEventListener("DOMContentLoaded", async function () {
   ensurePatchedUiStyles();
@@ -3090,6 +3158,8 @@ document.addEventListener("DOMContentLoaded", async function () {
   if (!appState.currentCategoryId) appState.currentCategoryId = getTrack().categories[0]?.id || null;
   if (!appState.currentLessonId) appState.currentLessonId = getTrack().categories[0]?.lessons[0]?.id || null;
   if (!appState.currentView) appState.currentView = "overview";
+  ensureGlossaryWorkspace();
+  ensureGlossaryNavButton();
   initUiActions();
   attachPersistentNavigationDelegates();
   initSchemaResizer();
@@ -3285,9 +3355,159 @@ function syncSandboxStarterQuery() {
   renderSandboxLessonContext(null);
 }
 
+function ensureGlossaryWorkspace() {
+  let workspace = document.getElementById("glossary-workspace");
+  if (workspace) return workspace;
+
+  const playArea = document.querySelector(".play-area") || document.querySelector(".main-content") || document.body;
+  workspace = document.createElement("section");
+  workspace.id = "glossary-workspace";
+  workspace.className = "glossary-workspace hidden";
+  playArea.appendChild(workspace);
+  return workspace;
+}
+
+function setGlossaryModeUi(isGlossary) {
+  document.body.classList.toggle("glossary-mode", !!isGlossary);
+  if (isGlossary) document.body.classList.remove("sandbox-mode");
+}
+
+function ensureGlossaryNavButton() {
+  let button = document.getElementById("open-glossary-btn");
+  if (button) return button;
+
+  const sandboxBtn = document.getElementById("open-sandbox-btn") || document.getElementById("nav-sandbox-btn") || Array.from(document.querySelectorAll("button")).find((btn) => String(btn.textContent || "").trim().toLowerCase() === "sandbox");
+  const resetBtn = Array.from(document.querySelectorAll("button")).find((btn) => /reset progress/i.test(String(btn.textContent || "")));
+  const parent = sandboxBtn?.parentElement || resetBtn?.parentElement || document.querySelector(".main-nav-actions") || document.querySelector(".dashboard-actions.main-nav-actions") || document.querySelector(".dashboard-actions");
+  if (!parent) return null;
+
+  button = document.createElement("button");
+  button.type = "button";
+  button.id = "open-glossary-btn";
+  button.className = "glossary-nav-btn";
+  button.textContent = "Glossary";
+
+  if (resetBtn && resetBtn.parentElement === parent) {
+    parent.insertBefore(button, resetBtn);
+  } else if (sandboxBtn && sandboxBtn.parentElement === parent) {
+    sandboxBtn.insertAdjacentElement("afterend", button);
+  } else {
+    parent.appendChild(button);
+  }
+
+  return button;
+}
+
+function getFilteredGlossaryTerms() {
+  const query = String(appState.glossarySearch || "").trim().toLowerCase();
+  const activeCategory = String(appState.glossaryCategory || "").trim().toLowerCase();
+
+  return GLOSSARY_TERMS.filter((item) => {
+    const matchesCategory = !activeCategory || item.category === activeCategory;
+    const haystack = [item.term, item.definition, item.why, item.example, glossaryCategoryLabel(item.category)].join(" ").toLowerCase();
+    const matchesQuery = !query || haystack.includes(query);
+    return matchesCategory && matchesQuery;
+  });
+}
+
+function renderGlossaryCard(item) {
+  return `
+    <article class="glossary-card glossary-card-${escapeHtml(item.category)}">
+      <div class="glossary-card-accent"></div>
+      <div class="glossary-card-body">
+        <div class="glossary-card-top">
+          <h3>${escapeHtml(item.term)}</h3>
+          <span class="glossary-category-pill glossary-category-pill-${escapeHtml(item.category)}">${escapeHtml(glossaryCategoryLabel(item.category))}</span>
+        </div>
+        <div class="glossary-copy-block">
+          <div class="glossary-copy-label">Definition</div>
+          <p>${escapeHtml(item.definition)}</p>
+        </div>
+        <div class="glossary-copy-block">
+          <div class="glossary-copy-label">Why it matters</div>
+          <p>${escapeHtml(item.why)}</p>
+        </div>
+        <div class="glossary-copy-block">
+          <div class="glossary-copy-label">Example</div>
+          <div class="glossary-example">${escapeHtml(item.example)}</div>
+        </div>
+      </div>
+    </article>
+  `;
+}
+
+function renderGlossary() {
+  const workspace = ensureGlossaryWorkspace();
+  const filteredTerms = getFilteredGlossaryTerms();
+
+  workspace.innerHTML = `
+    <div class="glossary-page">
+      <div class="glossary-header-card">
+        <div>
+          <div class="glossary-kicker">Reference Library</div>
+          <h2>Glossary</h2>
+          <p>Definitions for SQL, hospital operations, finance, and analytics terms used throughout the CareOps curriculum.</p>
+        </div>
+      </div>
+
+      <div class="glossary-toolbar">
+        <div>
+          <label class="glossary-label" for="glossary-search-input">Search Terms</label>
+          <input id="glossary-search-input" class="glossary-search-input" type="text" placeholder="Search LOS, denial, JOIN, KPI, readmission..." value="${escapeHtml(appState.glossarySearch || "")}" />
+        </div>
+        <div>
+          <div class="glossary-label">Categories</div>
+          <div class="glossary-filter-chips">
+            <button type="button" class="glossary-filter-chip ${!appState.glossaryCategory ? "active" : ""}" data-glossary-filter="">All Terms</button>
+            <button type="button" class="glossary-filter-chip ${appState.glossaryCategory === "sql" ? "active" : ""}" data-glossary-filter="sql">SQL</button>
+            <button type="button" class="glossary-filter-chip ${appState.glossaryCategory === "clinical" ? "active" : ""}" data-glossary-filter="clinical">Clinical / Operations</button>
+            <button type="button" class="glossary-filter-chip ${appState.glossaryCategory === "financial" ? "active" : ""}" data-glossary-filter="financial">Financial / Revenue</button>
+            <button type="button" class="glossary-filter-chip ${appState.glossaryCategory === "analytics" ? "active" : ""}" data-glossary-filter="analytics">Analytics / Strategy</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="glossary-results-meta">${filteredTerms.length} terms shown</div>
+
+      ${filteredTerms.length ? `<div class="glossary-card-grid">${filteredTerms.map(renderGlossaryCard).join("")}</div>` : `
+        <div class="glossary-empty-state">
+          <h3>No terms matched</h3>
+          <p>Try a different keyword or switch back to All Terms.</p>
+        </div>
+      `}
+    </div>
+  `;
+
+  const input = document.getElementById("glossary-search-input");
+  if (input) {
+    input.addEventListener("input", (event) => {
+      appState.glossarySearch = event.target.value || "";
+      saveProgress();
+      renderGlossary();
+    });
+  }
+
+  workspace.querySelectorAll("[data-glossary-filter]").forEach((button) => {
+    button.addEventListener("click", () => {
+      appState.glossaryCategory = button.getAttribute("data-glossary-filter") || "";
+      saveProgress();
+      renderGlossary();
+    });
+  });
+}
+
+function showGlossaryWorkspace() {
+  appState.currentView = "glossary";
+  setGlossaryModeUi(true);
+  showSection("glossary-workspace");
+  renderGlossary();
+  document.getElementById("glossary-workspace")?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
 function showOverview() {
   appState.currentView = "overview";
   setSandboxModeUi(false);
+  setGlossaryModeUi(false);
   showSection("track-overview");
   document.getElementById("track-overview")?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
@@ -3296,6 +3516,7 @@ function showLessonsWorkspace() {
   ensureCurrentLesson();
   appState.currentView = "lesson";
   setSandboxModeUi(false);
+  setGlossaryModeUi(false);
   showSection("lesson-workspace");
   document.getElementById("lesson-workspace")?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
@@ -3497,6 +3718,8 @@ function renderAll() {
     renderLesson();
   } else if (appState.currentView === "sandbox") {
     showSandboxWorkspace();
+  } else if (appState.currentView === "glossary") {
+    showGlossaryWorkspace();
   } else {
     showOverview();
   }
@@ -3527,6 +3750,17 @@ function initUiActions() {
       saveProgress();
       renderAll();
       document.getElementById("sandbox-workspace")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    };
+  }
+
+  const openGlossaryBtn = ensureGlossaryNavButton();
+  if (openGlossaryBtn) {
+    openGlossaryBtn.onclick = () => {
+      appState.currentView = "glossary";
+      attempts = 0;
+      showGlossaryWorkspace();
+      saveProgress();
+      renderAll();
     };
   }
 
@@ -3604,6 +3838,7 @@ function attachPersistentNavigationDelegates() {
 
     const isOverview = button.id === "open-overview-btn" || button.id === "nav-overview-btn" || label === "track overview";
     const isSandbox = button.id === "open-sandbox-btn" || button.id === "nav-sandbox-btn" || label === "sandbox" || label === "sql sandbox";
+    const isGlossary = button.id === "open-glossary-btn" || label === "glossary";
 
     if (isOverview) {
       event.preventDefault();
@@ -3618,6 +3853,15 @@ function attachPersistentNavigationDelegates() {
       event.preventDefault();
       attempts = 0;
       showSandboxWorkspace();
+      saveProgress();
+      renderAll();
+      return;
+    }
+
+    if (isGlossary) {
+      event.preventDefault();
+      attempts = 0;
+      showGlossaryWorkspace();
       saveProgress();
       renderAll();
       return;
