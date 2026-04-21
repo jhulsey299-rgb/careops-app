@@ -2690,6 +2690,7 @@ function refreshLessonChrome() {
   renderAchievements();
   updateDashboard();
   renderCurriculumNav();
+  removeLevelsPanelOverviewButton();
   renderTrackCategoryCards();
 }
 
@@ -3704,6 +3705,28 @@ function scrollToAiCompanion() {
 
 function updateAiContextBanner() {
   if (!aiThread.length) renderAiMessages();
+}
+
+
+function removeLevelsPanelOverviewButton() {
+  const panel = document.getElementById("levels-panel");
+  if (!panel) return;
+
+  const overviewBtn =
+    panel.querySelector("#open-overview-btn") ||
+    Array.from(panel.querySelectorAll("button")).find((button) =>
+      String(button.textContent || "").trim().toLowerCase() === "track overview"
+    );
+
+  if (!overviewBtn) return;
+
+  const wrapper = overviewBtn.closest(".side-panel-actions, .levels-panel-action-row, .panel-action-row");
+  if (wrapper) {
+    wrapper.remove();
+    return;
+  }
+
+  overviewBtn.remove();
 }
 
 function renderAll() {
