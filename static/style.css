@@ -2512,3 +2512,316 @@ body.sandbox-mode .sandbox-workspace {
     width: 100% !important;
     text-align: center !important;
 }
+
+
+/* ================= GLOSSARY VIEW ================= */
+body.glossary-mode .schema-panel,
+body.glossary-mode #schema-resizer,
+body.glossary-mode .top-dashboard,
+body.glossary-mode .badges-section,
+body.glossary-mode #lesson-workspace,
+body.glossary-mode #track-overview,
+body.glossary-mode #sandbox-workspace,
+body.glossary-mode #levels-panel {
+    display: none !important;
+}
+
+body.glossary-mode .app-shell {
+    grid-template-columns: 1fr !important;
+}
+
+body.glossary-mode .main-content {
+    padding-left: 0 !important;
+}
+
+.glossary-workspace {
+    margin-top: 20px;
+}
+
+.glossary-page {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.glossary-header-card,
+.glossary-toolbar,
+.glossary-card,
+.glossary-empty-state {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+}
+
+.glossary-header-card {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 16px;
+    padding: 22px;
+    align-items: start;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+}
+
+.glossary-kicker {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 10px;
+    border-radius: 999px;
+    font-size: 0.74rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    background: #eff6ff;
+    color: var(--primary-dark);
+    margin-bottom: 10px;
+}
+
+.glossary-header-card h2 {
+    margin-bottom: 8px;
+}
+
+.glossary-header-card p {
+    max-width: 760px;
+    margin-bottom: 0;
+}
+
+.glossary-toolbar {
+    display: grid;
+    grid-template-columns: minmax(280px, 1.4fr) minmax(260px, 1fr);
+    gap: 16px;
+    padding: 18px;
+    background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+}
+
+.glossary-label {
+    display: inline-block;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    margin-bottom: 8px;
+}
+
+.glossary-search-input {
+    width: 100%;
+    height: 48px;
+    border: 1px solid var(--border-strong);
+    border-radius: 14px;
+    background: #ffffff;
+    color: var(--text);
+    padding: 0 16px;
+    font-size: 0.96rem;
+    transition: border-color var(--transition), box-shadow var(--transition);
+    box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.glossary-search-input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+}
+
+.glossary-filter-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.glossary-filter-chip {
+    background: #ffffff;
+    color: var(--text);
+    border: 1px solid var(--border);
+    box-shadow: none;
+}
+
+.glossary-filter-chip:hover {
+    background: #f8fbff;
+    border-color: #bfdbfe;
+    color: var(--primary-dark);
+    transform: none;
+    box-shadow: none;
+}
+
+.glossary-filter-chip.active {
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    color: #ffffff;
+    border-color: #2563eb;
+}
+
+.glossary-results-meta {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-faint);
+    padding: 0 2px;
+}
+
+.glossary-card-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.glossary-card {
+    position: relative;
+    overflow: hidden;
+    display: grid;
+    grid-template-columns: 6px minmax(0, 1fr);
+    min-height: 100%;
+    background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+}
+
+.glossary-card-accent {
+    background: #cbd5e1;
+}
+
+.glossary-card-sql .glossary-card-accent {
+    background: linear-gradient(180deg, var(--concept-text) 0%, #60a5fa 100%);
+}
+
+.glossary-card-clinical .glossary-card-accent {
+    background: linear-gradient(180deg, var(--challenge-text) 0%, #22c55e 100%);
+}
+
+.glossary-card-financial .glossary-card-accent {
+    background: linear-gradient(180deg, var(--scenario-text) 0%, #fb923c 100%);
+}
+
+.glossary-card-analytics .glossary-card-accent {
+    background: linear-gradient(180deg, var(--advanced-text) 0%, #8b5cf6 100%);
+}
+
+.glossary-card-body {
+    padding: 18px 18px 16px;
+}
+
+.glossary-card-top {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    align-items: flex-start;
+    margin-bottom: 14px;
+}
+
+.glossary-card-top h3 {
+    margin: 0;
+    font-size: 1.02rem;
+    line-height: 1.25;
+}
+
+.glossary-category-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    padding: 5px 9px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    border: 1px solid transparent;
+    white-space: nowrap;
+}
+
+.glossary-category-pill-sql {
+    background: var(--concept-bg);
+    color: var(--concept-text);
+    border-color: var(--concept-border);
+}
+
+.glossary-category-pill-clinical {
+    background: var(--challenge-bg);
+    color: var(--challenge-text);
+    border-color: var(--challenge-border);
+}
+
+.glossary-category-pill-financial {
+    background: var(--scenario-bg);
+    color: var(--scenario-text);
+    border-color: var(--scenario-border);
+}
+
+.glossary-category-pill-analytics {
+    background: var(--advanced-bg);
+    color: var(--advanced-text);
+    border-color: var(--advanced-border);
+}
+
+.glossary-copy-block + .glossary-copy-block {
+    margin-top: 12px;
+}
+
+.glossary-copy-label {
+    font-size: 0.76rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    margin-bottom: 6px;
+}
+
+.glossary-copy-block p {
+    margin: 0;
+}
+
+.glossary-example {
+    display: inline-block;
+    white-space: normal;
+    line-height: 1.55;
+    background: #f8fafc;
+    color: var(--primary-dark);
+    border-radius: 10px;
+    padding: 10px 12px;
+}
+
+.glossary-empty-state {
+    padding: 24px;
+    text-align: center;
+    color: var(--text-faint);
+    background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+}
+
+.glossary-nav-btn {
+    background: #ffffff;
+    color: var(--primary-dark);
+    border: 1px solid #bfdbfe;
+}
+
+.glossary-nav-btn:hover {
+    background: var(--primary-soft);
+    color: var(--primary-dark);
+    border-color: #93c5fd;
+}
+
+@media (max-width: 1100px) {
+    .glossary-card-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .glossary-toolbar {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 900px) {
+    body.glossary-mode .hero-banner {
+        margin-bottom: 14px;
+    }
+
+    .glossary-header-card {
+        grid-template-columns: 1fr;
+    }
+
+    .glossary-card-top {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .glossary-filter-chips {
+        gap: 8px;
+    }
+
+    .glossary-filter-chip {
+        flex: 1 1 calc(50% - 8px);
+    }
+}
