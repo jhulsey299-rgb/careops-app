@@ -2825,3 +2825,26 @@ body.glossary-mode .main-content {
         flex: 1 1 calc(50% - 8px);
     }
 }
+
+/* ================= GLOSSARY RESTORE + WIDTH PATCH ================= */
+.glossary-workspace {
+    width: 100%;
+}
+
+.glossary-page,
+.glossary-header-card,
+.glossary-toolbar,
+.glossary-results-meta,
+.glossary-card-grid,
+.glossary-empty-state {
+    width: 100%;
+    max-width: 100%;
+}
+
+.glossary-card-grid {
+    grid-template-columns: 1fr;
+}
+
+.glossary-card {
+    width: 100%;
+}
