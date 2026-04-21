@@ -8,10 +8,7 @@ let appState = {
   completedLessonIds: [],
   firstTryLessonIds: [],
   schemaPanelWidth: 320,
-  lessonStats: {},
-  expandedCategoryIds: [],
-  glossarySearch: "",
-  glossaryFilter: "all"
+  lessonStats: {}
 };
 
 let SQL = null;
@@ -161,76 +158,6 @@ const schema = {
   ]
 };
 
-
-const GLOSSARY_TERMS = [
-  { term: "SELECT", category: "sql", definition: "Returns columns from one or more tables.", why: "SELECT is the starting point of nearly every SQL query an analyst writes.", example: "SELECT patient_id, insurance_type FROM patients;" },
-  { term: "FROM", category: "sql", definition: "Specifies the table or dataset the query should read from.", why: "Choosing the right base table sets the reporting grain and prevents duplicated results.", example: "SELECT * FROM encounters;" },
-  { term: "WHERE", category: "sql", definition: "Filters rows so only matching records are returned.", why: "Hospital analysts use WHERE to focus on populations like denied claims, high LOS encounters, or readmissions.", example: "SELECT * FROM claims WHERE claim_status = 'Denied';" },
-  { term: "GROUP BY", category: "sql", definition: "Aggregates rows into groups based on one or more columns.", why: "It lets leaders compare performance by department, facility, payer, or provider.", example: "SELECT department, COUNT(*) FROM encounters GROUP BY department;" },
-  { term: "ORDER BY", category: "sql", definition: "Sorts query results ascending or descending.", why: "Sorting helps surface highest-impact problems first, such as longest stays or highest charges.", example: "SELECT * FROM encounters ORDER BY length_of_stay DESC;" },
-  { term: "JOIN", category: "sql", definition: "Combines related tables using a shared key.", why: "Real hospital analysis usually requires connecting patient, encounter, claim, and discharge data together.", example: "SELECT * FROM encounters e JOIN claims c ON e.encounter_id = c.encounter_id;" },
-  { term: "INNER JOIN", category: "sql", definition: "Returns only rows that match in both joined tables.", why: "Use it when you only want records that exist in both datasets, such as encounters that have claims.", example: "SELECT * FROM encounters e INNER JOIN claims c ON e.encounter_id = c.encounter_id;" },
-  { term: "LEFT JOIN", category: "sql", definition: "Returns all rows from the left table and matching rows from the right table.", why: "Useful when you need to preserve the base population even if related data is missing.", example: "SELECT * FROM patients p LEFT JOIN encounters e ON p.patient_id = e.patient_id;" },
-  { term: "COUNT()", category: "sql", definition: "Counts rows or non-null values.", why: "Count is used constantly for encounter volume, readmission counts, denial counts, and patient totals.", example: "SELECT COUNT(*) AS encounter_count FROM encounters;" },
-  { term: "SUM()", category: "sql", definition: "Adds numeric values together.", why: "Finance and revenue-cycle analysis often requires summing charges, billed amounts, or denied dollars.", example: "SELECT SUM(billed_amount) AS denied_total FROM claims WHERE claim_status = 'Denied';" },
-  { term: "AVG()", category: "sql", definition: "Calculates the average of a numeric field.", why: "Average LOS, average discharge minutes, and average charge values are common hospital metrics.", example: "SELECT AVG(length_of_stay) AS avg_los FROM encounters;" },
-  { term: "DISTINCT", category: "sql", definition: "Removes duplicate values from a result set.", why: "Helpful when you need unique payer names, departments, or patients without repeat rows.", example: "SELECT DISTINCT payer FROM claims;" },
-  { term: "NULL", category: "sql", definition: "Represents a missing or unknown value.", why: "Null handling affects quality reporting and can change counts, averages, and filter results.", example: "SELECT * FROM patients WHERE city IS NULL;" },
-  { term: "Primary Key", category: "sql", definition: "A column that uniquely identifies each row in a table.", why: "Primary keys protect data integrity and define the grain of a dataset.", example: "patient_id uniquely identifies a row in patients." },
-  { term: "Foreign Key", category: "sql", definition: "A column that links one table to a related table.", why: "Foreign keys make joins possible between tables like encounters and patients.", example: "encounters.patient_id links to patients.patient_id." },
-
-  { term: "Patient", category: "clinical", definition: "The individual receiving care or services from the organization.", why: "Almost every dataset eventually rolls back to a patient population.", example: "A patient can have multiple encounters, appointments, and claims." },
-  { term: "Encounter", category: "clinical", definition: "A single visit or episode of care tied to a patient.", why: "Encounter-level analysis is central to throughput, LOS, utilization, and revenue reporting.", example: "An inpatient stay and an ED visit are both encounters." },
-  { term: "Admission", category: "clinical", definition: "The point when a patient is formally accepted for hospital care.", why: "Admissions affect capacity, staffing, LOS, and reimbursement patterns.", example: "A patient admitted on Monday begins an inpatient encounter." },
-  { term: "Discharge", category: "clinical", definition: "The point when a patient leaves the hospital or care setting.", why: "Discharge timing directly affects throughput, bed availability, and patient flow.", example: "Delayed discharge can increase total length of stay." },
-  { term: "Length of Stay (LOS)", category: "clinical", definition: "The total time a patient remains in the hospital from admission to discharge.", why: "LOS is one of the most important hospital efficiency and capacity metrics.", example: "A patient admitted Monday and discharged Wednesday has a LOS of about 2 days." },
-  { term: "Observation", category: "clinical", definition: "A hospital status used when a patient requires monitoring but may not meet inpatient criteria.", why: "Observation volume, hours, and conversions often create operational and reimbursement questions.", example: "An observation stay may later convert to inpatient." },
-  { term: "Inpatient", category: "clinical", definition: "A patient formally admitted to the hospital for ongoing treatment.", why: "Inpatient cases usually carry longer stays, higher reimbursement complexity, and more resource utilization.", example: "A pneumonia patient staying several days is typically inpatient." },
-  { term: "Readmission", category: "clinical", definition: "A patient returning to the hospital after a prior discharge, often within a tracked time window.", why: "High readmissions can signal discharge, follow-up, or care-transition problems.", example: "A patient discharged Friday and readmitted 10 days later counts as a readmission." },
-  { term: "30-Day Readmission", category: "clinical", definition: "A readmission occurring within 30 days of a prior discharge.", why: "This is a common quality and executive reporting metric tied to outcomes and transitions of care.", example: "days_to_readmit <= 30 indicates a 30-day readmission." },
-  { term: "ED Boarder", category: "clinical", definition: "A patient who remains in the emergency department after the decision to admit or transfer has already been made.", why: "ED boarders signal bed-flow pressure and can degrade throughput and patient experience.", example: "Admitted patients waiting in the ED for an inpatient bed are ED boarders." },
-  { term: "Code 44", category: "clinical", definition: "A status change where a patient originally treated as inpatient is reclassified to observation.", why: "Code 44 cases matter for utilization review, billing, and observation analytics.", example: "An inpatient-to-observation conversion can be flagged as Code 44." },
-  { term: "Discharge Disposition", category: "clinical", definition: "The location or status a patient is discharged to, such as home, SNF, or hospice.", why: "Disposition helps explain LOS variation, readmission risk, and discharge barriers.", example: "Home, SNF, rehab, and expired are all discharge dispositions." },
-  { term: "Provider", category: "clinical", definition: "The clinician or practitioner associated with patient care or an encounter.", why: "Provider-level variation is often reviewed in quality, productivity, and operational reporting.", example: "Attending physician, hospitalist, and specialist are provider roles." },
-  { term: "Care Coordination", category: "clinical", definition: "The work of organizing patient care across settings, teams, and follow-up needs.", why: "Weak care coordination often contributes to readmissions and discharge delays.", example: "Scheduling follow-up and reconciling medications are coordination activities." },
-  { term: "Case Management", category: "clinical", definition: "A service that helps manage discharge planning, utilization, and complex patient needs.", why: "Case management involvement can be critical when analyzing placement delays and avoidable LOS.", example: "Patients awaiting placement often require case management support." },
-
-  { term: "Charge", category: "financial", definition: "The billed value assigned to a service, procedure, or encounter component.", why: "Charges help estimate gross revenue and identify high-dollar activity.", example: "Facility and professional components can each generate charges." },
-  { term: "Claim", category: "financial", definition: "A request for payment submitted to a payer for services rendered.", why: "Claims data is central to denials, reimbursement, and payer analysis.", example: "A hospital submits a claim to Medicare after discharge coding is complete." },
-  { term: "Denial", category: "financial", definition: "A payer refusal to pay all or part of a submitted claim.", why: "Denials create revenue leakage and often reveal workflow or documentation problems.", example: "Missing authorization can result in a denied claim." },
-  { term: "Denial Rate", category: "financial", definition: "The percentage of claims or dollars denied out of the total submitted.", why: "Leaders use denial rate to monitor financial performance and preventable revenue loss.", example: "Denied claims divided by total claims produces a claim-based denial rate." },
-  { term: "Payer", category: "financial", definition: "The organization responsible for reimbursing the claim, such as Medicare or a commercial insurer.", why: "Payer segmentation helps explain variation in denials, reimbursement, and LOS.", example: "Medicare, Medicaid, BCBS, and self-pay are payer categories." },
-  { term: "Payer Mix", category: "financial", definition: "The distribution of the patient population across payer categories.", why: "Payer mix shapes financial risk, reimbursement patterns, and contract strategy.", example: "A high Medicaid mix can affect reimbursement performance." },
-  { term: "Gross Charges", category: "financial", definition: "The full billed amount before contractual adjustments and collection realities.", why: "Gross charges show total billed activity but not what the organization will actually realize.", example: "Total gross charges may be much higher than expected net revenue." },
-  { term: "Net Revenue", category: "financial", definition: "The estimated or realized revenue after contractual reductions and non-collectible amounts.", why: "Executives care more about net revenue than gross billed value.", example: "Some organizations estimate net revenue as a percentage of charges." },
-  { term: "Collections", category: "financial", definition: "Actual dollars received from payers or patients.", why: "Collections reflect financial performance more directly than gross billing alone.", example: "Posted payments and remits drive collection totals." },
-  { term: "Adjustment", category: "financial", definition: "A reduction applied to a billed amount based on contract terms, corrections, or policy.", why: "Adjustments explain why billed amounts do not equal final revenue.", example: "Contractual adjustment reduces a claim from gross charges to allowed amount." },
-  { term: "Write-off", category: "financial", definition: "An amount the organization does not expect to collect and removes from receivables.", why: "Write-offs affect net performance and can indicate bad debt or policy-based charity care.", example: "Uncollectible self-pay balances may be written off." },
-  { term: "DRG", category: "financial", definition: "Diagnosis Related Group, a classification used to organize inpatient reimbursement.", why: "DRGs influence reimbursement, case-mix analysis, and executive service-line reporting.", example: "Different DRGs carry different expected payment levels." },
-  { term: "RVU", category: "financial", definition: "Relative Value Unit, a measure used to quantify provider work and reimbursement value.", why: "RVUs are often used in provider productivity and compensation models.", example: "A procedure with more complexity may carry more RVUs." },
-
-  { term: "KPI", category: "analytics", definition: "A key performance indicator used to track whether a goal is being met.", why: "A strong KPI focuses attention on the few measures leaders should manage closely.", example: "Average LOS and denial rate are common hospital KPIs." },
-  { term: "Benchmark", category: "analytics", definition: "A comparison target based on internal history, peers, or an external standard.", why: "Benchmarks help leaders understand whether performance is acceptable or needs action.", example: "Comparing your denial rate to a target benchmark helps show urgency." },
-  { term: "Baseline", category: "analytics", definition: "The starting level of performance used for comparison over time.", why: "Without a baseline, it is hard to know whether a metric improved or worsened.", example: "Last quarter’s LOS can serve as the baseline for this quarter’s review." },
-  { term: "Trend", category: "analytics", definition: "The directional movement of a metric over time.", why: "Trend analysis reveals whether a problem is isolated or becoming systematic.", example: "A 6-month upward trend in readmissions deserves investigation." },
-  { term: "Variance", category: "analytics", definition: "The difference between expected and actual performance.", why: "Variance helps identify where performance is off-target and where root cause work should begin.", example: "Actual LOS of 5.1 days versus target LOS of 4.3 days creates a variance." },
-  { term: "Root Cause", category: "analytics", definition: "The underlying driver creating an observed performance issue.", why: "Analysts should move beyond reporting symptoms and help identify causes.", example: "Delayed placement may be the root cause of high discharge minutes." },
-  { term: "Outlier", category: "analytics", definition: "A data point or subgroup that behaves very differently from the rest.", why: "Outliers can reveal breakdowns, special causes, or data-quality issues.", example: "One department with much higher LOS than all others is an outlier." },
-  { term: "Cohort", category: "analytics", definition: "A defined group of patients or encounters analyzed together.", why: "Good cohort design makes results more clinically and operationally meaningful.", example: "Readmitted Medicare inpatients can be analyzed as a cohort." },
-  { term: "Aggregation", category: "analytics", definition: "The process of summarizing detailed data into grouped results.", why: "Aggregation makes row-level hospital data understandable for leaders.", example: "Grouping encounters by department is aggregation." },
-  { term: "Drill-down", category: "analytics", definition: "Moving from a summary view into more detailed supporting data.", why: "Drill-down lets leaders investigate which subgroups or cases are driving a metric.", example: "A dashboard may drill from facility LOS into department-level detail." },
-  { term: "Throughput", category: "analytics", definition: "The speed and efficiency with which patients move through care processes.", why: "Throughput problems affect capacity, wait times, patient experience, and cost.", example: "ED boarding and delayed discharge are throughput issues." },
-  { term: "Bottleneck", category: "analytics", definition: "A step in a process that constrains flow and slows the whole system.", why: "Finding the true bottleneck is often the fastest route to operational improvement.", example: "Delayed imaging or placement can create a throughput bottleneck." }
-];
-
-const GLOSSARY_CATEGORY_META = {
-  all: { label: "All Terms", key: "all" },
-  sql: { label: "SQL", key: "sql" },
-  clinical: { label: "Clinical / Operations", key: "clinical" },
-  financial: { label: "Financial / Revenue", key: "financial" },
-  analytics: { label: "Analytics / Strategy", key: "analytics" }
-};
-
 const curriculum = [
   {
     id: "track_foundations",
@@ -257,7 +184,7 @@ const curriculum = [
               "It helps validate table structure and available fields.",
               "It is helpful for quick review, but should be used carefully in large production queries."
             ],
-            example: "SELECT provider_id, provider_name, specialty FROM providers;",
+            example: "SELECT * FROM patients;",
             executiveTakeaway: { show: false }
           },
           {
@@ -303,7 +230,7 @@ It should be used carefully in large datasets, but is essential during early exp
               "Filtering is essential for identifying risk groups and operational exceptions.",
               "It allows leaders to focus on the subset of records that matter."
             ],
-            example: "SELECT claim_id, payer, claim_status, billed_amount FROM claims WHERE claim_status = 'Denied';",
+            example: "SELECT * FROM encounters WHERE length_of_stay > 5;",
             executiveTakeaway: { show: false }
           },
           {
@@ -346,7 +273,7 @@ High LOS patients are important because they:
               "Descending order is useful for reviewing biggest drivers.",
               "Leaders often need ranked outputs to prioritize intervention."
             ],
-            example: "SELECT charge_id, encounter_id, amount FROM charges ORDER BY amount DESC;",
+            example: "SELECT * FROM encounters ORDER BY length_of_stay DESC;",
             executiveTakeaway: { show: false }
           },
           {
@@ -404,7 +331,7 @@ Descending order is commonly used to:
               "In healthcare, this supports encounter volume and workload measurement.",
               "Volume is one of the most basic operational KPIs."
             ],
-            example: "SELECT COUNT(*) FROM appointments;",
+            example: "SELECT COUNT(*) FROM encounters;",
             executiveTakeaway: { show: false }
           },
           {
@@ -449,7 +376,7 @@ This is a foundational KPI used across:
               "It is the backbone of summary reporting.",
               "Choose the grouping field that matches the leader’s question."
             ],
-            example: "SELECT payer, COUNT(*) FROM claims GROUP BY payer;",
+            example: "SELECT department_id, COUNT(*) FROM encounters GROUP BY department_id;",
             executiveTakeaway: { show: false }
           },
           {
@@ -493,7 +420,7 @@ This helps:
               "Averages help evaluate efficiency and performance.",
               "Context matters because outliers can distort interpretation."
             ],
-            example: "SELECT AVG(departure_minutes) FROM discharges;",
+            example: "SELECT AVG(length_of_stay) FROM encounters;",
             executiveTakeaway: { show: false }
           },
           {
@@ -888,8 +815,7 @@ function loadProgress() {
         ...parsed,
         lessonStats: parsed.lessonStats || {},
         completedLessonIds: parsed.completedLessonIds || [],
-        firstTryLessonIds: parsed.firstTryLessonIds || [],
-        expandedCategoryIds: parsed.expandedCategoryIds || []
+        firstTryLessonIds: parsed.firstTryLessonIds || []
       };
     }
   } catch (error) {
@@ -1017,15 +943,6 @@ function getAllCategories() {
   return getTrack().categories || [];
 }
 
-function getCategoryById(categoryId) {
-  for (const track of curriculum) {
-    const category = (track.categories || []).find(category => category.id === categoryId);
-    if (category) return category;
-  }
-  return null;
-}
-
-
 function getCurrentCategory() {
   return getAllCategories().find(category => category.id === appState.currentCategoryId) || getAllCategories()[0] || null;
 }
@@ -1038,34 +955,12 @@ function getCurrentLesson() {
   return getAllLessons().find(lesson => lesson.id === appState.currentLessonId) || null;
 }
 
-function lessonsForTrack(trackId = appState.currentTrackId) {
-  const track = curriculum.find(item => item.id === trackId) || curriculum[0];
-  return (track?.categories || []).flatMap(category => category.lessons || []);
-}
-
-function allCurriculumLessons() {
-  return curriculum.flatMap(track => (track.categories || []).flatMap(category => category.lessons || []));
-}
-
-function allCurriculumLessonIds() {
-  return new Set(allCurriculumLessons().map(lesson => lesson.id));
-}
-
 function totalLessonCount() {
-  return allCurriculumLessons().length;
+  return getAllLessons().length;
 }
 
 function completedLessonCount() {
-  const validIds = allCurriculumLessonIds();
-  return [...new Set(appState.completedLessonIds || [])].filter(id => validIds.has(id)).length;
-}
-
-function currentTrackLessonCount() {
-  return totalLessonCount();
-}
-
-function currentTrackCompletedLessonCount() {
-  return completedLessonCount();
+  return appState.completedLessonIds.length;
 }
 
 function isLessonCompleted(lessonId) {
@@ -1123,7 +1018,7 @@ function masteryCount() {
 }
 
 function categoryComplete(category) {
-  return !!category && Array.isArray(category.lessons) && category.lessons.every(lesson => isLessonCompleted(lesson.id));
+  return category.lessons.every(lesson => isLessonCompleted(lesson.id));
 }
 
 function categoryBadgeCount() {
@@ -1133,7 +1028,7 @@ function categoryBadgeCount() {
 function levelBadgeCount() {
   return LEARNING_LEVELS.filter(level => {
     const track = curriculum.find(item => item.id === level.trackId);
-    return !!track && (track.categories || []).length > 0 && (track.categories || []).every(categoryComplete);
+    return !!track && track.categories.every(categoryComplete);
   }).length;
 }
 
@@ -1142,9 +1037,9 @@ function achievements() {
   const firstTry = appState.firstTryLessonIds.length;
   const mastered = masteryCount();
   const catComplete = categoryId => {
-  const category = getCategoryById(categoryId);
-  return categoryComplete(category);
-};
+    const category = getAllCategories().find(item => item.id === categoryId);
+    return !!category && category.lessons.every(lesson => isLessonCompleted(lesson.id));
+  };
   return [
     { label: "First Step", earned: completed >= 1, emoji: "🚀", description: "Unlock by completing your first lesson." },
     { label: "Getting the Hang of It", earned: completed >= 5, emoji: "📘", description: "Unlock by completing 5 lessons." },
@@ -1158,9 +1053,14 @@ function achievements() {
     { label: "Master of Masters", earned: mastered >= 25, emoji: "👑", description: "Unlock by mastering 25 lessons." },
     { label: "Foundations Builder", earned: catComplete("foundations_core"), emoji: "🔗", description: "Unlock by completing every lesson in SQL Foundations for Hospital Data." },
     { label: "Core Analyst", earned: catComplete("core_hospital_analytics"), emoji: "👑", description: "Unlock by completing every lesson in Core Hospital Analytics." },
-    { label: "Applied Investigator", earned: catComplete("applied_trends_investigation"), emoji: "🏥", description: "Unlock by completing every lesson in Applied Analytics: Trends & Investigation." },
+    { label: "Trend Tracker", earned: catComplete("applied_trends_investigation"), emoji: "🎯", description: "Unlock by completing every lesson in Applied Analytics: Trends & Investigation." },
     { label: "Root Cause Hunter", earned: catComplete("advanced_root_cause_analysis"), emoji: "📊", description: "Unlock by completing every lesson in Diagnosis: Root Cause Analysis." },
-    { label: "Executive Whisperer", earned: catComplete("expert_decision_making"), emoji: "🧩", description: "Unlock by completing every lesson in Executive Analytics & Decision Making." }
+    { label: "Executive Whisperer", earned: catComplete("expert_decision_making"), emoji: "🧩", description: "Unlock by completing every lesson in Executive Analytics & Decision Making." },
+    { label: "Expert Finisher", earned: catComplete("expert_decision_making"), emoji: "🧭", description: "Unlock by finishing the expert decision-making track." },
+    { label: "Applied Investigator", earned: catComplete("applied_trends_investigation"), emoji: "🏥", description: "Unlock by completing every lesson in Applied Analytics: Trends & Investigation." },
+    { label: "Root Cause Ranger", earned: catComplete("advanced_root_cause_analysis"), emoji: "🔁", description: "Unlock by completing every lesson in Diagnosis: Root Cause Analysis." },
+    { label: "Decision Driver", earned: catComplete("expert_decision_making"), emoji: "💰", description: "Unlock by completing every lesson in Executive Analytics & Decision Making." },
+    { label: "Executive Closer", earned: catComplete("expert_decision_making"), emoji: "🗣️", description: "Unlock by completing every lesson in Executive Analytics & Decision Making." }
   ];
 }
 
@@ -1273,8 +1173,8 @@ function renderAchievements() {
 }
 
 function updateDashboard() {
-  const total = currentTrackLessonCount();
-  const completed = currentTrackCompletedLessonCount();
+  const total = totalLessonCount();
+  const completed = completedLessonCount();
   const current = getCurrentLesson();
   const track = getTrack();
   const progressText = document.getElementById("progress-text");
@@ -1294,23 +1194,6 @@ function updateDashboard() {
   }
   if (trackTitle) trackTitle.innerText = track.title;
   if (trackDescription) trackDescription.innerText = "Curriculum, learning levels, completion, and mastery tracking.";
-  updateLevelsPanelTheme(track.id);
-}
-
-function updateLevelsPanelTheme(trackId) {
-  const panel = document.getElementById("levels-panel");
-  if (!panel) return;
-  panel.classList.remove(
-    "track-theme-foundations",
-    "track-theme-core",
-    "track-theme-applied",
-    "track-theme-advanced",
-    "track-theme-expert"
-  );
-  const level = levelForTrack(trackId);
-  if (!level) return;
-  panel.classList.add(`track-theme-${level.key}`);
-  panel.style.borderColor = level.color;
 }
 
 function renderSchema() {
@@ -1358,8 +1241,12 @@ function renderSchema() {
 
   if (relationshipsWrap) {
     relationshipsWrap.innerHTML = "";
-    const section = relationshipsWrap.closest(".schema-section");
-    if (section) section.style.display = "none";
+    schema.relationships.forEach(item => {
+      const div = document.createElement("div");
+      div.className = "relationship-item";
+      div.textContent = item;
+      relationshipsWrap.appendChild(div);
+    });
   }
 }
 
@@ -1454,198 +1341,21 @@ function renderTrackCategoryCards() {
   }
 }
 
-function ensureCurriculumLessonListStyles() {
-  if (document.getElementById("curriculum-lesson-list-style")) return;
-  const style = document.createElement("style");
-  style.id = "curriculum-lesson-list-style";
-  style.textContent = `
-    .curriculum-category {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    .curriculum-category-header {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      align-items: stretch;
-    }
-    .curriculum-category-main-btn {
-      width: 100%;
-      border: 0;
-      border-radius: 14px;
-      padding: 14px 16px;
-      text-align: center;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      background: linear-gradient(180deg, #3b82f6 0%, #2563eb 100%);
-      color: #ffffff;
-      cursor: pointer;
-      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.06);
-    }
-    .curriculum-category-main-btn:hover {
-      filter: brightness(1.02);
-    }
-    .curriculum-category-main-btn .curriculum-category-title {
-      color: #ffffff;
-      display: block;
-      width: 100%;
-      text-align: center;
-      font-size: 1.02rem;
-      line-height: 1.2;
-      margin-bottom: 8px;
-    }
-    .curriculum-category-main-btn .curriculum-category-header-meta {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      align-items: center;
-      justify-content: center;
-      width: 100%;
-      text-align: center;
-      color: rgba(255,255,255,0.88);
-      font-size: 0.78rem;
-      font-weight: 600;
-    }
-    .curriculum-category-main-btn .curriculum-category-meta {
-      color: rgba(255,255,255,0.88);
-    }
-    .curriculum-category-toggle-wrap {
-      display: flex;
-      justify-content: center;
-      margin-top: -2px;
-    }
-    .curriculum-category-toggle {
-      border: 1px solid #dbe3f0;
-      background: #ffffff;
-      color: #475569;
-      font-size: 1rem;
-      font-weight: 700;
-      cursor: pointer;
-      padding: 4px 10px;
-      border-radius: 999px;
-      line-height: 1;
-      min-width: 40px;
-      box-shadow: 0 1px 2px rgba(15,23,42,0.04);
-    }
-    .curriculum-category-toggle:hover {
-      background: #f8fafc;
-      color: #111827;
-      border-color: #cbd5e1;
-    }
-    .curriculum-category-body {
-      margin-top: 0;
-      padding: 8px;
-      border-top: 1px solid #e5e7eb;
-    }
-    .curriculum-lesson-list {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    .curriculum-lesson-row {
-      width: 100%;
-      border: 1px solid #e5e7eb;
-      border-radius: 12px;
-      background: #ffffff;
-      padding: 10px 12px;
-      text-align: left;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      cursor: pointer;
-    }
-    .curriculum-lesson-row:hover {
-      background: #f8fafc;
-      border-color: #cbd5e1;
-    }
-    .curriculum-lesson-row.is-active {
-      border-color: #2563eb;
-      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.12);
-    }
-    .curriculum-lesson-row.is-complete .curriculum-lesson-title {
-      color: #0f172a;
-    }
-    .curriculum-lesson-main {
-      min-width: 0;
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-    .curriculum-lesson-title {
-      font-size: 0.92rem;
-      font-weight: 600;
-      color: #111827;
-      white-space: normal;
-    }
-    .curriculum-lesson-meta {
-      font-size: 0.76rem;
-      color: #6b7280;
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-      align-items: center;
-    }
-    .curriculum-lesson-status {
-      font-size: 0.76rem;
-      font-weight: 600;
-      color: #16a34a;
-      white-space: nowrap;
-    }
-    .curriculum-lesson-status.is-pending {
-      color: #6b7280;
-    }
-  `;
-  document.head.appendChild(style);
-}
-
-function isCategoryExpanded(categoryId) {
-  return (appState.expandedCategoryIds || []).includes(categoryId);
-}
-
-function toggleCategoryExpanded(categoryId) {
-  const expanded = new Set(appState.expandedCategoryIds || []);
-  if (expanded.has(categoryId)) expanded.delete(categoryId);
-  else expanded.add(categoryId);
-  appState.expandedCategoryIds = Array.from(expanded);
-  saveProgress();
-  renderAll();
-}
-
-function ensureCurrentCategoryExpanded() {
-  const categoryId = appState.currentCategoryId;
-  if (!categoryId) return;
-  const expanded = new Set(appState.expandedCategoryIds || []);
-  if (!expanded.has(categoryId)) {
-    expanded.add(categoryId);
-    appState.expandedCategoryIds = Array.from(expanded);
-  }
-}
-
 function renderCurriculumNav() {
-  ensureCurriculumLessonListStyles();
-  ensureCurrentCategoryExpanded();
   const list = document.getElementById("category-list");
   if (!list) return;
   list.innerHTML = "";
-
   getAllCategories().forEach(category => {
     const wrap = document.createElement("div");
     wrap.className = "curriculum-category";
-
-    const total = (category.lessons || []).length;
-    const done = (category.lessons || []).filter(lesson => isLessonCompleted(lesson.id)).length;
-    const mastered = (category.lessons || []).filter(lesson => getLessonStats(lesson.id).mastered).length;
-    const expanded = isCategoryExpanded(category.id);
-
-    const header = document.createElement("div");
+    const total = category.lessons.length;
+    const done = category.lessons.filter(lesson => isLessonCompleted(lesson.id)).length;
+    const mastered = category.lessons.filter(lesson => getLessonStats(lesson.id).mastered).length;
+    const header = document.createElement("button");
+    header.type = "button";
     header.className = "curriculum-category-header" + (done === total ? " is-complete" : "");
     header.innerHTML = `
-      <button type="button" class="curriculum-category-main-btn" aria-label="Open ${category.title}">
+      <div class="curriculum-category-row">
         <div class="curriculum-category-main">
           <span class="curriculum-category-title">${category.title}</span>
           <div class="curriculum-category-header-meta">
@@ -1653,75 +1363,20 @@ function renderCurriculumNav() {
             <span class="curriculum-category-meta">${mastered} mastered</span>
           </div>
         </div>
-      </button>
-      <div class="curriculum-category-toggle-wrap">
-        <button type="button" class="curriculum-category-toggle" aria-label="${expanded ? "Collapse" : "Expand"} ${category.title}" aria-expanded="${expanded ? "true" : "false"}">${expanded ? "⌄" : "›"}</button>
+        <span class="curriculum-category-arrow">›</span>
       </div>
     `;
-
-    const mainBtn = header.querySelector(".curriculum-category-main-btn");
-    const toggleBtn = header.querySelector(".curriculum-category-toggle");
-
-    mainBtn?.addEventListener("click", () => {
+    header.addEventListener("click", () => {
       appState.currentCategoryId = category.id;
-      if (!appState.currentLessonId || !(category.lessons || []).find(lesson => lesson.id === appState.currentLessonId)) {
-        appState.currentLessonId = category.lessons?.[0]?.id || null;
+      if (!appState.currentLessonId || !category.lessons.find(lesson => lesson.id === appState.currentLessonId)) {
+        appState.currentLessonId = category.lessons[0]?.id || null;
       }
       appState.currentView = "lesson";
       attempts = 0;
-      ensureCurrentCategoryExpanded();
       saveProgress();
       renderAll();
     });
-
-    toggleBtn?.addEventListener("click", (event) => {
-      event.stopPropagation();
-      toggleCategoryExpanded(category.id);
-    });
-
     wrap.appendChild(header);
-
-    const body = document.createElement("div");
-    body.className = "curriculum-category-body" + (expanded ? "" : " hidden");
-
-    const lessonList = document.createElement("div");
-    lessonList.className = "curriculum-lesson-list";
-
-    (category.lessons || []).forEach(lesson => {
-      const row = document.createElement("button");
-      row.type = "button";
-      row.className = "curriculum-lesson-row" +
-        (lesson.id === appState.currentLessonId ? " is-active" : "") +
-        (isLessonCompleted(lesson.id) ? " is-complete" : "");
-
-      const typeLabel = lesson.type ? lesson.type.charAt(0).toUpperCase() + lesson.type.slice(1) : "Lesson";
-      const statusLabel = isLessonCompleted(lesson.id) ? "Completed" : "Not started";
-
-      row.innerHTML = `
-        <div class="curriculum-lesson-main">
-          <span class="curriculum-lesson-title">${lesson.title}</span>
-          <div class="curriculum-lesson-meta">
-            <span>${typeLabel}</span>
-          </div>
-        </div>
-        <span class="curriculum-lesson-status ${isLessonCompleted(lesson.id) ? "" : "is-pending"}">${statusLabel}</span>
-      `;
-
-      row.addEventListener("click", () => {
-        appState.currentCategoryId = category.id;
-        appState.currentLessonId = lesson.id;
-        appState.currentView = "lesson";
-        attempts = 0;
-        ensureCurrentCategoryExpanded();
-        saveProgress();
-        renderAll();
-      });
-
-      lessonList.appendChild(row);
-    });
-
-    body.appendChild(lessonList);
-    wrap.appendChild(body);
     list.appendChild(wrap);
   });
 }
@@ -1770,13 +1425,21 @@ function renderOverview() {
   };
 }
 
+function showLessonWorkspace() {
+  appState.currentView = "lesson";
+  const overview = document.getElementById("track-overview");
+  const workspace = document.getElementById("lesson-workspace");
+  if (overview) overview.classList.add("hidden");
+  if (workspace) workspace.classList.remove("hidden");
+}
 
-/* duplicate removed during stabilization pass */
-
-
-
-/* duplicate removed during stabilization pass */
-
+function showOverview() {
+  appState.currentView = "overview";
+  const overview = document.getElementById("track-overview");
+  const workspace = document.getElementById("lesson-workspace");
+  if (overview) overview.classList.remove("hidden");
+  if (workspace) workspace.classList.add("hidden");
+}
 
 
 function cleanInstructionExpression(expression) {
@@ -2202,74 +1865,6 @@ function enforceChallengeCriteria(curriculum) {
   });
 }
 
-
-function sanitizeProgressState() {
-  const firstTrack = curriculum[0] || null;
-  const validTrackIds = new Set(curriculum.map(track => track.id));
-  const validLessonIds = allCurriculumLessonIds();
-
-  appState.completedLessonIds = [...new Set((appState.completedLessonIds || []).filter(id => validLessonIds.has(id)))];
-  appState.firstTryLessonIds = [...new Set((appState.firstTryLessonIds || []).filter(id => validLessonIds.has(id)))];
-
-  const nextStats = {};
-  Object.entries(appState.lessonStats || {}).forEach(([lessonId, stats]) => {
-    if (validLessonIds.has(lessonId)) nextStats[lessonId] = stats;
-  });
-  appState.lessonStats = nextStats;
-
-  if (!validTrackIds.has(appState.currentTrackId)) {
-    appState.currentTrackId = firstTrack?.id || "track_foundations";
-  }
-
-  const activeTrack = getTrack();
-  const validCategories = activeTrack?.categories || [];
-  const validCategoryIds = new Set(validCategories.map(category => category.id));
-
-  if (!validCategoryIds.has(appState.currentCategoryId)) {
-    appState.currentCategoryId = validCategories[0]?.id || null;
-  }
-
-  const validLessonIdsForTrack = new Set(validCategories.flatMap(category => (category.lessons || []).map(lesson => lesson.id)));
-  if (!validLessonIdsForTrack.has(appState.currentLessonId)) {
-    appState.currentLessonId = validCategories[0]?.lessons?.[0]?.id || null;
-  }
-
-  if (!["overview", "lesson", "sandbox"].includes(appState.currentView)) {
-    appState.currentView = "overview";
-  }
-}
-
-function ensurePatchedUiStyles() {
-  if (document.getElementById("careops-patched-ui-styles")) return;
-  const style = document.createElement("style");
-  style.id = "careops-patched-ui-styles";
-  style.textContent = `
-    #levels-panel {
-      border: 2px solid transparent;
-      transition: border-color 0.18s ease, box-shadow 0.18s ease;
-    }
-    #levels-panel.track-theme-foundations { border-color: #22c55e; box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.08); }
-    #levels-panel.track-theme-core { border-color: #2563eb; box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.08); }
-    #levels-panel.track-theme-applied { border-color: #f59e0b; box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.08); }
-    #levels-panel.track-theme-advanced { border-color: #ef4444; box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.08); }
-    #levels-panel.track-theme-expert { border-color: #7c3aed; box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.08); }
-
-    .track-badge-ring .level-icon,
-    .track-badge-icon.level-icon {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 100%;
-      height: 100%;
-      text-align: center;
-      font-size: clamp(11px, 1.2vw, 16px);
-      line-height: 1;
-      font-weight: 700;
-    }
-  `;
-  document.head.appendChild(style);
-}
-
 function escapeHtml(str) {
   if (str === null || str === undefined) return '';
   return String(str)
@@ -2368,9 +1963,20 @@ if (!criteriaBox) {
   }
 }
 
-
-/* duplicate removed during stabilization pass */
-
+function renderAll() {
+  applySchemaPanelWidth();
+  renderSchema();
+  renderAchievements();
+  updateDashboard();
+  renderCurriculumNav();
+  renderTrackCategoryCards();
+  renderOverview();
+  if (appState.currentView === "lesson" && appState.currentLessonId) {
+    renderLesson();
+  } else {
+    showOverview();
+  }
+}
 
 function generateMockData() {
   const patients = [];
@@ -2854,19 +2460,11 @@ function nextLesson() {
   if (idx >= 0 && idx < lessons.length - 1) {
     appState.currentLessonId = lessons[idx + 1].id;
     appState.currentCategoryId = getAllCategories().find(cat => cat.lessons.some(l => l.id === appState.currentLessonId))?.id || appState.currentCategoryId;
-  } else {
-    const trackIndex = curriculum.findIndex(track => track.id === appState.currentTrackId);
-    if (trackIndex >= 0 && trackIndex < curriculum.length - 1) {
-      const nextTrack = curriculum[trackIndex + 1];
-      appState.currentTrackId = nextTrack.id;
-      appState.currentCategoryId = nextTrack.categories[0]?.id || null;
-      appState.currentLessonId = nextTrack.categories[0]?.lessons[0]?.id || null;
-    }
+    attempts = 0;
+    appState.currentView = "lesson";
+    saveProgress();
+    renderAll();
   }
-  attempts = 0;
-  appState.currentView = "lesson";
-  saveProgress();
-  renderAll();
 }
 
 function prevLesson() {
@@ -2875,34 +2473,20 @@ function prevLesson() {
   if (idx > 0) {
     appState.currentLessonId = lessons[idx - 1].id;
     appState.currentCategoryId = getAllCategories().find(cat => cat.lessons.some(l => l.id === appState.currentLessonId))?.id || appState.currentCategoryId;
-  } else {
-    const trackIndex = curriculum.findIndex(track => track.id === appState.currentTrackId);
-    if (trackIndex > 0) {
-      const prevTrack = curriculum[trackIndex - 1];
-      const prevLessons = (prevTrack.categories || []).flatMap(category => category.lessons || []);
-      appState.currentTrackId = prevTrack.id;
-      appState.currentLessonId = prevLessons[prevLessons.length - 1]?.id || null;
-      appState.currentCategoryId = prevTrack.categories.find(cat => cat.lessons.some(l => l.id === appState.currentLessonId))?.id || prevTrack.categories[0]?.id || null;
-    }
+    attempts = 0;
+    appState.currentView = "lesson";
+    saveProgress();
+    renderAll();
   }
-  attempts = 0;
-  appState.currentView = "lesson";
-  saveProgress();
-  renderAll();
 }
 
 function resetAllProgress() {
   if (!window.confirm("Reset all progress for CareOps SQL Analyst?")) return;
-  const firstTrack = curriculum[0] || null;
   appState.completedLessonIds = [];
   appState.firstTryLessonIds = [];
   appState.lessonStats = {};
-  appState.currentTrackId = firstTrack?.id || "track_foundations";
-  appState.currentCategoryId = firstTrack?.categories?.[0]?.id || null;
-  appState.currentLessonId = firstTrack?.categories?.[0]?.lessons?.[0]?.id || null;
-  appState.currentView = "overview";
-  activeDifficultyFilter = null;
   attempts = 0;
+  appState.currentView = "overview";
   saveProgress();
   showOverview();
   renderAll();
@@ -2945,9 +2529,79 @@ function closeTableModal(event) {
   if (overlay) overlay.classList.add("hidden");
 }
 
+function initUiActions() {
+  const openOverviewBtn = document.getElementById("open-overview-btn");
+  if (openOverviewBtn) {
+    openOverviewBtn.onclick = () => {
+      appState.currentView = "overview";
+      attempts = 0;
+      saveProgress();
+      renderAll();
+    };
+  }
 
-/* duplicate removed during stabilization pass */
+  const navOverviewBtn = document.getElementById("nav-overview-btn");
+  if (navOverviewBtn) {
+    navOverviewBtn.onclick = () => {
+      appState.currentView = "overview";
+      attempts = 0;
+      saveProgress();
+      renderAll();
+      document.getElementById("track-overview")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    };
+  }
 
+  const navSandboxBtn = document.getElementById("nav-sandbox-btn");
+  if (navSandboxBtn) {
+    navSandboxBtn.onclick = () => {
+      appState.currentView = "sandbox";
+      attempts = 0;
+      saveProgress();
+      renderAll();
+      document.getElementById("sandbox-workspace")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      document.getElementById("sandbox-query")?.focus();
+    };
+  }
+
+  const runSandboxBtn = document.getElementById("run-sandbox-btn");
+  if (runSandboxBtn) runSandboxBtn.onclick = runSandboxQuery;
+
+  const resetSandboxBtn = document.getElementById("reset-sandbox-btn");
+  if (resetSandboxBtn) resetSandboxBtn.onclick = resetSandbox;
+
+  const loadLessonBtn = document.getElementById("load-lesson-query-btn");
+  if (loadLessonBtn) {
+    loadLessonBtn.onclick = () => {
+      syncSandboxStarterQuery();
+      const sandboxInput = document.getElementById("sandbox-query");
+      if (sandboxInput) sandboxInput.focus();
+      setMessageState("sandbox-feedback", "success", "Loaded the current lesson query into the sandbox.");
+    };
+  }
+
+  const sendAiBtn = document.getElementById("send-ai-btn");
+  if (sendAiBtn) sendAiBtn.onclick = () => sendAiMessage();
+
+  const clearAiBtn = document.getElementById("clear-ai-btn");
+  if (clearAiBtn) clearAiBtn.onclick = clearAiChat;
+
+  document.querySelectorAll(".quick-ai-btn").forEach((btn) => {
+    btn.onclick = () => {
+      scrollToAiCompanion();
+      sendAiMessage(btn.dataset.aiPrompt || "");
+    };
+  });
+
+  const toggleBtn = document.getElementById("toggle-levels-panel-btn");
+  const panel = document.getElementById("levels-panel");
+  if (toggleBtn && panel) {
+    toggleBtn.onclick = () => {
+      panel.classList.toggle("collapsed");
+      toggleBtn.innerText = panel.classList.contains("collapsed") ? "Expand" : "Collapse";
+      toggleBtn.setAttribute("aria-expanded", panel.classList.contains("collapsed") ? "false" : "true");
+    };
+  }
+}
 
 const AI_API_CONFIG = {
   endpoint: "/api/ai-companion",
@@ -2959,7 +2613,7 @@ let sandboxDb = null;
 let aiThread = [];
 
 function showSection(sectionId) {
-  ["track-overview", "lesson-workspace", "sandbox-workspace", "glossary-workspace"].forEach((id) => {
+  ["track-overview", "lesson-workspace", "sandbox-workspace"].forEach((id) => {
     const el = document.getElementById(id);
     if (el) el.classList.toggle("hidden", id !== sectionId);
   });
@@ -2979,17 +2633,24 @@ function ensureCurrentLesson() {
   if (firstLesson) appState.currentLessonId = firstLesson.id;
 }
 
+function showLessonsWorkspace() {
+  ensureCurrentLesson();
+  appState.currentView = "lesson";
+  showSection("lesson-workspace");
+  document.getElementById("lesson-workspace")?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
 
-/* duplicate removed during stabilization pass */
+function showOverview() {
+  appState.currentView = "overview";
+  showSection("track-overview");
+}
 
-
-
-/* duplicate removed during stabilization pass */
-
-
-
-/* duplicate removed during stabilization pass */
-
+function showSandboxWorkspace() {
+  appState.currentView = "sandbox";
+  showSection("sandbox-workspace");
+  syncSandboxStarterQuery();
+  document.getElementById("sandbox-query")?.focus();
+}
 
 function setMessageState(elementId, state, message) {
   const el = document.getElementById(elementId);
@@ -3042,17 +2703,62 @@ async function resetSandbox() {
   syncSandboxStarterQuery();
 }
 
+function syncSandboxStarterQuery() {
+  const box = document.getElementById("sandbox-query");
+  const lesson = getCurrentLesson();
+  if (box) {
+    if (lesson && (lesson.starterQuery || lesson.solutionQuery)) {
+      box.value = lesson.starterQuery || lesson.solutionQuery;
+    } else if (!box.value) {
+      box.value = "";
+    }
+  }
+  renderSandboxLessonContext();
+}
 
-/* duplicate removed during stabilization pass */
+function renderSandboxLessonContext() {
+  const lesson = getCurrentLesson();
+  const titleEl = document.getElementById("sandbox-lesson-title");
+  const objectiveEl = document.getElementById("sandbox-lesson-objective");
+  const tablesEl = document.getElementById("sandbox-lesson-tables");
+  if (!titleEl || !objectiveEl || !tablesEl) return;
 
+  if (!lesson) {
+    titleEl.textContent = "No lesson selected.";
+    objectiveEl.textContent = "Open a lesson, then come back here to work with its SQL pattern and relevant tables.";
+    tablesEl.innerHTML = "";
+    return;
+  }
 
+  titleEl.textContent = lesson.title || "Current lesson";
+  objectiveEl.textContent = lesson.challengeCriteria || lesson.objective || "Use the current lesson as your sandbox context.";
+  const tables = Array.isArray(lesson.relevantTables) ? lesson.relevantTables : [];
+  tablesEl.innerHTML = tables.length
+    ? tables.map((table) => `<div class="sandbox-schema-pill"><span>${escapeHtml(table)}</span><code>${escapeHtml(table)}</code></div>`).join("")
+    : '<p class="sandbox-note">No table list was supplied for this lesson.</p>';
+}
 
-/* duplicate removed during stabilization pass */
-
-
-
-/* duplicate removed during stabilization pass */
-
+function runSandboxQuery() {
+  const query = (document.getElementById("sandbox-query")?.value || "").trim();
+  if (!query) {
+    setMessageState("sandbox-feedback", "warning", "Enter a SQL statement before running the sandbox.");
+    return;
+  }
+  if (!sandboxDb) {
+    setMessageState("sandbox-feedback", "warning", "Sandbox database is still loading. Try again in a moment.");
+    return;
+  }
+  try {
+    const execResult = sandboxDb.exec(query);
+    const normalized = execResult.length
+      ? { columns: execResult[0].columns || [], values: execResult[0].values || [] }
+      : { columns: [], values: [] };
+    document.getElementById("sandbox-output").innerHTML = formatResultTable(normalized);
+    setMessageState("sandbox-feedback", "success", execResult.length ? "Sandbox query ran successfully." : "Query executed successfully. No result rows were returned.");
+  } catch (error) {
+    setMessageState("sandbox-feedback", "error", getExecutionErrorMessage(error));
+  }
+}
 
 function aiContextPayload() {
   const lesson = getCurrentLesson();
@@ -3074,9 +2780,21 @@ function aiContextPayload() {
   };
 }
 
-
-/* duplicate removed during stabilization pass */
-
+function renderAiMessages() {
+  const holder = document.getElementById("ai-messages");
+  if (!holder) return;
+  if (!aiThread.length) {
+    holder.innerHTML = `<div class="ai-message assistant"><div class="ai-message-role">AI companion</div><div class="ai-message-body"><strong>How I can help</strong><br>I can give a hint, debug your SQL, rewrite a query more cleanly, or frame the result for an executive audience.</div></div>`;
+    return;
+  }
+  holder.innerHTML = aiThread.map((msg) => `
+    <div class="ai-message ${msg.role}">
+      <div class="ai-message-role">${msg.role === "user" ? "You" : "AI companion"}</div>
+      <div class="ai-message-body">${escapeHtml(msg.content).replace(/\n/g, "<br>")}</div>
+    </div>
+  `).join("");
+  holder.scrollTop = holder.scrollHeight;
+}
 
 function setAiStatus(text, isLive = false) {
   const pill = document.getElementById("ai-status-pill");
@@ -3085,9 +2803,82 @@ function setAiStatus(text, isLive = false) {
   pill.classList.toggle("is-ready", !!isLive);
 }
 
+function fallbackAiResponse(userMessage) {
+  const lesson = getCurrentLesson();
+  const prompt = userMessage.toLowerCase();
+  if (!lesson) {
+    return [
+      "Summary",
+      "Start or resume a lesson first so I can tailor the guidance to the correct objective, tables, and SQL pattern.",
+      "",
+      "Next step",
+      "Open a lesson, then return to the sandbox and load the current lesson query."
+    ].join("\n");
+  }
 
-/* duplicate removed during stabilization pass */
+  const relevantTables = lesson.relevantTables?.length ? lesson.relevantTables.join(", ") : "the lesson tables";
+  const sqlFocus = lesson.sql_focus?.length ? lesson.sql_focus.join(", ") : "the requested SQL pattern";
 
+  if (prompt.includes("hint")) {
+    return [
+      "Hint",
+      `Focus on the lesson objective: ${lesson.objective}`,
+      `Relevant tables: ${relevantTables}`,
+      `SQL focus: ${sqlFocus}`,
+      "",
+      "What to try next",
+      "Start with the base table, return only the requested fields, then add the filter, grouping, or ordering in the same sequence the lesson asks for."
+    ].join("\n");
+  }
+
+  if (prompt.includes("executive")) {
+    return [
+      "Executive framing",
+      `For ${lesson.title}, explain the metric or operational pattern being studied, why it matters to throughput, revenue, quality, or patient flow, and one action leadership should consider next.`,
+      "",
+      "Suggested structure",
+      "1. What the metric says",
+      "2. Why it matters operationally",
+      "3. What leaders should do next"
+    ].join("\n");
+  }
+
+  if (prompt.includes("debug") || prompt.includes("wrong") || prompt.includes("error")) {
+    return [
+      "Debug checklist",
+      "1. Confirm the base table matches the lesson grain.",
+      "2. Confirm the selected columns match the lesson prompt exactly.",
+      "3. Check the filter logic, GROUP BY, HAVING, ORDER BY, and aliases.",
+      "4. Confirm the result grain is not duplicated by a bad join.",
+      "",
+      `Lesson context: ${lesson.title}`,
+      `Relevant tables: ${relevantTables}`
+    ].join("\n");
+  }
+
+  if (prompt.includes("rewrite")) {
+    return [
+      "Rewrite guidance",
+      "I would rewrite the query to keep one clear base table, short aliases, and only the clauses needed for the lesson objective.",
+      "",
+      "Focus",
+      `Use ${relevantTables} and keep the query aligned to ${sqlFocus}.`
+    ].join("\n");
+  }
+
+  return [
+    "Support summary",
+    `You are working on ${lesson.title}.`,
+    `Objective: ${lesson.objective}`,
+    `Relevant tables: ${relevantTables}`,
+    "",
+    "Ask me for",
+    "- a hint",
+    "- a debug pass",
+    "- a cleaner rewrite",
+    "- an executive summary"
+  ].join("\n");
+}
 
 async function requestAiCompanion(userMessage) {
   const payload = {
@@ -3116,28 +2907,179 @@ async function requestAiCompanion(userMessage) {
   }
 }
 
+async function sendAiMessage(prefill = null) {
+  const input = document.getElementById("ai-input");
+  const message = (prefill || input?.value || "").trim();
+  if (!message) return;
+  aiThread.push({ role: "user", content: message });
+  renderAiMessages();
+  if (input) input.value = "";
+  const reply = await requestAiCompanion(message);
+  aiThread.push({ role: "assistant", content: reply });
+  renderAiMessages();
+}
+
+function clearAiChat() {
+  aiThread = [];
+  renderAiMessages();
+}
+
+function scrollToAiCompanion() {
+  const target =
+    document.getElementById("ai-companion-section") ||
+    document.getElementById("ai-input")?.closest("section") ||
+    document.getElementById("ai-input") ||
+    document.getElementById("send-ai-btn");
+  target?.scrollIntoView({ behavior: "smooth", block: "start" });
+  document.getElementById("ai-input")?.focus();
+}
+
+function updateAiContextBanner() {
+  const lesson = getCurrentLesson();
+  if (!lesson) return;
+  if (!aiThread.length) renderAiMessages();
+}
+
+function renderAll() {
+  applySchemaPanelWidth();
+  renderSchema();
+  renderAchievements();
+  updateDashboard();
+  renderCurriculumNav();
+  renderTrackCategoryCards();
+  renderOverview();
+  if (appState.currentView === "lesson" && appState.currentLessonId) {
+    renderLesson();
+  } else if (appState.currentView === "sandbox") {
+    showSandboxWorkspace();
+    renderSandboxLessonContext();
+  } else {
+    showOverview();
+  }
+  updateAiContextBanner();
+  initUiActions();
+  attachPersistentNavigationDelegates();
+}
+
+function initUiActions() {
+  const openOverviewBtn = document.getElementById("open-overview-btn");
+  if (openOverviewBtn) {
+    openOverviewBtn.onclick = () => {
+      appState.currentView = "overview";
+      attempts = 0;
+      showOverview();
+      saveProgress();
+      renderAll();
+      document.getElementById("track-overview")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    };
+  }
+
+  const openLessonsBtn =
+    document.getElementById("open-lessons-btn") ||
+    document.getElementById("jump-to-lessons-btn") ||
+    document.getElementById("show-lessons-btn");
+  if (openLessonsBtn) {
+    openLessonsBtn.onclick = () => {
+      attempts = 0;
+      showLessonsWorkspace();
+      saveProgress();
+      renderAll();
+    };
+  }
+
+  const openSandboxBtn = document.getElementById("open-sandbox-btn");
+  if (openSandboxBtn) {
+    openSandboxBtn.onclick = () => {
+      appState.currentView = "sandbox";
+      attempts = 0;
+      showSandboxWorkspace();
+      saveProgress();
+      renderAll();
+      document.getElementById("sandbox-workspace")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    };
+  }
+
+  const jumpToAiBtn = document.getElementById("jump-to-ai-btn");
+  if (jumpToAiBtn) {
+    jumpToAiBtn.onclick = () => {
+      scrollToAiCompanion();
+    };
+  }
+
+  const runSandboxBtn = document.getElementById("run-sandbox-btn");
+  if (runSandboxBtn) runSandboxBtn.onclick = runSandboxQuery;
+
+  const resetSandboxBtn = document.getElementById("reset-sandbox-btn");
+  if (resetSandboxBtn) resetSandboxBtn.onclick = resetSandbox;
+
+  const loadLessonBtn = document.getElementById("load-lesson-query-btn");
+  if (loadLessonBtn) {
+    loadLessonBtn.onclick = () => {
+      syncSandboxStarterQuery();
+      const sandboxInput = document.getElementById("sandbox-query");
+      if (sandboxInput) sandboxInput.focus();
+    };
+  }
+
+  const sendAiBtn = document.getElementById("send-ai-btn");
+  if (sendAiBtn) sendAiBtn.onclick = () => sendAiMessage();
+
+  const clearAiBtn = document.getElementById("clear-ai-btn");
+  if (clearAiBtn) clearAiBtn.onclick = clearAiChat;
+
+  document.querySelectorAll(".quick-ai-btn").forEach((btn) => {
+    btn.onclick = () => {
+      scrollToAiCompanion();
+      sendAiMessage(btn.dataset.aiPrompt || "");
+    };
+  });
+
+  const toggleBtn = document.getElementById("toggle-levels-panel-btn");
+  const panel = document.getElementById("levels-panel");
+  if (toggleBtn && panel) {
+    toggleBtn.onclick = () => {
+      panel.classList.toggle("collapsed");
+      toggleBtn.innerText = panel.classList.contains("collapsed") ? "Expand" : "Collapse";
+      toggleBtn.setAttribute("aria-expanded", panel.classList.contains("collapsed") ? "false" : "true");
+    };
+  }
+}
 
 
+function attachPersistentNavigationDelegates() {
+  if (window.__careopsNavDelegatesAttached) return;
+  window.__careopsNavDelegatesAttached = true;
 
-/* duplicate removed during stabilization pass */
+  document.addEventListener("click", function (event) {
+    const button = event.target.closest("button");
+    if (!button) return;
 
+    const label = (button.textContent || "").replace(/\s+/g, " ").trim().toLowerCase();
+    const isOverview = button.id === "open-overview-btn" || button.id === "nav-overview-btn" || label === "track overview";
+    const isSandbox = button.id === "open-sandbox-btn" || button.id === "nav-sandbox-btn" || label === "sandbox" || label === "sql sandbox";
 
+    if (isOverview) {
+      event.preventDefault();
+      attempts = 0;
+      appState.currentView = "overview";
+      saveProgress();
+      renderAll();
+      document.getElementById("track-overview")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      return;
+    }
 
-/* duplicate removed during stabilization pass */
-
-
-
-/* duplicate removed during stabilization pass */
-
-
-
-/* duplicate removed during stabilization pass */
-
-
-
-
-/* duplicate removed during stabilization pass */
-
+    if (isSandbox) {
+      event.preventDefault();
+      attempts = 0;
+      appState.currentView = "sandbox";
+      saveProgress();
+      renderAll();
+      document.getElementById("sandbox-workspace")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      document.getElementById("sandbox-query")?.focus();
+      return;
+    }
+  });
+}
 
 window.showCareopsOverview = function () {
   appState.currentView = "overview";
@@ -3160,22 +3102,12 @@ window.showCareopsSandbox = function () {
   renderAll();
 };
 
-window.showCareopsGlossary = function () {
-  appState.currentView = "glossary";
-  attempts = 0;
-  saveProgress();
-  renderAll();
-};
-
 
 document.addEventListener("DOMContentLoaded", async function () {
-  ensurePatchedUiStyles();
-  ensureGlossaryUi();
   normalizeCurriculum();
   backfillChallengeCriteria(curriculum);
   enforceChallengeCriteria(curriculum);
   loadProgress();
-  sanitizeProgressState();
   if (!appState.currentCategoryId) appState.currentCategoryId = getTrack().categories[0]?.id || null;
   if (!appState.currentLessonId) appState.currentLessonId = getTrack().categories[0]?.lessons[0]?.id || null;
   if (!appState.currentView) appState.currentView = "overview";
@@ -3374,169 +3306,8 @@ function syncSandboxStarterQuery() {
   renderSandboxLessonContext(null);
 }
 
-
-function filteredGlossaryTerms() {
-  const search = String(appState.glossarySearch || "").trim().toLowerCase();
-  const filter = appState.glossaryFilter || "all";
-  return GLOSSARY_TERMS.filter((item) => {
-    const matchesFilter = filter === "all" || item.category === filter;
-    if (!matchesFilter) return false;
-    if (!search) return true;
-    const haystack = [item.term, item.definition, item.why, item.example, item.category].join(" ").toLowerCase();
-    return haystack.includes(search);
-  });
-}
-
-function ensureGlossaryUi() {
-  const mainContent = document.querySelector(".main-content");
-  if (!mainContent) return;
-
-  if (!document.getElementById("glossary-workspace")) {
-    const glossarySection = document.createElement("section");
-    glossarySection.id = "glossary-workspace";
-    glossarySection.className = "glossary-workspace hidden";
-    glossarySection.innerHTML = `
-      <div class="glossary-page">
-        <div class="glossary-header-card">
-          <div>
-            <div class="glossary-kicker">Reference Library</div>
-            <h2>CareOps Glossary</h2>
-            <p>Definitions for SQL, hospital operations, finance, and analytics terms used throughout the curriculum.</p>
-          </div>
-          <div class="glossary-header-actions">
-            <button id="glossary-back-overview-btn" type="button">Back to Track Overview</button>
-          </div>
-        </div>
-
-        <div class="glossary-toolbar">
-          <div class="glossary-search-wrap">
-            <label class="glossary-label" for="glossary-search">Search Terms</label>
-            <input id="glossary-search" class="glossary-search-input" type="text" placeholder="Search LOS, denial, JOIN, KPI, readmission..." />
-          </div>
-          <div class="glossary-filter-wrap">
-            <span class="glossary-label">Category</span>
-            <div id="glossary-filter-chips" class="glossary-filter-chips"></div>
-          </div>
-        </div>
-
-        <div id="glossary-results-meta" class="glossary-results-meta"></div>
-        <div id="glossary-card-grid" class="glossary-card-grid"></div>
-      </div>
-    `;
-    const sandboxSection = document.getElementById("sandbox-workspace");
-    if (sandboxSection && sandboxSection.parentNode) {
-      sandboxSection.parentNode.insertBefore(glossarySection, sandboxSection.nextSibling);
-    } else {
-      mainContent.appendChild(glossarySection);
-    }
-  }
-
-  if (!document.getElementById("open-glossary-btn")) {
-    const resetBtn =
-      document.getElementById("reset-progress-btn") ||
-      Array.from(document.querySelectorAll("button")).find((btn) => String(btn.textContent || "").trim().toLowerCase() === "reset progress");
-    const glossaryBtn = document.createElement("button");
-    glossaryBtn.id = "open-glossary-btn";
-    glossaryBtn.type = "button";
-    glossaryBtn.textContent = "Glossary";
-    glossaryBtn.className = "glossary-nav-btn";
-    if (resetBtn && resetBtn.parentNode) {
-      resetBtn.parentNode.insertBefore(glossaryBtn, resetBtn);
-    } else {
-      const navContainer = document.querySelector(".main-nav-actions") || document.querySelector(".dashboard-actions");
-      navContainer?.appendChild(glossaryBtn);
-    }
-  }
-}
-
-function renderGlossary() {
-  ensureGlossaryUi();
-  const searchInput = document.getElementById("glossary-search");
-  const filterWrap = document.getElementById("glossary-filter-chips");
-  const resultsMeta = document.getElementById("glossary-results-meta");
-  const grid = document.getElementById("glossary-card-grid");
-  if (!searchInput || !filterWrap || !resultsMeta || !grid) return;
-
-  searchInput.value = appState.glossarySearch || "";
-
-  filterWrap.innerHTML = Object.values(GLOSSARY_CATEGORY_META).map((item) => `
-    <button type="button" class="glossary-filter-chip${(appState.glossaryFilter || "all") === item.key ? " active" : ""}" data-glossary-filter="${item.key}">
-      ${item.label}
-    </button>
-  `).join("");
-
-  filterWrap.querySelectorAll("[data-glossary-filter]").forEach((btn) => {
-    btn.onclick = () => {
-      appState.glossaryFilter = btn.getAttribute("data-glossary-filter") || "all";
-      saveProgress();
-      renderGlossary();
-    };
-  });
-
-  const terms = filteredGlossaryTerms();
-  resultsMeta.textContent = `${terms.length} term${terms.length === 1 ? "" : "s"} shown`;
-
-  if (!terms.length) {
-    grid.innerHTML = `<div class="glossary-empty-state">No glossary terms matched your search. Try a broader keyword or switch categories.</div>`;
-    return;
-  }
-
-  grid.innerHTML = terms.map((item) => `
-    <article class="glossary-card glossary-card-${item.category}">
-      <div class="glossary-card-accent"></div>
-      <div class="glossary-card-body">
-        <div class="glossary-card-top">
-          <h3>${escapeHtml(item.term)}</h3>
-          <span class="glossary-category-pill glossary-category-pill-${item.category}">${escapeHtml(GLOSSARY_CATEGORY_META[item.category]?.label || item.category)}</span>
-        </div>
-        <div class="glossary-copy-block">
-          <div class="glossary-copy-label">Definition</div>
-          <p>${escapeHtml(item.definition)}</p>
-        </div>
-        <div class="glossary-copy-block">
-          <div class="glossary-copy-label">Why it matters</div>
-          <p>${escapeHtml(item.why)}</p>
-        </div>
-        ${item.example ? `
-          <div class="glossary-copy-block">
-            <div class="glossary-copy-label">Example</div>
-            <code class="glossary-example">${escapeHtml(item.example)}</code>
-          </div>
-        ` : ""}
-      </div>
-    </article>
-  `).join("");
-
-  if (!searchInput.dataset.boundGlossarySearch) {
-    searchInput.dataset.boundGlossarySearch = "true";
-    searchInput.addEventListener("input", (event) => {
-      appState.glossarySearch = event.target.value || "";
-      saveProgress();
-      renderGlossary();
-    });
-  }
-
-  const backBtn = document.getElementById("glossary-back-overview-btn");
-  if (backBtn) {
-    backBtn.onclick = () => {
-      appState.currentView = "overview";
-      saveProgress();
-      renderAll();
-    };
-  }
-}
-
-function showGlossaryWorkspace() {
-  appState.currentView = "glossary";
-  document.body.classList.add("glossary-mode");
-  setSandboxModeUi(false);
-  showSection("glossary-workspace");
-  renderGlossary();
-  document.getElementById("glossary-workspace")?.scrollIntoView({ behavior: "smooth", block: "start" });
-}
 function showOverview() {
   appState.currentView = "overview";
-  document.body.classList.remove("glossary-mode");
   setSandboxModeUi(false);
   showSection("track-overview");
   document.getElementById("track-overview")?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -3545,7 +3316,6 @@ function showOverview() {
 function showLessonsWorkspace() {
   ensureCurrentLesson();
   appState.currentView = "lesson";
-  document.body.classList.remove("glossary-mode");
   setSandboxModeUi(false);
   showSection("lesson-workspace");
   document.getElementById("lesson-workspace")?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -3553,7 +3323,6 @@ function showLessonsWorkspace() {
 
 function showSandboxWorkspace() {
   appState.currentView = "sandbox";
-  document.body.classList.remove("glossary-mode");
   setSandboxModeUi(true);
   showSection("sandbox-workspace");
   setSandboxMode(sandboxModeState);
@@ -3749,8 +3518,6 @@ function renderAll() {
     renderLesson();
   } else if (appState.currentView === "sandbox") {
     showSandboxWorkspace();
-  } else if (appState.currentView === "glossary") {
-    showGlossaryWorkspace();
   } else {
     showOverview();
   }
@@ -3769,16 +3536,6 @@ function initUiActions() {
       saveProgress();
       renderAll();
       document.getElementById("track-overview")?.scrollIntoView({ behavior: "smooth", block: "start" });
-    };
-  }
-
-  const openGlossaryBtn = document.getElementById("open-glossary-btn");
-  if (openGlossaryBtn) {
-    openGlossaryBtn.onclick = () => {
-      attempts = 0;
-      showGlossaryWorkspace();
-      saveProgress();
-      renderAll();
     };
   }
 
@@ -3868,7 +3625,6 @@ function attachPersistentNavigationDelegates() {
 
     const isOverview = button.id === "open-overview-btn" || button.id === "nav-overview-btn" || label === "track overview";
     const isSandbox = button.id === "open-sandbox-btn" || button.id === "nav-sandbox-btn" || label === "sandbox" || label === "sql sandbox";
-    const isGlossary = button.id === "open-glossary-btn" || label === "glossary";
 
     if (isOverview) {
       event.preventDefault();
@@ -3887,14 +3643,276 @@ function attachPersistentNavigationDelegates() {
       renderAll();
       return;
     }
-
-    if (isGlossary) {
-      event.preventDefault();
-      attempts = 0;
-      showGlossaryWorkspace();
-      saveProgress();
-      renderAll();
-      return;
-    }
   });
 }
+
+/* ================= FINAL GLOSSARY PATCH ================= */
+
+if (typeof appState.glossarySearch === "undefined") appState.glossarySearch = "";
+if (typeof appState.glossaryCategory === "undefined") appState.glossaryCategory = "all";
+
+const GLOSSARY_TERMS = [
+  { term: "SELECT", category: "sql", definition: "Returns columns from one or more tables.", why: "It is the starting point for almost every SQL query and controls what data is brought into view.", example: "SELECT patient_id, first_name FROM patients;" },
+  { term: "FROM", category: "sql", definition: "Specifies the table or dataset the query should read from.", why: "Choosing the right base table is how analysts keep the reporting grain accurate.", example: "SELECT * FROM encounters;" },
+  { term: "WHERE", category: "sql", definition: "Filters rows so only records matching a condition are returned.", why: "This is how analysts isolate high-risk, delayed, denied, or otherwise targeted populations.", example: "SELECT * FROM claims WHERE claim_status = 'Denied';" },
+  { term: "GROUP BY", category: "sql", definition: "Aggregates results by one or more categories.", why: "It turns row-level data into summaries leadership can act on, such as by department or payer.", example: "SELECT department, COUNT(*) FROM encounters GROUP BY department;" },
+  { term: "ORDER BY", category: "sql", definition: "Sorts query results ascending or descending.", why: "Sorting helps analysts surface the biggest drivers first, like highest LOS or highest denial dollars.", example: "SELECT * FROM encounters ORDER BY length_of_stay DESC;" },
+  { term: "JOIN", category: "sql", definition: "Combines related data from multiple tables using a shared key.", why: "Hospital analysts rely on joins to connect operational, financial, and demographic information into one view.", example: "SELECT * FROM encounters e JOIN claims c ON e.encounter_id = c.encounter_id;" },
+  { term: "COUNT", category: "sql", definition: "Counts rows in a result set.", why: "It measures volume, such as encounter count, readmission count, or denied claim count.", example: "SELECT COUNT(*) AS encounter_count FROM encounters;" },
+  { term: "SUM", category: "sql", definition: "Adds numeric values together.", why: "It is used heavily in finance and revenue cycle reporting to total charges, payments, and denied dollars.", example: "SELECT SUM(billed_amount) AS total_billed FROM claims;" },
+  { term: "AVG", category: "sql", definition: "Calculates the average value of a numeric field.", why: "It helps measure efficiency metrics such as average length of stay or average discharge delay.", example: "SELECT AVG(length_of_stay) AS avg_los FROM encounters;" },
+  { term: "DISTINCT", category: "sql", definition: "Returns only unique values.", why: "It helps avoid overcounting and lets analysts see unique departments, payers, providers, or patients.", example: "SELECT DISTINCT payer FROM claims;" },
+  { term: "NULL", category: "sql", definition: "Represents a missing or unknown value.", why: "Understanding nulls is essential because missing data can distort results or cause logic to fail.", example: "SELECT * FROM patients WHERE city IS NULL;" },
+  { term: "Primary Key", category: "sql", definition: "A field that uniquely identifies each row in a table.", why: "Primary keys make joins reliable and keep records from being duplicated incorrectly.", example: "patient_id in patients or encounter_id in encounters" },
+  { term: "Foreign Key", category: "sql", definition: "A field that links one table to the primary key of another.", why: "Foreign keys are the connection points that allow encounter, claim, and patient data to be related.", example: "encounters.patient_id links to patients.patient_id" },
+  { term: "Encounter", category: "clinical", definition: "A patient visit or episode of care documented in the system.", why: "Many hospital analytics use encounter-level reporting as the operational grain for throughput, LOS, and utilization.", example: "An ED visit, inpatient stay, or observation encounter." },
+  { term: "Admission", category: "clinical", definition: "The point at which a patient is formally entered for inpatient care.", why: "Admissions are central to census, capacity, LOS, and case-mix analysis.", example: "A patient admitted from the ED to Hospital Medicine." },
+  { term: "Discharge", category: "clinical", definition: "The completion of an encounter when a patient leaves the hospital or care setting.", why: "Discharges are a major throughput event and delays here can create capacity bottlenecks.", example: "Patient discharged home after inpatient treatment." },
+  { term: "Length of Stay (LOS)", category: "clinical", definition: "The time a patient spends in the hospital or unit from admission to discharge.", why: "LOS affects capacity, cost, staffing pressure, and patient flow, making it one of the most important operational measures.", example: "A patient admitted Monday and discharged Thursday has a 3-day LOS." },
+  { term: "Observation", category: "clinical", definition: "A hospital status used for monitoring and short-term treatment without full inpatient admission.", why: "Observation volume, hours, and conversion rates are important for throughput and compliance reporting.", example: "A chest pain patient placed in observation for 18 hours." },
+  { term: "Readmission", category: "clinical", definition: "A return hospital encounter after a recent discharge, often tracked within 30 days.", why: "Readmissions can signal quality gaps, poor transitions of care, or follow-up barriers.", example: "A patient discharged with heart failure who returns within 12 days." },
+  { term: "Discharge Disposition", category: "clinical", definition: "The destination or care setting a patient is discharged to.", why: "Disposition helps explain LOS and care transition complexity, especially for SNF, rehab, or hospice discharges.", example: "Home, SNF, rehab, hospice, or expired." },
+  { term: "ED Boarder", category: "clinical", definition: "A patient who remains in the emergency department after the decision to admit or transfer has been made.", why: "Boarders create downstream crowding and are a key throughput pain point.", example: "An admitted patient waiting in the ED for an inpatient bed." },
+  { term: "Provider", category: "clinical", definition: "The clinician associated with the patient’s care, such as attending, admitting, or rendering provider.", why: "Provider-level variation is often reviewed in LOS, readmissions, and utilization reporting.", example: "An attending hospitalist or ED physician." },
+  { term: "Charge", category: "financial", definition: "The amount billed for a service, procedure, medication, or visit.", why: "Charges are the starting point for gross revenue analysis and reimbursement modeling.", example: "A facility charge for an inpatient room or imaging study." },
+  { term: "Claim", category: "financial", definition: "A request for payment submitted to a payer for services rendered.", why: "Claims are central to revenue cycle reporting, denials, reimbursement, and collections analysis.", example: "A Medicare claim submitted for an inpatient encounter." },
+  { term: "Denial", category: "financial", definition: "A payer refusal to reimburse all or part of a submitted claim.", why: "Denials create financial leakage and often reveal process, coding, or authorization issues.", example: "Claim denied due to missing authorization or non-covered service." },
+  { term: "Denial Rate", category: "financial", definition: "The proportion of claims or dollars denied relative to total claims or billed volume.", why: "It is a key revenue cycle KPI used to assess preventable reimbursement loss.", example: "Denied claims divided by total submitted claims." },
+  { term: "Payer", category: "financial", definition: "The insurer or entity responsible for reimbursing the claim.", why: "Payer differences often explain denial patterns, reimbursement variation, and operational complexity.", example: "Medicare, Medicaid, Commercial, or Self Pay." },
+  { term: "Payer Mix", category: "financial", definition: "The distribution of patients or claims across payer categories.", why: "Payer mix influences financial performance, reimbursement risk, and strategic planning.", example: "45% Medicare, 20% Medicaid, 30% Commercial, 5% Self Pay." },
+  { term: "Gross Charges", category: "financial", definition: "The full billed value before contractual allowances, denials, or write-offs.", why: "Gross charges are useful for top-line billing analysis but do not equal actual collectible revenue.", example: "The total billed amount on claims before reimbursement adjustments." },
+  { term: "Net Revenue", category: "financial", definition: "The portion of billed value expected to be collected after adjustments and payer effects.", why: "Net revenue is a more realistic measure of financial performance than gross charges alone.", example: "Estimated collectible revenue after payer reductions and write-offs." },
+  { term: "Collections", category: "financial", definition: "Cash actually received against claims or charges.", why: "Collections reveal how much billed activity turns into cash and support revenue cycle monitoring.", example: "Payments posted to paid claims." },
+  { term: "DRG", category: "financial", definition: "Diagnosis Related Group, a classification used to group inpatient cases for payment.", why: "DRGs affect reimbursement, case mix analysis, and benchmarking across inpatient populations.", example: "An inpatient heart failure case grouped into a specific DRG." },
+  { term: "RVU", category: "financial", definition: "Relative Value Unit, a measure of physician work and reimbursement value.", why: "RVUs are used in provider productivity analysis and compensation models.", example: "A visit or procedure assigned a work RVU value." },
+  { term: "KPI", category: "analytics", definition: "Key Performance Indicator, a measure used to monitor performance against a goal.", why: "KPIs help leadership focus on the handful of measures that matter most operationally or financially.", example: "Average LOS, denial rate, or 30-day readmission rate." },
+  { term: "Benchmark", category: "analytics", definition: "A comparison target used to judge whether performance is strong, average, or weak.", why: "Benchmarks help teams interpret metrics instead of just reporting raw numbers.", example: "Comparing denial rate against a 9.4% benchmark." },
+  { term: "Baseline", category: "analytics", definition: "The starting measurement used for future comparison.", why: "Without a baseline, improvement efforts cannot be measured meaningfully.", example: "LOS before implementing a new discharge process." },
+  { term: "Trend", category: "analytics", definition: "The direction a metric moves over time.", why: "Trend analysis helps leaders see whether performance is improving, worsening, or staying flat.", example: "Monthly denial rate over 12 months." },
+  { term: "Variance", category: "analytics", definition: "The difference between an observed result and an expected or target result.", why: "Variance helps identify where performance is off plan and requires investigation.", example: "Actual LOS of 5.2 days versus a goal of 4.5 days." },
+  { term: "Root Cause", category: "analytics", definition: "The underlying driver of a problem rather than the symptom.", why: "Finding root cause is how analysts move from reporting problems to helping solve them.", example: "A discharge delay caused by SNF placement issues, not just high LOS." },
+  { term: "Outlier", category: "analytics", definition: "A data point or result that is unusually high or low compared with peers.", why: "Outliers can reveal process failures, documentation issues, or truly exceptional cases.", example: "One department with much higher LOS than all others." },
+  { term: "Cohort", category: "analytics", definition: "A defined group of patients or encounters analyzed together.", why: "Cohort logic helps analysts compare similar populations fairly.", example: "All Medicare inpatient heart failure encounters in Q1." },
+  { term: "Aggregation", category: "analytics", definition: "Summarizing row-level data into totals, averages, or grouped outputs.", why: "Aggregation is how raw transaction data becomes useful reporting for managers and executives.", example: "Summing denied dollars by payer." },
+  { term: "Throughput", category: "analytics", definition: "The speed and efficiency of moving patients through care processes.", why: "Throughput affects capacity, wait times, staff burden, and patient experience.", example: "Time from discharge order to actual departure." },
+  { term: "Bottleneck", category: "analytics", definition: "A constraint that slows the flow of work or patients through a process.", why: "Bottlenecks are often the real driver behind high LOS, boarding, or delayed discharge.", example: "Case management delays or transport shortages." }
+];
+
+function ensureGlossaryWorkspace() {
+  let glossarySection = document.getElementById('glossary-workspace');
+  if (glossarySection) return glossarySection;
+  const mainContent = document.querySelector('.main-content');
+  if (!mainContent) return null;
+  glossarySection = document.createElement('section');
+  glossarySection.id = 'glossary-workspace';
+  glossarySection.className = 'glossary-workspace hidden';
+  const sandbox = document.getElementById('sandbox-workspace');
+  if (sandbox && sandbox.parentNode === mainContent) {
+    sandbox.insertAdjacentElement('afterend', glossarySection);
+  } else {
+    mainContent.appendChild(glossarySection);
+  }
+  return glossarySection;
+}
+
+function ensureGlossaryButton() {
+  if (document.getElementById('open-glossary-btn') || document.getElementById('nav-glossary-btn')) return;
+  const navContainer = document.querySelector('.dashboard-actions.main-nav-actions, .dashboard-actions');
+  if (!navContainer) return;
+  const buttons = Array.from(navContainer.querySelectorAll('button'));
+  const sandboxBtn = buttons.find(btn => (btn.id === 'open-sandbox-btn' || btn.id === 'nav-sandbox-btn' || /sandbox/i.test(btn.textContent || '')));
+  const resetBtn = buttons.find(btn => /reset progress/i.test(btn.textContent || ''));
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.id = 'open-glossary-btn';
+  btn.className = 'glossary-nav-btn';
+  btn.textContent = 'Glossary';
+  if (resetBtn && resetBtn.parentNode === navContainer) {
+    navContainer.insertBefore(btn, resetBtn);
+  } else if (sandboxBtn && sandboxBtn.parentNode === navContainer) {
+    sandboxBtn.insertAdjacentElement('afterend', btn);
+  } else {
+    navContainer.appendChild(btn);
+  }
+}
+
+function glossaryCategoryLabel(category) {
+  return ({sql:'SQL', clinical:'Clinical / Operations', financial:'Financial / Revenue', analytics:'Analytics / Strategy'})[category] || 'Reference';
+}
+
+function getFilteredGlossaryTerms() {
+  const search = String(appState.glossarySearch || '').trim().toLowerCase();
+  const category = String(appState.glossaryCategory || 'all');
+  return GLOSSARY_TERMS.filter(item => {
+    const catOk = category === 'all' || item.category === category;
+    const hay = [item.term, item.definition, item.why, item.example, glossaryCategoryLabel(item.category)].join(' ').toLowerCase();
+    const searchOk = !search || hay.includes(search);
+    return catOk && searchOk;
+  });
+}
+
+function renderGlossaryCard(item) {
+  return `
+    <article class="glossary-card glossary-card-${escapeHtml(item.category)}">
+      <div class="glossary-card-accent"></div>
+      <div class="glossary-card-body">
+        <div class="glossary-card-top">
+          <h3>${escapeHtml(item.term)}</h3>
+          <span class="glossary-category-pill glossary-category-pill-${escapeHtml(item.category)}">${escapeHtml(glossaryCategoryLabel(item.category))}</span>
+        </div>
+        <div class="glossary-copy-block">
+          <div class="glossary-copy-label">Definition</div>
+          <p>${escapeHtml(item.definition)}</p>
+        </div>
+        <div class="glossary-copy-block">
+          <div class="glossary-copy-label">Why it matters</div>
+          <p>${escapeHtml(item.why)}</p>
+        </div>
+        <div class="glossary-copy-block">
+          <div class="glossary-copy-label">Example</div>
+          <div class="glossary-example">${escapeHtml(item.example)}</div>
+        </div>
+      </div>
+    </article>`;
+}
+
+function showGlossaryWorkspace() {
+  appState.currentView = 'glossary';
+  document.body.classList.add('glossary-mode');
+  document.body.classList.remove('sandbox-mode');
+  const glossary = ensureGlossaryWorkspace();
+  showSection('glossary-workspace');
+  glossary?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function renderGlossaryPage() {
+  const glossarySection = ensureGlossaryWorkspace();
+  if (!glossarySection) return;
+  const filteredTerms = getFilteredGlossaryTerms();
+  glossarySection.innerHTML = `
+    <div class="glossary-page">
+      <section class="glossary-header-card">
+        <div>
+          <span class="glossary-kicker">Reference Library</span>
+          <h2>Glossary</h2>
+          <p>Definitions for SQL, hospital operations, finance, and analytics terms used throughout the curriculum.</p>
+        </div>
+        <div><button type="button" id="glossary-back-btn" class="glossary-nav-btn">Back to Track Overview</button></div>
+      </section>
+      <section class="glossary-toolbar">
+        <div>
+          <label class="glossary-label" for="glossary-search-input">Search Terms</label>
+          <input id="glossary-search-input" class="glossary-search-input" type="text" placeholder="Search LOS, denial, JOIN, KPI, readmission..." value="${escapeHtml(appState.glossarySearch || '')}">
+        </div>
+        <div>
+          <div class="glossary-label">Category</div>
+          <div class="glossary-filter-chips">
+            <button type="button" class="glossary-filter-chip ${appState.glossaryCategory === 'all' ? 'active' : ''}" data-glossary-filter="all">All Terms</button>
+            <button type="button" class="glossary-filter-chip ${appState.glossaryCategory === 'sql' ? 'active' : ''}" data-glossary-filter="sql">SQL</button>
+            <button type="button" class="glossary-filter-chip ${appState.glossaryCategory === 'clinical' ? 'active' : ''}" data-glossary-filter="clinical">Clinical / Operations</button>
+            <button type="button" class="glossary-filter-chip ${appState.glossaryCategory === 'financial' ? 'active' : ''}" data-glossary-filter="financial">Financial / Revenue</button>
+            <button type="button" class="glossary-filter-chip ${appState.glossaryCategory === 'analytics' ? 'active' : ''}" data-glossary-filter="analytics">Analytics / Strategy</button>
+          </div>
+        </div>
+      </section>
+      <div class="glossary-results-meta">${filteredTerms.length} terms shown</div>
+      ${filteredTerms.length ? `<section class="glossary-card-grid">${filteredTerms.map(renderGlossaryCard).join('')}</section>` : `<section class="glossary-empty-state">No glossary terms matched your search.</section>`}
+    </div>`;
+
+  document.getElementById('glossary-back-btn')?.addEventListener('click', () => {
+    showOverview();
+    saveProgress();
+    renderAll();
+  });
+  document.getElementById('glossary-search-input')?.addEventListener('input', (event) => {
+    appState.glossarySearch = event.target.value || '';
+    renderGlossaryPage();
+  });
+  glossarySection.querySelectorAll('[data-glossary-filter]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      appState.glossaryCategory = btn.getAttribute('data-glossary-filter') || 'all';
+      renderGlossaryPage();
+    });
+  });
+}
+
+const __originalShowOverviewFinal = showOverview;
+showOverview = function () {
+  document.body.classList.remove('glossary-mode');
+  document.body.classList.remove('sandbox-mode');
+  return __originalShowOverviewFinal();
+};
+
+const __originalShowLessonsWorkspaceFinal = showLessonsWorkspace;
+showLessonsWorkspace = function () {
+  document.body.classList.remove('glossary-mode');
+  return __originalShowLessonsWorkspaceFinal();
+};
+
+const __originalShowSandboxWorkspaceFinal = showSandboxWorkspace;
+showSandboxWorkspace = function () {
+  document.body.classList.remove('glossary-mode');
+  return __originalShowSandboxWorkspaceFinal();
+};
+
+const __originalRenderAllFinal = renderAll;
+renderAll = function () {
+  ensureGlossaryButton();
+  ensureGlossaryWorkspace();
+  applySchemaPanelWidth();
+  renderSchema();
+  renderAchievements();
+  updateDashboard();
+  renderCurriculumNav();
+  renderTrackCategoryCards();
+  renderOverview();
+  if (appState.currentView === 'glossary') {
+    showGlossaryWorkspace();
+    renderGlossaryPage();
+  } else if (appState.currentView === 'lesson' && appState.currentLessonId) {
+    renderLesson();
+  } else if (appState.currentView === 'sandbox') {
+    showSandboxWorkspace();
+  } else {
+    showOverview();
+  }
+  updateAiContextBanner();
+  initUiActions();
+  attachPersistentNavigationDelegates();
+};
+
+const __originalInitUiActionsFinal = initUiActions;
+initUiActions = function () {
+  __originalInitUiActionsFinal();
+  ensureGlossaryButton();
+  const openGlossaryBtn = document.getElementById('open-glossary-btn') || document.getElementById('nav-glossary-btn');
+  if (openGlossaryBtn) {
+    openGlossaryBtn.onclick = () => {
+      attempts = 0;
+      appState.currentView = 'glossary';
+      saveProgress();
+      renderAll();
+    };
+  }
+};
+
+const __originalAttachPersistentNavigationDelegatesFinal = attachPersistentNavigationDelegates;
+attachPersistentNavigationDelegates = function () {
+  if (window.__careopsGlossaryDelegateAttached) return;
+  __originalAttachPersistentNavigationDelegatesFinal();
+  window.__careopsGlossaryDelegateAttached = true;
+  document.addEventListener('click', function (event) {
+    const button = event.target.closest('button');
+    if (!button) return;
+    const label = String(button.textContent || '').trim().toLowerCase();
+    const isGlossary = button.id === 'open-glossary-btn' || button.id === 'nav-glossary-btn' || label === 'glossary';
+    if (!isGlossary) return;
+    event.preventDefault();
+    attempts = 0;
+    appState.currentView = 'glossary';
+    saveProgress();
+    renderAll();
+  });
+};
+
+const __originalDomContentLoadedFinal = document.addEventListener;
