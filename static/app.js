@@ -3748,6 +3748,7 @@ function renderAll() {
   }
   updateAiContextBanner();
   initUiActions();
+  removeLevelsPanelOverviewButton();
   attachPersistentNavigationDelegates();
 }
 
