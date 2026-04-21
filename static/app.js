@@ -225,138 +225,106 @@ const curriculum = [
     categories: [
       {
         id: "foundations_core",
-        title: "SQL Foundations for Hospital Data",
+        title: "Understanding Hospital Data",
         order: 1,
         lessons: [
           {
             kind: "concept",
             id: "f1",
-            title: "Selecting All Columns with SELECT *",
-            objective: "Understand how SELECT * retrieves all columns from a table.",
-            sql_focus: ["SELECT", "FROM"],
-            relevantTables: ["patients"],
-            joinHint: "No join is needed for this lesson.",
-            summary: "SELECT * retrieves all columns from a table.",
+            title: "What Is Hospital Data?",
+            objective: "Understand what hospital data represents before writing SQL.",
+            sql_focus: ["Business framing", "Table grain"],
+            relevantTables: ["patients", "encounters", "claims"],
+            joinHint: "No join is needed. This lesson is about understanding what each dataset represents.",
+            summary: "Hospital data represents real care events, financial activity, and operational workflow — and each table tells a different part of that story.",
             bullets: [
-              "Use it when exploring a dataset for the first time.",
-              "It helps validate table structure and available fields.",
-              "It is helpful for quick review, but should be used carefully in large production queries."
+              "A patients table usually describes people, not visits.",
+              "An encounters table usually describes visits or stays, not unique individuals.",
+              "A claims table usually describes reimbursement activity, not clinical events.",
+              "Before you query, you must know what one row means in the dataset you are using."
             ],
-            example: "SELECT provider_id, provider_name, specialty FROM providers;",
-            executiveTakeaway: { show: false }
-          },
-          {
-            kind: "challenge",
-            id: "f2",
-            title: "Pull All Patient Records",
-            objective: "Retrieve all patient records.",
-            sql_focus: ["SELECT", "FROM"],
-            relevantTables: ["patients"],
-            joinHint: "Use only the patients table for this lesson.",
-            challengeCriteria: `You are reviewing the patient master dataset.
-
-Return all columns and all records from the patients table.
-Do not filter or limit results.
-
-This helps you understand the structure of patient-level data before performing deeper analysis.`,
-            starterQuery: "SELECT * FROM patients;",
-            solutionQuery: "SELECT * FROM patients;",
-            hint: "Start by selecting everything from the patients table.",
-            smartHint: "Use SELECT * and reference the patients table.",
-            thirdHint: "SELECT * FROM patients;",
-            explanation: `SELECT * returns every column and every row from a table.
-
-This is typically used early in analysis to:
-- understand available fields
-- validate data
-- explore dataset structure
-
-It should be used carefully in large datasets, but is essential during early exploration.`,
+            example: "Hospital Example: If leadership asks for visit volume, the encounters table is usually the right starting point because each row represents a care event rather than a unique patient.",
             executiveTakeaway: { show: false }
           },
           {
             kind: "concept",
-            id: "f3",
-            title: "Filtering with WHERE",
-            objective: "Understand how WHERE filters records.",
-            sql_focus: ["SELECT", "FROM", "WHERE"],
-            relevantTables: ["encounters"],
-            joinHint: "No join is needed for this lesson.",
-            summary: "The WHERE clause filters records.",
+            id: "f2",
+            title: "Why Table Grain Matters",
+            objective: "Understand grain so you do not answer the wrong business question.",
+            sql_focus: ["Row meaning", "COUNT", "DISTINCT"],
+            relevantTables: ["patients", "encounters", "charges"],
+            joinHint: "No join is needed. Focus on what one row means before you count anything.",
+            summary: "Grain means the business meaning of one row in a table. If you use the wrong grain, your answer can be technically correct but operationally wrong.",
             bullets: [
-              "Use WHERE to isolate a specific population.",
-              "Filtering is essential for identifying risk groups and operational exceptions.",
-              "It allows leaders to focus on the subset of records that matter."
+              "Patients table: one row usually represents one person.",
+              "Encounters table: one row usually represents one visit or stay.",
+              "Charges table: one row usually represents one billed transaction.",
+              "A patient can have many encounters, and one encounter can have many charges."
             ],
-            example: "SELECT claim_id, payer, claim_status, billed_amount FROM claims WHERE claim_status = 'Denied';",
+            example: "Hospital Example: If the ED director asks how many people were seen, counting rows in encounters returns visits. Counting DISTINCT patient_id returns unique patients.",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "challenge",
+            id: "f3",
+            title: "Count Total Encounter Volume",
+            objective: "Return the total number of encounter records.",
+            sql_focus: ["SELECT", "COUNT", "FROM"],
+            relevantTables: ["encounters"],
+            joinHint: "Use only the encounters table. This question is about visit volume, not unique patients.",
+            challengeCriteria: `You are preparing a basic activity summary for operations.
+
+Return the total number of encounters in the encounters table.
+Label the result encounter_count.
+
+This answers the question: how many encounter records exist in the dataset?`,
+            starterQuery: "SELECT COUNT(*) AS encounter_count FROM encounters;",
+            solutionQuery: "SELECT COUNT(*) AS encounter_count FROM encounters;",
+            hint: "Use COUNT(*) against the encounters table.",
+            smartHint: "This is encounter volume, so count rows rather than distinct patients.",
+            thirdHint: "SELECT COUNT(*) AS encounter_count FROM encounters;",
+            explanation: `This query counts every encounter row.
+
+That is the correct approach when leadership is asking about visit or stay volume rather than the number of unique patients.`,
             executiveTakeaway: { show: false }
           },
           {
             kind: "challenge",
             id: "f4",
-            title: "Identify Long Length of Stay Patients",
-            objective: "Filter encounters with long LOS.",
-            sql_focus: ["SELECT", "FROM", "WHERE"],
+            title: "Count Unique Patients Seen",
+            objective: "Return the number of unique patients represented in the encounters table.",
+            sql_focus: ["SELECT", "COUNT", "DISTINCT", "FROM"],
             relevantTables: ["encounters"],
-            joinHint: "Use only the encounters table for this lesson.",
-            challengeCriteria: `Leadership wants to understand which patients are experiencing extended hospital stays.
+            joinHint: "Use the encounters table, but count distinct patient_id values because the question is about people, not visits.",
+            challengeCriteria: `Leadership now asks a different question: how many unique patients are represented in the encounters table?
 
-Return all encounter records where length_of_stay is greater than 5 days.
+Return the number of distinct patients.
+Label the result patient_count.
 
-This helps identify patients who may be contributing to capacity constraints.`,
-            starterQuery: "SELECT * FROM encounters WHERE length_of_stay > 5;",
-            solutionQuery: "SELECT * FROM encounters WHERE length_of_stay > 5;",
-            hint: "Filter encounters based on length_of_stay.",
-            smartHint: "Use WHERE length_of_stay > 5.",
-            thirdHint: "SELECT * FROM encounters WHERE length_of_stay > 5;",
-            explanation: `Filtering allows you to isolate specific populations.
+This answers a people-based question rather than a visit-based question.`,
+            starterQuery: "SELECT COUNT(DISTINCT patient_id) AS patient_count FROM encounters;",
+            solutionQuery: "SELECT COUNT(DISTINCT patient_id) AS patient_count FROM encounters;",
+            hint: "You need to count people, not rows.",
+            smartHint: "Use COUNT(DISTINCT patient_id) so repeat visits from the same patient are not double-counted.",
+            thirdHint: "SELECT COUNT(DISTINCT patient_id) AS patient_count FROM encounters;",
+            explanation: `This query counts unique patients instead of counting every encounter row.
 
-High LOS patients are important because they:
-- consume bed capacity
-- may indicate inefficiencies
-- often require deeper case review`,
+That distinction is critical in hospital analytics because volume and unique population are not the same thing.`,
             executiveTakeaway: { show: false }
           },
           {
-            kind: "concept",
+            kind: "scenario",
             id: "f5",
-            title: "Sorting Results",
-            objective: "Understand how ORDER BY sorts query results.",
-            sql_focus: ["SELECT", "FROM", "ORDER BY"],
-            relevantTables: ["encounters"],
-            joinHint: "No join is needed for this lesson.",
-            summary: "ORDER BY sorts your results.",
-            bullets: [
-              "Sorting helps surface the highest-priority records first.",
-              "Descending order is useful for reviewing biggest drivers.",
-              "Leaders often need ranked outputs to prioritize intervention."
-            ],
-            example: "SELECT charge_id, encounter_id, amount FROM charges ORDER BY amount DESC;",
-            executiveTakeaway: { show: false }
-          },
-          {
-            kind: "challenge",
-            id: "f6",
-            title: "Find Highest LOS Patients",
-            objective: "Sort LOS descending.",
-            sql_focus: ["SELECT", "FROM", "ORDER BY"],
-            relevantTables: ["encounters"],
-            joinHint: "Use only the encounters table for this lesson.",
-            challengeCriteria: `You are asked to identify the highest length of stay cases first.
-
-Return all encounters sorted by length_of_stay in descending order.
-
-This helps prioritize cases that may require immediate review.`,
-            starterQuery: "SELECT * FROM encounters ORDER BY length_of_stay DESC;",
-            solutionQuery: "SELECT * FROM encounters ORDER BY length_of_stay DESC;",
-            hint: "Sort by length_of_stay descending.",
-            smartHint: "Use ORDER BY length_of_stay DESC.",
-            thirdHint: "SELECT * FROM encounters ORDER BY length_of_stay DESC;",
-            explanation: `Sorting allows you to prioritize records.
-
-Descending order is commonly used to:
-- identify highest cost cases
-- surface operational issues quickly`,
+            title: "Scenario: Choosing the Right Starting Table",
+            objective: "Explain how to choose the correct table based on the business question being asked.",
+            relevantTables: ["patients", "encounters", "charges"],
+            joinHint: "Think first about what one row means in each table and which table best matches the question.",
+            summary: "An analyst must choose the right table before writing the query.",
+            prompt: "A director asks, 'How many people did we see last month, and how is that different from encounter volume?' Explain which table you would start from, how grain affects the answer, and why counting rows in the wrong table could mislead leadership.",
+            expectedKeywords: ["grain", "patient", "encounter", "distinct", "visit", "table"],
+            minLength: 100,
+            minimumKeywordMatches: 3,
+            feedbackGuide: "A strong answer explains that grain determines whether rows represent people, visits, or transactions, and that unique-patient counts often require DISTINCT while encounter volume counts rows.",
             executiveTakeaway: { show: false }
           }
         ]
