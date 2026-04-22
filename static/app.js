@@ -247,7 +247,7 @@ const curriculum = [
             example: "Hospital example: an ED visit creates an encounter record for the visit itself, a claim for reimbursement activity, and charge rows for billed services.",
             executiveTakeaway: { show: false }
           },
-          {
+                    {
             kind: "challenge",
             id: "f2",
             title: "Identify the Data Type",
@@ -256,7 +256,7 @@ const curriculum = [
             sql_focus: ["Reasoning", "Dataset selection"],
             relevantTables: ["encounters", "claims", "charges"],
             joinHint: "Think about whether the question is about care, operations, or money.",
-            challengeCriteria: `For each question below, identify the primary type of data you would start with and explain why.
+            challengeCriteria: `For each question below, identify the primary type of hospital data you would start with and explain why.
 
 1. Emergency department wait times
 2. Total billed charges for a hospital stay
@@ -265,19 +265,33 @@ const curriculum = [
 Use the categories clinical, operational, and financial in your explanation.`,
             starterQuery: "",
             solutionQuery: "",
-            minLength: 90,
-            acceptedConceptGroups: [
-              ["operational"],
-              ["financial"],
-              ["clinical"]
-            ],
-            minimumConceptMatches: 3,
-            feedbackGuide: "A strong answer identifies wait times as operational, billed charges as financial, and diagnosis trends as clinical, with a short reason for each.",
-            exemplarAnswer: `Emergency department wait times are primarily operational because they describe how patients move through care. Total billed charges for a hospital stay are financial because they measure billed reimbursement activity. Diagnosis trends are clinical because they describe medical conditions and care patterns rather than throughput or billing alone.`,
+            minLength: 70,
+            reasoningRubric: {
+              minimumLength: 70,
+              requiredConceptGroups: [
+                {
+                  key: "operational",
+                  terms: ["operational", "wait", "wait time", "throughput", "flow"],
+                  feedback: "Mention that emergency department wait times are operational because they measure process flow."
+                },
+                {
+                  key: "financial",
+                  terms: ["financial", "billed", "charge", "charges", "revenue"],
+                  feedback: "Mention that billed charges are financial because they measure money or reimbursement activity."
+                },
+                {
+                  key: "clinical",
+                  terms: ["clinical", "diagnosis", "medical", "condition"],
+                  feedback: "Mention that diagnosis trends are clinical because they describe medical conditions or care patterns."
+                }
+              ]
+            },
+            feedbackGuide: "Correct — you matched each question to the right type of hospital data.",
+            exemplarAnswer: `Emergency department wait times are operational because they measure how patients move through care. Total billed charges are financial because they relate to money and reimbursement activity. Diagnosis trends are clinical because they describe medical conditions and care patterns.`,
             hint: "Tie each question to what it is really measuring: care, operations, or money.",
-            smartHint: "Wait times are operational, billed charges are financial, and diagnoses are clinical.",
-            thirdHint: "Use all three category words in your response and explain each one briefly.",
-            explanation: "This challenge builds the habit of matching the business question to the correct data domain before you ever write SQL.",
+            smartHint: "Wait times are operational, billed charges are financial, and diagnosis trends are clinical.",
+            thirdHint: "Use all three category words in your response and give a short reason for each.",
+            explanation: "This challenge builds the habit of matching the business question to the correct data domain before writing SQL.",
             executiveTakeaway: { show: false }
           },
           {
@@ -299,7 +313,7 @@ Use the categories clinical, operational, and financial in your explanation.`,
             example: "Hospital example: in encounters, one row is likely one visit. In patients, one row is likely one patient.",
             executiveTakeaway: { show: false }
           },
-          {
+                    {
             kind: "challenge",
             id: "f4",
             title: "Interpret the Table Structure",
@@ -313,18 +327,27 @@ Use the categories clinical, operational, and financial in your explanation.`,
 Explain what one row in this table most likely represents and why.`,
             starterQuery: "",
             solutionQuery: "",
-            minLength: 70,
-            acceptedConceptGroups: [
-              ["encounter", "visit"],
-              ["encounter_id"],
-              ["patient", "multiple", "more than once", "repeat"]
-            ],
-            minimumConceptMatches: 2,
-            feedbackGuide: "A strong answer says one row represents a single encounter or visit, points to encounter_id as the clue, and notes that a patient could appear more than once.",
+            minLength: 50,
+            reasoningRubric: {
+              minimumLength: 50,
+              requiredConceptGroups: [
+                {
+                  key: "encounter_or_visit",
+                  terms: ["encounter", "visit"],
+                  feedback: "Explain that one row most likely represents a single encounter or visit."
+                },
+                {
+                  key: "encounter_id_clue",
+                  terms: ["encounter_id", "because encounter id", "visit level", "tracking visits"],
+                  feedback: "Mention that encounter_id is the clue that the table is visit-level."
+                }
+              ]
+            },
+            feedbackGuide: "Correct — one row most likely represents a single encounter or visit.",
             exemplarAnswer: `One row most likely represents a single encounter, or visit. The key clue is encounter_id, which suggests the table is tracking visit-level activity rather than one row per patient. A patient could appear more than once if they had multiple encounters.`,
-            hint: "Do not explain only what patient_id means. Explain what the row means.",
+            hint: "Do not explain only what patient_id means. Explain what the entire row means.",
             smartHint: "encounter_id is the strongest clue about row meaning.",
-            thirdHint: "A strong response should mention encounter or visit, encounter_id, and the fact that one patient may have multiple rows.",
+            thirdHint: "A strong response should mention encounter or visit and explain why encounter_id points to that grain.",
             explanation: "This challenge trains you to read table grain before you count, summarize, or join anything.",
             executiveTakeaway: { show: false }
           },
@@ -347,7 +370,7 @@ Explain what one row in this table most likely represents and why.`,
             example: "Hospital example: one patient with three ED visits may appear once in patients, three times in encounters, and several more times in charges.",
             executiveTakeaway: { show: false }
           },
-          {
+                    {
             kind: "challenge",
             id: "f6",
             title: "Choose the Right Table for the Question",
@@ -361,18 +384,27 @@ Explain what one row in this table most likely represents and why.`,
 Which table is the better starting point: patients or encounters? Explain your reasoning.`,
             starterQuery: "",
             solutionQuery: "",
-            minLength: 80,
-            acceptedConceptGroups: [
-              ["encounters"],
-              ["visit", "activity", "last month"],
-              ["distinct", "unique", "patient_id"]
-            ],
-            minimumConceptMatches: 2,
-            feedbackGuide: "A strong answer starts with encounters because the question is about who came in a period of time, then notes that you would count distinct patients rather than raw rows.",
-            exemplarAnswer: `Encounters is the better starting point because the question is about hospital activity during a time period, and encounters records the visits that actually happened. To answer the question correctly, you would count distinct patient_id values so one person with multiple visits is not overstated.`,
+            minLength: 35,
+            reasoningRubric: {
+              minimumLength: 35,
+              requiredConceptGroups: [
+                {
+                  key: "encounters_table",
+                  terms: ["encounter", "encounters"],
+                  feedback: "Identify encounters as the better starting point."
+                },
+                {
+                  key: "visit_activity",
+                  terms: ["visit", "came", "last month", "activity", "many visits", "multiple visits", "multiple encounters", "more than one visit", "one patient can"],
+                  feedback: "Explain that the question is about visit activity over a time period, and one patient can have multiple visits."
+                }
+              ]
+            },
+            feedbackGuide: "Correct — encounters is the better starting point because the question is about hospital activity over time.",
+            exemplarAnswer: `Encounters is the better starting point because the question is about who came to the hospital during a time period, and encounters records the visits that actually happened. One patient can have multiple encounters, so this table captures the activity being asked about.`,
             hint: "The phrase last month points toward visit activity rather than the static patient list.",
-            smartHint: "Start with the table that records visits, then think about how to avoid double counting people.",
-            thirdHint: "A complete answer should mention encounters, time-based activity, and distinct patients.",
+            smartHint: "Start with the table that records visits, then think about how to avoid double-counting people.",
+            thirdHint: "A complete answer should mention encounters and explain that one patient can have multiple visits over time.",
             explanation: "This challenge reinforces that table choice is driven by grain and business wording, not by whichever table feels most familiar.",
             executiveTakeaway: { show: false }
           },
@@ -395,7 +427,7 @@ Which table is the better starting point: patients or encounters? Explain your r
             example: "Hospital example: to understand which department saw the most patients, you usually start with encounters because that table records the visit and the department connected to it.",
             executiveTakeaway: { show: false }
           },
-          {
+                    {
             kind: "challenge",
             id: "f8",
             title: "Follow the Data Flow",
@@ -409,14 +441,23 @@ Which table is the better starting point: patients or encounters? Explain your r
 Should you start with patients, encounters, or charges? Explain your reasoning.`,
             starterQuery: "",
             solutionQuery: "",
-            minLength: 75,
-            acceptedConceptGroups: [
-              ["encounters"],
-              ["department"],
-              ["last week", "time period", "visit", "activity"]
-            ],
-            minimumConceptMatches: 2,
-            feedbackGuide: "A strong answer starts with encounters because the question is about visit activity in a department during a defined time period.",
+            minLength: 45,
+            reasoningRubric: {
+              minimumLength: 45,
+              requiredConceptGroups: [
+                {
+                  key: "encounters_table",
+                  terms: ["encounter", "encounters"],
+                  feedback: "Choose encounters as the starting dataset."
+                },
+                {
+                  key: "department_visit_activity",
+                  terms: ["department", "visit", "last week", "activity", "where care occurred", "time period"],
+                  feedback: "Explain that the question is about department-level visit activity during a time period."
+                }
+              ]
+            },
+            feedbackGuide: "Correct — encounters is the best starting point because the question is about visit activity in a department during a defined time period.",
             exemplarAnswer: `You should start with encounters because the question is about visit activity over time, and encounters records both the visit and the department tied to it. Patients does not represent visit-level activity, and charges is financial rather than operational.`,
             hint: "The best starting table is the one that directly records visits in departments.",
             smartHint: "Encounters ties the event, the department, and the time period together.",
@@ -1044,7 +1085,8 @@ function challengeLesson(spec) {
     acceptedConceptGroups: spec.acceptedConceptGroups || [],
     minimumConceptMatches: spec.minimumConceptMatches || 0,
     feedbackGuide: spec.feedbackGuide || "",
-    exemplarAnswer: spec.exemplarAnswer || ""
+    exemplarAnswer: spec.exemplarAnswer || "",
+    reasoningRubric: spec.reasoningRubric || null
   };
 }
 
@@ -2338,8 +2380,38 @@ function isTextChallenge(lesson) {
   return !!lesson && lesson.type === "challenge" && lesson.challengeMode === "text";
 }
 
+function normalizeReasoningText(value) {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function textIncludesAny(text, terms) {
+  return (terms || []).some(term => text.includes(String(term).toLowerCase()));
+}
+
 function challengeConceptMatches(lesson, answerText) {
-  const text = String(answerText || "").toLowerCase();
+  const text = normalizeReasoningText(answerText);
+
+  if (lesson?.reasoningRubric?.requiredConceptGroups) {
+    const groups = Array.isArray(lesson.reasoningRubric.requiredConceptGroups)
+      ? lesson.reasoningRubric.requiredConceptGroups
+      : [];
+    const matched = [];
+    const missing = [];
+
+    groups.forEach((group) => {
+      const terms = Array.isArray(group?.terms) ? group.terms : [];
+      const didMatch = textIncludesAny(text, terms);
+      if (didMatch) matched.push(group.key || terms[0] || "concept");
+      else missing.push(group.feedback || `Missing idea: ${group.key || terms[0] || "concept"}.`);
+    });
+
+    return { matchedCount: matched.length, missing };
+  }
+
   const groups = Array.isArray(lesson.acceptedConceptGroups) ? lesson.acceptedConceptGroups : [];
   const matched = [];
   const missing = [];
@@ -2356,12 +2428,16 @@ function challengeConceptMatches(lesson, answerText) {
 
 function gradeTextChallenge(lesson, rawAnswer) {
   const answer = String(rawAnswer || "").trim();
-  const minLength = lesson.minLength || 60;
-  const minimumConceptMatches = lesson.minimumConceptMatches || Math.max(1, (lesson.acceptedConceptGroups || []).length - 1);
+  const rubric = lesson?.reasoningRubric || null;
+  const minLength = rubric?.minimumLength || lesson.minLength || 60;
+  const minimumConceptMatches = rubric
+    ? (Array.isArray(rubric.requiredConceptGroups) ? rubric.requiredConceptGroups.length : 0)
+    : (lesson.minimumConceptMatches || Math.max(1, (lesson.acceptedConceptGroups || []).length - 1));
+
   const { matchedCount, missing } = challengeConceptMatches(lesson, answer);
   const longEnough = answer.length >= minLength;
   const passed = longEnough && matchedCount >= minimumConceptMatches;
-  const partial = !passed && answer.length >= Math.max(35, Math.floor(minLength * 0.55)) && matchedCount >= 1;
+  const partial = !passed && answer.length >= Math.max(20, Math.floor(minLength * 0.45)) && matchedCount >= Math.max(1, minimumConceptMatches - 1);
   return { passed, partial, missing, matchedCount, minLength, minimumConceptMatches };
 }
 
