@@ -225,165 +225,200 @@ const curriculum = [
     categories: [
       {
         id: "foundations_core",
-        title: "Understanding Hospital Data & Basic SQL Terms",
+        title: "Understanding Hospital Data",
         order: 1,
         lessons: [
           {
             kind: "concept",
             id: "f1",
-            title: "What SELECT Means",
-            objective: "Understand that SELECT tells SQL which columns or calculations to return.",
-            sql_focus: ["SELECT"],
-            relevantTables: ["patients"],
+            title: "What Is Hospital Data?",
+            objective: "Understand the main types of hospital data and why each exists.",
+            sql_focus: [],
+            relevantTables: ["patients", "encounters", "charges", "claims"],
             joinHint: "No join is needed for this lesson.",
-            summary: "SELECT tells SQL what you want to see in the result.",
+            summary: "Hospitals generate clinical, operational, and financial data, and each type answers a different business question.",
             bullets: [
-              "Use SELECT to choose the exact columns you want returned.",
-              "You can SELECT raw columns such as patient_id or department, or calculations such as COUNT(*).",
-              "Good analysts avoid pulling unnecessary fields when a simpler result answers the business question."
+              "Clinical data describes care, conditions, and treatment, such as diagnoses, procedures, and observations.",
+              "Operational data describes how care moved through the system, such as encounters, departments, admit dates, discharge dates, and appointment status.",
+              "Financial data describes what was billed, denied, adjusted, or collected, such as charges, claims, payer, and billed amounts.",
+              "A strong analyst starts by asking what kind of question is being asked before choosing a dataset."
             ],
-            example: "SELECT patient_id, first_name, last_name, insurance_type FROM patients;",
+            example: "Hospital example: an ED visit creates operational data in encounters, financial data in charges and claims, and patient context in patients. The same real-world event can appear in multiple tables for different reasons.",
             executiveTakeaway: { show: false }
           },
           {
-            kind: "concept",
+            kind: "challenge",
             id: "f2",
-            title: "What FROM Means",
-            objective: "Understand that FROM tells SQL which table supplies the data.",
-            sql_focus: ["FROM"],
-            relevantTables: ["encounters"],
-            joinHint: "No join is needed for this lesson.",
-            summary: "FROM tells SQL which table to read from.",
-            bullets: [
-              "The table after FROM determines what each row represents.",
-              "If you query patients, each row is a patient. If you query encounters, each row is a visit or stay.",
-              "Choosing the wrong table is one of the most common causes of bad hospital analytics."
-            ],
-            example: "SELECT encounter_id, patient_id, facility, department FROM encounters;",
+            title: "Identify the Data Type",
+            objective: "Match common hospital questions to the correct type of hospital data.",
+            sql_focus: [],
+            relevantTables: ["patients", "encounters", "charges", "claims"],
+            joinHint: "This is a thinking exercise. Focus on the kind of question being asked, not on writing SQL.",
+            challengeCriteria: `For each business question below, identify the primary type of data an analyst would start with: clinical, operational, or financial.
+
+1. Emergency department wait times
+2. Total charges for a hospital stay
+3. Diagnosis trends by month
+
+Explain your reasoning in a short response.`,
+            starterQuery: "",
+            solutionQuery: "",
+            expectedAnswerText: `Emergency department wait times are primarily operational because they describe patient flow through the care process. Total charges for a hospital stay are financial because they describe billed activity and reimbursement-related reporting. Diagnosis trends by month are primarily clinical because diagnoses describe patient conditions and care patterns.`,
+            expectedKeywords: ["operational", "financial", "clinical", "wait", "charges", "diagnosis"],
+            minLength: 90,
+            minimumKeywordMatches: 4,
+            hint: "Ask what each question is trying to measure: care delivered, workflow through the hospital, or money billed and paid.",
+            smartHint: "Wait times point to operational data, charges point to financial data, and diagnosis trends point to clinical data.",
+            thirdHint: "ED wait times = operational, total charges = financial, diagnosis trends = clinical.",
+            explanation: `This challenge teaches analysts to categorize the business question before selecting a table. That skill matters because many hospital problems look similar on the surface but belong to very different data domains.`,
             executiveTakeaway: { show: false }
           },
           {
-            kind: "challenge",
+            kind: "concept",
             id: "f3",
-            title: "Select Key Patient Columns",
-            objective: "Return a clean patient list using SELECT and FROM.",
-            sql_focus: ["SELECT", "FROM"],
-            relevantTables: ["patients"],
-            joinHint: "Use only the patients table for this lesson.",
-            challengeCriteria: `You are preparing a simple patient roster for analyst review.
-
-Return patient_id, first_name, last_name, and insurance_type from the patients table.
-
-Do not return any extra columns.`,
-            starterQuery: "SELECT patient_id, first_name, last_name, insurance_type FROM patients;",
-            solutionQuery: "SELECT patient_id, first_name, last_name, insurance_type FROM patients;",
-            hint: "Start with SELECT, list the four required columns, then add FROM patients.",
-            smartHint: "Use SELECT patient_id, first_name, last_name, insurance_type FROM patients.",
-            thirdHint: "SELECT patient_id, first_name, last_name, insurance_type FROM patients;",
-            explanation: `This query teaches the basic structure of a SQL sentence.
-
-SELECT answers: what fields do I want back?
-FROM answers: which table do those fields come from?
-
-This is the starting point for almost every hospital analyst query.`,
+            title: "Tables, Rows, and Columns",
+            objective: "Understand how hospital data is organized in relational tables.",
+            sql_focus: [],
+            relevantTables: ["patients", "encounters"],
+            joinHint: "No join is needed for this lesson.",
+            summary: "A table stores one subject, rows are records, and columns describe each record.",
+            bullets: [
+              "A table usually represents one business entity such as patients, encounters, charges, or claims.",
+              "A row is one record inside that table, such as one patient or one encounter.",
+              "A column is one attribute about that record, such as patient_id, department, or discharge_date.",
+              "Analysts should always know what one row means before they start counting, averaging, or grouping."
+            ],
+            example: "Hospital example: in the encounters table, one row might represent a single visit, while department and admit_date are columns that describe that visit.",
             executiveTakeaway: { show: false }
           },
           {
-            kind: "concept",
+            kind: "challenge",
             id: "f4",
-            title: "What COUNT(*) Means",
-            objective: "Understand that COUNT(*) returns the number of rows in the result.",
-            sql_focus: ["SELECT", "COUNT", "FROM"],
+            title: "Interpret the Table Structure",
+            objective: "Explain what one row most likely represents based on the columns shown.",
+            sql_focus: [],
             relevantTables: ["encounters"],
-            joinHint: "No join is needed for this lesson.",
-            summary: "COUNT(*) counts how many rows are returned.",
-            bullets: [
-              "COUNT(*) is often used for visit volume, appointment volume, claim volume, or other activity counts.",
-              "The result depends on table grain. Counting rows in encounters counts visits, not unique patients.",
-              "Always ask: what does one row represent before trusting a count?"
-            ],
-            example: "SELECT COUNT(*) AS encounter_count FROM encounters;",
-            executiveTakeaway: { show: false }
-          },
-          {
-            kind: "challenge",
-            id: "f5",
-            title: "Count Total Encounters",
-            objective: "Count all encounter rows.",
-            sql_focus: ["SELECT", "COUNT", "FROM"],
-            relevantTables: ["encounters"],
-            joinHint: "Use only the encounters table for this lesson.",
-            challengeCriteria: `Leadership wants to know total encounter volume.
+            joinHint: "This is a reasoning exercise about table structure and row meaning.",
+            challengeCriteria: `You are given a table with these columns:
 
-Return the total number of rows in the encounters table.
+- patient_id
+- encounter_id
+- department
+- visit_date
 
-Label the result encounter_count.`,
-            starterQuery: "SELECT COUNT(*) AS encounter_count FROM encounters;",
-            solutionQuery: "SELECT COUNT(*) AS encounter_count FROM encounters;",
-            hint: "Use COUNT(*) from the encounters table and alias the result encounter_count.",
-            smartHint: "SELECT COUNT(*) AS encounter_count FROM encounters;",
-            thirdHint: "SELECT COUNT(*) AS encounter_count FROM encounters;",
-            explanation: `This query counts all encounter records.
-
-Because the encounters table is one row per encounter, this result reflects total visit or stay volume, not unique patients.`,
+Explain what one row in this table most likely represents and why.`,
+            starterQuery: "",
+            solutionQuery: "",
+            expectedAnswerText: `One row most likely represents a single encounter or visit. The presence of encounter_id means the table is tracking visit-level activity rather than just one row per patient. A patient could appear more than once if they had multiple encounters.`,
+            expectedKeywords: ["encounter", "visit", "encounter_id", "patient", "multiple"],
+            minLength: 80,
+            minimumKeywordMatches: 3,
+            hint: "Focus on the most specific identifier in the table. Ask yourself what could repeat across rows.",
+            smartHint: "Because encounter_id is present, the table is almost certainly visit-level rather than patient-level.",
+            thirdHint: "One row represents a single encounter or visit, not a unique patient.",
+            explanation: `This challenge builds the habit of reading table structure before analyzing it. In hospital analytics, misunderstanding row meaning is one of the fastest ways to produce the wrong answer.`,
             executiveTakeaway: { show: false }
           },
           {
             kind: "concept",
-            id: "f6",
-            title: "What DISTINCT Means",
-            objective: "Understand that DISTINCT removes duplicate values from the result.",
-            sql_focus: ["SELECT", "DISTINCT", "FROM"],
-            relevantTables: ["patients"],
+            id: "f5",
+            title: "What Is a Record? (Grain)",
+            objective: "Understand grain, or what one row represents in a dataset.",
+            sql_focus: [],
+            relevantTables: ["patients", "encounters", "charges"],
             joinHint: "No join is needed for this lesson.",
-            summary: "DISTINCT returns unique values only.",
+            summary: "Grain means the business meaning of a single row in a table.",
             bullets: [
-              "Use DISTINCT when repeated values would otherwise overstate the answer.",
-              "DISTINCT is especially important when the business question is about unique patients, payers, or departments.",
-              "It does not change table grain; it changes what duplicate values are kept in the result set."
+              "Patients usually means one row per person.",
+              "Encounters usually means one row per visit or stay.",
+              "Charges usually means one row per billed charge line, which can create many rows for one encounter.",
+              "If you count rows without understanding grain, you may count visits when the leader asked for patients, or charges when the leader asked for encounters."
             ],
-            example: "SELECT DISTINCT insurance_type FROM patients;",
+            example: "Hospital example: one patient can have one patient row, three encounter rows, and many charge rows. Same person, different row grain in each table.",
             executiveTakeaway: { show: false }
           },
           {
             kind: "challenge",
+            id: "f6",
+            title: "Choose the Right Table for the Question",
+            objective: "Match a business question to the best starting grain.",
+            sql_focus: [],
+            relevantTables: ["patients", "encounters"],
+            joinHint: "This is a grain decision exercise, not a SQL syntax exercise.",
+            challengeCriteria: `A leader asks, "How many patients came to the hospital last month?"
+
+Which table is the better starting point: patients or encounters?
+
+Explain your answer, including why grain matters.`,
+            starterQuery: "",
+            solutionQuery: "",
+            expectedAnswerText: `Encounters is the better starting point because the question is about activity during a time period, and encounters records when visits happened. However, the analyst must still count unique patients rather than all encounter rows because the table grain is encounters, not people.`,
+            expectedKeywords: ["encounters", "time", "activity", "grain", "unique", "patients"],
+            minLength: 95,
+            minimumKeywordMatches: 4,
+            hint: "Ask which table actually tracks when someone came in. Then ask whether rows equal people or visits.",
+            smartHint: "Start with encounters because it captures visit activity in time, but remember that encounter rows are not the same as unique patients.",
+            thirdHint: "Encounters is the right starting point, but the final answer must still account for unique patients rather than raw visit rows.",
+            explanation: `This challenge teaches the difference between starting grain and final business answer. In hospital reporting, those are often related but not identical.`,
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "concept",
             id: "f7",
-            title: "Count Unique Patients With Encounters",
-            objective: "Use DISTINCT correctly when the business question is about people rather than visits.",
-            sql_focus: ["SELECT", "COUNT", "DISTINCT", "FROM"],
-            relevantTables: ["encounters"],
-            joinHint: "Use the encounters table, but remember that each row is an encounter, not a patient.",
-            challengeCriteria: `A director asks how many unique patients had encounters.
+            title: "How Hospital Tables Relate",
+            objective: "Understand how hospital tables connect conceptually before learning joins.",
+            sql_focus: [],
+            relevantTables: ["patients", "encounters", "departments", "charges"],
+            joinHint: "No join is required yet. Focus on business relationships between tables.",
+            summary: "Hospital tables describe different layers of the same care event and are connected by shared keys.",
+            bullets: [
+              "Patients tells you who the person is.",
+              "Encounters tells you that a visit or stay happened.",
+              "Departments tells you where care occurred.",
+              "Charges tells you what was billed for that care event.",
+              "Strong analysts understand the business relationship before they ever write a JOIN."
+            ],
+            example: "Hospital example: patient 27 appears in patients, has an encounter in encounters, is tied to a department through department_id, and generates billed lines in charges through encounter_id.",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "challenge",
+            id: "f8",
+            title: "Follow the Data Flow",
+            objective: "Choose the best starting dataset based on how hospital tables relate to one another.",
+            sql_focus: [],
+            relevantTables: ["patients", "encounters", "charges"],
+            joinHint: "Think about where visit activity lives and which table would answer the question first.",
+            challengeCriteria: `You are asked, "Which department saw the most patients last week?"
 
-Return the number of distinct patient_id values in the encounters table.
+Which table would you start with: patients, encounters, or charges?
 
-Label the result patient_count.`,
-            starterQuery: "SELECT COUNT(DISTINCT patient_id) AS patient_count FROM encounters;",
-            solutionQuery: "SELECT COUNT(DISTINCT patient_id) AS patient_count FROM encounters;",
-            hint: "Count DISTINCT patient_id values rather than counting all rows.",
-            smartHint: "Use COUNT(DISTINCT patient_id) from encounters.",
-            thirdHint: "SELECT COUNT(DISTINCT patient_id) AS patient_count FROM encounters;",
-            explanation: `This query answers a different question than total encounter volume.
-
-COUNT(*) tells you how many encounters occurred.
-COUNT(DISTINCT patient_id) tells you how many unique people were seen.
-
-That difference is one of the most important concepts in hospital analytics.`,
+Explain why that table is the best starting point.`,
+            starterQuery: "",
+            solutionQuery: "",
+            expectedAnswerText: `Encounters is the best starting point because it records visit activity and includes department context or the link needed to get department information. Patients does not represent visit activity, and charges represents billed lines rather than the operational event itself.`,
+            expectedKeywords: ["encounters", "department", "visit", "activity", "patients", "charges"],
+            minLength: 90,
+            minimumKeywordMatches: 4,
+            hint: "Ask which table records a visit occurring in a department during a period of time.",
+            smartHint: "Encounters is usually the right starting point because the question is about where visits happened, not who exists in the patient master or what was billed.",
+            thirdHint: "Start with encounters because it captures visit-level operational activity tied to department.",
+            explanation: `This challenge reinforces that analysts should start with the table that matches the event being measured. Good dataset selection often matters more than SQL complexity.`,
             executiveTakeaway: { show: false }
           },
           {
             kind: "scenario",
-            id: "f8",
-            title: "Scenario: Patient Count vs Encounter Count",
-            objective: "Explain why counting rows is not always the same as counting people.",
-            relevantTables: ["encounters", "patients"],
-            joinHint: "Think about what one row represents in encounters and how that affects the business answer.",
-            summary: "A leader asks how many patients the organization saw, but an analyst counts encounter rows instead.",
-            prompt: "A leader asks, 'How many patients did we see this month?' An analyst runs SELECT COUNT(*) FROM encounters. Explain why that answer may be wrong. In your response, mention table grain, encounters versus patients, and why DISTINCT patient_id may be needed.",
-            expectedKeywords: ["grain", "encounter", "patient", "distinct", "patient_id", "count"],
-            minLength: 90,
-            minimumKeywordMatches: 3,
-            feedbackGuide: "A strong answer explains that encounters count visits, not unique people, so a patient with multiple encounters would be counted more than once unless DISTINCT patient_id is used.",
+            id: "f9",
+            title: "Scenario: What Data Do I Even Use?",
+            objective: "Apply hospital data structure concepts to a realistic analyst request.",
+            relevantTables: ["patients", "encounters", "charges"],
+            joinHint: "Think about the business request first, then choose the table whose row grain best matches that request.",
+            summary: "A leader asks for ED volume analysis, and you must decide where to begin.",
+            prompt: "You are asked to analyze emergency department volume for last month. You have access to patients, encounters, and charges. Explain which table you would start with and why. In your response, mention the business question, row grain, and why the other two tables are weaker starting points.",
+            expectedKeywords: ["encounters", "volume", "grain", "patients", "charges", "visit"],
+            minLength: 110,
+            minimumKeywordMatches: 4,
+            feedbackGuide: "A strong answer starts with encounters because ED volume is a visit-based operational question. It should explain that patients is too person-focused and charges is too billing-focused for the initial analysis.",
             executiveTakeaway: { show: false }
           }
         ]
@@ -984,6 +1019,10 @@ function challengeLesson(spec) {
     secondHint: spec.secondHint || spec.smartHint || "",
     thirdHint: spec.thirdHint || "",
     explanation: spec.explanation || "",
+    expectedAnswerText: spec.expectedAnswerText || "",
+    expectedKeywords: spec.expectedKeywords || [],
+    minLength: spec.minLength || 0,
+    minimumKeywordMatches: spec.minimumKeywordMatches || 0,
     businessContext: spec.businessContext || null,
     executiveTakeaway: spec.executiveTakeaway || null
   };
@@ -2350,7 +2389,11 @@ if (!criteriaBox) {
     `;
 
     const query = document.getElementById("query");
+    const isTextChallenge = !lesson.solutionQuery && (lesson.expectedAnswerText || (lesson.expectedKeywords || []).length);
+    const queryLabel = challengeContent.querySelector(".query-label");
+    if (queryLabel) queryLabel.textContent = isTextChallenge ? "Enter your response" : "Write your SQL query";
     query.value = lesson.starterQuery || "";
+    query.placeholder = isTextChallenge ? "Type your explanation here..." : "Write your SQL query here...";
     document.getElementById("feedback").innerText = "";
     document.getElementById("feedback").classList.remove("success","error","warning");
     document.getElementById("output").innerHTML = "";
@@ -2613,24 +2656,71 @@ function runQuery() {
   const query = queryBox.value.trim();
   lastRunQuery = query;
 
+  const isTextChallenge = !lesson.solutionQuery && (lesson.expectedAnswerText || (lesson.expectedKeywords || []).length);
+
   if (!query) {
-    setFeedbackState(feedback, "error", "Please enter a query before running it.");
+    setFeedbackState(feedback, "error", isTextChallenge ? "Please enter a response before submitting." : "Please enter a query before running it.");
     if (output) output.innerHTML = "";
     return;
   }
 
   const hintOne =
     lesson.hint ||
-    "Start with the correct table and make sure you are selecting the required fields.";
+    (isTextChallenge
+      ? "Focus on the business question, the correct dataset or grain, and why your choice fits."
+      : "Start with the correct table and make sure you are selecting the required fields.");
 
   const hintTwo =
     lesson.smartHint ||
     lesson.secondHint ||
-    "Double-check the exact columns, filters, joins, or grouping needed to match the lesson objective.";
+    (isTextChallenge
+      ? "Add more detail about row meaning, the best starting table, or why the other options are weaker."
+      : "Double-check the exact columns, filters, joins, or grouping needed to match the lesson objective.");
 
   const finalExplanation =
     lesson.explanation ||
-    "This answer is correct because it uses the right table, selects the required fields, and returns the expected result for the lesson objective.";
+    (isTextChallenge
+      ? "A strong response should clearly explain the business reasoning, the correct data source or grain, and why that answer fits the request."
+      : "This answer is correct because it uses the right table, selects the required fields, and returns the expected result for the lesson objective.");
+
+  if (isTextChallenge) {
+    if (output) output.innerHTML = "";
+
+    const response = query.toLowerCase();
+    const expectedKeywords = lesson.expectedKeywords || [];
+    const minLength = lesson.minLength || 80;
+    const minimumKeywordMatches = lesson.minimumKeywordMatches || Math.min(2, expectedKeywords.length || 2);
+    const matchedKeywords = expectedKeywords.filter(keyword => response.includes(String(keyword).toLowerCase()));
+    const passed = query.length >= minLength && matchedKeywords.length >= minimumKeywordMatches;
+
+    if (passed) {
+      markLessonCompleted(lesson.id, attempts === 0);
+      const successMessage = lesson.feedbackGuide || "Correct — your explanation shows the right business reasoning.";
+      setFeedbackState(feedback, "success", successMessage);
+      attempts = 0;
+      saveProgress();
+      refreshLessonChrome();
+      return;
+    }
+
+    attempts += 1;
+
+    if (attempts === 1) {
+      setFeedbackState(feedback, "warning", `Not correct yet. Hint 1: ${hintOne}`);
+    } else if (attempts === 2) {
+      setFeedbackState(feedback, "warning", `Still not correct. Hint 2: ${hintTwo}`);
+    } else {
+      setFeedbackState(
+        feedback,
+        "error",
+        `You have used all 3 attempts.\n\nSuggested Answer:\n${lesson.expectedAnswerText || "Review the lesson concepts and answer using the correct business reasoning."}\n\nExplanation:\n${finalExplanation}`
+      );
+    }
+
+    saveProgress();
+    refreshLessonChrome();
+    return;
+  }
 
   try {
     const result = queryToResult(query);
