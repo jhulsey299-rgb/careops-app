@@ -419,7 +419,7 @@ Which table is the better starting point: patients or encounters? Explain your r
 Should you start with patients, encounters, or charges? Explain your reasoning.`,
             starterQuery: "",
             solutionQuery: "",
-            minLength: 45,
+            minLength: 18,
             requiredConceptGroups: [
               ["encounters", "encounter"]
             ],
