@@ -225,106 +225,165 @@ const curriculum = [
     categories: [
       {
         id: "foundations_core",
-        title: "Understanding Hospital Data",
+        title: "Understanding Hospital Data & Basic SQL Terms",
         order: 1,
         lessons: [
           {
             kind: "concept",
             id: "f1",
-            title: "What Is Hospital Data?",
-            objective: "Understand what hospital data represents before writing SQL.",
-            sql_focus: ["Business framing", "Table grain"],
-            relevantTables: ["patients", "encounters", "claims"],
-            joinHint: "No join is needed. This lesson is about understanding what each dataset represents.",
-            summary: "Hospital data represents real care events, financial activity, and operational workflow — and each table tells a different part of that story.",
+            title: "What SELECT Means",
+            objective: "Understand that SELECT tells SQL which columns or calculations to return.",
+            sql_focus: ["SELECT"],
+            relevantTables: ["patients"],
+            joinHint: "No join is needed for this lesson.",
+            summary: "SELECT tells SQL what you want to see in the result.",
             bullets: [
-              "A patients table usually describes people, not visits.",
-              "An encounters table usually describes visits or stays, not unique individuals.",
-              "A claims table usually describes reimbursement activity, not clinical events.",
-              "Before you query, you must know what one row means in the dataset you are using."
+              "Use SELECT to choose the exact columns you want returned.",
+              "You can SELECT raw columns such as patient_id or department, or calculations such as COUNT(*).",
+              "Good analysts avoid pulling unnecessary fields when a simpler result answers the business question."
             ],
-            example: "Hospital Example: If leadership asks for visit volume, the encounters table is usually the right starting point because each row represents a care event rather than a unique patient.",
+            example: "SELECT patient_id, first_name, last_name, insurance_type FROM patients;",
             executiveTakeaway: { show: false }
           },
           {
             kind: "concept",
             id: "f2",
-            title: "Why Table Grain Matters",
-            objective: "Understand grain so you do not answer the wrong business question.",
-            sql_focus: ["Row meaning", "COUNT", "DISTINCT"],
-            relevantTables: ["patients", "encounters", "charges"],
-            joinHint: "No join is needed. Focus on what one row means before you count anything.",
-            summary: "Grain means the business meaning of one row in a table. If you use the wrong grain, your answer can be technically correct but operationally wrong.",
+            title: "What FROM Means",
+            objective: "Understand that FROM tells SQL which table supplies the data.",
+            sql_focus: ["FROM"],
+            relevantTables: ["encounters"],
+            joinHint: "No join is needed for this lesson.",
+            summary: "FROM tells SQL which table to read from.",
             bullets: [
-              "Patients table: one row usually represents one person.",
-              "Encounters table: one row usually represents one visit or stay.",
-              "Charges table: one row usually represents one billed transaction.",
-              "A patient can have many encounters, and one encounter can have many charges."
+              "The table after FROM determines what each row represents.",
+              "If you query patients, each row is a patient. If you query encounters, each row is a visit or stay.",
+              "Choosing the wrong table is one of the most common causes of bad hospital analytics."
             ],
-            example: "Hospital Example: If the ED director asks how many people were seen, counting rows in encounters returns visits. Counting DISTINCT patient_id returns unique patients.",
+            example: "SELECT encounter_id, patient_id, facility, department FROM encounters;",
             executiveTakeaway: { show: false }
           },
           {
             kind: "challenge",
             id: "f3",
-            title: "Count Total Encounter Volume",
-            objective: "Return the total number of encounter records.",
+            title: "Select Key Patient Columns",
+            objective: "Return a clean patient list using SELECT and FROM.",
+            sql_focus: ["SELECT", "FROM"],
+            relevantTables: ["patients"],
+            joinHint: "Use only the patients table for this lesson.",
+            challengeCriteria: `You are preparing a simple patient roster for analyst review.
+
+Return patient_id, first_name, last_name, and insurance_type from the patients table.
+
+Do not return any extra columns.`,
+            starterQuery: "SELECT patient_id, first_name, last_name, insurance_type FROM patients;",
+            solutionQuery: "SELECT patient_id, first_name, last_name, insurance_type FROM patients;",
+            hint: "Start with SELECT, list the four required columns, then add FROM patients.",
+            smartHint: "Use SELECT patient_id, first_name, last_name, insurance_type FROM patients.",
+            thirdHint: "SELECT patient_id, first_name, last_name, insurance_type FROM patients;",
+            explanation: `This query teaches the basic structure of a SQL sentence.
+
+SELECT answers: what fields do I want back?
+FROM answers: which table do those fields come from?
+
+This is the starting point for almost every hospital analyst query.`,
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "concept",
+            id: "f4",
+            title: "What COUNT(*) Means",
+            objective: "Understand that COUNT(*) returns the number of rows in the result.",
             sql_focus: ["SELECT", "COUNT", "FROM"],
             relevantTables: ["encounters"],
-            joinHint: "Use only the encounters table. This question is about visit volume, not unique patients.",
-            challengeCriteria: `You are preparing a basic activity summary for operations.
-
-Return the total number of encounters in the encounters table.
-Label the result encounter_count.
-
-This answers the question: how many encounter records exist in the dataset?`,
-            starterQuery: "SELECT COUNT(*) AS encounter_count FROM encounters;",
-            solutionQuery: "SELECT COUNT(*) AS encounter_count FROM encounters;",
-            hint: "Use COUNT(*) against the encounters table.",
-            smartHint: "This is encounter volume, so count rows rather than distinct patients.",
-            thirdHint: "SELECT COUNT(*) AS encounter_count FROM encounters;",
-            explanation: `This query counts every encounter row.
-
-That is the correct approach when leadership is asking about visit or stay volume rather than the number of unique patients.`,
+            joinHint: "No join is needed for this lesson.",
+            summary: "COUNT(*) counts how many rows are returned.",
+            bullets: [
+              "COUNT(*) is often used for visit volume, appointment volume, claim volume, or other activity counts.",
+              "The result depends on table grain. Counting rows in encounters counts visits, not unique patients.",
+              "Always ask: what does one row represent before trusting a count?"
+            ],
+            example: "SELECT COUNT(*) AS encounter_count FROM encounters;",
             executiveTakeaway: { show: false }
           },
           {
             kind: "challenge",
-            id: "f4",
-            title: "Count Unique Patients Seen",
-            objective: "Return the number of unique patients represented in the encounters table.",
+            id: "f5",
+            title: "Count Total Encounters",
+            objective: "Count all encounter rows.",
+            sql_focus: ["SELECT", "COUNT", "FROM"],
+            relevantTables: ["encounters"],
+            joinHint: "Use only the encounters table for this lesson.",
+            challengeCriteria: `Leadership wants to know total encounter volume.
+
+Return the total number of rows in the encounters table.
+
+Label the result encounter_count.`,
+            starterQuery: "SELECT COUNT(*) AS encounter_count FROM encounters;",
+            solutionQuery: "SELECT COUNT(*) AS encounter_count FROM encounters;",
+            hint: "Use COUNT(*) from the encounters table and alias the result encounter_count.",
+            smartHint: "SELECT COUNT(*) AS encounter_count FROM encounters;",
+            thirdHint: "SELECT COUNT(*) AS encounter_count FROM encounters;",
+            explanation: `This query counts all encounter records.
+
+Because the encounters table is one row per encounter, this result reflects total visit or stay volume, not unique patients.`,
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "concept",
+            id: "f6",
+            title: "What DISTINCT Means",
+            objective: "Understand that DISTINCT removes duplicate values from the result.",
+            sql_focus: ["SELECT", "DISTINCT", "FROM"],
+            relevantTables: ["patients"],
+            joinHint: "No join is needed for this lesson.",
+            summary: "DISTINCT returns unique values only.",
+            bullets: [
+              "Use DISTINCT when repeated values would otherwise overstate the answer.",
+              "DISTINCT is especially important when the business question is about unique patients, payers, or departments.",
+              "It does not change table grain; it changes what duplicate values are kept in the result set."
+            ],
+            example: "SELECT DISTINCT insurance_type FROM patients;",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "challenge",
+            id: "f7",
+            title: "Count Unique Patients With Encounters",
+            objective: "Use DISTINCT correctly when the business question is about people rather than visits.",
             sql_focus: ["SELECT", "COUNT", "DISTINCT", "FROM"],
             relevantTables: ["encounters"],
-            joinHint: "Use the encounters table, but count distinct patient_id values because the question is about people, not visits.",
-            challengeCriteria: `Leadership now asks a different question: how many unique patients are represented in the encounters table?
+            joinHint: "Use the encounters table, but remember that each row is an encounter, not a patient.",
+            challengeCriteria: `A director asks how many unique patients had encounters.
 
-Return the number of distinct patients.
-Label the result patient_count.
+Return the number of distinct patient_id values in the encounters table.
 
-This answers a people-based question rather than a visit-based question.`,
+Label the result patient_count.`,
             starterQuery: "SELECT COUNT(DISTINCT patient_id) AS patient_count FROM encounters;",
             solutionQuery: "SELECT COUNT(DISTINCT patient_id) AS patient_count FROM encounters;",
-            hint: "You need to count people, not rows.",
-            smartHint: "Use COUNT(DISTINCT patient_id) so repeat visits from the same patient are not double-counted.",
+            hint: "Count DISTINCT patient_id values rather than counting all rows.",
+            smartHint: "Use COUNT(DISTINCT patient_id) from encounters.",
             thirdHint: "SELECT COUNT(DISTINCT patient_id) AS patient_count FROM encounters;",
-            explanation: `This query counts unique patients instead of counting every encounter row.
+            explanation: `This query answers a different question than total encounter volume.
 
-That distinction is critical in hospital analytics because volume and unique population are not the same thing.`,
+COUNT(*) tells you how many encounters occurred.
+COUNT(DISTINCT patient_id) tells you how many unique people were seen.
+
+That difference is one of the most important concepts in hospital analytics.`,
             executiveTakeaway: { show: false }
           },
           {
             kind: "scenario",
-            id: "f5",
-            title: "Scenario: Choosing the Right Starting Table",
-            objective: "Explain how to choose the correct table based on the business question being asked.",
-            relevantTables: ["patients", "encounters", "charges"],
-            joinHint: "Think first about what one row means in each table and which table best matches the question.",
-            summary: "An analyst must choose the right table before writing the query.",
-            prompt: "A director asks, 'How many people did we see last month, and how is that different from encounter volume?' Explain which table you would start from, how grain affects the answer, and why counting rows in the wrong table could mislead leadership.",
-            expectedKeywords: ["grain", "patient", "encounter", "distinct", "visit", "table"],
-            minLength: 100,
+            id: "f8",
+            title: "Scenario: Patient Count vs Encounter Count",
+            objective: "Explain why counting rows is not always the same as counting people.",
+            relevantTables: ["encounters", "patients"],
+            joinHint: "Think about what one row represents in encounters and how that affects the business answer.",
+            summary: "A leader asks how many patients the organization saw, but an analyst counts encounter rows instead.",
+            prompt: "A leader asks, 'How many patients did we see this month?' An analyst runs SELECT COUNT(*) FROM encounters. Explain why that answer may be wrong. In your response, mention table grain, encounters versus patients, and why DISTINCT patient_id may be needed.",
+            expectedKeywords: ["grain", "encounter", "patient", "distinct", "patient_id", "count"],
+            minLength: 90,
             minimumKeywordMatches: 3,
-            feedbackGuide: "A strong answer explains that grain determines whether rows represent people, visits, or transactions, and that unique-patient counts often require DISTINCT while encounter volume counts rows.",
+            feedbackGuide: "A strong answer explains that encounters count visits, not unique people, so a patient with multiple encounters would be counted more than once unless DISTINCT patient_id is used.",
             executiveTakeaway: { show: false }
           }
         ]
