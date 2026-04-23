@@ -784,6 +784,8 @@ Should you start with patients, encounters, or charges? Explain your reasoning.`
             feedbackGuide: "A strong answer identifies that this is a two-condition filter, uses the encounters table, and applies both conditions with AND.",
             executiveTakeaway: { show: false }
           }
+          ]
+      },
           {
   id: "foundations_sorting_interpreting",
   title: "Sorting & Interpreting Results",
