@@ -1333,8 +1333,12 @@ This helps identify where revenue is being lost.`,
 FROM claims
 WHERE claim_status = 'Denied'
 GROUP BY payer;`,
-            explanation: `Denials impact revenue directly.
+            explanation: `Denials impact revenue directly.explanation: `Denials impact revenue directly.
 
+Analyzing by payer helps:
+- identify contract issues
+- improve billing processes
+- reduce financial losses`,
 Analyzing by payer helps:
 - identify contract issues
 - improve billing processes
