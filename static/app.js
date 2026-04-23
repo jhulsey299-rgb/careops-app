@@ -957,12 +957,7 @@ Your answer must:
       minimumKeywordMatches: 2,
       feedbackGuide: "A strong answer includes sorting, filtering, and a clear explanation of what leadership should learn from the data.",
       executiveTakeaway: { show: false }
-    }
-
-  ]
-}
-
-        ]
+       ]
       }
     ]
   },
