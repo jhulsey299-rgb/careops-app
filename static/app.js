@@ -784,167 +784,165 @@ Should you start with patients, encounters, or charges? Explain your reasoning.`
             feedbackGuide: "A strong answer identifies that this is a two-condition filter, uses the encounters table, and applies both conditions with AND.",
             executiveTakeaway: { show: false }
           }
-          ]
+        ]
       },
+      {
+        id: "foundations_sorting_interpreting",
+        title: "Sorting & Interpreting Results",
+        order: 4,
+        lessons: [
           {
-  id: "foundations_sorting_interpreting",
-  title: "Sorting & Interpreting Results",
-  order: 4,
-  lessons: [
-
-    // LESSON 16
-    {
-      kind: "concept",
-      id: "s16",
-      title: "ORDER BY Basics",
-      objective: "Understand how to sort query results.",
-      sql_focus: ["ORDER BY"],
-      relevantTables: ["encounters"],
-      joinHint: "No join needed.",
-      summary: "ORDER BY controls how results are sorted.",
-      bullets: [
-        "Sorting helps you understand patterns in data",
-        "Most analysis requires ordering results",
-        "Default sort is ascending (ASC)"
-      ],
-      example: "SELECT * FROM encounters ORDER BY visit_date;"
-    },
-
-    {
-      kind: "challenge",
-      id: "s17",
-      title: "Sort by Date",
-      objective: "Order encounters by visit date.",
-      sql_focus: ["ORDER BY"],
-      relevantTables: ["encounters"],
-      challengeCriteria: `Return all encounters sorted by visit_date.`,
-      solutionQuery: "SELECT * FROM encounters ORDER BY visit_date;",
-      hint: "Use ORDER BY.",
-      smartHint: "ORDER BY visit_date",
-      thirdHint: "SELECT * FROM encounters",
-      explanation: "Sorting by date allows you to view records chronologically."
-    },
-
-    // LESSON 17
-    {
-      kind: "concept",
-      id: "s18",
-      title: "ASC vs DESC",
-      objective: "Understand sort direction.",
-      sql_focus: ["ASC", "DESC"],
-      relevantTables: ["encounters"],
-      joinHint: "No join needed.",
-      summary: "ASC sorts low to high. DESC sorts high to low.",
-      bullets: [
-        "DESC is commonly used for most recent or highest values",
-        "ASC is useful for timelines or smallest values",
-        "Direction changes interpretation"
-      ],
-      example: "SELECT * FROM encounters ORDER BY visit_date DESC;"
-    },
-
-    {
-      kind: "challenge",
-      id: "s19",
-      title: "Most Recent Visits",
-      objective: "Return newest encounters first.",
-      sql_focus: ["ORDER BY", "DESC"],
-      relevantTables: ["encounters"],
-      challengeCriteria: `Return encounters sorted with the most recent visits first.`,
-      solutionQuery: "SELECT * FROM encounters ORDER BY visit_date DESC;",
-      hint: "Use DESC.",
-      smartHint: "ORDER BY visit_date DESC",
-      thirdHint: "SELECT * FROM encounters",
-      explanation: "Descending order shows most recent activity first."
-    },
-
-    // LESSON 18
-    {
-      kind: "concept",
-      id: "s20",
-      title: "Multiple Sort Fields",
-      objective: "Sort by more than one column.",
-      sql_focus: ["ORDER BY multiple"],
-      relevantTables: ["encounters"],
-      joinHint: "No join needed.",
-      summary: "You can sort by multiple columns to organize results more precisely.",
-      bullets: [
-        "First column controls primary order",
-        "Second column breaks ties",
-        "Useful for grouped analysis"
-      ],
-      example: "SELECT * FROM encounters ORDER BY department, visit_date DESC;"
-    },
-
-    {
-      kind: "challenge",
-      id: "s21",
-      title: "Sort by Department and Date",
-      objective: "Apply multi-column sorting.",
-      sql_focus: ["ORDER BY"],
-      relevantTables: ["encounters"],
-      challengeCriteria: `Sort encounters by department, then by most recent visit_date.`,
-      solutionQuery: "SELECT * FROM encounters ORDER BY department, visit_date DESC;",
-      hint: "Use two columns in ORDER BY.",
-      smartHint: "ORDER BY department, visit_date DESC",
-      thirdHint: "SELECT * FROM encounters",
-      explanation: "Multi-column sorting helps structure grouped data."
-    },
-
-    // LESSON 19 (🔥 DIFFERENTIATOR)
-    {
-      kind: "concept",
-      id: "s22",
-      title: "Interpreting Results",
-      objective: "Understand what query output actually means.",
-      sql_focus: ["Interpretation"],
-      relevantTables: ["encounters"],
-      joinHint: "No join needed.",
-      summary: "SQL output is useless unless you can explain what it means.",
-      bullets: [
-        "Data answers questions — but you must interpret it",
-        "Sorting highlights trends and outliers",
-        "Analysts must translate data into insight",
-        "Executives do not want raw data — they want meaning"
-      ],
-      example: "If the top results show high LOS, that may indicate capacity issues."
-    },
-
-    {
-      kind: "challenge",
-      id: "s23",
-      title: "Explain the Output",
-      objective: "Translate data into plain English.",
-      challengeMode: "text",
-      sql_focus: ["Interpretation"],
-      relevantTables: ["encounters"],
-      challengeCriteria: `You run a query and see the top 5 encounters with the longest length_of_stay.
+            kind: "concept",
+            id: "s16",
+            title: "ORDER BY Basics",
+            objective: "Understand how to sort query results.",
+            sql_focus: ["ORDER BY"],
+            relevantTables: ["encounters"],
+            joinHint: "No join needed.",
+            summary: "ORDER BY controls how results are sorted.",
+            bullets: [
+              "Sorting helps you understand patterns in data.",
+              "Most analysis requires ordering results.",
+              "Default sort is ascending (ASC)."
+            ],
+            example: "SELECT * FROM encounters ORDER BY admit_date;",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "challenge",
+            id: "s17",
+            title: "Sort by Date",
+            objective: "Order encounters by admit_date.",
+            sql_focus: ["ORDER BY"],
+            relevantTables: ["encounters"],
+            challengeCriteria: "Return all encounters sorted by admit_date.",
+            starterQuery: "",
+            solutionQuery: "SELECT * FROM encounters ORDER BY admit_date;",
+            hint: "Use ORDER BY.",
+            smartHint: "ORDER BY admit_date",
+            thirdHint: "SELECT * FROM encounters ORDER BY admit_date;",
+            explanation: "Sorting by date allows you to view records chronologically.",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "concept",
+            id: "s18",
+            title: "ASC vs DESC",
+            objective: "Understand sort direction.",
+            sql_focus: ["ASC", "DESC"],
+            relevantTables: ["encounters"],
+            joinHint: "No join needed.",
+            summary: "ASC sorts low to high. DESC sorts high to low.",
+            bullets: [
+              "DESC is commonly used for most recent or highest values.",
+              "ASC is useful for timelines or smallest values.",
+              "Direction changes interpretation."
+            ],
+            example: "SELECT * FROM encounters ORDER BY admit_date DESC;",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "challenge",
+            id: "s19",
+            title: "Most Recent Visits",
+            objective: "Return newest encounters first.",
+            sql_focus: ["ORDER BY", "DESC"],
+            relevantTables: ["encounters"],
+            challengeCriteria: "Return encounters sorted with the most recent visits first.",
+            starterQuery: "",
+            solutionQuery: "SELECT * FROM encounters ORDER BY admit_date DESC;",
+            hint: "Use DESC.",
+            smartHint: "ORDER BY admit_date DESC",
+            thirdHint: "SELECT * FROM encounters ORDER BY admit_date DESC;",
+            explanation: "Descending order shows most recent activity first.",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "concept",
+            id: "s20",
+            title: "Multiple Sort Fields",
+            objective: "Sort by more than one column.",
+            sql_focus: ["ORDER BY multiple"],
+            relevantTables: ["encounters"],
+            joinHint: "No join needed.",
+            summary: "You can sort by multiple columns to organize results more precisely.",
+            bullets: [
+              "First column controls primary order.",
+              "Second column breaks ties.",
+              "Useful for grouped analysis."
+            ],
+            example: "SELECT * FROM encounters ORDER BY department, admit_date DESC;",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "challenge",
+            id: "s21",
+            title: "Sort by Department and Date",
+            objective: "Apply multi-column sorting.",
+            sql_focus: ["ORDER BY"],
+            relevantTables: ["encounters"],
+            challengeCriteria: "Sort encounters by department, then by most recent admit_date.",
+            starterQuery: "",
+            solutionQuery: "SELECT * FROM encounters ORDER BY department, admit_date DESC;",
+            hint: "Use two columns in ORDER BY.",
+            smartHint: "ORDER BY department, admit_date DESC",
+            thirdHint: "SELECT * FROM encounters ORDER BY department, admit_date DESC;",
+            explanation: "Multi-column sorting helps structure grouped data.",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "concept",
+            id: "s22",
+            title: "Interpreting Results",
+            objective: "Understand what query output actually means.",
+            sql_focus: ["Interpretation"],
+            relevantTables: ["encounters"],
+            joinHint: "No join needed.",
+            summary: "SQL output is useless unless you can explain what it means.",
+            bullets: [
+              "Data answers questions — but you must interpret it.",
+              "Sorting highlights trends and outliers.",
+              "Analysts must translate data into insight.",
+              "Executives do not want raw data — they want meaning."
+            ],
+            example: "If the top results show high LOS, that may indicate capacity issues.",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "challenge",
+            id: "s23",
+            title: "Explain the Output",
+            objective: "Translate data into plain English.",
+            challengeMode: "text",
+            sql_focus: ["Interpretation"],
+            relevantTables: ["encounters"],
+            challengeCriteria: `You run a query and see the top 5 encounters with the longest length_of_stay.
 
 Explain what this result means and why it matters.`,
-      minLength: 50,
-      requiredConceptGroups: [
-        ["long", "length of stay", "los"],
-        ["impact", "important", "matters", "problem", "issue"]
-      ],
-      requiredConceptMatches: 1,
-      feedbackGuide: "Correct — long length of stay can indicate operational or capacity issues.",
-      exemplarAnswer: `This result shows the encounters with the longest length of stay, which may indicate inefficiencies, complex cases, or delays in discharge. This matters because long stays impact hospital capacity and cost.`,
-      hint: "Think about why long stays matter operationally.",
-      smartHint: "Long LOS affects capacity and cost.",
-      thirdHint: "Explain both what it shows and why it matters.",
-      explanation: "This is the first step in thinking like an analyst, not just writing SQL.",
-      executiveTakeaway: { show: false }
-    },
-
-    // SCENARIO (🔥 REAL ANALYST MOMENT)
-    {
-      kind: "scenario",
-      id: "s24",
-      title: "Scenario: Executive Request",
-      objective: "Deliver sorted and interpretable data.",
-      relevantTables: ["encounters"],
-      summary: "A leader wants insight, not raw data.",
-      prompt: `A hospital executive asks: "Show me the most recent high-cost encounters."
+            starterQuery: "",
+            solutionQuery: "",
+            minLength: 50,
+            requiredConceptGroups: [
+              ["long", "length of stay", "los"],
+              ["impact", "important", "matters", "problem", "issue"]
+            ],
+            requiredConceptMatches: 1,
+            feedbackGuide: "Correct — long length of stay can indicate operational or capacity issues.",
+            exemplarAnswer: `This result shows the encounters with the longest length of stay, which may indicate inefficiencies, complex cases, or delays in discharge. This matters because long stays impact hospital capacity and cost.`,
+            hint: "Think about why long stays matter operationally.",
+            smartHint: "Long LOS affects capacity and cost.",
+            thirdHint: "Explain both what it shows and why it matters.",
+            explanation: "This is the first step in thinking like an analyst, not just writing SQL.",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "scenario",
+            id: "s24",
+            title: "Scenario: Executive Request",
+            objective: "Deliver sorted and interpretable data.",
+            relevantTables: ["encounters"],
+            summary: "A leader wants insight, not raw data.",
+            prompt: `A hospital executive asks: "Show me the most recent high-cost encounters."
 
 Write a query AND explain what the result means.
 
@@ -952,414 +950,10 @@ Your answer must:
 - filter relevant encounters
 - sort results
 - explain what leadership should take away`,
-      expectedKeywords: ["select", "where", "order", "desc"],
-      minLength: 80,
-      minimumKeywordMatches: 2,
-      feedbackGuide: "A strong answer includes sorting, filtering, and a clear explanation of what leadership should learn from the data.",
-      executiveTakeaway: { show: false }
-      }
-    ]
-  },
-  {
-    id: "track_core",
-    title: "Core",
-    description: "Core learning path for CareOps hospital analytics.",
-    order: 2,
-    categories: [
-      {
-        id: "core_hospital_analytics",
-        title: "Core Hospital Analytics",
-        order: 1,
-        lessons: [
-          {
-            kind: "concept",
-            id: "c1",
-            title: "Counting Records",
-            objective: "Understand how COUNT() measures volume.",
-            sql_focus: ["SELECT", "COUNT"],
-            relevantTables: ["encounters"],
-            joinHint: "No join is needed for this lesson.",
-            summary: "COUNT() is used to measure volume.",
-            bullets: [
-              "COUNT(*) tells you how many rows exist in a dataset.",
-              "In healthcare, this supports encounter volume and workload measurement.",
-              "Volume is one of the most basic operational KPIs."
-            ],
-            example: "SELECT COUNT(*) FROM appointments;",
-            executiveTakeaway: { show: false }
-          },
-          {
-            kind: "challenge",
-            id: "c2",
-            title: "Total Encounter Volume",
-            objective: "Measure encounter volume.",
-            sql_focus: ["SELECT", "COUNT"],
-            relevantTables: ["encounters"],
-            joinHint: "Use only the encounters table for this lesson.",
-            challengeCriteria: `Leadership wants to understand total hospital activity.
-
-Return the total number of encounters.
-
-Label the column encounter_count.
-
-This represents overall patient volume.`,
-            starterQuery: "SELECT COUNT(*) AS encounter_count FROM encounters;",
-            solutionQuery: "SELECT COUNT(*) AS encounter_count FROM encounters;",
-            hint: "Count all rows in encounters.",
-            smartHint: "Use COUNT(*) and alias it encounter_count.",
-            thirdHint: "SELECT COUNT(*) AS encounter_count FROM encounters;",
-            explanation: `COUNT(*) measures total volume.
-
-This is a foundational KPI used across:
-- operations
-- finance
-- capacity planning`,
-            executiveTakeaway: { show: false }
-          },
-          {
-            kind: "concept",
-            id: "c3",
-            title: "Grouping Data",
-            objective: "Understand how GROUP BY aggregates data by category.",
-            sql_focus: ["SELECT", "COUNT", "GROUP BY"],
-            relevantTables: ["encounters"],
-            joinHint: "No join is needed for this lesson.",
-            summary: "GROUP BY aggregates data by category.",
-            bullets: [
-              "Grouping allows comparison across departments, facilities, or payers.",
-              "It is the backbone of summary reporting.",
-              "Choose the grouping field that matches the leader’s question."
-            ],
-            example: "SELECT payer, COUNT(*) FROM claims GROUP BY payer;",
-            executiveTakeaway: { show: false }
-          },
-          {
-            kind: "challenge",
-            id: "c4",
-            title: "Encounters by Department",
-            objective: "Group encounters.",
-            sql_focus: ["SELECT", "COUNT", "GROUP BY"],
-            relevantTables: ["encounters"],
-            joinHint: "Use only the encounters table for this lesson.",
-            challengeCriteria: `Leadership wants to understand which departments are seeing the most patients.
-
-Return encounter volume grouped by department_id.
-
-Label the count encounter_count.
-
-This helps identify high-demand areas.`,
-            starterQuery: "SELECT department_id, COUNT(*) AS encounter_count FROM encounters GROUP BY department_id;",
-            solutionQuery: "SELECT department_id, COUNT(*) AS encounter_count FROM encounters GROUP BY department_id;",
-            hint: "Group encounters by department_id.",
-            smartHint: "Use GROUP BY department_id and COUNT(*).",
-            thirdHint: "SELECT department_id, COUNT(*) AS encounter_count FROM encounters GROUP BY department_id;",
-            explanation: `Grouping allows comparison across units.
-
-This helps:
-- identify high volume departments
-- guide staffing decisions`,
-            executiveTakeaway: { show: false }
-          },
-          {
-            kind: "concept",
-            id: "c5",
-            title: "Average Metrics",
-            objective: "Understand how AVG() calculates averages.",
-            sql_focus: ["SELECT", "AVG"],
-            relevantTables: ["encounters"],
-            joinHint: "No join is needed for this lesson.",
-            summary: "AVG() calculates averages.",
-            bullets: [
-              "AVG is commonly used for LOS, charge amount, and delay minutes.",
-              "Averages help evaluate efficiency and performance.",
-              "Context matters because outliers can distort interpretation."
-            ],
-            example: "SELECT AVG(departure_minutes) FROM discharges;",
-            executiveTakeaway: { show: false }
-          },
-          {
-            kind: "challenge",
-            id: "c6",
-            title: "Average Length of Stay",
-            objective: "Calculate average LOS.",
-            sql_focus: ["SELECT", "AVG"],
-            relevantTables: ["encounters"],
-            joinHint: "Use only the encounters table for this lesson.",
-            challengeCriteria: `Leadership wants to understand overall efficiency.
-
-Return the average length_of_stay across all encounters.
-
-Label the result avg_los.
-
-This helps evaluate throughput performance.`,
-            starterQuery: "SELECT AVG(length_of_stay) AS avg_los FROM encounters;",
-            solutionQuery: "SELECT AVG(length_of_stay) AS avg_los FROM encounters;",
-            hint: "Use AVG on length_of_stay.",
-            smartHint: "Use AVG(length_of_stay) and alias it avg_los.",
-            thirdHint: "SELECT AVG(length_of_stay) AS avg_los FROM encounters;",
-            explanation: `Average LOS is a key efficiency metric.
-
-Higher LOS often indicates:
-- bottlenecks
-- delays
-- complex patient populations`,
-            executiveTakeaway: { show: false }
-          },
-          {
-            kind: "scenario",
-            id: "c7",
-            title: "Scenario: Operational Insight",
-            objective: "Interpret department-level LOS variation and recommend the right next step.",
-            relevantTables: ["encounters"],
-            joinHint: "Think about what operational factors would explain why one department has much higher LOS than others.",
-            summary: "One department shows significantly higher LOS than others.",
-            prompt: "You ran a query showing that one department has significantly higher length_of_stay than other departments. Explain the most appropriate next step. In your response, mention workflow delays, case complexity, or discharge barriers and explain why ignoring or averaging away the result would be a mistake.",
-            expectedKeywords: ["workflow", "delay", "complexity", "discharge", "investigate"],
-            minLength: 90,
+            expectedKeywords: ["select", "where", "order", "desc"],
+            minLength: 80,
             minimumKeywordMatches: 2,
-            feedbackGuide: "A strong answer explains that high LOS should trigger investigation into discharge delays, workflow issues, or patient complexity rather than being ignored or averaged away.",
-            executiveTakeaway: { show: false }
-          }
-        ]
-      }
-    ]
-  },
-
-  {
-    id: "track_applied",
-    title: "Applied",
-    description: "Applied learning path for CareOps hospital analytics.",
-    order: 3,
-    categories: [
-      {
-        id: "applied_trends_investigation",
-        title: "Applied Analytics: Trends & Investigation",
-        order: 1,
-        lessons: [
-          {
-            kind: "challenge",
-            id: "a1",
-            title: "Top Departments by Volume",
-            objective: "Rank departments by volume.",
-            sql_focus: ["SELECT", "COUNT", "GROUP BY", "ORDER BY", "LIMIT"],
-            relevantTables: ["encounters"],
-            joinHint: "Use encounters as the base table and summarize at the department level.",
-            challengeCriteria: `Leadership wants to identify the busiest departments.
-
-Return department_id and encounter volume.
-Sort results from highest to lowest volume.
-Limit results to the top 5 departments.
-
-This helps prioritize resource allocation and staffing.`,
-            starterQuery: "SELECT department_id, COUNT(*) AS encounter_count FROM encounters GROUP BY department_id ORDER BY encounter_count DESC LIMIT 5;",
-            solutionQuery: "SELECT department_id, COUNT(*) AS encounter_count FROM encounters GROUP BY department_id ORDER BY encounter_count DESC LIMIT 5;",
-            hint: "Group by department_id and count encounters.",
-            smartHint: "Use COUNT(*) with GROUP BY department_id and ORDER BY encounter_count DESC.",
-            thirdHint: `SELECT department_id, COUNT(*) AS encounter_count
-FROM encounters
-GROUP BY department_id
-ORDER BY encounter_count DESC
-LIMIT 5;`,
-            explanation: `Ranking allows leadership to focus on the highest-impact areas.
-
-Top departments often:
-- drive staffing needs
-- create bottlenecks
-- influence financial performance`,
-            executiveTakeaway: { show: false }
-          },
-          {
-            kind: "challenge",
-            id: "a2",
-            title: "High Utilization Patients",
-            objective: "Find repeat patients.",
-            sql_focus: ["SELECT", "COUNT", "GROUP BY", "HAVING"],
-            relevantTables: ["encounters"],
-            joinHint: "Use encounters and summarize at the patient level.",
-            challengeCriteria: `Leadership wants to identify patients with frequent visits.
-
-Return patient_id and number of encounters.
-Only include patients with more than 3 encounters.
-
-This helps identify high utilizers who may need care coordination.`,
-            starterQuery: "SELECT patient_id, COUNT(*) AS visit_count FROM encounters GROUP BY patient_id HAVING COUNT(*) > 3;",
-            solutionQuery: "SELECT patient_id, COUNT(*) AS visit_count FROM encounters GROUP BY patient_id HAVING COUNT(*) > 3;",
-            hint: "Group encounters by patient_id.",
-            smartHint: "Use HAVING COUNT(*) > 3 after grouping by patient_id.",
-            thirdHint: `SELECT patient_id, COUNT(*) AS visit_count
-FROM encounters
-GROUP BY patient_id
-HAVING COUNT(*) > 3;`,
-            explanation: `High utilization patients often indicate:
-- chronic conditions
-- gaps in outpatient care
-- potential readmission risk`,
-            executiveTakeaway: { show: false }
-          },
-          {
-            kind: "challenge",
-            id: "a3",
-            title: "Average LOS by Department",
-            objective: "Compare department efficiency.",
-            sql_focus: ["SELECT", "AVG", "GROUP BY", "ORDER BY"],
-            relevantTables: ["encounters"],
-            joinHint: "Use encounters and summarize at the department level.",
-            challengeCriteria: `Leadership wants to compare efficiency across departments.
-
-Return department_id and average length_of_stay.
-Sort from highest to lowest average LOS.
-
-This helps identify departments with potential inefficiencies.`,
-            starterQuery: "SELECT department_id, AVG(length_of_stay) AS avg_los FROM encounters GROUP BY department_id ORDER BY avg_los DESC;",
-            solutionQuery: "SELECT department_id, AVG(length_of_stay) AS avg_los FROM encounters GROUP BY department_id ORDER BY avg_los DESC;",
-            hint: "Use AVG and group by department_id.",
-            smartHint: "Sort the grouped results by avg_los descending.",
-            thirdHint: `SELECT department_id, AVG(length_of_stay) AS avg_los
-FROM encounters
-GROUP BY department_id
-ORDER BY avg_los DESC;`,
-            explanation: `Comparing LOS across departments helps:
-- identify operational issues
-- surface discharge delays
-- guide performance improvement efforts`,
-            executiveTakeaway: { show: false }
-          },
-          {
-            kind: "scenario",
-            id: "a4",
-            title: "Scenario: Investigating a Spike",
-            objective: "Interpret a departmental LOS spike and propose the next investigation step.",
-            relevantTables: ["encounters"],
-            joinHint: "Think about what changed in operations, staffing, or patient mix.",
-            summary: "One department’s LOS increased significantly this month.",
-            prompt: "You discover that one department’s length_of_stay increased significantly this month. Explain the best next step. In your response, mention patient mix, discharge delays, workflow constraints, or staffing and explain why removing the department from reporting or averaging it away would be a mistake.",
-            expectedKeywords: ["patient", "mix", "discharge", "workflow", "staffing", "investigate"],
-            minLength: 90,
-            minimumKeywordMatches: 2,
-            feedbackGuide: "A strong answer recommends investigation into patient mix, discharge barriers, staffing, or workflow constraints rather than ignoring or masking the signal.",
-            executiveTakeaway: { show: false }
-          }
-        ]
-      }
-    ]
-  },
-
-  {
-    id: "track_advanced",
-    title: "Advanced",
-    description: "Advanced learning path for CareOps hospital analytics.",
-    order: 4,
-    categories: [
-      {
-        id: "advanced_root_cause_analysis",
-        title: "Diagnosis: Root Cause Analysis",
-        order: 1,
-        lessons: [
-          {
-            kind: "challenge",
-            id: "d1",
-            title: "LOS by Payer",
-            objective: "Segment LOS by payer.",
-            sql_focus: ["SELECT", "AVG", "JOIN", "GROUP BY"],
-            relevantTables: ["encounters", "claims"],
-            joinHint: "Join claims to encounters on encounter_id so you can compare LOS across payer segments.",
-            challengeCriteria: `Leadership suspects payer type may influence LOS.
-
-Return payer and average length_of_stay.
-
-This helps identify whether certain populations are driving inefficiencies.`,
-            starterQuery: "SELECT c.payer, AVG(e.length_of_stay) AS avg_los FROM encounters e JOIN claims c ON e.encounter_id = c.encounter_id GROUP BY c.payer;",
-            solutionQuery: "SELECT c.payer, AVG(e.length_of_stay) AS avg_los FROM encounters e JOIN claims c ON e.encounter_id = c.encounter_id GROUP BY c.payer;",
-            hint: "Join encounters with claims.",
-            smartHint: "Group by payer after joining claims to encounters on encounter_id.",
-            thirdHint: `SELECT c.payer, AVG(e.length_of_stay) AS avg_los
-FROM encounters e
-JOIN claims c ON e.encounter_id = c.encounter_id
-GROUP BY c.payer;`,
-            explanation: `Different payer populations often:
-- have different care pathways
-- experience delays in discharge or placement
-
-Segmenting data reveals hidden drivers.`,
-            executiveTakeaway: { show: false }
-          },
-          {
-            kind: "challenge",
-            id: "d2",
-            title: "Readmissions by Department",
-            objective: "Identify readmission drivers.",
-            sql_focus: ["SELECT", "COUNT", "JOIN", "GROUP BY"],
-            relevantTables: ["readmissions", "encounters"],
-            joinHint: "Use the readmit encounter to connect readmissions back to the department where the readmission occurred.",
-            challengeCriteria: `Leadership wants to understand which departments are driving readmissions.
-
-Return department_id and readmission count.
-
-This helps target quality improvement initiatives.`,
-            starterQuery: "SELECT e.department_id, COUNT(*) AS readmit_count FROM readmissions r JOIN encounters e ON r.readmit_encounter_id = e.encounter_id GROUP BY e.department_id;",
-            solutionQuery: "SELECT e.department_id, COUNT(*) AS readmit_count FROM readmissions r JOIN encounters e ON r.readmit_encounter_id = e.encounter_id GROUP BY e.department_id;",
-            hint: "Join readmissions to encounters.",
-            smartHint: "Use readmit_encounter_id to connect the readmission record back to encounters, then group by department_id.",
-            thirdHint: `SELECT e.department_id, COUNT(*) AS readmit_count
-FROM readmissions r
-JOIN encounters e ON r.readmit_encounter_id = e.encounter_id
-GROUP BY e.department_id;`,
-            explanation: `High readmissions may indicate:
-- poor discharge planning
-- lack of follow-up care
-- quality gaps
-
-Department-level analysis helps isolate the issue.`,
-            executiveTakeaway: { show: false }
-- poor discharge planning
-- lack of follow-up care
-- quality gaps
-
-Department-level analysis helps isolate the issue.`,
-            executiveTakeaway: { show: false }
-          },
-          {
-            kind: "challenge",
-            id: "d3",
-            title: "Denials by Payer",
-            objective: "Find financial leakage.",
-            sql_focus: ["SELECT", "SUM", "WHERE", "GROUP BY"],
-            relevantTables: ["claims"],
-            joinHint: "Use claims and isolate denied records before summarizing by payer.",
-            challengeCriteria: `Finance wants to understand denial patterns.
-
-Return payer and total denied billed_amount.
-
-This helps identify where revenue is being lost.`,
-            starterQuery: "SELECT payer, SUM(billed_amount) AS denied_total FROM claims WHERE claim_status = 'Denied' GROUP BY payer;",
-            solutionQuery: "SELECT payer, SUM(billed_amount) AS denied_total FROM claims WHERE claim_status = 'Denied' GROUP BY payer;",
-            hint: "Filter denied claims.",
-            smartHint: "Use WHERE claim_status = 'Denied' and SUM(billed_amount), then group by payer.",
-            thirdHint: `SELECT payer, SUM(billed_amount) AS denied_total
-FROM claims
-WHERE claim_status = 'Denied'
-GROUP BY payer;`,
-            explanation: `Denials impact revenue directly.
-
-Analyzing by payer helps:
-- identify contract issues
-- improve billing processes
-- reduce financial losses`,
-            executiveTakeaway: { show: false }
-          },
-          {
-            kind: "scenario",
-            id: "d4",
-            title: "Scenario: Root Cause Identification",
-            objective: "Explain the right next step when a department stands out for readmissions.",
-            relevantTables: ["readmissions", "encounters"],
-            joinHint: "Think about discharge process, transition of care, and follow-up support.",
-            summary: "One department has the highest readmission rate in the organization.",
-            prompt: "You find that readmissions are highest in one department. Explain the most appropriate next step. In your response, mention discharge planning, follow-up care, or care coordination and explain why ignoring the result would be a mistake.",
-            expectedKeywords: ["discharge", "follow", "care", "coordination", "investigate"],
-            minLength: 90,
-            minimumKeywordMatches: 2,
-            feedbackGuide: "A strong answer recommends investigating discharge planning, follow-up care, and coordination rather than ignoring the signal.",
+            feedbackGuide: "A strong answer includes sorting, filtering, and a clear explanation of what leadership should learn from the data.",
             executiveTakeaway: { show: false }
           }
         ]
@@ -1367,6 +961,9 @@ Analyzing by payer helps:
     ]
   }
 ];
+
+backfillChallengeCriteria(curriculum);
+enforceChallengeCriteria(curriculum);
 
 
 // =========================
