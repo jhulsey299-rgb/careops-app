@@ -1344,24 +1344,57 @@ Analyzing by payer helps:
           },
           {
             kind: "scenario",
-            id: "d4",
-            title: "Scenario: Root Cause Identification",
-            objective: "Explain the right next step when a department stands out for readmissions.",
-            relevantTables: ["readmissions", "encounters"],
-            joinHint: "Think about discharge process, transition of care, and follow-up support.",
-            summary: "One department has the highest readmission rate in the organization.",
-            prompt: "You find that readmissions are highest in one department. Explain the most appropriate next step. In your response, mention discharge process, follow-up care, care transitions, or quality review and explain why blaming the data or removing the department from analysis would be the wrong move.",
-            expectedKeywords: ["discharge", "follow-up", "care", "transition", "quality", "investigate"],
-            minLength: 90,
-            minimumKeywordMatches: 2,
-            feedbackGuide: "A strong answer focuses on discharge process, follow-up, care transitions, or quality review rather than ignoring the result or blaming the data.",
-            executiveTakeaway: { show: false }
-          }
+           {
+  kind: "scenario",
+  id: "d4",
+  title: "Scenario: Root Cause Identification",
+  objective: "Explain the right next step when a department stands out for readmissions.",
+  relevantTables: ["readmissions", "encounters"],
+  joinHint: "Think about discharge process, transition of care, and follow-up support.",
+  summary: "One department has the highest readmission rate in the organization.",
+  prompt: "You find that readmissions are highest in one department. Explain the most appropriate next step. In your response, mention discharge planning, follow-up care, or care coordination and explain why ignoring the result would be a mistake.",
+  expectedKeywords: ["discharge", "follow", "care", "coordination", "investigate"],
+  minLength: 90,
+  minimumKeywordMatches: 2,
+  feedbackGuide: "A strong answer recommends investigating discharge planning, follow-up care, and coordination rather than ignoring the signal.",
+  executiveTakeaway: { show: false }
+}
         ]
       }
     ]
-  },
+  }
+];
 
+
+// =========================
+// POST CURRICULUM FUNCTIONS
+// =========================
+
+function saveProgress() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+}
+
+function loadProgress() {
+  const saved = localStorage.getItem(STORAGE_KEY);
+  if (saved) {
+    appState = { ...appState, ...JSON.parse(saved) };
+  }
+}
+
+function resetAllProgress() {
+  localStorage.removeItem(STORAGE_KEY);
+  location.reload();
+}
+
+
+// =========================
+// APP INIT
+// =========================
+
+document.addEventListener("DOMContentLoaded", () => {
+  loadProgress();
+  console.log("CareOps App Initialized ✅");
+});
   {
     id: "track_expert",
     title: "Expert",
