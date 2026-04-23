@@ -1358,8 +1358,6 @@ Analyzing by payer helps:
 }
         ]
       }
-    ]
-  }
 ];
 
 
