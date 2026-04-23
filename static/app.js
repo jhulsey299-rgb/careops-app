@@ -1333,32 +1333,32 @@ This helps identify where revenue is being lost.`,
 FROM claims
 WHERE claim_status = 'Denied'
 GROUP BY payer;`,
-explanation: `Denials impact revenue directly.
+            explanation: `Denials impact revenue directly.
 
 Analyzing by payer helps:
 - identify contract issues
 - improve billing processes
 - reduce financial losses`,
-executiveTakeaway: { show: false }
+            executiveTakeaway: { show: false }
           },
           {
             kind: "scenario",
-  id: "d4",
-  title: "Scenario: Root Cause Identification",
-  objective: "Explain the right next step when a department stands out for readmissions.",
-  relevantTables: ["readmissions", "encounters"],
-  joinHint: "Think about discharge process, transition of care, and follow-up support.",
-  summary: "One department has the highest readmission rate in the organization.",
-  prompt: "You find that readmissions are highest in one department. Explain the most appropriate next step. In your response, mention discharge planning, follow-up care, or care coordination and explain why ignoring the result would be a mistake.",
-  expectedKeywords: ["discharge", "follow", "care", "coordination", "investigate"],
-  minLength: 90,
-  minimumKeywordMatches: 2,
-  feedbackGuide: "A strong answer recommends investigating discharge planning, follow-up care, and coordination rather than ignoring the signal.",
-  executiveTakeaway: { show: false }
-}
+            id: "d4",
+            title: "Scenario: Root Cause Identification",
+            objective: "Explain the right next step when a department stands out for readmissions.",
+            relevantTables: ["readmissions", "encounters"],
+            joinHint: "Think about discharge process, transition of care, and follow-up support.",
+            summary: "One department has the highest readmission rate in the organization.",
+            prompt: "You find that readmissions are highest in one department. Explain the most appropriate next step. In your response, mention discharge planning, follow-up care, or care coordination and explain why ignoring the result would be a mistake.",
+            expectedKeywords: ["discharge", "follow", "care", "coordination", "investigate"],
+            minLength: 90,
+            minimumKeywordMatches: 2,
+            feedbackGuide: "A strong answer recommends investigating discharge planning, follow-up care, and coordination rather than ignoring the signal.",
+            executiveTakeaway: { show: false }
+          }
         ]
       }
-      ]
+    ]
   }
 ];
 
