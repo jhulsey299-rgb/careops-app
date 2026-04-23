@@ -1340,7 +1340,6 @@ Analyzing by payer helps:
 - improve billing processes
 - reduce financial losses`,
 executiveTakeaway: { show: false }
-            executiveTakeaway: { show: false }
           },
           {
             kind: "scenario",
