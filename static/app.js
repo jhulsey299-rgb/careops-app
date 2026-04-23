@@ -1274,9 +1274,6 @@ Clear communication drives action.`,
             executiveTakeaway: { show: false }
           }
         ]
-      }
-    ]
-  }
 ];
 
 backfillChallengeCriteria(curriculum);
