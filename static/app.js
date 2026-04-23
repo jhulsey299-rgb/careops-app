@@ -1343,8 +1343,6 @@ Analyzing by payer helps:
           },
           {
             kind: "scenario",
-           {
-  kind: "scenario",
   id: "d4",
   title: "Scenario: Root Cause Identification",
   objective: "Explain the right next step when a department stands out for readmissions.",
