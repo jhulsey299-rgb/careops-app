@@ -454,166 +454,169 @@ Should you start with patients, encounters, or charges? Explain your reasoning.`
           }
         ]
       },
-    {
-  id: "foundations_selecting_data",
-  title: "Selecting & Exploring Data",
-  order: 2,
-  lessons: [
-
-    // LESSON 6
-    {
-      kind: "concept",
-      id: "s1",
-      title: "SELECT Basics",
-      objective: "Understand how to choose relevant columns from a table.",
-      sql_focus: ["SELECT"],
-      relevantTables: ["encounters"],
-      joinHint: "No join needed.",
-      summary: "SELECT chooses which columns to return from a table.",
-      bullets: [
-        "You should only pull the data you need",
-        "Selecting fewer columns improves performance",
-        "Good analysts are intentional about what they select"
-      ],
-      example: "SELECT patient_id, encounter_id FROM encounters;"
-    },
-
-    {
-      kind: "challenge",
-      id: "s2",
-      title: "Select Key Fields",
-      objective: "Select core encounter fields.",
-      sql_focus: ["SELECT"],
-      relevantTables: ["encounters"],
-      challengeCriteria: `Return patient_id, encounter_id, and visit_date from encounters.`,
-      solutionQuery: "SELECT patient_id, encounter_id, visit_date FROM encounters;",
-      hint: "List the columns explicitly.",
-      smartHint: "SELECT patient_id, encounter_id, visit_date",
-      thirdHint: "FROM encounters",
-      explanation: "Selecting specific columns keeps queries efficient and clear."
-    },
-
-    // LESSON 7
-    {
-      kind: "concept",
-      id: "s3",
-      title: "SELECT *",
-      objective: "Understand when to use SELECT *.",
-      sql_focus: ["SELECT *"],
-      relevantTables: ["encounters"],
-      joinHint: "No join needed.",
-      summary: "SELECT * returns all columns.",
-      bullets: [
-        "Useful for exploration",
-        "Avoid in production queries",
-        "Large tables can slow systems"
-      ],
-      example: "SELECT * FROM encounters;"
-    },
-
-    {
-      kind: "challenge",
-      id: "s4",
-      title: "Return All Columns",
-      objective: "Pull full dataset.",
-      sql_focus: ["SELECT *"],
-      relevantTables: ["encounters"],
-      challengeCriteria: `Return all columns from encounters.`,
-      solutionQuery: "SELECT * FROM encounters;",
-      hint: "Use the wildcard operator.",
-      smartHint: "SELECT *",
-      thirdHint: "FROM encounters",
-      explanation: "This is useful for initial exploration only."
-    },
-
-    // LESSON 8
-    {
-      kind: "concept",
-      id: "s5",
-      title: "LIMIT / TOP",
-      objective: "Preview data safely.",
-      sql_focus: ["LIMIT"],
-      relevantTables: ["encounters"],
-      joinHint: "No join needed.",
-      summary: "LIMIT restricts the number of rows returned.",
-      bullets: [
-        "Prevents loading massive datasets",
-        "Used during exploration",
-        "Improves speed and safety"
-      ],
-      example: "SELECT * FROM encounters LIMIT 10;"
-    },
-
-    {
-      kind: "challenge",
-      id: "s6",
-      title: "Preview Data",
-      objective: "Limit rows returned.",
-      sql_focus: ["LIMIT"],
-      relevantTables: ["encounters"],
-      challengeCriteria: `Return 10 rows from encounters.`,
-      solutionQuery: "SELECT * FROM encounters LIMIT 10;",
-      hint: "Limit the result size.",
-      smartHint: "LIMIT 10",
-      thirdHint: "Use SELECT *",
-      explanation: "Previewing data is critical before deeper analysis."
-    },
-
-    // LESSON 9
-    {
-      kind: "concept",
-      id: "s7",
-      title: "Aliases (AS)",
-      objective: "Make output readable.",
-      sql_focus: ["AS"],
-      relevantTables: ["encounters"],
-      joinHint: "No join needed.",
-      summary: "Aliases rename columns.",
-      bullets: [
-        "Improves readability",
-        "Important for executives",
-        "Transforms raw data into usable output"
-      ],
-      example: `SELECT encounter_id AS "Visit ID" FROM encounters;`
-    },
-
-    {
-      kind: "challenge",
-      id: "s8",
-      title: "Rename Fields",
-      objective: "Use aliases.",
-      sql_focus: ["AS"],
-      relevantTables: ["encounters"],
-      challengeCriteria: `Rename encounter_id to Visit ID.`,
-      solutionQuery: `SELECT encounter_id AS "Visit ID" FROM encounters;`,
-      hint: "Use AS.",
-      smartHint: `AS "Visit ID"`,
-      thirdHint: "SELECT encounter_id",
-      explanation: "Readable outputs are critical in real reporting."
-    },
-
-    // SCENARIO
-    {
-      kind: "scenario",
-      id: "s9",
-      title: "Scenario: Initial Data Pull",
-      objective: "Pull a clean dataset preview.",
-      relevantTables: ["encounters"],
-      summary: "A manager asks for a preview of ED visits.",
-      prompt: `Write a query that:
+      {
+        id: "foundations_selecting_data",
+        title: "Selecting & Exploring Data",
+        order: 2,
+        lessons: [
+          {
+            kind: "concept",
+            id: "s1",
+            title: "SELECT Basics",
+            objective: "Understand how to choose relevant columns from a table.",
+            sql_focus: ["SELECT"],
+            relevantTables: ["encounters"],
+            joinHint: "No join needed.",
+            summary: "SELECT chooses which columns to return from a table.",
+            bullets: [
+              "You should only pull the data you need",
+              "Selecting fewer columns improves performance",
+              "Good analysts are intentional about what they select"
+            ],
+            example: "SELECT patient_id, encounter_id FROM encounters;",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "challenge",
+            id: "s2",
+            title: "Select Key Fields",
+            objective: "Select core encounter fields.",
+            sql_focus: ["SELECT"],
+            relevantTables: ["encounters"],
+            joinHint: "Use only the encounters table for this lesson.",
+            challengeCriteria: "Return patient_id, encounter_id, and visit_date from encounters.",
+            starterQuery: "",
+            solutionQuery: "SELECT patient_id, encounter_id, visit_date FROM encounters;",
+            hint: "List the columns explicitly.",
+            smartHint: "SELECT patient_id, encounter_id, visit_date",
+            thirdHint: "FROM encounters",
+            explanation: "Selecting specific columns keeps queries efficient and clear.",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "concept",
+            id: "s3",
+            title: "SELECT *",
+            objective: "Understand when to use SELECT *.",
+            sql_focus: ["SELECT *"],
+            relevantTables: ["encounters"],
+            joinHint: "No join needed.",
+            summary: "SELECT * returns all columns.",
+            bullets: [
+              "Useful for exploration",
+              "Avoid in production queries",
+              "Large tables can slow systems"
+            ],
+            example: "SELECT * FROM encounters;",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "challenge",
+            id: "s4",
+            title: "Return All Columns",
+            objective: "Pull the full dataset.",
+            sql_focus: ["SELECT *"],
+            relevantTables: ["encounters"],
+            joinHint: "Use only the encounters table for this lesson.",
+            challengeCriteria: "Return all columns from encounters.",
+            starterQuery: "",
+            solutionQuery: "SELECT * FROM encounters;",
+            hint: "Use the wildcard operator.",
+            smartHint: "SELECT *",
+            thirdHint: "FROM encounters",
+            explanation: "This is useful for initial exploration only.",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "concept",
+            id: "s5",
+            title: "LIMIT / TOP",
+            objective: "Preview data safely.",
+            sql_focus: ["LIMIT"],
+            relevantTables: ["encounters"],
+            joinHint: "No join needed.",
+            summary: "LIMIT restricts the number of rows returned.",
+            bullets: [
+              "Prevents loading massive datasets",
+              "Used during exploration",
+              "Improves speed and safety"
+            ],
+            example: "SELECT * FROM encounters LIMIT 10;",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "challenge",
+            id: "s6",
+            title: "Preview Data",
+            objective: "Limit rows returned.",
+            sql_focus: ["LIMIT"],
+            relevantTables: ["encounters"],
+            joinHint: "Use only the encounters table for this lesson.",
+            challengeCriteria: "Return 10 rows from encounters.",
+            starterQuery: "",
+            solutionQuery: "SELECT * FROM encounters LIMIT 10;",
+            hint: "Limit the result size.",
+            smartHint: "LIMIT 10",
+            thirdHint: "Use SELECT *",
+            explanation: "Previewing data is critical before deeper analysis.",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "concept",
+            id: "s7",
+            title: "Aliases (AS)",
+            objective: "Make output readable.",
+            sql_focus: ["AS"],
+            relevantTables: ["encounters"],
+            joinHint: "No join needed.",
+            summary: "Aliases rename columns.",
+            bullets: [
+              "Improves readability",
+              "Important for executives",
+              "Transforms raw data into usable output"
+            ],
+            example: `SELECT encounter_id AS "Visit ID" FROM encounters;`,
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "challenge",
+            id: "s8",
+            title: "Rename Fields",
+            objective: "Use aliases.",
+            sql_focus: ["AS"],
+            relevantTables: ["encounters"],
+            joinHint: "Use only the encounters table for this lesson.",
+            challengeCriteria: "Rename encounter_id to Visit ID.",
+            starterQuery: "",
+            solutionQuery: `SELECT encounter_id AS "Visit ID" FROM encounters;`,
+            hint: "Use AS.",
+            smartHint: `AS "Visit ID"`,
+            thirdHint: "SELECT encounter_id",
+            explanation: "Readable outputs are critical in real reporting.",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "scenario",
+            id: "s9",
+            title: "Scenario: Initial Data Pull",
+            objective: "Pull a clean dataset preview.",
+            relevantTables: ["encounters"],
+            joinHint: "Use only the encounters table for this scenario.",
+            summary: "A manager asks for a preview of ED visits.",
+            prompt: `Write a query that:
 - selects relevant fields
 - renames at least one column
 - limits results`,
-      expectedKeywords: ["select", "limit"],
-      minLength: 20,
-      minimumKeywordMatches: 1,
-      feedbackGuide: "A strong answer includes select, limit, and readable output."
-    }
-
-  ]
-}
+            expectedKeywords: ["select", "limit"],
+            minLength: 20,
+            minimumKeywordMatches: 1,
+            feedbackGuide: "A strong answer includes select, limit, and readable output.",
+            executiveTakeaway: { show: false }
+          }
+        ]
+      }
+    ]
   },
-
   {
     id: "track_core",
     title: "Core",
