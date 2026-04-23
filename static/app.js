@@ -785,7 +785,7 @@ Should you start with patients, encounters, or charges? Explain your reasoning.`
             executiveTakeaway: { show: false }
           }
         ]
-      }
+      },
 
   {
     id: "track_core",
