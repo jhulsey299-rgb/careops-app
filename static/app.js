@@ -453,8 +453,7 @@ Should you start with patients, encounters, or charges? Explain your reasoning.`
             executiveTakeaway: { show: false }
           }
         ]
-      }
-    ]
+      },
     {
   id: "foundations_selecting_data",
   title: "Selecting & Exploring Data",
