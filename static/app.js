@@ -1311,6 +1311,12 @@ GROUP BY e.department_id;`,
 
 Department-level analysis helps isolate the issue.`,
             executiveTakeaway: { show: false }
+- poor discharge planning
+- lack of follow-up care
+- quality gaps
+
+Department-level analysis helps isolate the issue.`,
+            executiveTakeaway: { show: false }
           },
           {
             kind: "challenge",
