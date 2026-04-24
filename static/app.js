@@ -967,6 +967,10 @@ Your answer must:
 backfillChallengeCriteria(curriculum);
 enforceChallengeCriteria(curriculum);
 
+appState.currentTrackId = "track_foundations";
+appState.currentCategoryId = "foundations_core";
+
+
 function saveProgress() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
 }
