@@ -955,8 +955,7 @@ Your answer must:
       executiveTakeaway: { show: false }
       }
     ]
-  }
-    ],
+  },
     {
   id: "foundations_data_quality",
   title: "Data Quality & Analyst Thinking",
