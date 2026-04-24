@@ -1510,7 +1510,7 @@ if (!track) {
     const doneCategories = track.categories.filter(categoryComplete).length;
     const totalLessons = track.categories.flatMap(c => c.lessons).length;
     const doneLessons = track.categories.flatMap(c => c.lessons).filter(lesson => isLessonCompleted(lesson.id)).length;
-    const percent = totalLessons ? Math.round((doneLessons / totalLessons) * 100) : 0;
+    const percent = totalLessons ? Math.round((doneLessons.length / totalLessons) * 100) : 0;
 
     const card = document.createElement("button");
     card.type = "button";
