@@ -22,7 +22,8 @@ let lastRunQuery = "";
 let activeDifficultyFilter = null;
 
 const LEARNING_LEVELS = [
-  { label: "Foundations", key: "foundations", color: "#22c55e", trackId: "track_foundations" },
+  { label: "Foundations", key: "foundations", color: "#22c55e", trackId: "track_foundations" }
+  };
   
 
 const BUSINESS_LOGIC_MAP = {
