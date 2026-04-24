@@ -1506,7 +1506,11 @@ function renderTrackCategoryCards() {
 
   const cards = LEARNING_LEVELS.map(level => {
     const track = curriculum.find(item => item.id === level.trackId);
-    const totalCategories = track.categories.length;
+
+if (!track) {
+  console.error("Track not found for level:", level);
+  return null; // prevents crash
+}
     const doneCategories = track.categories.filter(categoryComplete).length;
     const totalLessons = track.categories.flatMap(c => c.lessons).length;
     const doneLessons = track.categories.flatMap(c => c.lessons).filter(lesson => isLessonCompleted(lesson.id)).length;
