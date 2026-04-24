@@ -1160,11 +1160,6 @@ if (!track) {
 
 const totalCategories = track.categories.length;
 
-Get Outlook for iOS
-From: Josh Hulsey <jhulsey@tidelandshealth.org>
-Sent: Friday, April 24, 2026 8:43:11 AM
-To: Josh Hulsey <jhulsey@tidelandshealth.org>
-Subject: Re:
  
 backfillChallengeCriteria(curriculum);
 enforceChallengeCriteria(curriculum);
