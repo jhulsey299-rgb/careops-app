@@ -1524,7 +1524,7 @@ if (!track) {
         </div>
       </div>
       <div class="track-badge-name">${level.label}</div>
-      <div class="track-badge-stats">${doneCategories} / ${totalCategories} curriculum complete<br>${doneLessons} / ${totalLessons} lessons completed</div>
+      <div class="track-badge-stats">${doneCategories.length} of ${track.categories.length} sections complete</div>
       <div class="track-badge-helper">Click to view this learning level</div>
     `;
 
