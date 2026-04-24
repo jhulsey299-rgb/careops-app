@@ -784,165 +784,167 @@ Should you start with patients, encounters, or charges? Explain your reasoning.`
             feedbackGuide: "A strong answer identifies that this is a two-condition filter, uses the encounters table, and applies both conditions with AND.",
             executiveTakeaway: { show: false }
           }
-        ]
+          ]
       },
-      {
-        id: "foundations_sorting_interpreting",
-        title: "Sorting & Interpreting Results",
-        order: 4,
-        lessons: [
           {
-            kind: "concept",
-            id: "s16",
-            title: "ORDER BY Basics",
-            objective: "Understand how to sort query results.",
-            sql_focus: ["ORDER BY"],
-            relevantTables: ["encounters"],
-            joinHint: "No join needed.",
-            summary: "ORDER BY controls how results are sorted.",
-            bullets: [
-              "Sorting helps you understand patterns in data.",
-              "Most analysis requires ordering results.",
-              "Default sort is ascending (ASC)."
-            ],
-            example: "SELECT * FROM encounters ORDER BY admit_date;",
-            executiveTakeaway: { show: false }
-          },
-          {
-            kind: "challenge",
-            id: "s17",
-            title: "Sort by Date",
-            objective: "Order encounters by admit_date.",
-            sql_focus: ["ORDER BY"],
-            relevantTables: ["encounters"],
-            challengeCriteria: "Return all encounters sorted by admit_date.",
-            starterQuery: "",
-            solutionQuery: "SELECT * FROM encounters ORDER BY admit_date;",
-            hint: "Use ORDER BY.",
-            smartHint: "ORDER BY admit_date",
-            thirdHint: "SELECT * FROM encounters ORDER BY admit_date;",
-            explanation: "Sorting by date allows you to view records chronologically.",
-            executiveTakeaway: { show: false }
-          },
-          {
-            kind: "concept",
-            id: "s18",
-            title: "ASC vs DESC",
-            objective: "Understand sort direction.",
-            sql_focus: ["ASC", "DESC"],
-            relevantTables: ["encounters"],
-            joinHint: "No join needed.",
-            summary: "ASC sorts low to high. DESC sorts high to low.",
-            bullets: [
-              "DESC is commonly used for most recent or highest values.",
-              "ASC is useful for timelines or smallest values.",
-              "Direction changes interpretation."
-            ],
-            example: "SELECT * FROM encounters ORDER BY admit_date DESC;",
-            executiveTakeaway: { show: false }
-          },
-          {
-            kind: "challenge",
-            id: "s19",
-            title: "Most Recent Visits",
-            objective: "Return newest encounters first.",
-            sql_focus: ["ORDER BY", "DESC"],
-            relevantTables: ["encounters"],
-            challengeCriteria: "Return encounters sorted with the most recent visits first.",
-            starterQuery: "",
-            solutionQuery: "SELECT * FROM encounters ORDER BY admit_date DESC;",
-            hint: "Use DESC.",
-            smartHint: "ORDER BY admit_date DESC",
-            thirdHint: "SELECT * FROM encounters ORDER BY admit_date DESC;",
-            explanation: "Descending order shows most recent activity first.",
-            executiveTakeaway: { show: false }
-          },
-          {
-            kind: "concept",
-            id: "s20",
-            title: "Multiple Sort Fields",
-            objective: "Sort by more than one column.",
-            sql_focus: ["ORDER BY multiple"],
-            relevantTables: ["encounters"],
-            joinHint: "No join needed.",
-            summary: "You can sort by multiple columns to organize results more precisely.",
-            bullets: [
-              "First column controls primary order.",
-              "Second column breaks ties.",
-              "Useful for grouped analysis."
-            ],
-            example: "SELECT * FROM encounters ORDER BY department, admit_date DESC;",
-            executiveTakeaway: { show: false }
-          },
-          {
-            kind: "challenge",
-            id: "s21",
-            title: "Sort by Department and Date",
-            objective: "Apply multi-column sorting.",
-            sql_focus: ["ORDER BY"],
-            relevantTables: ["encounters"],
-            challengeCriteria: "Sort encounters by department, then by most recent admit_date.",
-            starterQuery: "",
-            solutionQuery: "SELECT * FROM encounters ORDER BY department, admit_date DESC;",
-            hint: "Use two columns in ORDER BY.",
-            smartHint: "ORDER BY department, admit_date DESC",
-            thirdHint: "SELECT * FROM encounters ORDER BY department, admit_date DESC;",
-            explanation: "Multi-column sorting helps structure grouped data.",
-            executiveTakeaway: { show: false }
-          },
-          {
-            kind: "concept",
-            id: "s22",
-            title: "Interpreting Results",
-            objective: "Understand what query output actually means.",
-            sql_focus: ["Interpretation"],
-            relevantTables: ["encounters"],
-            joinHint: "No join needed.",
-            summary: "SQL output is useless unless you can explain what it means.",
-            bullets: [
-              "Data answers questions — but you must interpret it.",
-              "Sorting highlights trends and outliers.",
-              "Analysts must translate data into insight.",
-              "Executives do not want raw data — they want meaning."
-            ],
-            example: "If the top results show high LOS, that may indicate capacity issues.",
-            executiveTakeaway: { show: false }
-          },
-          {
-            kind: "challenge",
-            id: "s23",
-            title: "Explain the Output",
-            objective: "Translate data into plain English.",
-            challengeMode: "text",
-            sql_focus: ["Interpretation"],
-            relevantTables: ["encounters"],
-            challengeCriteria: `You run a query and see the top 5 encounters with the longest length_of_stay.
+  id: "foundations_sorting_interpreting",
+  title: "Sorting & Interpreting Results",
+  order: 4,
+  lessons: [
+
+    // LESSON 16
+    {
+      kind: "concept",
+      id: "s16",
+      title: "ORDER BY Basics",
+      objective: "Understand how to sort query results.",
+      sql_focus: ["ORDER BY"],
+      relevantTables: ["encounters"],
+      joinHint: "No join needed.",
+      summary: "ORDER BY controls how results are sorted.",
+      bullets: [
+        "Sorting helps you understand patterns in data",
+        "Most analysis requires ordering results",
+        "Default sort is ascending (ASC)"
+      ],
+      example: "SELECT * FROM encounters ORDER BY visit_date;"
+    },
+
+    {
+      kind: "challenge",
+      id: "s17",
+      title: "Sort by Date",
+      objective: "Order encounters by visit date.",
+      sql_focus: ["ORDER BY"],
+      relevantTables: ["encounters"],
+      challengeCriteria: `Return all encounters sorted by visit_date.`,
+      solutionQuery: "SELECT * FROM encounters ORDER BY visit_date;",
+      hint: "Use ORDER BY.",
+      smartHint: "ORDER BY visit_date",
+      thirdHint: "SELECT * FROM encounters",
+      explanation: "Sorting by date allows you to view records chronologically."
+    },
+
+    // LESSON 17
+    {
+      kind: "concept",
+      id: "s18",
+      title: "ASC vs DESC",
+      objective: "Understand sort direction.",
+      sql_focus: ["ASC", "DESC"],
+      relevantTables: ["encounters"],
+      joinHint: "No join needed.",
+      summary: "ASC sorts low to high. DESC sorts high to low.",
+      bullets: [
+        "DESC is commonly used for most recent or highest values",
+        "ASC is useful for timelines or smallest values",
+        "Direction changes interpretation"
+      ],
+      example: "SELECT * FROM encounters ORDER BY visit_date DESC;"
+    },
+
+    {
+      kind: "challenge",
+      id: "s19",
+      title: "Most Recent Visits",
+      objective: "Return newest encounters first.",
+      sql_focus: ["ORDER BY", "DESC"],
+      relevantTables: ["encounters"],
+      challengeCriteria: `Return encounters sorted with the most recent visits first.`,
+      solutionQuery: "SELECT * FROM encounters ORDER BY visit_date DESC;",
+      hint: "Use DESC.",
+      smartHint: "ORDER BY visit_date DESC",
+      thirdHint: "SELECT * FROM encounters",
+      explanation: "Descending order shows most recent activity first."
+    },
+
+    // LESSON 18
+    {
+      kind: "concept",
+      id: "s20",
+      title: "Multiple Sort Fields",
+      objective: "Sort by more than one column.",
+      sql_focus: ["ORDER BY multiple"],
+      relevantTables: ["encounters"],
+      joinHint: "No join needed.",
+      summary: "You can sort by multiple columns to organize results more precisely.",
+      bullets: [
+        "First column controls primary order",
+        "Second column breaks ties",
+        "Useful for grouped analysis"
+      ],
+      example: "SELECT * FROM encounters ORDER BY department, visit_date DESC;"
+    },
+
+    {
+      kind: "challenge",
+      id: "s21",
+      title: "Sort by Department and Date",
+      objective: "Apply multi-column sorting.",
+      sql_focus: ["ORDER BY"],
+      relevantTables: ["encounters"],
+      challengeCriteria: `Sort encounters by department, then by most recent visit_date.`,
+      solutionQuery: "SELECT * FROM encounters ORDER BY department, visit_date DESC;",
+      hint: "Use two columns in ORDER BY.",
+      smartHint: "ORDER BY department, visit_date DESC",
+      thirdHint: "SELECT * FROM encounters",
+      explanation: "Multi-column sorting helps structure grouped data."
+    },
+
+    // LESSON 19 (🔥 DIFFERENTIATOR)
+    {
+      kind: "concept",
+      id: "s22",
+      title: "Interpreting Results",
+      objective: "Understand what query output actually means.",
+      sql_focus: ["Interpretation"],
+      relevantTables: ["encounters"],
+      joinHint: "No join needed.",
+      summary: "SQL output is useless unless you can explain what it means.",
+      bullets: [
+        "Data answers questions — but you must interpret it",
+        "Sorting highlights trends and outliers",
+        "Analysts must translate data into insight",
+        "Executives do not want raw data — they want meaning"
+      ],
+      example: "If the top results show high LOS, that may indicate capacity issues."
+    },
+
+    {
+      kind: "challenge",
+      id: "s23",
+      title: "Explain the Output",
+      objective: "Translate data into plain English.",
+      challengeMode: "text",
+      sql_focus: ["Interpretation"],
+      relevantTables: ["encounters"],
+      challengeCriteria: `You run a query and see the top 5 encounters with the longest length_of_stay.
 
 Explain what this result means and why it matters.`,
-            starterQuery: "",
-            solutionQuery: "",
-            minLength: 50,
-            requiredConceptGroups: [
-              ["long", "length of stay", "los"],
-              ["impact", "important", "matters", "problem", "issue"]
-            ],
-            requiredConceptMatches: 1,
-            feedbackGuide: "Correct — long length of stay can indicate operational or capacity issues.",
-            exemplarAnswer: `This result shows the encounters with the longest length of stay, which may indicate inefficiencies, complex cases, or delays in discharge. This matters because long stays impact hospital capacity and cost.`,
-            hint: "Think about why long stays matter operationally.",
-            smartHint: "Long LOS affects capacity and cost.",
-            thirdHint: "Explain both what it shows and why it matters.",
-            explanation: "This is the first step in thinking like an analyst, not just writing SQL.",
-            executiveTakeaway: { show: false }
-          },
-          {
-            kind: "scenario",
-            id: "s24",
-            title: "Scenario: Executive Request",
-            objective: "Deliver sorted and interpretable data.",
-            relevantTables: ["encounters"],
-            summary: "A leader wants insight, not raw data.",
-            prompt: `A hospital executive asks: "Show me the most recent high-cost encounters."
+      minLength: 50,
+      requiredConceptGroups: [
+        ["long", "length of stay", "los"],
+        ["impact", "important", "matters", "problem", "issue"]
+      ],
+      requiredConceptMatches: 1,
+      feedbackGuide: "Correct — long length of stay can indicate operational or capacity issues.",
+      exemplarAnswer: `This result shows the encounters with the longest length of stay, which may indicate inefficiencies, complex cases, or delays in discharge. This matters because long stays impact hospital capacity and cost.`,
+      hint: "Think about why long stays matter operationally.",
+      smartHint: "Long LOS affects capacity and cost.",
+      thirdHint: "Explain both what it shows and why it matters.",
+      explanation: "This is the first step in thinking like an analyst, not just writing SQL.",
+      executiveTakeaway: { show: false }
+    },
+
+    // SCENARIO (🔥 REAL ANALYST MOMENT)
+    {
+      kind: "scenario",
+      id: "s24",
+      title: "Scenario: Executive Request",
+      objective: "Deliver sorted and interpretable data.",
+      relevantTables: ["encounters"],
+      summary: "A leader wants insight, not raw data.",
+      prompt: `A hospital executive asks: "Show me the most recent high-cost encounters."
 
 Write a query AND explain what the result means.
 
@@ -950,14 +952,14 @@ Your answer must:
 - filter relevant encounters
 - sort results
 - explain what leadership should take away`,
-            expectedKeywords: ["select", "where", "order", "desc"],
-            minLength: 80,
-            minimumKeywordMatches: 2,
-            feedbackGuide: "A strong answer includes sorting, filtering, and a clear explanation of what leadership should learn from the data.",
-            executiveTakeaway: { show: false }
-          }
-        ]
+      expectedKeywords: ["select", "where", "order", "desc"],
+      minLength: 80,
+      minimumKeywordMatches: 2,
+      feedbackGuide: "A strong answer includes sorting, filtering, and a clear explanation of what leadership should learn from the data.",
+      executiveTakeaway: { show: false }
       }
+    ]
+  }
     ]
   }
 ];
@@ -965,129 +967,6 @@ Your answer must:
 backfillChallengeCriteria(curriculum);
 enforceChallengeCriteria(curriculum);
 
-
-// =========================
-// POST CURRICULUM FUNCTIONS
-// =========================
-
-function saveProgress() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
-}
-
-function loadProgress() {
-  const saved = localStorage.getItem(STORAGE_KEY);
-  if (saved) {
-    appState = { ...appState, ...JSON.parse(saved) };
-  }
-}
-
-function resetAllProgress() {
-  localStorage.removeItem(STORAGE_KEY);
-  location.reload();
-}
-
-
-// =========================
-// APP INIT
-// =========================
-
-document.addEventListener("DOMContentLoaded", () => {
-  loadProgress();
-  console.log("CareOps App Initialized ✅");
-});
-  {
-    id: "track_expert",
-    title: "Expert",
-    description: "Expert learning path for CareOps hospital analytics.",
-    order: 5,
-    categories: [
-      {
-        id: "expert_decision_making",
-        title: "Executive Analytics & Decision Making",
-        order: 1,
-        lessons: [
-          {
-            kind: "scenario",
-            id: "e1",
-            title: "Identify Top Operational Issue",
-            objective: "Prioritize the most urgent operational problem from a set of metrics.",
-            relevantTables: ["encounters", "readmissions"],
-            joinHint: "Think about how LOS and readmissions together affect flow, quality, and cost.",
-            summary: "LOS is rising, readmissions are increasing, and volume is stable.",
-            prompt: "Your analysis shows that length_of_stay is rising, readmissions are increasing, and overall volume is stable. Explain what leadership should prioritize and why. In your response, mention discharge efficiency, care transitions, or patient flow and explain why focusing only on volume would miss the real issue.",
-            expectedKeywords: ["discharge", "transition", "flow", "readmission", "los", "priority"],
-            minLength: 90,
-            minimumKeywordMatches: 2,
-            feedbackGuide: "A strong answer prioritizes discharge efficiency and care transitions because rising LOS and readmissions together usually signal a process problem rather than simple volume growth.",
-            executiveTakeaway: { show: false }
-          },
-          {
-            kind: "challenge",
-            id: "e2",
-            title: "Executive Summary Thinking",
-            objective: "Frame insights for leadership.",
-            sql_focus: ["Executive communication"],
-            relevantTables: ["encounters"],
-            joinHint: "This is a communication exercise, so focus on the issue, likely cause, and next action.",
-            challengeCriteria: `You ran an analysis showing high length_of_stay in one department.
-
-Write a summary that includes:
-- the key issue
-- likely cause
-- recommended next step
-
-This simulates real executive communication.`,
-            starterQuery: "",
-            solutionQuery: "",
-            hint: "Focus on impact and action.",
-            smartHint: "Explain what happened, why it matters, and what leadership should do next.",
-            thirdHint: "Summarize the issue, likely driver, and recommendation clearly in business language.",
-            explanation: `Executives care about:
-- the problem
-- why it matters
-- what to do next
-
-Clear communication drives action.`,
-            executiveTakeaway: { show: false }
-          },
-          {
-            kind: "scenario",
-            id: "e3",
-            title: "Prioritization",
-            objective: "Decide which issue should be addressed first.",
-            relevantTables: ["claims", "encounters"],
-            joinHint: "Think about operational impact, financial effect, and patient outcomes.",
-            summary: "You identify moderate denial issues, severe LOS issues, and minor volume fluctuation.",
-            prompt: "You identify moderate denial issues, severe length_of_stay issues, and minor volume fluctuation. Explain what should be prioritized first and why. In your response, mention capacity, cost, patient outcomes, or throughput and explain why volume fluctuation is not the top concern here.",
-            expectedKeywords: ["capacity", "cost", "outcomes", "throughput", "los", "priority"],
-            minLength: 90,
-            minimumKeywordMatches: 2,
-            feedbackGuide: "A strong answer prioritizes severe LOS because it affects capacity, cost, and patient outcomes more broadly than minor volume fluctuation.",
-            executiveTakeaway: { show: false }
-          },
-          {
-            kind: "scenario",
-            id: "e4",
-            title: "Action Planning",
-            objective: "Translate a high LOS finding into a concrete next step.",
-            relevantTables: ["encounters", "discharges"],
-            joinHint: "Think about discharge delays, workflow bottlenecks, and downstream process review.",
-            summary: "LOS is high in one department.",
-            prompt: "LOS is high in one department. Explain the best next action. In your response, mention discharge delays, workflow bottlenecks, or process review and explain why reducing reporting or ignoring the problem would be a poor response.",
-            expectedKeywords: ["discharge", "workflow", "bottleneck", "process", "review", "investigate"],
-            minLength: 90,
-            minimumKeywordMatches: 2,
-            feedbackGuide: "A strong answer recommends investigating discharge delays, workflow bottlenecks, or process breakdowns rather than ignoring the problem or reducing visibility.",
-            executiveTakeaway: { show: false }
-          }
-        ]
-      }
-    ]
-  }
-];
-
-backfillChallengeCriteria(curriculum);
-enforceChallengeCriteria(curriculum);
 function saveProgress() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
 }
