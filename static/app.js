@@ -780,6 +780,954 @@ Should you start with patients, encounters, or charges? Explain your reasoning.`
             feedbackGuide: "A strong answer identifies that this is a two-condition filter, uses the encounters table, and applies both conditions with AND.",
             executiveTakeaway: { show: false }
           }
+        ]
+      },
+      {
+        id: "foundations_sorting_interpreting",
+        title: "Sorting & Interpreting Results",
+        order: 4,
+        lessons: [
+          {
+            kind: "concept",
+            id: "s16",
+            title: "ORDER BY Basics",
+            objective: "Understand how to sort query results.",
+            sql_focus: ["ORDER BY"],
+            relevantTables: ["encounters"],
+            joinHint: "No join needed.",
+            summary: "ORDER BY controls how results are sorted.",
+            bullets: [
+              "Sorting helps you understand patterns in data.",
+              "Most analysis requires ordering results.",
+              "Default sort is ascending (ASC)."
+            ],
+            example: "SELECT * FROM encounters ORDER BY visit_date;",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "challenge",
+            id: "s17",
+            title: "Sort by Date",
+            objective: "Order encounters by visit date.",
+            sql_focus: ["ORDER BY"],
+            relevantTables: ["encounters"],
+            challengeCriteria: "Return all encounters sorted by visit_date.",
+            starterQuery: "",
+            solutionQuery: "SELECT * FROM encounters ORDER BY visit_date;",
+            hint: "Use ORDER BY.",
+            smartHint: "ORDER BY visit_date",
+            thirdHint: "SELECT * FROM encounters ORDER BY visit_date;",
+            explanation: "Sorting by date allows you to view records chronologically.",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "concept",
+            id: "s18",
+            title: "ASC vs DESC",
+            objective: "Understand sort direction.",
+            sql_focus: ["ASC", "DESC"],
+            relevantTables: ["encounters"],
+            joinHint: "No join needed.",
+            summary: "ASC sorts low to high. DESC sorts high to low.",
+            bullets: [
+              "DESC is commonly used for most recent or highest values.",
+              "ASC is useful for timelines or smallest values.",
+              "Direction changes interpretation."
+            ],
+            example: "SELECT * FROM encounters ORDER BY visit_date DESC;",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "challenge",
+            id: "s19",
+            title: "Most Recent Visits",
+            objective: "Return newest encounters first.",
+            sql_focus: ["ORDER BY", "DESC"],
+            relevantTables: ["encounters"],
+            challengeCriteria: "Return encounters sorted with the most recent visits first.",
+            starterQuery: "",
+            solutionQuery: "SELECT * FROM encounters ORDER BY visit_date DESC;",
+            hint: "Use DESC.",
+            smartHint: "ORDER BY visit_date DESC",
+            thirdHint: "SELECT * FROM encounters ORDER BY visit_date DESC;",
+            explanation: "Descending order shows most recent activity first.",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "concept",
+            id: "s20",
+            title: "Multiple Sort Fields",
+            objective: "Sort by more than one column.",
+            sql_focus: ["ORDER BY multiple"],
+            relevantTables: ["encounters"],
+            joinHint: "No join needed.",
+            summary: "You can sort by multiple columns to organize results more precisely.",
+            bullets: [
+              "First column controls primary order.",
+              "Second column breaks ties.",
+              "Multi-column sorting is useful for grouped analysis."
+            ],
+            example: "SELECT * FROM encounters ORDER BY department, visit_date DESC;",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "challenge",
+            id: "s21",
+            title: "Sort by Department and Date",
+            objective: "Apply multi-column sorting.",
+            sql_focus: ["ORDER BY"],
+            relevantTables: ["encounters"],
+            challengeCriteria: "Sort encounters by department, then by most recent visit_date.",
+            starterQuery: "",
+            solutionQuery: "SELECT * FROM encounters ORDER BY department, visit_date DESC;",
+            hint: "Use two columns in ORDER BY.",
+            smartHint: "ORDER BY department, visit_date DESC",
+            thirdHint: "SELECT * FROM encounters ORDER BY department, visit_date DESC;",
+            explanation: "Multi-column sorting helps structure grouped data.",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "concept",
+            id: "s22",
+            title: "Interpreting Results",
+            objective: "Understand what query output actually means.",
+            sql_focus: ["Interpretation"],
+            relevantTables: ["encounters"],
+            joinHint: "No join needed.",
+            summary: "SQL output is useless unless you can explain what it means.",
+            bullets: [
+              "Data answers questions, but analysts must interpret it.",
+              "Sorting highlights trends and outliers.",
+              "Analysts must translate data into insight.",
+              "Executives do not want raw data. They want meaning.",
+              "A strong analyst explains the operational implication of the result."
+            ],
+            example: "Hospital example: if the top results show high LOS, that may indicate capacity issues, discharge delays, or complex cases.",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "challenge",
+            id: "s23",
+            title: "Explain the Output",
+            objective: "Translate data into plain English.",
+            challengeMode: "text",
+            sql_focus: ["Interpretation"],
+            relevantTables: ["encounters"],
+            challengeCriteria: `You run a query and see the top 5 encounters with the longest length_of_stay.
+
+Explain what this result means and why it matters.`,
+            starterQuery: "",
+            solutionQuery: "",
+            minLength: 50,
+            requiredConceptGroups: [
+              ["long", "length of stay", "los"],
+              ["impact", "important", "matters", "problem", "issue"]
+            ],
+            requiredConceptMatches: 1,
+            feedbackGuide: "Correct — long length of stay can indicate operational or capacity issues.",
+            exemplarAnswer: `This result shows the encounters with the longest length of stay, which may indicate inefficiencies, complex cases, or delays in discharge. This matters because long stays impact hospital capacity and cost.`,
+            hint: "Think about why long stays matter operationally.",
+            smartHint: "Long LOS affects capacity and cost.",
+            thirdHint: "Explain both what it shows and why it matters.",
+            explanation: "This is the first step in thinking like an analyst, not just writing SQL.",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "scenario",
+            id: "s24",
+            title: "Scenario: Executive Request",
+            objective: "Deliver sorted and interpretable data.",
+            relevantTables: ["encounters"],
+            joinHint: "Use sorting to make the output useful, then explain the meaning.",
+            summary: "A leader wants insight, not raw data.",
+            prompt: `A hospital executive asks: "Show me the most recent high-cost encounters."
+
+Write a query AND explain what the result means.
+
+Your answer must:
+- filter relevant encounters
+- sort results
+- explain what leadership should take away`,
+            expectedKeywords: ["select", "where", "order", "desc"],
+            minLength: 80,
+            minimumKeywordMatches: 2,
+            feedbackGuide: "A strong answer includes sorting, filtering, and a clear explanation of what leadership should learn from the data.",
+            executiveTakeaway: { show: false }
+          }
+        ]
+      },
+      {
+        id: "foundations_data_quality",
+        title: "Data Quality & Analyst Thinking",
+        order: 5,
+        lessons: [
+          {
+            kind: "concept",
+            id: "dq1",
+            title: "Why Data Quality Matters",
+            objective: "Understand how bad data leads to bad decisions.",
+            sql_focus: ["Data validation", "Trust"],
+            relevantTables: ["encounters", "patients"],
+            joinHint: "No join needed.",
+            summary: "Bad data leads to bad decisions. Analysts must question the data before trusting it.",
+            bullets: [
+              "Executives assume data is correct unless told otherwise.",
+              "Missing or incorrect data can completely distort results.",
+              "Analysts are responsible for validating outputs.",
+              "Trust in analytics is built on data quality.",
+              "Always question results that feel off."
+            ],
+            example: "Hospital example: if ED visits suddenly drop to zero, it is likely a data issue, not reality.",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "challenge",
+            id: "dq2",
+            title: "Spot the Data Issue",
+            objective: "Recognize when results likely indicate bad data.",
+            challengeMode: "text",
+            sql_focus: ["Reasoning"],
+            relevantTables: ["encounters"],
+            challengeCriteria: `You run a report and see that emergency department visits dropped to zero last week.
+
+Explain why this is likely a data issue and not a real operational change.`,
+            starterQuery: "",
+            solutionQuery: "",
+            minLength: 50,
+            requiredConceptGroups: [
+              ["data issue", "error", "incorrect", "problem"],
+              ["unlikely", "unrealistic", "not possible"]
+            ],
+            requiredConceptMatches: 1,
+            feedbackGuide: "Correct — a sudden drop to zero is almost always a data issue.",
+            exemplarAnswer: `A sudden drop to zero ED visits is extremely unlikely in a real hospital setting, which suggests a data issue such as missing records, ETL failure, or incorrect filtering rather than a true operational change.`,
+            hint: "Think about whether zero visits is realistic.",
+            smartHint: "Hospitals do not suddenly stop seeing patients.",
+            thirdHint: "Call out that this is likely a data error, not reality.",
+            explanation: "Analysts must challenge results that do not make sense before presenting them.",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "concept",
+            id: "dq3",
+            title: "NULL Values",
+            objective: "Understand how missing data appears and impacts analysis.",
+            sql_focus: ["NULL"],
+            relevantTables: ["encounters"],
+            joinHint: "No join needed.",
+            summary: "NULL means missing data, not zero.",
+            bullets: [
+              "NULL represents unknown or missing values.",
+              "NULL is not the same as 0.",
+              "Ignoring NULLs can skew results.",
+              "Analysts must decide how to handle missing data.",
+              "Data completeness is part of data quality."
+            ],
+            example: "Hospital example: a missing discharge date does not mean the patient stayed zero days.",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "challenge",
+            id: "dq4",
+            title: "Handle Missing Data",
+            objective: "Filter out NULL values.",
+            sql_focus: ["WHERE", "IS NOT NULL"],
+            relevantTables: ["encounters"],
+            joinHint: "Use only the encounters table for this lesson.",
+            challengeCriteria: "Return all encounters where discharge_date is not NULL.",
+            starterQuery: "",
+            solutionQuery: "SELECT * FROM encounters WHERE discharge_date IS NOT NULL;",
+            hint: "Use IS NOT NULL.",
+            smartHint: "NULL cannot be compared with =.",
+            thirdHint: "SELECT * FROM encounters WHERE discharge_date IS NOT NULL;",
+            explanation: "Handling NULL values correctly is critical for accurate analysis.",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "concept",
+            id: "dq5",
+            title: "Duplicates & Overcounting",
+            objective: "Understand how duplicate rows inflate results.",
+            sql_focus: ["DISTINCT"],
+            relevantTables: ["encounters"],
+            joinHint: "No join needed.",
+            summary: "Duplicates can inflate counts and mislead decision-making.",
+            bullets: [
+              "Duplicate rows can double-count activity.",
+              "Counting rows is not always the same as counting unique entities.",
+              "DISTINCT is used to remove duplicates.",
+              "Understanding grain prevents overcounting.",
+              "Always verify what you are counting."
+            ],
+            example: "Hospital example: counting rows in encounters may overcount patients if they had multiple visits.",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "challenge",
+            id: "dq6",
+            title: "Count Unique Patients",
+            objective: "Avoid duplicate counting.",
+            sql_focus: ["COUNT", "DISTINCT"],
+            relevantTables: ["encounters"],
+            joinHint: "Use only the encounters table for this lesson.",
+            challengeCriteria: "Count the number of unique patients in encounters.",
+            starterQuery: "",
+            solutionQuery: "SELECT COUNT(DISTINCT patient_id) FROM encounters;",
+            hint: "Use DISTINCT inside COUNT.",
+            smartHint: "COUNT(DISTINCT patient_id)",
+            thirdHint: "SELECT COUNT(DISTINCT patient_id) FROM encounters;",
+            explanation: "This prevents overcounting patients with multiple visits.",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "concept",
+            id: "dq7",
+            title: "Sanity Checking Results",
+            objective: "Validate whether results make sense before sharing.",
+            sql_focus: ["Validation"],
+            relevantTables: ["encounters"],
+            joinHint: "No join needed.",
+            summary: "Good analysts validate results before presenting them.",
+            bullets: [
+              "Always check if results are realistic.",
+              "Compare against expectations or prior trends.",
+              "Extreme values should be investigated.",
+              "Small mistakes can create large errors.",
+              "Validation builds trust with leadership."
+            ],
+            example: "Hospital example: if LOS averages jump from 3 days to 30 days overnight, something is wrong.",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "challenge",
+            id: "dq8",
+            title: "Explain a Suspicious Result",
+            objective: "Interpret questionable output.",
+            challengeMode: "text",
+            sql_focus: ["Interpretation"],
+            relevantTables: ["encounters"],
+            challengeCriteria: `You calculate average length_of_stay and get 45 days.
+
+Explain why this result is likely incorrect and what you would check.`,
+            starterQuery: "",
+            solutionQuery: "",
+            minLength: 60,
+            requiredConceptGroups: [
+              ["incorrect", "wrong", "issue", "problem"],
+              ["check", "validate", "investigate"]
+            ],
+            requiredConceptMatches: 1,
+            feedbackGuide: "Correct — the value is unrealistic and requires validation.",
+            exemplarAnswer: `An average length of stay of 45 days is unusually high and likely incorrect. I would check for data errors such as missing discharge dates, duplicate rows, or incorrect filters that could inflate the result.`,
+            hint: "Does 45 days sound realistic?",
+            smartHint: "Think about data errors like duplicates or NULLs.",
+            thirdHint: "Explain both why it is wrong and what you would check.",
+            explanation: "Analysts must validate outputs before sharing them with leadership.",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "scenario",
+            id: "dq9",
+            title: "Scenario: Analyst Reality Check",
+            objective: "Validate results before presenting to leadership.",
+            relevantTables: ["encounters"],
+            joinHint: "Think about validation checks before presenting to leadership.",
+            summary: "A leader is about to act on your data.",
+            prompt: `You are about to present a report showing a sudden spike in hospital volume.
+
+Explain how you would validate the data before presenting it and what checks you would perform.`,
+            expectedKeywords: ["validate", "check", "data", "error"],
+            minLength: 90,
+            minimumKeywordMatches: 2,
+            feedbackGuide: "A strong answer includes validation steps and data quality checks before presenting.",
+            executiveTakeaway: { show: false }
+          }
+        ]
+      }
+    ]
+  }
+];
+
+backfillChallengeCriteria(curriculum);
+enforceChallengeCriteria(curriculum);
+
+appState.currentTrackId = "track_foundations";
+appState.currentCategoryId = "foundations_core";
+
+Get Outlook for iOS
+From: Josh Hulsey <jhulsey@tidelandshealth.org>
+Sent: Friday, April 24, 2026 3:24:02 PM
+To: Josh Hulsey <jhulsey@tidelandshealth.org>
+Subject:
+ 
+const curriculum = [
+  {
+    id: "track_foundations",
+    title: "Foundations",
+    description: "Foundations learning path for CareOps hospital analytics.",
+    order: 1,
+    categories: [
+      {
+        id: "foundations_core",
+        title: "Understanding Hospital Data",
+        order: 1,
+        lessons: [
+          {
+            kind: "concept",
+            id: "f1",
+            title: "What Is Hospital Data?",
+            objective: "Understand the main types of hospital data and why each serves a different business purpose.",
+            sql_focus: ["Clinical data", "Operational data", "Financial data"],
+            relevantTables: ["encounters", "claims", "charges"],
+            joinHint: "No join is needed for this lesson.",
+            summary: "Hospital data is not one giant spreadsheet. It is a collection of different data types that capture patient care, operations, and reimbursement.",
+            bullets: [
+              "Clinical data describes what happened medically, such as diagnoses, procedures, and care decisions.",
+              "Operational data describes how care moved through the system, such as encounters, departments, and visit dates.",
+              "Financial data describes how services were billed and reimbursed, such as charges and claims.",
+              "A strong analyst starts by identifying what kind of question is being asked before choosing a dataset.",
+              "The same patient can generate clinical, operational, and financial records during one episode of care."
+            ],
+            example: "Hospital example: an ED visit creates an encounter record for the visit itself, a claim for reimbursement activity, and charge rows for billed services.",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "challenge",
+            id: "f2",
+            title: "Identify the Data Type",
+            objective: "Match a business question to the right kind of hospital data.",
+            challengeMode: "text",
+            sql_focus: ["Reasoning", "Dataset selection"],
+            relevantTables: ["encounters", "claims", "charges"],
+            joinHint: "Think about whether the question is about care, operations, or money.",
+            challengeCriteria: `For each question below, identify the primary type of data you would start with and explain why.
+
+1. Emergency department wait times
+2. Total billed charges for a hospital stay
+3. Diagnosis trends by quarter
+
+Use the categories clinical, operational, and financial in your explanation.`,
+            starterQuery: "",
+            solutionQuery: "",
+            minLength: 70,
+            requiredConceptGroups: [
+              ["operational"],
+              ["financial"],
+              ["clinical"]
+            ],
+            requiredConceptMatches: 3,
+            bonusConceptGroups: [
+              ["wait", "wait times", "throughput", "flow"],
+              ["charges", "billed", "billing", "reimbursement"],
+              ["diagnosis", "diagnoses", "condition", "medical"]
+            ],
+            feedbackGuide: "Correct — ED wait times are operational, billed charges are financial, and diagnosis trends are clinical.",
+            exemplarAnswer: `Emergency department wait times are operational because they describe how patients move through care. Total billed charges are financial because they measure billing and reimbursement activity. Diagnosis trends are clinical because they describe patient conditions and medical patterns.`,
+            hint: "Tie each question to what it is really measuring: care, operations, or money.",
+            smartHint: "Wait times are operational, billed charges are financial, and diagnoses are clinical.",
+            thirdHint: "Use all three category words in your response and explain each one briefly.",
+            explanation: "This challenge builds the habit of matching the business question to the correct data domain before you ever write SQL.",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "concept",
+            id: "f3",
+            title: "Tables, Rows, and Columns",
+            objective: "Understand how relational tables organize hospital data into records and fields.",
+            sql_focus: ["Table structure", "Rows", "Columns"],
+            relevantTables: ["patients", "encounters"],
+            joinHint: "No join is needed for this lesson.",
+            summary: "A table stores one subject at a time. Rows are records, and columns are the fields that describe each record.",
+            bullets: [
+              "A patients table should describe people, while an encounters table should describe visits or stays.",
+              "Columns such as patient_id, encounter_id, department, and visit_date tell you what information is available.",
+              "Rows tell the story one record at a time.",
+              "Before analyzing anything, an analyst should understand what one row represents.",
+              "Good SQL starts with good table reading."
+            ],
+            example: "Hospital example: in encounters, one row is likely one visit. In patients, one row is likely one patient.",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "challenge",
+            id: "f4",
+            title: "Interpret the Table Structure",
+            objective: "Explain what one row most likely represents in a table.",
+            challengeMode: "text",
+            sql_focus: ["Reasoning", "Row meaning"],
+            relevantTables: ["encounters"],
+            joinHint: "Look for the most specific identifier in the column list.",
+            challengeCriteria: `You are given a table with these columns: patient_id, encounter_id, department, and visit_date.
+
+Explain what one row in this table most likely represents and why.`,
+            starterQuery: "",
+            solutionQuery: "",
+            minLength: 45,
+            requiredConceptGroups: [
+              ["encounter", "visit", "patient visit", "visit level", "encounter level"]
+            ],
+            requiredConceptMatches: 1,
+            bonusConceptGroups: [
+              ["encounter_id"],
+              ["multiple", "more than once", "repeat", "same patient", "many visits"]
+            ],
+            feedbackGuide: "Correct — one row most likely represents a single encounter or patient visit.",
+            exemplarAnswer: `One row most likely represents a single encounter, or patient visit. The clue is that the table includes encounter_id and visit_date, which suggests visit-level activity rather than one row per patient. A patient could appear more than once if they had multiple encounters.`,
+            hint: "Do not explain only what patient_id means. Explain what the whole row means.",
+            smartHint: "A strong answer says the row is one encounter or one patient visit.",
+            thirdHint: "Mentioning encounter_id helps, but the main idea is that the row is visit-level.",
+            explanation: "This challenge trains you to identify row meaning first. The key learning goal is recognizing that the row is visit-level, not forcing one exact explanation.",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "concept",
+            id: "f5",
+            title: "What Is a Record? (Grain)",
+            objective: "Understand that grain means what one row represents and why it changes the business answer.",
+            sql_focus: ["Grain", "Row-level meaning"],
+            relevantTables: ["patients", "encounters", "charges"],
+            joinHint: "No join is needed for this lesson.",
+            summary: "Grain is the row-level meaning of a table. If you misunderstand grain, your counts and conclusions will be wrong.",
+            bullets: [
+              "One row in patients usually means one patient.",
+              "One row in encounters usually means one visit or stay.",
+              "One row in charges usually means one billed line item or charge event.",
+              "The same patient can appear once in patients, several times in encounters, and many times in charges.",
+              "Analysts must align the table grain with the business question."
+            ],
+            example: "Hospital example: one patient with three ED visits may appear once in patients, three times in encounters, and several more times in charges.",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "challenge",
+            id: "f6",
+            title: "Choose the Right Table for the Question",
+            objective: "Use grain to explain which table is the better starting point.",
+            challengeMode: "text",
+            sql_focus: ["Reasoning", "Grain", "Table choice"],
+            relevantTables: ["patients", "encounters"],
+            joinHint: "The wording of the business question should guide your table choice.",
+            challengeCriteria: `A leader asks, "How many patients came to the hospital last month?"
+
+Which table is the better starting point: patients or encounters? Explain your reasoning.`,
+            starterQuery: "",
+            solutionQuery: "",
+            minLength: 45,
+            requiredConceptGroups: [
+              ["encounters", "encounter"]
+            ],
+            requiredConceptMatches: 1,
+            bonusConceptGroups: [
+              ["visit", "activity", "last month", "time period"],
+              ["distinct", "unique", "patient_id"],
+              ["multiple", "more than one", "many visits", "multiple encounters"]
+            ],
+            feedbackGuide: "Correct — encounters is the better starting point because the question is about who came in during a time period, which is visit activity.",
+            exemplarAnswer: `Encounters is the better starting point because the question is about hospital activity during a time period, and encounters records the visits that actually happened. From there, you would make sure you count unique patients rather than overstating people with multiple visits.`,
+            hint: "The phrase last month points toward visit activity rather than the static patient list.",
+            smartHint: "Start with the table that records visits. Mentioning unique patients is a strong extra detail, but not required for full credit.",
+            thirdHint: "A good answer says encounters is better because the question is about who came in during a time period.",
+            explanation: "This challenge is about choosing the right starting table. Naming encounters with a sound reason should pass; DISTINCT is a stronger follow-up point, not a required phrase.",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "concept",
+            id: "f7",
+            title: "Relationships Between Tables",
+            objective: "Understand how common hospital tables relate before learning formal joins.",
+            sql_focus: ["Patient → encounter → department", "Relationships"],
+            relevantTables: ["patients", "encounters", "departments"],
+            joinHint: "No join is needed for this lesson.",
+            summary: "Hospital tables are connected. Patients have encounters, encounters happen in departments, and those relationships let analysts answer more complete questions.",
+            bullets: [
+              "Patients describe who received care.",
+              "Encounters describe when and where a visit happened.",
+              "Departments describe the operational unit involved in that visit.",
+              "You do not need to memorize every relationship at once, but you must know that tables are connected by keys.",
+              "Understanding the relationship path helps you choose the right starting table and avoids unnecessary joins later."
+            ],
+            example: "Hospital example: to understand which department saw the most patients, you usually start with encounters because that table records the visit and the department connected to it.",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "challenge",
+            id: "f8",
+            title: "Follow the Data Flow",
+            objective: "Choose the best dataset to start with for an operational question.",
+            challengeMode: "text",
+            sql_focus: ["Reasoning", "Dataset selection"],
+            relevantTables: ["patients", "encounters", "charges"],
+            joinHint: "Start with the table that directly captures the event being measured.",
+            challengeCriteria: `You are asked, "Which department saw the most patients last week?"
+
+Should you start with patients, encounters, or charges? Explain your reasoning.`,
+            starterQuery: "",
+            solutionQuery: "",
+            minLength: 18,
+            requiredConceptGroups: [
+              ["encounters", "encounter"]
+            ],
+            requiredConceptMatches: 1,
+            bonusConceptGroups: [
+              ["department"],
+              ["last week", "time period", "visit", "activity"],
+              ["charges", "financial", "patients table", "patient table"]
+            ],
+            feedbackGuide: "Correct — encounters is the best starting point because the question is about department-level visit activity over time.",
+            exemplarAnswer: `You should start with encounters because the question is about visit activity over time, and encounters records both the visit and the department tied to it. Patients is too static for this question, and charges is financial rather than operational.`,
+            hint: "The best starting table is the one that directly records visits in departments.",
+            smartHint: "Encounters ties the event, the department, and the time period together.",
+            thirdHint: "A strong answer names encounters and explains that the question is about department-level visit activity.",
+            explanation: "This challenge builds the habit of starting with the table that best matches the event being measured. Naming encounters with the right general reason should pass.",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "scenario",
+            id: "f9",
+            title: "Scenario: What Data Do I Even Use?",
+            objective: "Apply Section 1 concepts to explain the best starting point for ED volume analysis.",
+            relevantTables: ["patients", "encounters", "charges"],
+            joinHint: "Focus on which table best represents ED visit activity before worrying about calculations.",
+            summary: "An analyst is asked to analyze ED volume and must decide where to start.",
+            prompt: "You are asked to analyze emergency department volume for last month. You have access to patients, encounters, and charges. Explain which table you would start with and why. In your response, mention table grain, visit activity, and why the other tables are not the best first choice.",
+            expectedKeywords: ["encounters", "grain", "visit", "patients", "charges", "volume"],
+            minLength: 110,
+            minimumKeywordMatches: 3,
+            feedbackGuide: "A strong answer starts with encounters because ED volume is a visit-based operational question and explains why patients and charges are not the best first table.",
+            executiveTakeaway: { show: false }
+          }
+        ]
+      },
+      {
+        id: "foundations_selecting_data",
+        title: "Selecting & Exploring Data",
+        order: 2,
+        lessons: [
+          {
+            kind: "concept",
+            id: "s1",
+            title: "SELECT Basics",
+            objective: "Understand how to choose relevant columns from a table.",
+            sql_focus: ["SELECT"],
+            relevantTables: ["encounters"],
+            joinHint: "No join is needed for this lesson.",
+            summary: "SELECT chooses which columns to return from a table.",
+            bullets: [
+              "You should only pull the data you need.",
+              "Selecting fewer columns improves performance and readability.",
+              "Good analysts are intentional about what they select.",
+              "The business question should decide which fields belong in the output.",
+              "Exploration is easier when you start with a focused set of columns."
+            ],
+            example: "Hospital example: to review ED activity, you might select patient_id, encounter_id, department, and admit_date from encounters.",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "challenge",
+            id: "s2",
+            title: "Select Key Fields",
+            objective: "Return a focused set of encounter columns.",
+            sql_focus: ["SELECT", "FROM"],
+            relevantTables: ["encounters"],
+            joinHint: "Use only the encounters table for this lesson.",
+            challengeCriteria: "Return patient_id, encounter_id, and admit_date from encounters.",
+            starterQuery: "",
+            solutionQuery: "SELECT patient_id, encounter_id, admit_date FROM encounters;",
+            hint: "List the columns explicitly in the SELECT statement.",
+            smartHint: "Use patient_id, encounter_id, and admit_date in that order or any order.",
+            thirdHint: "SELECT patient_id, encounter_id, admit_date FROM encounters;",
+            explanation: "Selecting specific columns keeps the query efficient and keeps the learner focused on the fields that matter.",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "concept",
+            id: "s3",
+            title: "SELECT *",
+            objective: "Understand when to use SELECT * and when to avoid it.",
+            sql_focus: ["SELECT *"],
+            relevantTables: ["encounters"],
+            joinHint: "No join is needed for this lesson.",
+            summary: "SELECT * returns all columns from a table.",
+            bullets: [
+              "It can be useful for quick exploration when you do not yet know the dataset well.",
+              "It is usually a bad habit in production queries and dashboards.",
+              "Large hospital tables can become messy and slower when you pull every column.",
+              "Focused output is usually better for analysts and much better for leaders.",
+              "Use SELECT * to learn first, then narrow down to what you actually need."
+            ],
+            example: "Hospital example: an analyst may use SELECT * FROM encounters during exploration, then replace it with a cleaner query once the needed fields are known.",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "challenge",
+            id: "s4",
+            title: "Return All Columns",
+            objective: "Pull the full encounters dataset for exploration.",
+            sql_focus: ["SELECT *", "FROM"],
+            relevantTables: ["encounters"],
+            joinHint: "Use only the encounters table for this lesson.",
+            challengeCriteria: "Return all columns from encounters.",
+            starterQuery: "",
+            solutionQuery: "SELECT * FROM encounters;",
+            hint: "Use the wildcard operator.",
+            smartHint: "The asterisk returns every column in the table.",
+            thirdHint: "SELECT * FROM encounters;",
+            explanation: "This challenge teaches how to explore quickly, while the concept explains why this should not become your default habit.",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "concept",
+            id: "s5",
+            title: "LIMIT / TOP",
+            objective: "Preview data safely without pulling the full table.",
+            sql_focus: ["LIMIT"],
+            relevantTables: ["encounters"],
+            joinHint: "No join is needed for this lesson.",
+            summary: "LIMIT restricts the number of rows returned.",
+            bullets: [
+              "LIMIT is one of the safest ways to preview unfamiliar data.",
+              "It prevents unnecessarily loading large datasets during exploration.",
+              "Analysts often preview first before building a more targeted query.",
+              "Previewing a small sample can help catch field issues and table grain problems early.",
+              "TOP serves a similar purpose in some SQL dialects, but this app uses LIMIT."
+            ],
+            example: "Hospital example: when checking a large encounters table, an analyst might return only 10 rows first to inspect the fields before filtering further.",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "challenge",
+            id: "s6",
+            title: "Preview Data",
+            objective: "Return only 10 rows from encounters.",
+            sql_focus: ["SELECT *", "FROM", "LIMIT"],
+            relevantTables: ["encounters"],
+            joinHint: "Use only the encounters table for this lesson.",
+            challengeCriteria: "Return 10 rows from encounters.",
+            starterQuery: "",
+            solutionQuery: "SELECT * FROM encounters LIMIT 10;",
+            hint: "Use LIMIT to restrict the result size.",
+            smartHint: "Start with SELECT * FROM encounters and add LIMIT 10.",
+            thirdHint: "SELECT * FROM encounters LIMIT 10;",
+            explanation: "Previewing data is critical before deeper analysis because it lets you inspect the shape of the table without returning everything.",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "concept",
+            id: "s7",
+            title: "Aliases (AS)",
+            objective: "Make SQL output easier for humans to read.",
+            sql_focus: ["AS"],
+            relevantTables: ["encounters"],
+            joinHint: "No join is needed for this lesson.",
+            summary: "Aliases rename columns in the output.",
+            bullets: [
+              "Aliases make raw field names more readable.",
+              "They are especially helpful when sharing outputs with non-technical audiences.",
+              "Clear output is part of good analysis, not just good presentation.",
+              "Aliases do not change the underlying table. They only change the returned column name.",
+              "Good analysts translate database language into business language."
+            ],
+            example: 'Hospital example: encounter_id AS "Visit ID" makes the result easier for a manager to understand than encounter_id alone.',
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "challenge",
+            id: "s8",
+            title: "Rename Fields",
+            objective: "Use aliases to create a more readable output.",
+            sql_focus: ["SELECT", "AS", "FROM"],
+            relevantTables: ["encounters"],
+            joinHint: "Use only the encounters table for this lesson.",
+            challengeCriteria: 'Rename encounter_id to "Visit ID" in the output.',
+            starterQuery: "",
+            solutionQuery: 'SELECT encounter_id AS "Visit ID" FROM encounters;',
+            hint: "Use AS to rename the column.",
+            smartHint: 'Write encounter_id AS "Visit ID" inside the SELECT statement.',
+            thirdHint: 'SELECT encounter_id AS "Visit ID" FROM encounters;',
+            explanation: "Readable outputs are critical in real reporting because the audience often cares more about clarity than raw field names.",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "scenario",
+            id: "s9",
+            title: "Scenario: Initial Data Pull",
+            objective: "Pull a clean preview of encounter data for review.",
+            relevantTables: ["encounters"],
+            joinHint: "Use only the encounters table for this scenario.",
+            summary: "A manager asks for a clean preview of encounter data before a deeper review.",
+            prompt: "Write a query that selects relevant fields from encounters, renames at least one column for readability, and limits the results so the manager gets only a clean preview.",
+            expectedKeywords: ["select", "from", "limit", "as"],
+            minLength: 20,
+            minimumKeywordMatches: 2,
+            feedbackGuide: "A strong answer uses the encounters table, selects a focused set of fields, makes at least one field more readable, and limits the number of rows returned.",
+            executiveTakeaway: { show: false }
+          }
+        ]
+      },
+      {
+        id: "foundations_filtering_questions",
+        title: "Filtering for Real Questions",
+        order: 3,
+        lessons: [
+          {
+            kind: "concept",
+            id: "t1",
+            title: "WHERE Basics",
+            objective: "Understand that WHERE limits rows to only the records that match the business question.",
+            sql_focus: ["WHERE"],
+            relevantTables: ["encounters"],
+            joinHint: "No join is needed for this lesson.",
+            summary: "WHERE is how analysts stop looking at everything and start looking at the right population.",
+            bullets: [
+              "WHERE filters records before results are returned.",
+              "It is one of the most important tools in SQL.",
+              "Good filtering starts with the exact wording of the business question.",
+              "A weak analyst pulls everything. A strong analyst narrows the dataset intentionally.",
+              "If leadership asks about one department, one payer, or one population, WHERE is usually involved."
+            ],
+            example: "Hospital example: if a leader asks about ED visits, you should not query all encounters. You should filter to only encounters where department equals Emergency Department.",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "challenge",
+            id: "t2",
+            title: "Filter ED Visits",
+            objective: "Filter the encounters table to only emergency department visits.",
+            sql_focus: ["SELECT", "FROM", "WHERE"],
+            relevantTables: ["encounters"],
+            joinHint: "Use only the encounters table for this lesson.",
+            challengeCriteria: "Return all rows from encounters where department equals 'Emergency Department'.",
+            starterQuery: "",
+            solutionQuery: "SELECT * FROM encounters WHERE department = 'Emergency Department';",
+            hint: "Start with SELECT * FROM encounters and then add a WHERE filter.",
+            smartHint: "Use the department column and match the department name exactly.",
+            thirdHint: "SELECT * FROM encounters WHERE department = 'Emergency Department';",
+            explanation: "This is the first step in moving from broad exploration to question-driven analysis. The filter should match the business ask directly.",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "concept",
+            id: "t3",
+            title: "Comparison Operators",
+            objective: "Use comparison operators to find records above, below, or equal to a threshold.",
+            sql_focus: ["WHERE", "=", ">", "<", ">=", "<="],
+            relevantTables: ["encounters"],
+            joinHint: "No join is needed for this lesson.",
+            summary: "Comparison operators let analysts turn threshold-based questions into SQL.",
+            bullets: [
+              "= checks for exact matches.",
+              "> and < check whether a value is above or below a threshold.",
+              ">= and <= include the threshold itself.",
+              "These operators are common in LOS, charges, risk scores, and turnaround time analysis.",
+              "The operator you choose changes the population you return."
+            ],
+            example: "Hospital example: if leadership wants to review long-stay encounters, you need a threshold such as length_of_stay greater than 3 days.",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "challenge",
+            id: "t4",
+            title: "Find Long-Stay Encounters",
+            objective: "Return encounters with length_of_stay greater than 3 days.",
+            sql_focus: ["SELECT", "FROM", "WHERE", ">"],
+            relevantTables: ["encounters"],
+            joinHint: "Use only the encounters table for this lesson.",
+            challengeCriteria: "Return all rows from encounters where length_of_stay is greater than 3.",
+            starterQuery: "",
+            solutionQuery: "SELECT * FROM encounters WHERE length_of_stay > 3;",
+            hint: "Use a numeric comparison operator.",
+            smartHint: "You are not looking for exactly 3. You are looking for more than 3.",
+            thirdHint: "SELECT * FROM encounters WHERE length_of_stay > 3;",
+            explanation: "This query teaches how business thresholds become filter logic. A leader says long stay, and the analyst defines the threshold clearly.",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "concept",
+            id: "t5",
+            title: "AND / OR Logic",
+            objective: "Use multiple conditions in one filter.",
+            sql_focus: ["WHERE", "AND", "OR"],
+            relevantTables: ["encounters"],
+            joinHint: "No join is needed for this lesson.",
+            summary: "AND narrows the result. OR broadens it.",
+            bullets: [
+              "AND means both conditions must be true.",
+              "OR means either condition can be true.",
+              "The business question tells you which one to use.",
+              "Bad logic changes the population and can completely distort the answer.",
+              "Always ask whether the question is asking for overlap or for multiple possible groups."
+            ],
+            example: "Hospital example: if a manager wants ED encounters with length_of_stay greater than 3 days, both conditions must be true.",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "challenge",
+            id: "t6",
+            title: "Filter High-LOS ED Encounters",
+            objective: "Return emergency department encounters with length_of_stay above 3 days.",
+            sql_focus: ["SELECT", "FROM", "WHERE", "AND"],
+            relevantTables: ["encounters"],
+            joinHint: "Use only the encounters table for this lesson.",
+            challengeCriteria: "Return all rows from encounters where department equals 'Emergency Department' and length_of_stay is greater than 3.",
+            starterQuery: "",
+            solutionQuery: "SELECT * FROM encounters WHERE department = 'Emergency Department' AND length_of_stay > 3;",
+            hint: "Both conditions must be true.",
+            smartHint: "Use AND, not OR.",
+            thirdHint: "SELECT * FROM encounters WHERE department = 'Emergency Department' AND length_of_stay > 3;",
+            explanation: "This query narrows the population to only the encounters that match both the operational setting and the threshold.",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "concept",
+            id: "t7",
+            title: "IN / NOT IN",
+            objective: "Use grouped filtering instead of writing repeated OR statements.",
+            sql_focus: ["WHERE", "IN", "NOT IN"],
+            relevantTables: ["encounters"],
+            joinHint: "No join is needed for this lesson.",
+            summary: "IN is a cleaner way to filter for several allowed values at once.",
+            bullets: [
+              "IN is often easier to read than multiple OR conditions.",
+              "NOT IN excludes groups of values.",
+              "This is common when leaders ask about several departments, facilities, or payers.",
+              "Readability matters in production SQL.",
+              "Cleaner SQL is easier to maintain and easier for teammates to understand."
+            ],
+            example: "Hospital example: if leadership wants to review Emergency Department and ICU activity together, IN is cleaner than repeating OR.",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "challenge",
+            id: "t8",
+            title: "Filter Multiple Departments",
+            objective: "Return encounters from the Emergency Department and ICU.",
+            sql_focus: ["SELECT", "FROM", "WHERE", "IN"],
+            relevantTables: ["encounters"],
+            joinHint: "Use only the encounters table for this lesson.",
+            challengeCriteria: "Return all rows from encounters where department is either 'Emergency Department' or 'ICU'.",
+            starterQuery: "",
+            solutionQuery: "SELECT * FROM encounters WHERE department IN ('Emergency Department', 'ICU');",
+            hint: "Use one grouped filter instead of two separate equals conditions.",
+            smartHint: "IN (...) is the cleanest syntax here.",
+            thirdHint: "SELECT * FROM encounters WHERE department IN ('Emergency Department', 'ICU');",
+            explanation: "This challenge teaches cleaner filter structure. The output may match an OR query, but IN is usually more readable and easier to maintain.",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "scenario",
+            id: "t9",
+            title: "Scenario: Find High-Risk Encounters",
+            objective: "Combine filters and logic to identify encounters that need review.",
+            relevantTables: ["encounters"],
+            joinHint: "Use one table well before trying to expand to multiple tables.",
+            summary: "A leader wants a list of encounters that may need operational review.",
+            prompt: "Build a query that returns encounters that meet both of these conditions: the department is 'Emergency Department' and the length_of_stay is greater than 3. Your query should use the encounters table and return only the population that needs review.",
+            expectedKeywords: ["select", "where", "and", "department", "length_of_stay"],
+            minLength: 35,
+            minimumKeywordMatches: 2,
+            feedbackGuide: "A strong answer identifies that this is a two-condition filter, uses the encounters table, and applies both conditions with AND.",
+            executiveTakeaway: { show: false }
+          }
           ]
       },
           {
