@@ -1,4 +1,3 @@
-APP.JS
 const STORAGE_KEY = "careops_curriculum_master_v2";
 
 let appState = {
