@@ -247,7 +247,6 @@
                         <h2>Sandbox SQL Lab</h2>
                         <p>Use the in-browser hospital dataset for free play or load guided prompts tied to real analyst tasks.</p>
                     </div>
-
                     <div class="sandbox-shell">
                         <div class="sandbox-main">
                             <div class="sandbox-toolbar">
@@ -260,7 +259,6 @@
                                     <button type="button" id="reset-sandbox-btn">Reset</button>
                                 </div>
                             </div>
-
                             <div class="concept-card sandbox-lesson-context hidden" id="sandbox-lesson-context">
                                 <div class="sandbox-context-header">
                                     <div>
@@ -271,13 +269,11 @@
                                 <p id="sandbox-lesson-objective">Select a guided prompt to load its objective, SQL starter pattern, and related tables.</p>
                                 <div id="sandbox-lesson-tables" class="sandbox-schema-list"></div>
                             </div>
-
                             <div id="sandbox-guided-panel" class="concept-card hidden">
                                 <h4>Guided Prompt Library</h4>
                                 <p>Select a prompt card to load a realistic analyst question and starter query into the sandbox.</p>
                                 <div id="sandbox-prompt-list" class="sandbox-prompt-list"></div>
                             </div>
-
                             <div class="query-section">
                                 <label for="sandbox-query" class="query-label">Sandbox SQL</label>
                                 <textarea id="sandbox-query" rows="10" cols="80" spellcheck="false" autocomplete="off" autocapitalize="off"></textarea>
@@ -288,20 +284,16 @@
                                 <div id="sandbox-output" aria-live="polite"></div>
                             </div>
                         </div>
-
                         <aside class="sandbox-ai-panel concept-card" id="ai-companion-section">
                             <div class="section-header">
                                 <h3>AI Companion</h3>
                                 <p>Ask for SQL help, working code, or analytics guidance just like a chat. You can also ask broader questions like why readmissions matter and where to investigate if they are high.</p>
                             </div>
-
                             <label for="ai-input" class="query-label">Message</label>
                             <textarea id="ai-input" rows="8" cols="40" placeholder="Ask for SQL code, query debugging, or analytics guidance. Press Enter to send, or use Send. Shift+Enter adds a new line."></textarea>
-
                             <div class="ai-actions-wrap">
                                 <button type="button" id="send-ai-btn">Send</button>
                             </div>
-
                             <div id="ai-messages" class="ai-messages"></div>
                         </aside>
                     </div>
@@ -407,6 +399,6 @@ window.addEventListener('unhandledrejection', function (event) {
 </script>
  
 <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/sql-wasm.min.js"></script>
-<script src="/static/app.js?v=optionA"></script>
+<script src="/static/app.js?v=clean-foundations-1"></script>
 </body>
 </html>
