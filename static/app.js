@@ -1,5 +1,4 @@
 const STORAGE_KEY = "careops_curriculum_master_v2";
-
 let appState = {
   currentTrackId: "track_foundations",
   currentCategoryId: null,
@@ -13,20 +12,17 @@ let appState = {
   glossarySearch: "",
   glossaryCategory: ""
 };
-
 let SQL = null;
 let sqlDb = null;
 let sqlEngineReady = false;
 let attempts = 0;
 let lastRunQuery = "";
 let activeDifficultyFilter = null;
-
 const LEARNING_LEVELS = [
   { label: "Foundations", key: "foundations", color: "#22c55e", trackId: "track_foundations" },
   { label: "Core", key: "core", color: "#2563eb", trackId: "track_core" }
 ];
   
-
 const BUSINESS_LOGIC_MAP = {
   revenue_net_vs_gross: {
     analystFrame: "You are preparing a board-facing revenue cycle summary.",
@@ -127,7 +123,6 @@ const BUSINESS_LOGIC_MAP = {
     executiveQuestion: "What additional patient, provider, or financial context is needed to interpret the operational results?"
   }
 };
-
 const GLOSSARY_TERMS = [
   { term: "SELECT", category: "sql", definition: "Returns the columns you ask for from a table or query.", why: "SELECT is the starting point for almost every SQL query an analyst writes.", example: "SELECT patient_id, insurance_type FROM patients;" },
   { term: "WHERE", category: "sql", definition: "Filters rows so only matching records are returned.", why: "It lets analysts focus on the exact population or event they need to study.", example: "SELECT * FROM encounters WHERE length_of_stay > 5;" },
@@ -173,7 +168,6 @@ const GLOSSARY_TERMS = [
   { term: "Throughput", category: "analytics", definition: "How efficiently patients move through the care process.", why: "Throughput connects LOS, boarding, discharge timing, and capacity.", example: "A rise in discharge delays often harms throughput across the hospital." },
   { term: "Bottleneck", category: "analytics", definition: "A step in the process that slows down the overall system.", why: "Finding bottlenecks helps leaders know where to intervene first.", example: "Placement delays, pending consults, or transport waits can become bottlenecks." }
 ];
-
 function glossaryCategoryLabel(category) {
   return {
     sql: "SQL",
@@ -182,7 +176,6 @@ function glossaryCategoryLabel(category) {
     analytics: "Analytics / Strategy"
   }[category] || "Reference";
 }
-
 const schema = {
   tables: [
     { name: "patients", description: "Patient demographic, insurance, and risk information.", keyColumns: ["patient_id"], notableColumns: ["patient_id","first_name","last_name","age","gender","insurance_type","risk_score","city"], sampleRows: [] },
@@ -212,7 +205,6 @@ const schema = {
     "observations.encounter_id = encounters.encounter_id"
   ]
 };
-
 const curriculum = [
   {
     id: "track_foundations",
@@ -254,11 +246,9 @@ const curriculum = [
             relevantTables: ["encounters", "claims", "charges"],
             joinHint: "Think about whether the question is about care, operations, or money.",
             challengeCriteria: `For each question below, identify the primary type of data you would start with and explain why.
-
 1. Emergency department wait times
 2. Total billed charges for a hospital stay
 3. Diagnosis trends by quarter
-
 Use the categories clinical, operational, and financial in your explanation.`,
             starterQuery: "",
             solutionQuery: "",
@@ -311,7 +301,6 @@ Use the categories clinical, operational, and financial in your explanation.`,
             relevantTables: ["encounters"],
             joinHint: "Look for the most specific identifier in the column list.",
             challengeCriteria: `You are given a table with these columns: patient_id, encounter_id, department, and visit_date.
-
 Explain what one row in this table most likely represents and why.`,
             starterQuery: "",
             solutionQuery: "",
@@ -361,7 +350,6 @@ Explain what one row in this table most likely represents and why.`,
             relevantTables: ["patients", "encounters"],
             joinHint: "The wording of the business question should guide your table choice.",
             challengeCriteria: `A leader asks, "How many patients came to the hospital last month?"
-
 Which table is the better starting point: patients or encounters? Explain your reasoning.`,
             starterQuery: "",
             solutionQuery: "",
@@ -412,7 +400,6 @@ Which table is the better starting point: patients or encounters? Explain your r
             relevantTables: ["patients", "encounters", "charges"],
             joinHint: "Start with the table that directly captures the event being measured.",
             challengeCriteria: `You are asked, "Which department saw the most patients last week?"
-
 Should you start with patients, encounters, or charges? Explain your reasoning.`,
             starterQuery: "",
             solutionQuery: "",
@@ -915,7 +902,6 @@ Should you start with patients, encounters, or charges? Explain your reasoning.`
             sql_focus: ["Interpretation"],
             relevantTables: ["encounters"],
             challengeCriteria: `You run a query and see the top 5 encounters with the longest length_of_stay.
-
 Explain what this result means and why it matters.`,
             starterQuery: "",
             solutionQuery: "",
@@ -942,9 +928,7 @@ Explain what this result means and why it matters.`,
             joinHint: "Use sorting to make the output useful, then explain the meaning.",
             summary: "A leader wants insight, not raw data.",
             prompt: `A hospital executive asks: "Show me the most recent high-cost encounters."
-
 Write a query AND explain what the result means.
-
 Your answer must:
 - filter relevant encounters
 - sort results
@@ -990,7 +974,6 @@ Your answer must:
             sql_focus: ["Reasoning"],
             relevantTables: ["encounters"],
             challengeCriteria: `You run a report and see that emergency department visits dropped to zero last week.
-
 Explain why this is likely a data issue and not a real operational change.`,
             starterQuery: "",
             solutionQuery: "",
@@ -1108,7 +1091,6 @@ Explain why this is likely a data issue and not a real operational change.`,
             sql_focus: ["Interpretation"],
             relevantTables: ["encounters"],
             challengeCriteria: `You calculate average length_of_stay and get 45 days.
-
 Explain why this result is likely incorrect and what you would check.`,
             starterQuery: "",
             solutionQuery: "",
@@ -1135,7 +1117,6 @@ Explain why this result is likely incorrect and what you would check.`,
             joinHint: "Think about validation checks before presenting to leadership.",
             summary: "A leader is about to act on your data.",
             prompt: `You are about to present a report showing a sudden spike in hospital volume.
-
 Explain how you would validate the data before presenting it and what checks you would perform.`,
             expectedKeywords: ["validate", "check", "data", "error"],
             minLength: 90,
@@ -1959,7 +1940,6 @@ Explain how you would validate the data before presenting it and what checks you
             relevantTables: ["claims"],
             joinHint: "This is an interpretation exercise based on a grouped denial summary.",
             challengeCriteria: `A payer summary shows that one payer has the highest denied billed amount.
-
 Explain what this means, why it matters, and what revenue cycle should investigate next.`,
             starterQuery: "",
             solutionQuery: "",
@@ -2002,17 +1982,13 @@ Explain what this means, why it matters, and what revenue cycle should investiga
     ]
   }
 ];
-
 backfillChallengeCriteria(curriculum);
 enforceChallengeCriteria(curriculum);
-
 appState.currentTrackId = "track_foundations";
 appState.currentCategoryId = "foundations_core";
-
 function saveProgress() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
 }
-
 function loadProgress() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -2034,7 +2010,6 @@ function loadProgress() {
     console.error("Could not load progress:", error);
   }
 }
-
 function applySchemaPanelWidth() {
   const panel = document.getElementById("schema-panel");
   const shell = document.querySelector(".app-shell");
@@ -2043,7 +2018,6 @@ function applySchemaPanelWidth() {
   panel.style.width = `${width}px`;
   shell.style.gridTemplateColumns = `${width}px 14px 1fr`;
 }
-
 function initSchemaResizer() {
   const resizer = document.getElementById("schema-resizer");
   const shell = document.querySelector(".app-shell");
@@ -2071,7 +2045,6 @@ function initSchemaResizer() {
     saveProgress();
   });
 }
-
 function conceptLesson(spec) {
   return {
     id: spec.id,
@@ -2089,7 +2062,6 @@ function conceptLesson(spec) {
     executiveTakeaway: spec.executiveTakeaway || null
   };
 }
-
 function challengeLesson(spec) {
   return {
     id: spec.id,
@@ -2121,7 +2093,6 @@ function challengeLesson(spec) {
     exemplarAnswer: spec.exemplarAnswer || ""
   };
 }
-
 function scenarioLesson(spec) {
   return {
     id: spec.id,
@@ -2143,10 +2114,11 @@ function scenarioLesson(spec) {
     executiveTakeaway: spec.executiveTakeaway || null
   };
 }
-
 function normalizeCurriculum() {
   curriculum.forEach(track => {
+    track.categories = Array.isArray(track.categories) ? track.categories : [];
     track.categories.forEach(category => {
+      category.lessons = Array.isArray(category.lessons) ? category.lessons : [];
       category.lessons = category.lessons.map(lesson => {
         if (lesson.kind === "concept") return conceptLesson(lesson);
         if (lesson.kind === "challenge") return challengeLesson(lesson);
@@ -2155,15 +2127,13 @@ function normalizeCurriculum() {
     });
   });
 }
-
 function getTrack() {
-  return curriculum.find(track => track.id === appState.currentTrackId) || curriculum[0];
+  return curriculum.find(track => track.id === appState.currentTrackId) || curriculum[0] || { categories: [] };
 }
-
 function getAllCategories() {
-  return getTrack().categories || [];
+  const track = getTrack();
+  return Array.isArray(track.categories) ? track.categories : [];
 }
-
 function getCategoryById(categoryId) {
   for (const track of curriculum) {
     const category = (track.categories || []).find(category => category.id === categoryId);
@@ -2171,54 +2141,42 @@ function getCategoryById(categoryId) {
   }
   return null;
 }
-
-
 function getCurrentCategory() {
   return getAllCategories().find(category => category.id === appState.currentCategoryId) || getAllCategories()[0] || null;
 }
-
 function getAllLessons() {
-  return getAllCategories().flatMap(category => category.lessons);
+  return getAllCategories().flatMap(category => Array.isArray(category.lessons) ? category.lessons : []);
 }
-
 function getCurrentLesson() {
   return getAllLessons().find(lesson => lesson.id === appState.currentLessonId) || null;
 }
-
 function lessonsForTrack(trackId = appState.currentTrackId) {
   const track = curriculum.find(item => item.id === trackId) || curriculum[0];
   return (track?.categories || []).flatMap(category => category.lessons || []);
 }
-
 function allCurriculumLessons() {
   return curriculum.flatMap(track => (track.categories || []).flatMap(category => category.lessons || []));
 }
-
 function allCurriculumLessonIds() {
   return new Set(allCurriculumLessons().map(lesson => lesson.id));
 }
-
 function totalLessonCount() {
   return allCurriculumLessons().length;
 }
-
 function completedLessonCount() {
   const validIds = allCurriculumLessonIds();
   return [...new Set(appState.completedLessonIds || [])].filter(id => validIds.has(id)).length;
 }
-
 function currentTrackLessonCount() {
-  return totalLessonCount();
+  return lessonsForTrack(appState.currentTrackId).length;
 }
-
 function currentTrackCompletedLessonCount() {
-  return completedLessonCount();
+  const validIds = new Set(lessonsForTrack(appState.currentTrackId).map(lesson => lesson.id));
+  return [...new Set(appState.completedLessonIds || [])].filter(id => validIds.has(id)).length;
 }
-
 function isLessonCompleted(lessonId) {
   return appState.completedLessonIds.includes(lessonId);
 }
-
 function markLessonCompleted(lessonId, firstTry = false) {
   if (!isLessonCompleted(lessonId)) {
     appState.completedLessonIds.push(lessonId);
@@ -2228,7 +2186,6 @@ function markLessonCompleted(lessonId, firstTry = false) {
   }
   saveProgress();
 }
-
 function getLessonStats(lessonId) {
   if (!appState.lessonStats[lessonId]) {
     appState.lessonStats[lessonId] = {
@@ -2243,7 +2200,6 @@ function getLessonStats(lessonId) {
   }
   return appState.lessonStats[lessonId];
 }
-
 function tierRank(tier) {
   return {
     "Not Started": 0,
@@ -2253,7 +2209,6 @@ function tierRank(tier) {
     "Perfect": 4
   }[tier] || 0;
 }
-
 function updateLessonStatsOnGrade(lessonId, gradeResult, passed) {
   const stats = getLessonStats(lessonId);
   stats.attempts += 1;
@@ -2264,26 +2219,21 @@ function updateLessonStatsOnGrade(lessonId, gradeResult, passed) {
   if (tierRank(gradeResult.tier) > tierRank(stats.bestTier)) stats.bestTier = gradeResult.tier;
   if (gradeResult.score >= 90 || gradeResult.tier === "Perfect") stats.mastered = true;
 }
-
 function masteryCount() {
   return Object.values(appState.lessonStats).filter(stat => stat && stat.mastered).length;
 }
-
 function categoryComplete(category) {
   return !!category && Array.isArray(category.lessons) && category.lessons.every(lesson => isLessonCompleted(lesson.id));
 }
-
 function categoryBadgeCount() {
   return getAllCategories().filter(categoryComplete).length;
 }
-
 function levelBadgeCount() {
   return LEARNING_LEVELS.filter(level => {
     const track = curriculum.find(item => item.id === level.trackId);
     return !!track && (track.categories || []).length > 0 && (track.categories || []).every(categoryComplete);
   }).length;
 }
-
 function achievements() {
   const completed = completedLessonCount();
   const firstTry = appState.firstTryLessonIds.length;
@@ -2310,9 +2260,7 @@ function achievements() {
     { label: "Executive Whisperer", earned: catComplete("expert_decision_making"), emoji: "🧩", description: "Unlock by completing every lesson in Executive Analytics & Decision Making." }
   ];
 }
-
 let achievementTooltipEl = null;
-
 function ensureAchievementTooltipStyles() {
   if (document.getElementById("achievement-tooltip-style")) return;
   const style = document.createElement("style");
@@ -2346,7 +2294,6 @@ function ensureAchievementTooltipStyles() {
   `;
   document.head.appendChild(style);
 }
-
 function ensureAchievementTooltip() {
   ensureAchievementTooltipStyles();
   if (achievementTooltipEl && document.body.contains(achievementTooltipEl)) return achievementTooltipEl;
@@ -2356,25 +2303,21 @@ function ensureAchievementTooltip() {
   document.body.appendChild(achievementTooltipEl);
   return achievementTooltipEl;
 }
-
 function positionAchievementTooltip(event) {
   const tooltip = ensureAchievementTooltip();
   const offset = 14;
   const rect = tooltip.getBoundingClientRect();
   let left = event.clientX + offset;
   let top = event.clientY + offset;
-
   if (left + rect.width > window.innerWidth - 12) {
     left = Math.max(12, window.innerWidth - rect.width - 12);
   }
   if (top + rect.height > window.innerHeight - 12) {
     top = Math.max(12, event.clientY - rect.height - offset);
   }
-
   tooltip.style.left = left + "px";
   tooltip.style.top = top + "px";
 }
-
 function showAchievementTooltip(event, text) {
   if (!text) return;
   const tooltip = ensureAchievementTooltip();
@@ -2382,12 +2325,10 @@ function showAchievementTooltip(event, text) {
   tooltip.classList.add("visible");
   positionAchievementTooltip(event);
 }
-
 function hideAchievementTooltip() {
   if (!achievementTooltipEl) return;
   achievementTooltipEl.classList.remove("visible");
 }
-
 function attachAchievementTooltip(node, text) {
   if (!node || !text) return;
   node.dataset.unlockDescription = text;
@@ -2397,14 +2338,11 @@ function attachAchievementTooltip(node, text) {
   node.addEventListener("blur", hideAchievementTooltip);
   node.addEventListener("focus", event => showAchievementTooltip(event, text));
 }
-
 function renderAchievements() {
   const container = document.getElementById("badges-container");
   if (!container) return;
-
   ensureAchievementTooltipStyles();
   container.innerHTML = "";
-
   achievements().forEach((achievement) => {
     const chip = document.createElement("div");
     chip.className = achievement.earned ? "badge-chip" : "badge-chip locked";
@@ -2412,13 +2350,10 @@ function renderAchievements() {
     chip.setAttribute("tabindex", "0");
     chip.setAttribute("aria-label", `${achievement.label}: ${achievement.description || ""}`);
     chip.dataset.unlockDescription = achievement.description || "";
-
     attachAchievementTooltip(chip, achievement.description || "");
-
     container.appendChild(chip);
   });
 }
-
 function updateDashboard() {
   const total = currentTrackLessonCount();
   const completed = currentTrackCompletedLessonCount();
@@ -2443,7 +2378,6 @@ function updateDashboard() {
   if (trackDescription) trackDescription.innerText = "Curriculum, learning levels, completion, and mastery tracking.";
   updateLevelsPanelTheme(track.id);
 }
-
 function updateLevelsPanelTheme(trackId) {
   const panel = document.getElementById("levels-panel");
   if (!panel) return;
@@ -2459,19 +2393,15 @@ function updateLevelsPanelTheme(trackId) {
   panel.classList.add(`track-theme-${level.key}`);
   panel.style.borderColor = level.color;
 }
-
 function renderSchema() {
   const tablesWrap = document.getElementById("schema-tables");
   const relationshipsWrap = document.getElementById("schema-relationships");
-
   const activeLesson = appState.currentView === "lesson" ? getCurrentLesson() : null;
   const relevantTables = new Set(
     (activeLesson?.relevantTables || []).map(name => String(name).toLowerCase())
   );
-
   if (tablesWrap) {
     tablesWrap.innerHTML = "";
-
     schema.tables.forEach(table => {
       const details = document.createElement("details");
       details.className = "schema-card";
@@ -2479,42 +2409,33 @@ function renderSchema() {
         appState.currentView === "lesson" &&
         relevantTables.size > 0 &&
         relevantTables.has(String(table.name).toLowerCase());
-
       const summary = document.createElement("summary");
       summary.textContent = table.name;
       details.appendChild(summary);
-
       const p = document.createElement("p");
       p.innerHTML = `<strong>Description:</strong> ${table.description}<br><strong>Columns:</strong> ${table.notableColumns.join(", ")}`;
       details.appendChild(p);
-
       const actions = document.createElement("div");
       actions.className = "schema-table-actions";
-
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "schema-table-view-btn";
       btn.textContent = "Open Table Viewer";
       btn.addEventListener("click", () => openTableModal(table.name));
-
       actions.appendChild(btn);
       details.appendChild(actions);
       tablesWrap.appendChild(details);
     });
   }
-
   if (relationshipsWrap) {
     relationshipsWrap.innerHTML = "";
     const section = relationshipsWrap.closest(".schema-section");
     if (section) section.style.display = "none";
   }
 }
-
-
 function levelForTrack(trackId) {
   return LEARNING_LEVELS.find(level => level.trackId === trackId);
 }
-
 function shouldShowExecutiveTakeaway(lesson) {
   const levelKey = levelForTrack(appState.currentTrackId)?.key;
   return Boolean(
@@ -2527,84 +2448,67 @@ function shouldShowExecutiveTakeaway(lesson) {
     )
   );
 }
-
-
 function getVisibleCategories() {
   return getAllCategories();
 }
-
 function renderTrackCategoryCards() {
   const container = document.getElementById("track-category-cards");
   if (!container) return;
 
   container.innerHTML = "";
   container.style.display = "grid";
-  container.style.gridTemplateColumns = "repeat(3, minmax(220px, 1fr))";
+  container.style.gridTemplateColumns = "repeat(auto-fit, minmax(220px, 1fr))";
   container.style.gap = "18px";
 
   const cards = LEARNING_LEVELS.map(level => {
     const track = curriculum.find(item => item.id === level.trackId);
 
-if (!track) {
-  console.error("Track not found for level:", level);
-  return null; // prevents crash
-}
-    const doneCategories = track.categories.filter(categoryComplete).length;
-    const totalLessons = track.categories.flatMap(c => c.lessons).length;
-    const doneLessons = track.categories.flatMap(c => c.lessons).filter(lesson => isLessonCompleted(lesson.id)).length;
-    const percent = totalLessons ? Math.round((doneLessons.length / totalLessons) * 100) : 0;
+    if (!track) {
+      console.error("Track not found for level:", level);
+      return null;
+    }
+
+    const categories = Array.isArray(track.categories) ? track.categories : [];
+    const lessons = categories.flatMap(category => Array.isArray(category.lessons) ? category.lessons : []);
+    const doneCategoriesCount = categories.filter(categoryComplete).length;
+    const totalLessons = lessons.length;
+    const doneLessonsCount = lessons.filter(lesson => isLessonCompleted(lesson.id)).length;
+    const percent = totalLessons > 0 ? Math.round((doneLessonsCount / totalLessons) * 100) : 0;
+    const isActive = appState.currentTrackId === track.id;
 
     const card = document.createElement("button");
     card.type = "button";
-    card.className = "track-badge-card level-card" + (appState.currentTrackId === track.id ? " active" : "");
+    card.className = "track-badge-card level-card" + (isActive ? " active" : "");
+    card.style.setProperty("--level-color", level.color);
     card.style.borderColor = level.color;
 
     card.innerHTML = `
       <div class="track-badge-icon-wrap">
-        <div class="track-badge-ring" style="--badge-progress: ${percent}%; background: conic-gradient(${level.color} ${percent}%, #e2e8f0 0);">
+        <div class="track-badge-ring" style="background: conic-gradient(${level.color} ${percent}%, #e2e8f0 0);">
           <div class="track-badge-icon level-icon" style="color:${level.color};">${percent}%</div>
         </div>
       </div>
       <div class="track-badge-name">${level.label}</div>
-      <div class="track-badge-stats">${doneCategories.length} of ${track.categories.length} sections complete</div>
-      <div class="track-badge-helper">Click to view this learning level</div>
+      <div class="track-badge-stats">${doneCategoriesCount} of ${categories.length} sections complete</div>
+      <div class="track-badge-helper">${doneLessonsCount} of ${totalLessons} lessons complete</div>
     `;
 
     card.addEventListener("click", () => {
       appState.currentTrackId = track.id;
-      appState.currentCategoryId = track.categories[0]?.id || null;
+      appState.currentCategoryId = categories[0]?.id || null;
       appState.currentLessonId = null;
       appState.currentView = "overview";
       attempts = 0;
       saveProgress();
       renderAll();
-  initUiActions();
+      initUiActions();
     });
 
     return card;
-  });
+  }).filter(Boolean);
 
-  cards.slice(0, 3).forEach(card => container.appendChild(card));
-
-  if (cards.length > 3) {
-    const bottomRow = document.createElement("div");
-    bottomRow.style.gridColumn = "1 / -1";
-    bottomRow.style.display = "flex";
-    bottomRow.style.justifyContent = "center";
-    bottomRow.style.gap = "18px";
-    bottomRow.style.flexWrap = "wrap";
-
-    cards.slice(3).forEach(card => {
-      card.style.width = "calc((100% - 36px) / 3)";
-      card.style.maxWidth = "340px";
-      card.style.minWidth = "220px";
-      bottomRow.appendChild(card);
-    });
-
-    container.appendChild(bottomRow);
-  }
+  cards.forEach(card => container.appendChild(card));
 }
-
 function ensureCurriculumLessonListStyles() {
   if (document.getElementById("curriculum-lesson-list-style")) return;
   const style = document.createElement("style");
@@ -2744,11 +2648,9 @@ function ensureCurriculumLessonListStyles() {
   `;
   document.head.appendChild(style);
 }
-
 function isCategoryExpanded(categoryId) {
   return (appState.expandedCategoryIds || []).includes(categoryId);
 }
-
 function toggleCategoryExpanded(categoryId) {
   const expanded = new Set(appState.expandedCategoryIds || []);
   if (expanded.has(categoryId)) expanded.delete(categoryId);
@@ -2757,7 +2659,6 @@ function toggleCategoryExpanded(categoryId) {
   saveProgress();
   renderAll();
 }
-
 function ensureCurrentCategoryExpanded() {
   const categoryId = appState.currentCategoryId;
   if (!categoryId) return;
@@ -2767,23 +2668,19 @@ function ensureCurrentCategoryExpanded() {
     appState.expandedCategoryIds = Array.from(expanded);
   }
 }
-
 function renderCurriculumNav() {
   ensureCurriculumLessonListStyles();
   ensureCurrentCategoryExpanded();
   const list = document.getElementById("category-list");
   if (!list) return;
   list.innerHTML = "";
-
   getAllCategories().forEach(category => {
     const wrap = document.createElement("div");
     wrap.className = "curriculum-category";
-
     const total = (category.lessons || []).length;
     const done = (category.lessons || []).filter(lesson => isLessonCompleted(lesson.id)).length;
     const mastered = (category.lessons || []).filter(lesson => getLessonStats(lesson.id).mastered).length;
     const expanded = isCategoryExpanded(category.id);
-
     const header = document.createElement("div");
     header.className = "curriculum-category-header" + (done === total ? " is-complete" : "");
     header.innerHTML = `
@@ -2800,10 +2697,8 @@ function renderCurriculumNav() {
         <button type="button" class="curriculum-category-toggle" aria-label="${expanded ? "Collapse" : "Expand"} ${category.title}" aria-expanded="${expanded ? "true" : "false"}">${expanded ? "⌄" : "›"}</button>
       </div>
     `;
-
     const mainBtn = header.querySelector(".curriculum-category-main-btn");
     const toggleBtn = header.querySelector(".curriculum-category-toggle");
-
     mainBtn?.addEventListener("click", () => {
       appState.currentCategoryId = category.id;
       if (!appState.currentLessonId || !(category.lessons || []).find(lesson => lesson.id === appState.currentLessonId)) {
@@ -2815,30 +2710,23 @@ function renderCurriculumNav() {
       saveProgress();
       renderAll();
     });
-
     toggleBtn?.addEventListener("click", (event) => {
       event.stopPropagation();
       toggleCategoryExpanded(category.id);
     });
-
     wrap.appendChild(header);
-
     const body = document.createElement("div");
     body.className = "curriculum-category-body" + (expanded ? "" : " hidden");
-
     const lessonList = document.createElement("div");
     lessonList.className = "curriculum-lesson-list";
-
     (category.lessons || []).forEach(lesson => {
       const row = document.createElement("button");
       row.type = "button";
       row.className = "curriculum-lesson-row" +
         (lesson.id === appState.currentLessonId ? " is-active" : "") +
         (isLessonCompleted(lesson.id) ? " is-complete" : "");
-
       const typeLabel = lesson.type ? lesson.type.charAt(0).toUpperCase() + lesson.type.slice(1) : "Lesson";
       const statusLabel = isLessonCompleted(lesson.id) ? "Completed" : "Not started";
-
       row.innerHTML = `
         <div class="curriculum-lesson-main">
           <span class="curriculum-lesson-title">${lesson.title}</span>
@@ -2848,7 +2736,6 @@ function renderCurriculumNav() {
         </div>
         <span class="curriculum-lesson-status ${isLessonCompleted(lesson.id) ? "" : "is-pending"}">${statusLabel}</span>
       `;
-
       row.addEventListener("click", () => {
         appState.currentCategoryId = category.id;
         appState.currentLessonId = lesson.id;
@@ -2858,21 +2745,19 @@ function renderCurriculumNav() {
         saveProgress();
         renderAll();
       });
-
       lessonList.appendChild(row);
     });
-
     body.appendChild(lessonList);
     wrap.appendChild(body);
     list.appendChild(wrap);
   });
 }
-
 function renderOverview() {
   const track = getTrack();
-  const cats = track.categories;
-  const total = cats.flatMap(c => c.lessons).length;
-  const completed = cats.flatMap(c => c.lessons).filter(l => isLessonCompleted(l.id)).length;
+  const cats = Array.isArray(track.categories) ? track.categories : [];
+  const lessons = cats.flatMap(c => Array.isArray(c.lessons) ? c.lessons : []);
+  const total = lessons.length;
+  const completed = lessons.filter(l => isLessonCompleted(l.id)).length;
   const title = document.getElementById("track-overview-title");
   const desc = document.getElementById("track-overview-description");
   const trackTitleDisplay = document.getElementById("track-title-display-overview");
@@ -2891,7 +2776,7 @@ function renderOverview() {
   const resumeBtn = document.getElementById("resume-track-btn");
   if (startBtn) startBtn.onclick = function () {
     appState.currentCategoryId = track.categories[0]?.id || null;
-    appState.currentLessonId = track.categories[0]?.lessons[0]?.id || null;
+    appState.currentLessonId = cats[0]?.lessons?.[0]?.id || null;
     appState.currentView = "lesson";
     attempts = 0;
     appState.currentView = "lesson";
@@ -2899,8 +2784,8 @@ function renderOverview() {
     renderAll();
   };
   if (resumeBtn) resumeBtn.onclick = function () {
-    const firstIncomplete = track.categories.flatMap(c => c.lessons).find(l => !isLessonCompleted(l.id));
-    const lesson = firstIncomplete || track.categories[0]?.lessons[0];
+    const firstIncomplete = lessons.find(l => !isLessonCompleted(l.id));
+    const lesson = firstIncomplete || cats[0]?.lessons?.[0];
     if (!lesson) return;
     appState.currentLessonId = lesson.id;
     appState.currentCategoryId = track.categories.find(c => c.lessons.some(l => l.id === lesson.id))?.id || null;
@@ -2911,23 +2796,14 @@ function renderOverview() {
     renderAll();
   };
 }
-
-
 /* duplicate removed during stabilization pass */
-
-
-
 /* duplicate removed during stabilization pass */
-
-
-
 function cleanInstructionExpression(expression) {
   return String(expression || "")
     .replace(/\s+/g, " ")
     .replace(/\bAS\b/gi, "as")
     .trim();
 }
-
 function listToSentence(items) {
   const cleaned = (items || []).map(item => String(item || "").trim()).filter(Boolean);
   if (cleaned.length === 0) return "";
@@ -2935,7 +2811,6 @@ function listToSentence(items) {
   if (cleaned.length === 2) return cleaned[0] + " and " + cleaned[1];
   return cleaned.slice(0, -1).join(", ") + ", and " + cleaned[cleaned.length - 1];
 }
-
 function extractSelectExpressions(query) {
   const match = String(query || "").match(/select\s+([\s\S]+?)\s+from\s+/i);
   if (!match) return [];
@@ -2944,7 +2819,6 @@ function extractSelectExpressions(query) {
     .map(part => cleanInstructionExpression(part))
     .filter(Boolean);
 }
-
 function extractTableNames(query) {
   const matches = String(query || "").match(/\b(?:from|join|update|into)\s+([a-zA-Z_][\w]*)/gi) || [];
   const seen = new Set();
@@ -2959,7 +2833,6 @@ function extractTableNames(query) {
   });
   return tables;
 }
-
 function extractGroupByFields(query) {
   const match = String(query || "").match(/group\s+by\s+([\s\S]+?)(?:\s+having\s+|\s+order\s+by\s+|\s+limit\s+|;|$)/i);
   if (!match) return [];
@@ -2968,53 +2841,42 @@ function extractGroupByFields(query) {
     .map(part => cleanInstructionExpression(part))
     .filter(Boolean);
 }
-
 function extractOrderByFields(query) {
   const match = String(query || "").match(/order\s+by\s+([\s\S]+?)(?:\s+limit\s+|;|$)/i);
   if (!match) return "";
   return cleanInstructionExpression(match[1]);
 }
-
-
 function extractWhereClause(query) {
   const match = String(query || "").match(/\bwhere\s+([\s\S]+?)(?:\s+group\s+by\s+|\s+having\s+|\s+order\s+by\s+|\s+limit\s+|;|$)/i);
   return match ? match[1].trim() : "";
 }
-
 function extractGroupByClause(query) {
   const match = String(query || "").match(/\bgroup\s+by\s+([\s\S]+?)(?:\s+having\s+|\s+order\s+by\s+|\s+limit\s+|;|$)/i);
   return match ? match[1].trim() : "";
 }
-
 function extractHavingClause(query) {
   const match = String(query || "").match(/\bhaving\s+([\s\S]+?)(?:\s+order\s+by\s+|\s+limit\s+|;|$)/i);
   return match ? match[1].trim() : "";
 }
-
 function extractOrderByClause(query) {
   const match = String(query || "").match(/\border\s+by\s+([\s\S]+?)(?:\s+limit\s+|;|$)/i);
   return match ? match[1].trim() : "";
 }
-
-
 function extractLimitValue(query) {
   const match = String(query || "").match(/limit\s+(\d+)/i);
   return match ? match[1] : "";
 }
-
 function cleanExpression(expr) {
   return String(expr || "")
     .replace(/\s+/g, " ")
     .trim()
     .replace(/;$/, "");
 }
-
 function splitSelectColumns(selectClause) {
   if (!selectClause) return [];
   const parts = [];
   let current = "";
   let depth = 0;
-
   for (const char of selectClause) {
     if (char === "(") depth++;
     if (char === ")") depth--;
@@ -3025,15 +2887,12 @@ function splitSelectColumns(selectClause) {
       current += char;
     }
   }
-
   if (current.trim()) parts.push(current.trim());
   return parts;
 }
-
 function extractAlias(expr) {
   const asMatch = String(expr).match(/\bAS\s+([a-zA-Z_][\w]*)$/i);
   if (asMatch) return asMatch[1];
-
   const trimmed = String(expr).trim();
   const parts = trimmed.split(/\s+/);
   if (parts.length >= 2 && !/[()*/+-]/.test(parts[parts.length - 2])) {
@@ -3041,7 +2900,6 @@ function extractAlias(expr) {
   }
   return null;
 }
-
 function prettifyFieldName(name) {
   return String(name || "")
     .replace(/\bavg\b/gi, "average")
@@ -3051,13 +2909,10 @@ function prettifyFieldName(name) {
     .replace(/\s+/g, " ")
     .trim();
 }
-
-
 function inferMetricType(lesson, normalizedQuery) {
   const query = String(normalizedQuery || "").toLowerCase();
   const tables = Array.isArray(lesson?.relevantTables) ? lesson.relevantTables : [];
   const firstTable = tables[0] || "";
-
   if (/sum\s*\(\s*amount\s*\)\s*\*\s*0?\.82/i.test(query)) return "revenue_net_vs_gross";
   if (/avg\s*\(\s*length_of_stay\s*\)/i.test(query) || /encounter_count/i.test(query)) return "los_summary";
   if (/group\s+by\s+facility\s*,\s*department/i.test(query)) return "facility_rollup";
@@ -3066,7 +2921,6 @@ function inferMetricType(lesson, normalizedQuery) {
   if (/\bjoin\b/i.test(query)) return "join_population_enrichment";
   return null;
 }
-
 function getBusinessLogicConfig(lesson, normalizedQuery) {
   if (lesson?.businessContext?.metricType && BUSINESS_LOGIC_MAP[lesson.businessContext.metricType]) {
     return BUSINESS_LOGIC_MAP[lesson.businessContext.metricType];
@@ -3074,77 +2928,62 @@ function getBusinessLogicConfig(lesson, normalizedQuery) {
   const inferred = inferMetricType(lesson, normalizedQuery);
   return inferred ? BUSINESS_LOGIC_MAP[inferred] : null;
 }
-
 function formatFieldForPrompt(value) {
   return prettifyFieldName(String(value || "").replace(/\b[a-zA-Z_][\w]*\./g, ""));
 }
-
 function cleanIdentifier(value) {
   return String(value || "").replace(/\b[a-zA-Z_][\w]*\./g, "").trim();
 }
-
 function extractFunctionArg(expr, fnName) {
   const re = new RegExp(fnName + "\\s*\\((.+?)\\)", "i");
   const match = String(expr || "").match(re);
   return match ? cleanIdentifier(match[1]) : "";
 }
-
 function parseSelectExpressions(query) {
   const selectMatch = String(query || "").match(/select\s+(.+?)\s+from\s+/i);
   return splitSelectColumns(selectMatch ? selectMatch[1] : "");
 }
-
 function sentenceCase(text) {
   const s = String(text || "").trim();
   return s ? s.charAt(0).toUpperCase() + s.slice(1) : "";
 }
-
 function buildWhyItMatters(lesson, config) {
   if (lesson?.businessContext?.businessGoal) return lesson.businessContext.businessGoal;
   if (lesson?.executiveTakeaway?.whyItMatters) return lesson.executiveTakeaway.whyItMatters;
   if (config?.executiveQuestion) return config.executiveQuestion;
   return "";
 }
-
 function buildExplicitTaskFromQuery(lesson) {
   const query = String(lesson?.solutionQuery || lesson?.starterQuery || "").trim();
   const normalized = cleanExpression(query);
   if (!normalized) return lesson?.objective || "Write a SQL query that satisfies the lesson objective.";
-
   const lower = normalized.toLowerCase();
   const baseTableMatch = normalized.match(/\bfrom\s+([a-zA-Z_][\w]*)/i);
   const baseTable = baseTableMatch ? baseTableMatch[1] : (lesson?.relevantTables?.[0] || "the relevant table");
   const selectExpressions = parseSelectExpressions(normalized);
-
   const whereClause = (() => {
     const m = normalized.match(/\bwhere\s+([\s\S]+?)(?:\s+group\s+by\s+|\s+having\s+|\s+order\s+by\s+|\s+limit\s+|;|$)/i);
     return m ? m[1].trim() : "";
   })();
-
   const groupByClause = (() => {
     const m = normalized.match(/\bgroup\s+by\s+([\s\S]+?)(?:\s+having\s+|\s+order\s+by\s+|\s+limit\s+|;|$)/i);
     return m ? m[1].trim() : "";
   })();
-
   const havingClause = (() => {
     const m = normalized.match(/\bhaving\s+([\s\S]+?)(?:\s+order\s+by\s+|\s+limit\s+|;|$)/i);
     return m ? m[1].trim() : "";
   })();
-
   const orderByClause = (() => {
     const m = normalized.match(/\border\s+by\s+([\s\S]+?)(?:\s+limit\s+|;|$)/i);
     return m ? m[1].trim() : "";
   })();
-
   const limitValue = extractLimitValue(normalized);
-
   const joinTables = [];
   const joinRegex = /\bjoin\s+([a-zA-Z_][\w]*)/gi;
   let joinHit;
   while ((joinHit = joinRegex.exec(normalized)) !== null) {
     joinTables.push(joinHit[1]);
   }
-
   if (/\bwhere\b[\s\S]*\bin\s*\(\s*select\b/i.test(lower)) {
     const subFrom = normalized.match(/\(\s*select[\s\S]*?\bfrom\s+([a-zA-Z_][\w]*)/i);
     const nestedTable = subFrom ? subFrom[1] : "the related table";
@@ -3152,7 +2991,6 @@ function buildExplicitTaskFromQuery(lesson) {
     const subCondition = nestedWhere ? cleanInstructionExpression(nestedWhere[1]) : "the requested condition";
     return `Return all records from the \`${baseTable}\` table for rows that match a subquery against \`${nestedTable}\`, where ${subCondition}.`;
   }
-
   if (/\bjoin\b/i.test(lower)) {
     const allTables = [baseTable, ...joinTables].filter(Boolean);
     const selectedFields = selectExpressions
@@ -3169,7 +3007,6 @@ function buildExplicitTaskFromQuery(lesson) {
     if (whereClause) task += ` Keep only rows where ${cleanInstructionExpression(whereClause)}.`;
     return task;
   }
-
   const countExpr = selectExpressions.find(expr => /\bcount\s*\(/i.test(expr));
   const avgExpr = selectExpressions.find(expr => /\bavg\s*\(/i.test(expr));
   const sumExprs = selectExpressions.filter(expr => /\bsum\s*\(/i.test(expr));
@@ -3180,7 +3017,6 @@ function buildExplicitTaskFromQuery(lesson) {
   const castExpr = selectExpressions.find(expr => /\bcast\s*\(/i.test(expr));
   const dateDiffExpr = selectExpressions.find(expr => /\bjulianday\s*\(/i.test(expr));
   const textTransformExpr = selectExpressions.find(expr => /\bupper\s*\(|\blower\s*\(|\bsubstr\s*\(|\btrim\s*\(/i.test(expr));
-
   if (groupByClause && countExpr) {
     const groupFields = formatFieldForPrompt(groupByClause);
     const countAlias = extractAlias(countExpr) || "count";
@@ -3189,21 +3025,18 @@ function buildExplicitTaskFromQuery(lesson) {
     if (orderByClause) task += ` Sort the output by ${cleanInstructionExpression(orderByClause)}.`;
     return sentenceCase(task);
   }
-
   if (countExpr && avgExpr && !groupByClause) {
     const countAlias = extractAlias(countExpr) || "count";
     const avgField = formatFieldForPrompt(extractFunctionArg(avgExpr, "avg"));
     const avgAlias = extractAlias(avgExpr) || "average";
     return `Return total ${countAlias.replace(/_/g, " ")} and average ${avgField} from the \`${baseTable}\` table. Label the results \`${countAlias}\` and \`${avgAlias}\`.`;
   }
-
   if (sumExprs.length >= 2 && /0?\.82/.test(lower)) {
     const aliases = sumExprs.map(extractAlias).filter(Boolean);
     const grossAlias = aliases.find(a => /gross/i.test(a)) || aliases[0] || "gross_total";
     const netAlias = aliases.find(a => /net/i.test(a)) || aliases[1] || "estimated_net";
     return `Return total gross charges and estimated net revenue from the \`${baseTable}\` table. Assume net revenue equals 82% of gross charges and label the results \`${grossAlias}\` and \`${netAlias}\`.`;
   }
-
   if (sumExprs.length === 1 && !groupByClause) {
     const sumExpr = sumExprs[0];
     const field = formatFieldForPrompt(extractFunctionArg(sumExpr, "sum"));
@@ -3217,14 +3050,12 @@ function buildExplicitTaskFromQuery(lesson) {
     if (alias) return `Return total ${field} from the \`${baseTable}\` table and label the result \`${alias}\`.`;
     return `Return total ${field} from the \`${baseTable}\` table.`;
   }
-
   if (minExpr && maxExpr) {
     const field = formatFieldForPrompt(extractFunctionArg(minExpr, "min") || extractFunctionArg(maxExpr, "max"));
     const minAlias = extractAlias(minExpr) || "minimum_value";
     const maxAlias = extractAlias(maxExpr) || "maximum_value";
     return `Return the lowest and highest ${field} from the \`${baseTable}\` table. Label the results \`${minAlias}\` and \`${maxAlias}\`.`;
   }
-
   if (distinctExpr) {
     const field = formatFieldForPrompt(distinctExpr.replace(/^distinct\s+/i, "").replace(/\s+AS\s+.+$/i, ""));
     let task = `Return each unique ${field} from the \`${baseTable}\` table one time only.`;
@@ -3232,36 +3063,30 @@ function buildExplicitTaskFromQuery(lesson) {
     if (limitValue) task += ` Limit the output to ${limitValue} rows.`;
     return task;
   }
-
   if (caseExpr) {
     const alias = extractAlias(caseExpr) || "derived_value";
     return `Return the requested base fields from the \`${baseTable}\` table and create a derived field labeled \`${alias}\` using CASE logic that matches the lesson rule.`;
   }
-
   if (castExpr) {
     const alias = extractAlias(castExpr) || "converted_value";
     const castArg = extractFunctionArg(castExpr, "cast");
     const field = formatFieldForPrompt(castArg.split(/\s+as\s+/i)[0]);
     return `Return the requested fields from the \`${baseTable}\` table and convert ${field} into a new data type labeled \`${alias}\`.`;
   }
-
   if (dateDiffExpr) {
     const alias = extractAlias(dateDiffExpr) || "date_metric";
     return `Return the requested identifier from the \`${baseTable}\` table and calculate the date difference metric labeled \`${alias}\`.`;
   }
-
   if (textTransformExpr) {
     const alias = extractAlias(textTransformExpr) || "transformed_text";
     return `Return the requested text transformation from the \`${baseTable}\` table and label it \`${alias}\`.`;
   }
-
   if (whereClause && /^select\s+\*/i.test(lower)) {
     let task = `Return all rows from the \`${baseTable}\` table where ${cleanInstructionExpression(whereClause)}.`;
     if (orderByClause) task += ` Sort the output by ${cleanInstructionExpression(orderByClause)}.`;
     if (limitValue) task += ` Limit the output to ${limitValue} rows.`;
     return task;
   }
-
   if (whereClause) {
     const fieldLabels = selectExpressions.map(expr => {
       const bare = expr.replace(/\s+AS\s+[a-zA-Z_][\w]*$/i, "");
@@ -3275,14 +3100,12 @@ function buildExplicitTaskFromQuery(lesson) {
     if (limitValue) task += ` Limit the output to ${limitValue} rows.`;
     return task;
   }
-
   if (/^select\s+\*/i.test(lower)) {
     let task = `Return all columns from the \`${baseTable}\` table.`;
     if (orderByClause) task += ` Sort the output by ${cleanInstructionExpression(orderByClause)}.`;
     if (limitValue) task += ` Limit the output to ${limitValue} rows.`;
     return task;
   }
-
   if (selectExpressions.length) {
     const aliasLabels = selectExpressions.map(expr => extractAlias(expr)).filter(Boolean);
     if (aliasLabels.length) {
@@ -3293,34 +3116,26 @@ function buildExplicitTaskFromQuery(lesson) {
       return task;
     }
   }
-
   return lesson?.objective || `Write a SQL query using the \`${baseTable}\` table that satisfies the lesson objective.`;
 }
-
 function buildBoardLevelChallengePrompt(lesson) {
   if (!lesson) return "Write a SQL query that satisfies the lesson objective.";
-
   const direct = (lesson.challengeCriteria || "").trim();
   if (direct) return direct;
-
   const config = getBusinessLogicConfig(lesson, cleanExpression(lesson.solutionQuery || lesson.starterQuery || ""));
   const task = buildExplicitTaskFromQuery(lesson);
   const why = buildWhyItMatters(lesson, config);
-
   if (why) {
     return `${task}\n\nWhy this matters: ${why}`;
   }
-
   return task;
 }
-
 function buildChallengePrompt(lesson) {
   if (!lesson) return "Write a SQL query that satisfies the lesson objective.";
   const direct = (lesson.challengeCriteria || "").trim();
   if (direct) return direct;
   return buildBoardLevelChallengePrompt(lesson) || lesson.objective || "Write a SQL query that satisfies the lesson objective.";
 }
-
 function backfillChallengeCriteria(curriculum) {
   curriculum.forEach(track => {
     track.categories.forEach(category => {
@@ -3332,7 +3147,6 @@ function backfillChallengeCriteria(curriculum) {
     });
   });
 }
-
 function enforceChallengeCriteria(curriculum) {
   curriculum.forEach(track => {
     track.categories.forEach(category => {
@@ -3343,44 +3157,34 @@ function enforceChallengeCriteria(curriculum) {
     });
   });
 }
-
-
 function sanitizeProgressState() {
   const firstTrack = curriculum[0] || null;
   const validTrackIds = new Set(curriculum.map(track => track.id));
   const validLessonIds = allCurriculumLessonIds();
-
   appState.completedLessonIds = [...new Set((appState.completedLessonIds || []).filter(id => validLessonIds.has(id)))];
   appState.firstTryLessonIds = [...new Set((appState.firstTryLessonIds || []).filter(id => validLessonIds.has(id)))];
-
   const nextStats = {};
   Object.entries(appState.lessonStats || {}).forEach(([lessonId, stats]) => {
     if (validLessonIds.has(lessonId)) nextStats[lessonId] = stats;
   });
   appState.lessonStats = nextStats;
-
   if (!validTrackIds.has(appState.currentTrackId)) {
     appState.currentTrackId = firstTrack?.id || "track_foundations";
   }
-
   const activeTrack = getTrack();
   const validCategories = activeTrack?.categories || [];
   const validCategoryIds = new Set(validCategories.map(category => category.id));
-
   if (!validCategoryIds.has(appState.currentCategoryId)) {
     appState.currentCategoryId = validCategories[0]?.id || null;
   }
-
   const validLessonIdsForTrack = new Set(validCategories.flatMap(category => (category.lessons || []).map(lesson => lesson.id)));
   if (!validLessonIdsForTrack.has(appState.currentLessonId)) {
     appState.currentLessonId = validCategories[0]?.lessons?.[0]?.id || null;
   }
-
   if (!["overview", "lesson", "sandbox", "glossary"].includes(appState.currentView)) {
     appState.currentView = "overview";
   }
 }
-
 function ensurePatchedUiStyles() {
   if (document.getElementById("careops-patched-ui-styles")) return;
   const style = document.createElement("style");
@@ -3395,7 +3199,68 @@ function ensurePatchedUiStyles() {
     #levels-panel.track-theme-applied { border-color: #f59e0b; box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.08); }
     #levels-panel.track-theme-advanced { border-color: #ef4444; box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.08); }
     #levels-panel.track-theme-expert { border-color: #7c3aed; box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.08); }
-
+    .track-badge-card,
+    .level-card {
+      appearance: none;
+      background: #ffffff !important;
+      color: #0f172a !important;
+      border: 2px solid var(--level-color, #cbd5e1) !important;
+      border-radius: 18px !important;
+      padding: 18px 16px !important;
+      min-height: 174px;
+      cursor: pointer;
+      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06) !important;
+      transform: none;
+      transition: transform 0.16s ease, box-shadow 0.16s ease, background-color 0.16s ease, border-color 0.16s ease !important;
+    }
+    .track-badge-card:hover,
+    .level-card:hover {
+      background: #f8fafc !important;
+      color: #0f172a !important;
+      transform: translateY(-2px);
+      box-shadow: 0 14px 30px rgba(15, 23, 42, 0.10) !important;
+    }
+    .track-badge-card.active,
+    .level-card.active,
+    .track-badge-card.active:hover,
+    .level-card.active:hover {
+      background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%) !important;
+      color: #0f172a !important;
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--level-color, #2563eb) 18%, transparent), 0 14px 30px rgba(15, 23, 42, 0.10) !important;
+    }
+    .track-badge-name {
+      color: #0f172a !important;
+      font-weight: 800;
+      margin-top: 10px;
+    }
+    .track-badge-stats,
+    .track-badge-helper {
+      color: #64748b !important;
+      font-weight: 650;
+    }
+    .track-badge-helper {
+      font-size: 0.82rem;
+      margin-top: 4px;
+    }
+    .track-badge-icon-wrap {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .track-badge-ring {
+      width: 74px;
+      height: 74px;
+      border-radius: 999px;
+      padding: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .track-badge-icon.level-icon {
+      background: #ffffff;
+      border-radius: 999px;
+      box-shadow: inset 0 0 0 1px #e2e8f0;
+    }
     .track-badge-ring .level-icon,
     .track-badge-icon.level-icon {
       display: flex;
@@ -3411,35 +3276,29 @@ function ensurePatchedUiStyles() {
   `;
   document.head.appendChild(style);
 }
-
 function isTextChallenge(lesson) {
   return !!lesson && lesson.type === "challenge" && lesson.challengeMode === "text";
 }
-
 function challengeConceptMatches(lesson, answerText) {
   const text = String(answerText || "").toLowerCase();
   const requiredGroups = Array.isArray(lesson.requiredConceptGroups) && lesson.requiredConceptGroups.length
     ? lesson.requiredConceptGroups
     : (Array.isArray(lesson.acceptedConceptGroups) ? lesson.acceptedConceptGroups : []);
   const bonusGroups = Array.isArray(lesson.bonusConceptGroups) ? lesson.bonusConceptGroups : [];
-
   const matchedRequired = [];
   const missingRequired = [];
   const matchedBonus = [];
-
   requiredGroups.forEach((group) => {
     const terms = Array.isArray(group) ? group : [group];
     const didMatch = terms.some((term) => text.includes(String(term).toLowerCase()));
     if (didMatch) matchedRequired.push(terms[0]);
     else missingRequired.push(terms[0]);
   });
-
   bonusGroups.forEach((group) => {
     const terms = Array.isArray(group) ? group : [group];
     const didMatch = terms.some((term) => text.includes(String(term).toLowerCase()));
     if (didMatch) matchedBonus.push(terms[0]);
   });
-
   return {
     matchedCount: matchedRequired.length,
     missing: missingRequired,
@@ -3448,7 +3307,6 @@ function challengeConceptMatches(lesson, answerText) {
     requiredGroupCount: requiredGroups.length
   };
 }
-
 function gradeTextChallenge(lesson, rawAnswer) {
   const answer = String(rawAnswer || "").trim();
   const minLength = lesson.minLength || 60;
@@ -3473,7 +3331,6 @@ function gradeTextChallenge(lesson, rawAnswer) {
     requiredGroupCount
   };
 }
-
 function escapeHtml(str) {
   if (str === null || str === undefined) return '';
   return String(str)
@@ -3493,7 +3350,6 @@ function renderLesson() {
   document.getElementById("lesson-tables").innerHTML = `<strong>Relevant Tables:</strong> ${lesson.relevantTables.join(", ") || "—"}`;
   document.getElementById("lesson-join-hint").innerHTML = `<strong>Join Hint:</strong> ${lesson.joinHint || "—"}`;
   document.getElementById("lesson-sql-focus").innerHTML = `<strong>SQL Focus:</strong> ${(lesson.sql_focus || []).join(", ") || "—"}`;
-
   const typeBadge = document.getElementById("current-lesson-type-badge");
   const catBadge = document.getElementById("current-category-badge");
   if (typeBadge) {
@@ -3506,12 +3362,10 @@ function renderLesson() {
     catBadge.className = "difficulty-badge " + (map[level.key] || "difficulty-intermediate");
     catBadge.innerText = level.label;
   }
-
   ["concept-content","challenge-content","scenario-content","executive-takeaway"].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.classList.add("hidden");
   });
-
   if (lesson.type === "concept") {
     document.getElementById("concept-content").classList.remove("hidden");
     document.getElementById("concept-summary").innerText = lesson.content.summary;
@@ -3524,13 +3378,10 @@ function renderLesson() {
     });
     document.getElementById("concept-example").innerText = lesson.content.example || "";
   }
-
   if (lesson.type === "challenge") {
     const challengeContent = document.getElementById("challenge-content");
     challengeContent.classList.remove("hidden");
-
 let criteriaBox = document.getElementById("challenge-criteria");
-
 if (!criteriaBox) {
   criteriaBox = document.createElement("div");
   criteriaBox.id = "challenge-criteria";
@@ -3542,12 +3393,10 @@ if (!criteriaBox) {
     challengeContent.insertBefore(criteriaBox, challengeContent.firstChild);
   }
 }
-
     criteriaBox.innerHTML = `
       <h4>Your Task</h4>
       <p style="white-space: pre-line;">${escapeHtml(lesson.challengeCriteria || buildChallengePrompt(lesson) || lesson.objective || "")}</p>
     `;
-
     const query = document.getElementById("query");
     const queryLabel = challengeContent.querySelector(".query-label");
     const challengeButtons = challengeContent.querySelectorAll("button");
@@ -3568,7 +3417,6 @@ if (!criteriaBox) {
     document.getElementById("feedback").classList.remove("success","error","warning");
     document.getElementById("output").innerHTML = "";
   }
-
   if (lesson.type === "scenario") {
     document.getElementById("scenario-content").classList.remove("hidden");
     document.getElementById("scenario-summary").innerText = lesson.content.summary || "";
@@ -3576,7 +3424,6 @@ if (!criteriaBox) {
     document.getElementById("scenario-response").value = "";
     document.getElementById("scenario-feedback").innerText = "";
   }
-
   if (shouldShowExecutiveTakeaway(lesson)) {
     document.getElementById("executive-takeaway").classList.remove("hidden");
     document.getElementById("exec-metric").innerHTML = `<strong>Metric:</strong> ${lesson.executiveTakeaway.metric}`;
@@ -3585,11 +3432,7 @@ if (!criteriaBox) {
     document.getElementById("exec-action").innerHTML = `<strong>Recommended action:</strong> ${lesson.executiveTakeaway.action}`;
   }
 }
-
-
 /* duplicate removed during stabilization pass */
-
-
 function generateMockData() {
   const patients = [];
   const providers = [];
@@ -3652,7 +3495,6 @@ function generateMockData() {
       discharge_date: dischargeDate
     };
     encounters.push(encounter);
-
     appointments.push({
       appointment_id: appointmentId++,
       patient_id: patientId,
@@ -3663,7 +3505,6 @@ function generateMockData() {
       status: i % 9 === 0 ? "No Show" : "Completed",
       date: admitDate
     });
-
     const amount = 500 + (i * 37);
     charges.push({
       charge_id: chargeId++,
@@ -3681,7 +3522,6 @@ function generateMockData() {
       payer: ["Medicare","Medicaid","Commercial","Self Pay"][i % 4],
       charge_type: i % 2 === 0 ? "Professional" : "Ancillary"
     });
-
     claims.push({
       claim_id: claimId++,
       patient_id: patientId,
@@ -3690,8 +3530,6 @@ function generateMockData() {
       claim_status: i % 7 === 0 ? "Denied" : "Paid",
       billed_amount: amount * 1.4
     });
-
-
     discharges.push({
       discharge_id: dischargeId++,
       encounter_id: i,
@@ -3703,7 +3541,6 @@ function generateMockData() {
       departure_minutes: 60 + (i % 240),
       delayed_for_transport: i % 8 === 0 ? 1 : 0
     });
-
     if (encounter.encounter_type === "Observation") {
       observations.push({
         observation_id: observationId++,
@@ -3717,7 +3554,6 @@ function generateMockData() {
       });
     }
   }
-
   for (let i = 1; i <= 30; i++) {
     readmissions.push({
       readmission_id: readmissionId++,
@@ -3729,15 +3565,12 @@ function generateMockData() {
       days_to_readmit: 5 + (i % 25)
     });
   }
-
   schema.tables.forEach(table => {
     const rows = {patients, providers, departments, encounters, appointments, charges, claims, discharges, readmissions, observations}[table.name] || [];
     table.sampleRows = rows.slice(0, 5);
   });
-
   return { patients, providers, departments, encounters, appointments, charges, claims, discharges, readmissions, observations };
 }
-
 function initDatabase() {
   return new Promise((resolve, reject) => {
     if (sqlEngineReady) return resolve();
@@ -3764,7 +3597,6 @@ function initDatabase() {
       .catch(reject);
   });
 }
-
 function createTables() {
   sqlDb.run(`CREATE TABLE patients (patient_id INTEGER, first_name TEXT, last_name TEXT, age INTEGER, gender TEXT, insurance_type TEXT, risk_score INTEGER, city TEXT);`);
   sqlDb.run(`CREATE TABLE providers (provider_id INTEGER, provider_name TEXT, specialty TEXT, facility TEXT);`);
@@ -3777,7 +3609,6 @@ function createTables() {
   sqlDb.run(`CREATE TABLE readmissions (readmission_id INTEGER, index_encounter_id INTEGER, readmit_encounter_id INTEGER, patient_id INTEGER, facility TEXT, readmit_within_30_days INTEGER, days_to_readmit INTEGER);`);
   sqlDb.run(`CREATE TABLE observations (observation_id INTEGER, encounter_id INTEGER, patient_id INTEGER, facility TEXT, department TEXT, obs_hours INTEGER, converted_to_inpatient INTEGER, code_44_flag INTEGER);`);
 }
-
 function seedTable(tableName, rows) {
   if (!rows.length) return;
   const cols = Object.keys(rows[0]);
@@ -3785,13 +3616,11 @@ function seedTable(tableName, rows) {
   rows.forEach(row => stmt.run(cols.map(col => row[col])));
   stmt.free();
 }
-
 function queryToResult(query) {
   const result = sqlDb.exec(query);
   if (!result.length) return { columns: [], values: [] };
   return { columns: result[0].columns, values: result[0].values };
 }
-
 function formatResultTable(result) {
   if (!result.columns.length) return "<p>No rows returned.</p>";
   let html = '<div class="query-results-table-wrap"><table class="preview-table"><thead><tr>';
@@ -3805,7 +3634,6 @@ function formatResultTable(result) {
   html += "</tbody></table></div>";
   return html;
 }
-
 function getExecutionErrorMessage(error) {
   const raw = String(error && error.message ? error.message : error || "");
   const message = raw.toLowerCase();
@@ -3815,29 +3643,23 @@ function getExecutionErrorMessage(error) {
   if (message.includes("ambiguous")) return "A column reference is ambiguous. Add the table alias or full table.column reference.";
   return raw || "The query could not be executed.";
 }
-
 function runQuery() {
   const lesson = getCurrentLesson();
   const output = document.getElementById("output");
   const feedback = document.getElementById("feedback");
   const queryBox = document.getElementById("query");
-
   if (!lesson || (lesson.kind !== "challenge" && lesson.type !== "challenge") || !queryBox) return;
-
   const query = queryBox.value.trim();
   lastRunQuery = query;
-
   if (!query) {
     setFeedbackState(feedback, "error", isTextChallenge(lesson) ? "Please enter a response before submitting." : "Please enter a query before running it.");
     if (output) output.innerHTML = "";
     return;
   }
-
   if (isTextChallenge(lesson)) {
     if (output) output.innerHTML = "";
     attempts += 1;
     const result = gradeTextChallenge(lesson, query);
-
     if (result.passed) {
       updateLessonStatsOnGrade(lesson.id, attempts === 1 ? { score: 100, tier: "Perfect" } : { score: 92, tier: "Strong" }, true);
       markLessonCompleted(lesson.id, attempts === 1);
@@ -3847,16 +3669,13 @@ function runQuery() {
       refreshLessonChrome();
       return;
     }
-
     const missingText = result.missing.length ? ` Missing ideas to mention: ${result.missing.slice(0, 3).join(", ")}.` : "";
-
     if (result.partial && attempts < 3) {
       setFeedbackState(feedback, "warning", `You are on the right track, but the explanation is incomplete.${missingText}`);
       saveProgress();
       refreshLessonChrome();
       return;
     }
-
     if (attempts < 3) {
       const nextHint = attempts === 1 ? (lesson.hint || "Focus on what one row represents and why.") : (lesson.smartHint || lesson.thirdHint || lesson.hint || "Use the business wording and the table grain to guide your answer.");
       setFeedbackState(feedback, "warning", `Not correct yet. Hint ${attempts}: ${nextHint}${missingText}`);
@@ -3864,15 +3683,12 @@ function runQuery() {
       refreshLessonChrome();
       return;
     }
-
     setFeedbackState(
       feedback,
       "error",
       `You have used all 3 attempts.
-
 Suggested Answer:
 ${lesson.exemplarAnswer || lesson.explanation || "Review the lesson and try again."}
-
 Explanation:
 ${lesson.explanation || lesson.feedbackGuide || "This lesson is testing your reasoning, not verbatim wording."}`
     );
@@ -3880,27 +3696,21 @@ ${lesson.explanation || lesson.feedbackGuide || "This lesson is testing your rea
     refreshLessonChrome();
     return;
   }
-
   const hintOne =
     lesson.hint ||
     "Start with the correct table and make sure you are selecting the required fields.";
-
   const hintTwo =
     lesson.smartHint ||
     lesson.secondHint ||
     "Double-check the exact columns, filters, joins, or grouping needed to match the lesson objective.";
-
   const finalExplanation =
     lesson.explanation ||
     "This answer is correct because it uses the right table, selects the required fields, and returns the expected result for the lesson objective.";
-
   try {
     const result = queryToResult(query);
     if (output) output.innerHTML = formatResultTable(result);
-
     const solutionResult = queryToResult(lesson.solutionQuery);
     const passed = normalizeResult(result) === normalizeResult(solutionResult);
-
     if (passed) {
       markLessonCompleted(lesson.id, attempts === 0);
       setFeedbackState(
@@ -3913,9 +3723,7 @@ ${lesson.explanation || lesson.feedbackGuide || "This lesson is testing your rea
       refreshLessonChrome();
       return;
     }
-
     attempts += 1;
-
     if (attempts === 1) {
       setFeedbackState(feedback, "warning", `Not correct yet. Hint 1: ${hintOne}`);
     } else if (attempts === 2) {
@@ -3925,24 +3733,18 @@ ${lesson.explanation || lesson.feedbackGuide || "This lesson is testing your rea
         feedback,
         "error",
         `You have used all 3 attempts.
-
 Correct Answer:
 ${lesson.solutionQuery}
-
 Explanation:
 ${finalExplanation}`
       );
     }
-
     saveProgress();
     refreshLessonChrome();
   } catch (error) {
     if (output) output.innerHTML = "";
-
     attempts += 1;
-
     const executionMessage = getExecutionErrorMessage(error);
-
     if (attempts === 1) {
       setFeedbackState(
         feedback,
@@ -3960,15 +3762,12 @@ ${finalExplanation}`
         feedback,
         "error",
         `You have used all 3 attempts.
-
 Correct Answer:
 ${lesson.solutionQuery}
-
 Explanation:
 ${finalExplanation}`
       );
     }
-
     saveProgress();
     refreshLessonChrome();
   }
@@ -3979,7 +3778,6 @@ function normalizeResult(result) {
     values: result.values
   });
 }
-
 function gradePass() {
   if (attempts === 0) return { score: 100, tier: "Perfect" };
   if (attempts === 1) return { score: 92, tier: "Strong" };
@@ -3994,7 +3792,6 @@ function refreshLessonChrome() {
   removeLevelsPanelOverviewButton();
   renderTrackCategoryCards();
 }
-
 function setFeedbackState(element, state, message) {
   if (!element) return;
   element.classList.remove("success", "error", "warning");
@@ -4008,117 +3805,92 @@ function resetQuery() {
   const queryBox = document.getElementById("query");
   const feedback = document.getElementById("feedback");
   const output = document.getElementById("output");
-
   if (queryBox) queryBox.value = "";
   if (feedback) {
     feedback.classList.remove("success", "error", "warning");
     feedback.innerText = "";
   }
   if (output) output.innerHTML = "";
-
   attempts = 0;
   lastRunQuery = "";
 }
-
 function submitScenario() {
   const lesson = getCurrentLesson();
   const box = document.getElementById("scenario-response");
   const feedback = document.getElementById("scenario-feedback");
-
   if (!lesson || lesson.type !== "scenario" || !box || !feedback) return;
-
   attempts += 1;
-
   const rawAnswer = box.value.trim();
   const answer = rawAnswer.toLowerCase();
-
   if (!rawAnswer) {
     setFeedbackState(feedback, "error", "Please enter a response before submitting.");
     return;
   }
-
   const expectedKeywords = lesson.content.expectedKeywords || [];
   const minLength = lesson.content.minLength || 80;
   const minimumKeywordMatches =
     lesson.content.minimumKeywordMatches || Math.min(2, expectedKeywords.length);
-
   const matchedKeywords = expectedKeywords.filter(k =>
     answer.includes(String(k).toLowerCase())
   );
   const missingKeywords = expectedKeywords.filter(k =>
     !answer.includes(String(k).toLowerCase())
   );
-
   const passed =
     rawAnswer.length >= minLength &&
     matchedKeywords.length >= minimumKeywordMatches;
-
   const partial =
     !passed &&
     rawAnswer.length >= Math.max(50, Math.floor(minLength * 0.6)) &&
     matchedKeywords.length >= 1;
-
   if (passed) {
     const perfect = matchedKeywords.length >= expectedKeywords.length;
     const grade = perfect
       ? { score: 100, tier: "Perfect" }
       : { score: 92, tier: "Strong" };
-
     updateLessonStatsOnGrade(lesson.id, grade, true);
     markLessonCompleted(lesson.id, attempts === 1);
-
     setFeedbackState(
       feedback,
       "success",
       `Correct — ${lesson.content.feedbackGuide || "You covered the right business context, likely data source, and practical action."}`
     );
-
     saveProgress();
     refreshLessonChrome();
     return;
   }
-
   if (partial) {
     updateLessonStatsOnGrade(lesson.id, { score: 72, tier: "Partial" }, false);
-
     const missingText = missingKeywords.length
       ? `Missing ideas to mention: ${missingKeywords.slice(0, 4).join(", ")}.`
       : "Add more specificity to the response.";
-
     setFeedbackState(
       feedback,
       "warning",
       `Partially correct — you are on the right track, but the response needs more specificity. ${missingText}`
     );
-
     saveProgress();
     refreshLessonChrome();
     return;
   }
-
   updateLessonStatsOnGrade(lesson.id, { score: 55, tier: "Developing" }, false);
-
   const missingText = missingKeywords.length
     ? `Missing ideas to mention: ${missingKeywords.slice(0, 4).join(", ")}.`
     : "";
-
   setFeedbackState(
     feedback,
     "error",
     `Not correct yet. Build the response around the likely table or data source, the business meaning, and one practical action. ${missingText}`.trim()
   );
-
   saveProgress();
   refreshLessonChrome();
 }
-
 function resetScenario() {
   const box = document.getElementById("scenario-response");
   const feedback = document.getElementById("scenario-feedback");
   if (box) box.value = "";
   if (feedback) feedback.innerText = "";
 }
-
 function markConceptComplete() {
   const lesson = getCurrentLesson();
   if (!lesson || lesson.type !== "concept") return;
@@ -4127,7 +3899,6 @@ function markConceptComplete() {
   saveProgress();
   renderAll();
 }
-
 function nextLesson() {
   const lessons = getAllLessons();
   const idx = lessons.findIndex(item => item.id === appState.currentLessonId);
@@ -4148,7 +3919,6 @@ function nextLesson() {
   saveProgress();
   renderAll();
 }
-
 function prevLesson() {
   const lessons = getAllLessons();
   const idx = lessons.findIndex(item => item.id === appState.currentLessonId);
@@ -4170,7 +3940,6 @@ function prevLesson() {
   saveProgress();
   renderAll();
 }
-
 function resetAllProgress() {
   if (!window.confirm("Reset all progress for CareOps SQL Analyst?")) return;
   const firstTrack = curriculum[0] || null;
@@ -4189,7 +3958,6 @@ function resetAllProgress() {
   showOverview();
   renderAll();
 }
-
 function openTableModal(tableName) {
   const overlay = document.getElementById("table-modal-overlay");
   const table = schema.tables.find(item => item.name === tableName);
@@ -4220,38 +3988,29 @@ function openTableModal(tableName) {
   previewContent.innerHTML = html;
   overlay.classList.remove("hidden");
 }
-
 function closeTableModal(event) {
   if (event && event.target && event.target.id && event.target.id !== "table-modal-overlay") return;
   const overlay = document.getElementById("table-modal-overlay");
   if (overlay) overlay.classList.add("hidden");
 }
-
-
 /* duplicate removed during stabilization pass */
-
-
 const AI_API_CONFIG = {
   endpoint: "/api/ai-companion",
   method: "POST",
   timeoutMs: 15000
 };
-
 let sandboxDb = null;
 let aiThread = [];
-
 function showSection(sectionId) {
   ["track-overview", "lesson-workspace", "sandbox-workspace", "glossary-workspace"].forEach((id) => {
     const el = document.getElementById(id);
     if (el) el.classList.toggle("hidden", id !== sectionId);
   });
 }
-
 function showLessonWorkspace() {
   appState.currentView = "lesson";
   showSection("lesson-workspace");
 }
-
 function ensureCurrentLesson() {
   if (appState.currentLessonId) return;
   const firstTrack = getTrack();
@@ -4260,19 +4019,9 @@ function ensureCurrentLesson() {
   if (firstCategory) appState.currentCategoryId = firstCategory.id;
   if (firstLesson) appState.currentLessonId = firstLesson.id;
 }
-
-
 /* duplicate removed during stabilization pass */
-
-
-
 /* duplicate removed during stabilization pass */
-
-
-
 /* duplicate removed during stabilization pass */
-
-
 function setMessageState(elementId, state, message) {
   const el = document.getElementById(elementId);
   if (!el) return;
@@ -4284,7 +4033,6 @@ function setMessageState(elementId, state, message) {
   el.classList.add(state);
   el.textContent = message;
 }
-
 async function initializeSandboxDatabase() {
   if (!SQL) return;
   sandboxDb = new SQL.Database();
@@ -4292,7 +4040,6 @@ async function initializeSandboxDatabase() {
   createTablesForDb(sandboxDb);
   Object.entries(mockData).forEach(([tableName, rows]) => seedTableIntoDb(sandboxDb, tableName, rows));
 }
-
 function createTablesForDb(db) {
   db.run(`
     CREATE TABLE patients (patient_id INTEGER, first_name TEXT, last_name TEXT, age INTEGER, gender TEXT, insurance_type TEXT, risk_score REAL, city TEXT);
@@ -4307,7 +4054,6 @@ function createTablesForDb(db) {
     CREATE TABLE observations (observation_id INTEGER, encounter_id INTEGER, patient_id INTEGER, facility TEXT, department TEXT, obs_hours INTEGER, converted_to_inpatient INTEGER, code_44_flag INTEGER);
   `);
 }
-
 function seedTableIntoDb(db, tableName, rows) {
   if (!rows || !rows.length) return;
   const keys = Object.keys(rows[0]);
@@ -4316,26 +4062,15 @@ function seedTableIntoDb(db, tableName, rows) {
   rows.forEach((row) => stmt.run(keys.map((key) => row[key])));
   stmt.free();
 }
-
 async function resetSandbox() {
   await initializeSandboxDatabase();
   document.getElementById("sandbox-output").innerHTML = "";
   setMessageState("sandbox-feedback", "success", "Sandbox reset. You are back to a clean mock environment.");
   syncSandboxStarterQuery();
 }
-
-
 /* duplicate removed during stabilization pass */
-
-
-
 /* duplicate removed during stabilization pass */
-
-
-
 /* duplicate removed during stabilization pass */
-
-
 function aiContextPayload() {
   const lesson = getCurrentLesson();
   return {
@@ -4355,22 +4090,14 @@ function aiContextPayload() {
     }
   };
 }
-
-
 /* duplicate removed during stabilization pass */
-
-
 function setAiStatus(text, isLive = false) {
   const pill = document.getElementById("ai-status-pill");
   if (!pill) return;
   pill.textContent = text;
   pill.classList.toggle("is-ready", !!isLive);
 }
-
-
 /* duplicate removed during stabilization pass */
-
-
 async function requestAiCompanion(userMessage) {
   const payload = {
     message: userMessage,
@@ -4397,59 +4124,35 @@ async function requestAiCompanion(userMessage) {
     return fallbackAiResponse(userMessage);
   }
 }
-
-
-
-
 /* duplicate removed during stabilization pass */
-
-
-
 /* duplicate removed during stabilization pass */
-
-
-
 /* duplicate removed during stabilization pass */
-
-
-
 /* duplicate removed during stabilization pass */
-
-
-
-
 /* duplicate removed during stabilization pass */
-
-
 window.showCareopsOverview = function () {
   appState.currentView = "overview";
   attempts = 0;
   saveProgress();
   renderAll();
 };
-
 window.showCareopsLessons = function () {
   attempts = 0;
   showLessonsWorkspace();
   saveProgress();
   renderAll();
 };
-
 window.showCareopsSandbox = function () {
   appState.currentView = "sandbox";
   attempts = 0;
   saveProgress();
   renderAll();
 };
-
 window.showCareopsGlossary = function () {
   appState.currentView = "glossary";
   attempts = 0;
   saveProgress();
   renderAll();
 };
-
-
 document.addEventListener("DOMContentLoaded", async function () {
   ensurePatchedUiStyles();
   normalizeCurriculum();
@@ -4472,27 +4175,20 @@ document.addEventListener("DOMContentLoaded", async function () {
   window.addEventListener("scroll", hideAchievementTooltip, true);
   window.addEventListener("resize", hideAchievementTooltip);
 });
-
-
 /* ================= PATCHED SANDBOX / AI / MOBILE BEHAVIOR ================= */
-
 let sandboxModeState = "free";
 let selectedSandboxPromptId = null;
-
 function setSandboxModeUi(isSandbox) {
   document.body.classList.toggle("sandbox-mode", !!isSandbox);
 }
-
 function defaultSandboxQuery() {
   return "SELECT * FROM patients;";
 }
-
 function getSandboxPromptOptions() {
   const current = getCurrentLesson();
   const lessons = (typeof getAllLessons === "function" ? getAllLessons() : []).filter(
     (lesson) => lesson && (lesson.starterQuery || lesson.solutionQuery)
   );
-
   const prompts = [];
   if (current && (current.starterQuery || current.solutionQuery)) {
     prompts.push({
@@ -4503,7 +4199,6 @@ function getSandboxPromptOptions() {
       tables: Array.isArray(current.relevantTables) ? current.relevantTables : []
     });
   }
-
   lessons.slice(0, 12).forEach((lesson) => {
     if (current && lesson.id === current.id) return;
     prompts.push({
@@ -4514,22 +4209,18 @@ function getSandboxPromptOptions() {
       tables: Array.isArray(lesson.relevantTables) ? lesson.relevantTables : []
     });
   });
-
   return prompts;
 }
-
 function getSelectedSandboxPrompt() {
   const prompts = getSandboxPromptOptions();
   return prompts.find((prompt) => prompt.id === selectedSandboxPromptId) || null;
 }
-
 function renderSandboxLessonContext(prompt = null) {
   const panel = document.getElementById("sandbox-lesson-context");
   const titleEl = document.getElementById("sandbox-lesson-title");
   const objectiveEl = document.getElementById("sandbox-lesson-objective");
   const tablesEl = document.getElementById("sandbox-lesson-tables");
   if (!panel || !titleEl || !objectiveEl || !tablesEl) return;
-
   if (sandboxModeState !== "guided" || !prompt) {
     panel.classList.add("hidden");
     titleEl.textContent = "Choose a guided prompt.";
@@ -4537,7 +4228,6 @@ function renderSandboxLessonContext(prompt = null) {
     tablesEl.innerHTML = "";
     return;
   }
-
   panel.classList.remove("hidden");
   titleEl.textContent = prompt.title || "Guided prompt";
   objectiveEl.textContent = prompt.objective || "Use this guided prompt in the sandbox.";
@@ -4546,38 +4236,30 @@ function renderSandboxLessonContext(prompt = null) {
     ? tables.map((table) => `<div class="sandbox-schema-pill"><span>${escapeHtml(table)}</span><code>${escapeHtml(table)}</code></div>`).join("")
     : '<p class="sandbox-note">No related tables were supplied for this prompt.</p>';
 }
-
 function applySandboxPrompt(prompt, silent = false) {
   if (!prompt) return;
   selectedSandboxPromptId = prompt.id || null;
   sandboxModeState = "guided";
-
   const box = document.getElementById("sandbox-query");
   if (box) box.value = prompt.query || "";
-
   renderSandboxLessonContext(prompt);
-
   const holder = document.getElementById("sandbox-prompt-list");
   holder?.querySelectorAll(".sandbox-prompt-card").forEach((card) => {
     card.classList.toggle("active", card.getAttribute("data-prompt-id") === String(prompt.id));
   });
-
   if (!silent) {
     setMessageState("sandbox-feedback", "success", `Loaded guided prompt: ${prompt.title}`);
   }
 }
-
 function renderSandboxPromptList() {
   const holder = document.getElementById("sandbox-prompt-list");
   if (!holder) return;
-
   const prompts = getSandboxPromptOptions();
   if (!prompts.length) {
     holder.innerHTML = '<p class="sandbox-note">No guided prompts are available yet. Open a lesson first, then return to the sandbox.</p>';
     renderSandboxLessonContext(null);
     return;
   }
-
   holder.innerHTML = prompts.map((prompt) => `
     <div class="sandbox-prompt-card ${prompt.id === selectedSandboxPromptId ? "active" : ""}" data-prompt-id="${escapeHtml(prompt.id)}">
       <h5>${escapeHtml(prompt.title)}</h5>
@@ -4587,7 +4269,6 @@ function renderSandboxPromptList() {
       </div>
     </div>
   `).join("");
-
   holder.querySelectorAll(".sandbox-prompt-card").forEach((card) => {
     card.onclick = () => {
       const prompt = prompts.find((item) => item.id === card.getAttribute("data-prompt-id"));
@@ -4596,7 +4277,6 @@ function renderSandboxPromptList() {
       document.getElementById("sandbox-query")?.focus();
     };
   });
-
   if (selectedSandboxPromptId) {
     const selected = prompts.find((prompt) => prompt.id === selectedSandboxPromptId);
     renderSandboxLessonContext(selected || null);
@@ -4604,21 +4284,17 @@ function renderSandboxPromptList() {
     renderSandboxLessonContext(null);
   }
 }
-
 function setSandboxMode(mode = "free") {
   sandboxModeState = mode === "guided" ? "guided" : "free";
-
   const guidedPanel = document.getElementById("sandbox-guided-panel");
   const guidedBtn = document.getElementById("sandbox-guided-btn");
   const freeBtn = document.getElementById("sandbox-free-btn");
   const box = document.getElementById("sandbox-query");
-
   if (sandboxModeState === "guided") {
     guidedPanel?.classList.remove("hidden");
     guidedBtn?.classList.add("active");
     freeBtn?.classList.remove("active");
     renderSandboxPromptList();
-
     const selected = getSelectedSandboxPrompt();
     if (selected) {
       applySandboxPrompt(selected, true);
@@ -4628,7 +4304,6 @@ function setSandboxMode(mode = "free") {
     }
     return;
   }
-
   guidedPanel?.classList.add("hidden");
   freeBtn?.classList.add("active");
   guidedBtn?.classList.remove("active");
@@ -4638,11 +4313,9 @@ function setSandboxMode(mode = "free") {
     box.value = defaultSandboxQuery();
   }
 }
-
 function syncSandboxStarterQuery() {
   const box = document.getElementById("sandbox-query");
   if (!box) return;
-
   if (sandboxModeState === "guided") {
     const selected = getSelectedSandboxPrompt();
     if (selected) {
@@ -4650,17 +4323,14 @@ function syncSandboxStarterQuery() {
       return;
     }
   }
-
   if (!box.value.trim()) {
     box.value = defaultSandboxQuery();
   }
   renderSandboxLessonContext(null);
 }
-
 function ensureGlossaryWorkspace() {
   let workspace = document.getElementById("glossary-workspace");
   if (workspace) return workspace;
-
   const playArea = document.querySelector(".play-area") || document.querySelector(".main-content") || document.body;
   workspace = document.createElement("section");
   workspace.id = "glossary-workspace";
@@ -4668,27 +4338,22 @@ function ensureGlossaryWorkspace() {
   playArea.appendChild(workspace);
   return workspace;
 }
-
 function setGlossaryModeUi(isGlossary) {
   document.body.classList.toggle("glossary-mode", !!isGlossary);
   if (isGlossary) document.body.classList.remove("sandbox-mode");
 }
-
 function ensureGlossaryNavButton() {
   let button = document.getElementById("open-glossary-btn");
   if (button) return button;
-
   const sandboxBtn = document.getElementById("open-sandbox-btn") || document.getElementById("nav-sandbox-btn") || Array.from(document.querySelectorAll("button")).find((btn) => String(btn.textContent || "").trim().toLowerCase() === "sandbox");
   const resetBtn = Array.from(document.querySelectorAll("button")).find((btn) => /reset progress/i.test(String(btn.textContent || "")));
   const parent = sandboxBtn?.parentElement || resetBtn?.parentElement || document.querySelector(".main-nav-actions") || document.querySelector(".dashboard-actions.main-nav-actions") || document.querySelector(".dashboard-actions");
   if (!parent) return null;
-
   button = document.createElement("button");
   button.type = "button";
   button.id = "open-glossary-btn";
   button.className = "glossary-nav-btn";
   button.textContent = "Glossary";
-
   if (resetBtn && resetBtn.parentElement === parent) {
     parent.insertBefore(button, resetBtn);
   } else if (sandboxBtn && sandboxBtn.parentElement === parent) {
@@ -4696,14 +4361,11 @@ function ensureGlossaryNavButton() {
   } else {
     parent.appendChild(button);
   }
-
   return button;
 }
-
 function getFilteredGlossaryTerms() {
   const query = String(appState.glossarySearch || "").trim().toLowerCase();
   const activeCategory = String(appState.glossaryCategory || "").trim().toLowerCase();
-
   return GLOSSARY_TERMS.filter((item) => {
     const matchesCategory = !activeCategory || item.category === activeCategory;
     const haystack = [item.term, item.definition, item.why, item.example, glossaryCategoryLabel(item.category)].join(" ").toLowerCase();
@@ -4711,7 +4373,6 @@ function getFilteredGlossaryTerms() {
     return matchesCategory && matchesQuery;
   });
 }
-
 function renderGlossaryCard(item) {
   return `
     <article class="glossary-card glossary-card-${escapeHtml(item.category)}">
@@ -4737,11 +4398,9 @@ function renderGlossaryCard(item) {
     </article>
   `;
 }
-
 function renderGlossary() {
   const workspace = ensureGlossaryWorkspace();
   const filteredTerms = getFilteredGlossaryTerms();
-
   workspace.innerHTML = `
     <div class="glossary-page">
       <div class="glossary-header-card">
@@ -4751,7 +4410,6 @@ function renderGlossary() {
           <p>Definitions for SQL, hospital operations, finance, and analytics terms used throughout the CareOps curriculum.</p>
         </div>
       </div>
-
       <div class="glossary-toolbar">
         <div>
           <label class="glossary-label" for="glossary-search-input">Search Terms</label>
@@ -4768,9 +4426,7 @@ function renderGlossary() {
           </div>
         </div>
       </div>
-
       <div class="glossary-results-meta">${filteredTerms.length} terms shown</div>
-
       ${filteredTerms.length ? `<div class="glossary-card-grid">${filteredTerms.map(renderGlossaryCard).join("")}</div>` : `
         <div class="glossary-empty-state">
           <h3>No terms matched</h3>
@@ -4779,7 +4435,6 @@ function renderGlossary() {
       `}
     </div>
   `;
-
   const input = document.getElementById("glossary-search-input");
   if (input) {
     input.addEventListener("input", (event) => {
@@ -4788,7 +4443,6 @@ function renderGlossary() {
       renderGlossary();
     });
   }
-
   workspace.querySelectorAll("[data-glossary-filter]").forEach((button) => {
     button.addEventListener("click", () => {
       appState.glossaryCategory = button.getAttribute("data-glossary-filter") || "";
@@ -4797,7 +4451,6 @@ function renderGlossary() {
     });
   });
 }
-
 function showGlossaryWorkspace() {
   appState.currentView = "glossary";
   setGlossaryModeUi(true);
@@ -4805,7 +4458,6 @@ function showGlossaryWorkspace() {
   renderGlossary();
   document.getElementById("glossary-workspace")?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
-
 function showOverview() {
   appState.currentView = "overview";
   setSandboxModeUi(false);
@@ -4813,7 +4465,6 @@ function showOverview() {
   showSection("track-overview");
   document.getElementById("track-overview")?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
-
 function showLessonsWorkspace() {
   ensureCurrentLesson();
   appState.currentView = "lesson";
@@ -4822,7 +4473,6 @@ function showLessonsWorkspace() {
   showSection("lesson-workspace");
   document.getElementById("lesson-workspace")?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
-
 function showSandboxWorkspace() {
   appState.currentView = "sandbox";
   setSandboxModeUi(true);
@@ -4830,7 +4480,6 @@ function showSandboxWorkspace() {
   setSandboxMode(sandboxModeState);
   document.getElementById("sandbox-query")?.focus();
 }
-
 function formatSandboxResultTable(result) {
   const columns = Array.isArray(result?.columns) ? result.columns : [];
   const values = Array.isArray(result?.values) ? result.values : [];
@@ -4851,7 +4500,6 @@ function formatSandboxResultTable(result) {
   out += "</tbody></table></div>";
   return out;
 }
-
 function runSandboxQuery() {
   const query = (document.getElementById("sandbox-query")?.value || "").trim();
   if (!query) {
@@ -4862,7 +4510,6 @@ function runSandboxQuery() {
     setMessageState("sandbox-feedback", "warning", "Sandbox database is still loading. Try again in a moment.");
     return;
   }
-
   try {
     const execResult = sandboxDb.exec(query);
     const first = Array.isArray(execResult) && execResult.length ? execResult[0] : null;
@@ -4883,7 +4530,6 @@ function runSandboxQuery() {
     setMessageState("sandbox-feedback", "error", getExecutionErrorMessage(error));
   }
 }
-
 function formatAiResponseBody(text) {
   const safe = escapeHtml(String(text || ""));
   const sections = safe.split(/\n{2,}/).filter(Boolean);
@@ -4896,11 +4542,9 @@ function formatAiResponseBody(text) {
     return `<p>${lines.join("<br>")}</p>`;
   }).join("");
 }
-
 function renderAiMessages() {
   const holder = document.getElementById("ai-messages");
   if (!holder) return;
-
   if (!aiThread.length) {
     holder.innerHTML = `
       <div class="ai-message assistant">
@@ -4912,7 +4556,6 @@ function renderAiMessages() {
       </div>`;
     return;
   }
-
   holder.innerHTML = aiThread.map((msg) => `
     <div class="ai-message ${msg.role}">
       <div class="ai-message-role">${msg.role === "user" ? "You" : "AI companion"}</div>
@@ -4921,14 +4564,12 @@ function renderAiMessages() {
   `).join("");
   holder.scrollTop = holder.scrollHeight;
 }
-
 function fallbackAiResponse(userMessage) {
   const lesson = getCurrentLesson();
   const prompt = String(userMessage || "").toLowerCase();
   const lessonTitle = lesson?.title || "the current topic";
   const objective = lesson?.objective || "the question you are exploring";
   const relevantTables = lesson?.relevantTables?.length ? lesson.relevantTables.join(", ") : "the relevant tables";
-
   if (prompt.includes("readmission")) {
     return [
       "Readmissions matter because they can signal breakdowns in discharge planning, follow-up access, medication reconciliation, or care coordination.",
@@ -4941,7 +4582,6 @@ function fallbackAiResponse(userMessage) {
       "- length of stay, case management involvement, and ED bounce-backs"
     ].join("\n");
   }
-
   if (prompt.includes("los") || prompt.includes("length of stay")) {
     return [
       "Length of stay matters because it affects capacity, throughput, staffing pressure, and cost of care.",
@@ -4954,7 +4594,6 @@ function fallbackAiResponse(userMessage) {
       "- provider or unit variation"
     ].join("\n");
   }
-
   if (prompt.includes("code") || prompt.includes("sql") || prompt.includes("query")) {
     return [
       `You are working on ${lessonTitle}.`,
@@ -4965,7 +4604,6 @@ function fallbackAiResponse(userMessage) {
       "Tell me exactly what output you want and I will write or improve the SQL for you."
     ].join("\n");
   }
-
   return [
     `You are currently in ${lessonTitle}.`,
     `Objective: ${objective}`,
@@ -4978,58 +4616,45 @@ function fallbackAiResponse(userMessage) {
     "- help translate the result for leaders"
   ].join("\n");
 }
-
 async function sendAiMessage(prefill = null) {
   const input = document.getElementById("ai-input");
   const message = (prefill || input?.value || "").trim();
   if (!message) return;
-
   aiThread.push({ role: "user", content: message });
   renderAiMessages();
   if (input) input.value = "";
-
   const reply = await requestAiCompanion(message);
   aiThread.push({ role: "assistant", content: reply });
   renderAiMessages();
 }
-
 function clearAiChat() {
   aiThread = [];
   renderAiMessages();
 }
-
 function scrollToAiCompanion() {
   const target = document.getElementById("ai-companion-section") || document.getElementById("ai-input");
   target?.scrollIntoView({ behavior: "smooth", block: "start" });
   document.getElementById("ai-input")?.focus();
 }
-
 function updateAiContextBanner() {
   if (!aiThread.length) renderAiMessages();
 }
-
-
 function removeLevelsPanelOverviewButton() {
   const panel = document.getElementById("levels-panel");
   if (!panel) return;
-
   const overviewBtn =
     panel.querySelector("#open-overview-btn") ||
     Array.from(panel.querySelectorAll("button")).find((button) =>
       String(button.textContent || "").trim().toLowerCase() === "track overview"
     );
-
   if (!overviewBtn) return;
-
   const wrapper = overviewBtn.closest(".side-panel-actions, .levels-panel-action-row, .panel-action-row");
   if (wrapper) {
     wrapper.remove();
     return;
   }
-
   overviewBtn.remove();
 }
-
 function renderAll() {
   applySchemaPanelWidth();
   renderSchema();
@@ -5052,7 +4677,6 @@ function renderAll() {
   removeLevelsPanelOverviewButton();
   attachPersistentNavigationDelegates();
 }
-
 function initUiActions() {
   const openOverviewBtn = document.getElementById("open-overview-btn");
   if (openOverviewBtn) {
@@ -5065,7 +4689,6 @@ function initUiActions() {
       document.getElementById("track-overview")?.scrollIntoView({ behavior: "smooth", block: "start" });
     };
   }
-
   const openSandboxBtn = document.getElementById("open-sandbox-btn");
   if (openSandboxBtn) {
     openSandboxBtn.onclick = () => {
@@ -5077,7 +4700,6 @@ function initUiActions() {
       document.getElementById("sandbox-workspace")?.scrollIntoView({ behavior: "smooth", block: "start" });
     };
   }
-
   const openGlossaryBtn = ensureGlossaryNavButton();
   if (openGlossaryBtn) {
     openGlossaryBtn.onclick = () => {
@@ -5088,7 +4710,6 @@ function initUiActions() {
       renderAll();
     };
   }
-
   const toggleBtn = document.getElementById("toggle-levels-panel-btn");
   const panel = document.getElementById("levels-panel");
   if (toggleBtn && panel) {
@@ -5098,10 +4719,8 @@ function initUiActions() {
       toggleBtn.setAttribute("aria-expanded", panel.classList.contains("collapsed") ? "false" : "true");
     };
   }
-
   const runSandboxBtn = document.getElementById("run-sandbox-btn");
   if (runSandboxBtn) runSandboxBtn.onclick = runSandboxQuery;
-
   const resetSandboxBtn = document.getElementById("reset-sandbox-btn");
   if (resetSandboxBtn) {
     resetSandboxBtn.onclick = () => {
@@ -5111,7 +4730,6 @@ function initUiActions() {
       setSandboxMode("free");
     };
   }
-
   const guidedBtn = document.getElementById("sandbox-guided-btn");
   const freeBtn = document.getElementById("sandbox-free-btn");
   if (guidedBtn) guidedBtn.onclick = () => {
@@ -5121,7 +4739,6 @@ function initUiActions() {
   if (freeBtn) freeBtn.onclick = () => {
     setSandboxMode("free");
   };
-
   const askAiAboutQueryBtn = document.getElementById("sandbox-send-ai-btn");
   if (askAiAboutQueryBtn) {
     askAiAboutQueryBtn.onclick = () => {
@@ -5136,10 +4753,8 @@ function initUiActions() {
       scrollToAiCompanion();
     };
   }
-
   const sendAiBtn = document.getElementById("send-ai-btn");
   if (sendAiBtn) sendAiBtn.onclick = () => sendAiMessage();
-
   const aiInput = document.getElementById("ai-input");
   if (aiInput && !aiInput.dataset.enterBound) {
     aiInput.dataset.enterBound = "true";
@@ -5151,20 +4766,16 @@ function initUiActions() {
     });
   }
 }
-
 function attachPersistentNavigationDelegates() {
   if (window.__careopsNavDelegatePatchedV2) return;
   window.__careopsNavDelegatePatchedV2 = true;
-
   document.addEventListener("click", function (event) {
     const button = event.target.closest("button");
     if (!button) return;
     const label = String(button.textContent || "").trim().toLowerCase();
-
     const isOverview = button.id === "open-overview-btn" || button.id === "nav-overview-btn" || label === "track overview";
     const isSandbox = button.id === "open-sandbox-btn" || button.id === "nav-sandbox-btn" || label === "sandbox" || label === "sql sandbox";
     const isGlossary = button.id === "open-glossary-btn" || label === "glossary";
-
     if (isOverview) {
       event.preventDefault();
       attempts = 0;
@@ -5173,7 +4784,6 @@ function attachPersistentNavigationDelegates() {
       renderAll();
       return;
     }
-
     if (isSandbox) {
       event.preventDefault();
       attempts = 0;
@@ -5182,7 +4792,6 @@ function attachPersistentNavigationDelegates() {
       renderAll();
       return;
     }
-
     if (isGlossary) {
       event.preventDefault();
       attempts = 0;
