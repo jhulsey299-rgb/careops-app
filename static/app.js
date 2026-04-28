@@ -3889,35 +3889,66 @@ function sqlClauseExpectation(expected, prop) {
 }
 function gradeSQLQuery(userQuery, lesson, executionResult, solutionResult) {
   const user = parseSQL(userQuery);
-  const expected = parseSQL(lesson.solutionQuery || lesson.expectedAnswer || "");
+  const expected = parseSQL(lesson.solutionQuery || lesson.expectedAnswer || lesson.thirdHint || "");
+
   let score = 0;
   const feedback = [];
   const hints = [];
   const criticalIssues = [];
 
+  const expectedCols = expected.columns || [];
+  const expectedTable =
+    expected.table ||
+    (lesson.relevantTables && lesson.relevantTables[0]) ||
+    "";
+
+  if (!user.raw || !user.raw.includes("select")) {
+    return {
+      passed: false,
+      score: 0,
+      tier: "Needs Work",
+      feedback: ["Missing SELECT clause."],
+      hint: "Start with SELECT and list the requested columns.",
+      criticalIssues: ["select"]
+    };
+  }
+
+  if (!user.raw.includes(" from ")) {
+    return {
+      passed: false,
+      score: 15,
+      tier: "Needs Work",
+      feedback: ["Missing FROM clause."],
+      hint: expectedTable
+        ? `Add FROM ${expectedTable} after your selected columns.`
+        : "Add a FROM clause after your selected columns.",
+      criticalIssues: ["table"]
+    };
+  }
+
   if (!user.selectRaw) {
-    feedback.push("Missing SELECT clause.");
-    hints.push("Start with SELECT and list the requested columns.");
-    criticalIssues.push("select");
+    feedback.push("Missing SELECT fields.");
+    hints.push("List the requested columns after SELECT.");
+    criticalIssues.push("columns");
   } else if (user.selectRaw === "*" && expected.selectRaw !== "*") {
     score += 10;
     feedback.push("SELECT * returns extra columns; list only the requested fields.");
     hints.push("Replace * with the specific requested columns.");
-  } else {
-    const expectedCols = expected.columns;
+  } else if (expectedCols.length) {
     const missingCols = expectedCols.filter(col => !user.columns.includes(col));
     const extraCols = user.columns.filter(col => !expectedCols.includes(col));
     const exactColumns = arraysEqualStrict(user.columns, expectedCols);
     const sameColumnSet = sameMembers(user.columns, expectedCols);
+
     if (exactColumns) {
       score += 30;
     } else if (sameColumnSet) {
       score += 22;
       feedback.push("The right columns are present, but the column order does not match the expected output.");
-      hints.push("Use the exact column order shown in the task or expected answer.");
+      hints.push(`Use this column order: ${expectedCols.join(", ")}.`);
       criticalIssues.push("column_order");
     } else {
-      score += Math.max(0, 12 - (missingCols.length * 4) - (extraCols.length * 2));
+      score += Math.max(0, 12 - missingCols.length * 4 - extraCols.length * 2);
       if (missingCols.length) feedback.push("Missing column(s): " + missingCols.join(", ") + ".");
       if (extraCols.length) feedback.push("Extra column(s): " + extraCols.join(", ") + ".");
       hints.push("Check the requested SELECT fields against the task instructions.");
@@ -3927,105 +3958,84 @@ function gradeSQLQuery(userQuery, lesson, executionResult, solutionResult) {
 
   if (!user.table) {
     feedback.push("Missing FROM table.");
-    hints.push("Add FROM with the correct table name.");
+    hints.push(expectedTable ? `Use FROM ${expectedTable}.` : "Add the correct FROM table.");
     criticalIssues.push("table");
-  } else if (user.table === expected.table) {
+  } else if (expectedTable && user.table === expectedTable) {
     score += 20;
-  } else {
-    feedback.push("Incorrect table. Expected: " + expected.table + ".");
-    hints.push("Use FROM " + expected.table + ".");
+  } else if (expectedTable) {
+    feedback.push(`Incorrect table. Expected ${expectedTable}, but found ${user.table}.`);
+    hints.push(`Use FROM ${expectedTable}.`);
     criticalIssues.push("table");
-  }
-
-  if (sqlClauseExpectation(expected, "where")) {
-    if (!user.where) {
-      feedback.push("Missing WHERE filter.");
-      hints.push("Add the WHERE condition required by the lesson.");
-      criticalIssues.push("where");
-    } else if (user.where === expected.where || expected.where.split(/\s+and\s+|\s+or\s+/).every(part => user.where.includes(part.trim()))) {
-      score += 15;
-    } else {
-      score += 7;
-      feedback.push("WHERE clause is present but does not fully match the required filter.");
-      hints.push("Compare your WHERE condition to the task wording.");
-    }
-  } else {
-    score += user.where ? 8 : 15;
-    if (user.where) feedback.push("This lesson does not require a WHERE filter; make sure the filter does not change the requested output.");
-  }
-
-  if (expected.groupBy.length) {
-    if (arraysEqualStrict(user.groupBy, expected.groupBy)) {
-      score += 10;
-    } else if (sameMembers(user.groupBy, expected.groupBy)) {
-      score += 7;
-      feedback.push("GROUP BY fields are present but not in the expected order.");
-    } else {
-      feedback.push("Missing or incorrect GROUP BY.");
-      hints.push("Group by the same field(s) used in the expected answer.");
-    }
-  } else {
-    score += user.groupBy.length ? 5 : 10;
   }
 
   if (expected.aggregateFunctions.length) {
-    const missingAgg = expected.aggregateFunctions.filter(fn => !user.aggregateFunctions.includes(fn));
-    if (!missingAgg.length) {
+    const missingAggs = expected.aggregateFunctions.filter(fn => !user.aggregateFunctions.includes(fn));
+    if (!missingAggs.length) {
       score += 10;
     } else {
-      feedback.push("Missing aggregate function(s): " + missingAgg.join(", ") + ".");
-      hints.push("Use the aggregate function requested by the lesson, such as COUNT, SUM, or AVG.");
+      feedback.push("Missing aggregate function(s): " + missingAggs.join(", ") + ".");
+      hints.push("Use the aggregate function requested in the task.");
+      criticalIssues.push("aggregation");
     }
-  } else {
-    score += 10;
+  }
+
+  if (expected.groupBy.length) {
+    if (sameMembers(user.groupBy, expected.groupBy)) {
+      score += 10;
+    } else {
+      feedback.push("GROUP BY does not match the expected grouping.");
+      hints.push("Check the required grouping field.");
+      criticalIssues.push("group_by");
+    }
   }
 
   if (expected.orderBy.length) {
-    if (user.orderByRaw === expected.orderByRaw) {
+    if (sameMembers(user.orderBy, expected.orderBy)) {
       score += 8;
-    } else if (user.orderBy.length) {
-      score += 4;
-      feedback.push("ORDER BY is present but does not fully match the expected sorting.");
     } else {
-      feedback.push("Missing ORDER BY sorting.");
-      hints.push("Add ORDER BY exactly as requested.");
+      feedback.push("ORDER BY does not match the expected sort.");
+      hints.push("Check the required sort field and direction.");
+      criticalIssues.push("order_by");
     }
-  } else {
-    score += 8;
   }
 
   if (expected.limit !== null) {
     if (user.limit === expected.limit) {
       score += 7;
     } else {
-      feedback.push("Missing or incorrect LIMIT. Expected LIMIT " + expected.limit + ".");
-      hints.push("Add LIMIT " + expected.limit + " to control the row count.");
+      feedback.push(`LIMIT should be ${expected.limit}.`);
+      hints.push(`Use LIMIT ${expected.limit}.`);
+      criticalIssues.push("limit");
     }
-  } else {
-    score += 7;
   }
 
-  const exactResult = normalizeResult(executionResult || { columns: [], values: [] }) === normalizeResult(solutionResult || { columns: [], values: [] });
-  if (exactResult) score += 10;
-  else feedback.push("Your query ran, but the returned output does not match the expected result.");
+  const normalizedUserResult = normalizeResult(executionResult);
+  const normalizedSolutionResult = normalizeResult(solutionResult);
 
-  score = Math.max(0, Math.min(100, Math.round(score)));
-  let tier = "Needs Work";
-  if (score >= 95) tier = "Excellent";
-  else if (score >= 85) tier = "Strong";
-  else if (score >= 70) tier = "Partial";
+  if (normalizedUserResult === normalizedSolutionResult) {
+    score = Math.max(score, 95);
+  } else {
+    feedback.push("Returned result does not match the expected output.");
+    hints.push("The SQL runs, but the output is not the same as the expected answer.");
+  }
 
-  const primaryHint = hints[0] || lesson.smartHint || lesson.hint || "Compare your SELECT, FROM, filters, and grouping to the task.";
+  const passed = normalizedUserResult === normalizedSolutionResult;
+  score = passed ? Math.max(score, 95) : Math.min(score, 89);
+
+  const tier =
+    score >= 95 ? "Excellent" :
+    score >= 85 ? "Strong" :
+    score >= 70 ? "Close" :
+    score >= 50 ? "Developing" :
+    "Needs Work";
+
   return {
+    passed,
     score,
     tier,
-    passed: exactResult,
-    exactResult,
-    criticalIssues,
-    feedback: feedback.length ? feedback : ["The query structure is close. Compare the returned output to the expected result."],
-    hint: primaryHint,
-    parsed: user,
-    expected
+    feedback,
+    hint: hints[0] || lesson.hint || "Compare your query to the lesson task.",
+    criticalIssues
   };
 }
 function formatSQLGradeFeedback(grade) {
