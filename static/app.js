@@ -4081,10 +4081,17 @@ function runQuery() {
 
   return "Check syntax carefully.";
 }
-      setFeedbackState(feedback, "warning", `Not correct yet. Hint ${attempts}: ${nextHint}${missingText}`);
-      saveProgress();
-      refreshLessonChrome();
-      return;
+    const generatedHint = generateHint(query, lesson);
+
+setFeedbackState(
+  feedback,
+  "warning",
+  `Not correct yet. Hint ${attempts}: ${generatedHint}${missingText}`
+);
+
+saveProgress();
+refreshLessonChrome();
+return;
     }
     setFeedbackState(
       feedback,
