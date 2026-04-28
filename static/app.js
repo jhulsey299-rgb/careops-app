@@ -4181,7 +4181,6 @@ ${finalExplanation}`
     saveProgress();
     refreshLessonChrome();
   }
-}
 function normalizeResult(result) {
   return JSON.stringify({
     columns: result.columns,
