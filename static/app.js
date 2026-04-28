@@ -3639,12 +3639,16 @@ function formatResultTable(result) {
   html += "</tbody></table></div>";
   return html;
 }
-function getExecutionErrorMessage(error) {
+function getExecutionErrorMessage(error, queryText = "") {
   const raw = String(error && error.message ? error.message : error || "");
   const message = raw.toLowerCase();
-  if (message.includes("syntax error")) return "SQL syntax error. Check commas, parentheses, aliases, and clause order.";
-  if (message.includes("no such table")) return "One of the tables in your query does not exist in this lesson schema.";
-  if (message.includes("no such column")) return "One of the columns in your query does not exist in the table you used.";
+
+  if (/select\s+[\s\S]*,\s*and\s+[a-z_][a-z0-9_]*[\s\S]*\sfrom\s+/i.test(String(queryText || ""))) {
+    return "SQL syntax issue: do not use the word AND between SELECT columns. Use commas only. Example: SELECT patient_id, encounter_id, admit_date FROM encounters;";
+  }
+  if (message.includes("syntax error")) return "SQL syntax error. Check commas, parentheses, aliases, and clause order. In SELECT lists, separate columns with commas only — do not use AND.";
+  if (message.includes("no such table")) return "One of the tables in your query does not exist in this lesson schema. Check the table name and spelling.";
+  if (message.includes("no such column")) return "One of the columns in your query does not exist in the table you used. Check the schema explorer for the exact column name.";
   if (message.includes("ambiguous")) return "A column reference is ambiguous. Add the table alias or full table.column reference.";
   return raw || "The query could not be executed.";
 }
@@ -3666,9 +3670,10 @@ function runQuery() {
     attempts += 1;
     const result = gradeTextChallenge(lesson, query);
     if (result.passed) {
-      updateLessonStatsOnGrade(lesson.id, attempts === 1 ? { score: 100, tier: "Perfect" } : { score: 92, tier: "Strong" }, true);
+      const grade = attempts === 1 ? { score: 100, tier: "Perfect" } : { score: 92, tier: "Strong" };
+      updateLessonStatsOnGrade(lesson.id, grade, true);
       markLessonCompleted(lesson.id, attempts === 1);
-      setFeedbackState(feedback, "success", lesson.feedbackGuide || "Correct — your explanation shows the right reasoning.");
+      setFeedbackState(feedback, "success", (lesson.feedbackGuide || "Correct — your explanation shows the right reasoning.") + " Score: " + grade.score + "/100 (" + grade.tier + ").");
       attempts = 0;
       saveProgress();
       refreshLessonChrome();
@@ -3717,11 +3722,13 @@ ${lesson.explanation || lesson.feedbackGuide || "This lesson is testing your rea
     const solutionResult = queryToResult(lesson.solutionQuery);
     const passed = normalizeResult(result) === normalizeResult(solutionResult);
     if (passed) {
+      const grade = gradePass();
+      updateLessonStatsOnGrade(lesson.id, grade, true);
       markLessonCompleted(lesson.id, attempts === 0);
       setFeedbackState(
         feedback,
         "success",
-        "Correct — your query returned the expected result."
+        "Correct — your query returned the expected result. Score: " + grade.score + "/100 (" + grade.tier + ")."
       );
       attempts = 0;
       saveProgress();
@@ -3749,7 +3756,7 @@ ${finalExplanation}`
   } catch (error) {
     if (output) output.innerHTML = "";
     attempts += 1;
-    const executionMessage = getExecutionErrorMessage(error);
+    const executionMessage = getExecutionErrorMessage(error, query);
     if (attempts === 1) {
       setFeedbackState(
         feedback,
@@ -3806,52 +3813,73 @@ function setFeedbackState(element, state, message) {
 
 function gradeAnswer(userInput, lessonContent) {
   const result = { score: 0, feedback: [], passed: false };
-  const input = userInput.toLowerCase();
+  const input = String(userInput || "").toLowerCase();
+  const lesson = lessonContent || {};
+
+  const expectedKeywords = lesson.expectedKeywords || [];
+  const minimumKeywordMatches = lesson.minimumKeywordMatches || 0;
+  const minLength = lesson.minLength || 0;
 
   let keywordMatches = 0;
-  const grade = gradeAnswer(rawAnswer, lesson.content);
-  if (grade.passed) {
-    const perfect = matchedKeywords.length >= expectedKeywords.length;
-    const grade = perfect
-      ? { score: 100, tier: "Perfect" }
-      : { score: 92, tier: "Strong" };
-    updateLessonStatsOnGrade(lesson.id, grade, true);
-    markLessonCompleted(lesson.id, attempts === 1);
-    setFeedbackState(
-      feedback,
-      "success",
-      `Correct — ${lesson.content.feedbackGuide || "You covered the right business context, likely data source, and practical action."}`
-    );
-    saveProgress();
-    refreshLessonChrome();
-    return;
+  expectedKeywords.forEach(keyword => {
+    if (input.includes(String(keyword).toLowerCase())) keywordMatches += 1;
+  });
+
+  const requiredConceptGroups = lesson.requiredConceptGroups || [];
+  const requiredConceptMatches = lesson.requiredConceptMatches || 0;
+  let conceptMatches = 0;
+  requiredConceptGroups.forEach(group => {
+    if ((group || []).some(term => input.includes(String(term).toLowerCase()))) {
+      conceptMatches += 1;
+    }
+  });
+
+  const lengthPass = input.length >= minLength;
+
+  if (!expectedKeywords.length || keywordMatches >= minimumKeywordMatches) {
+    result.score += 40;
+  } else {
+    result.feedback.push(`Missing key ideas. Found ${keywordMatches} of ${minimumKeywordMatches} required keywords.`);
   }
-  if (partial) {
-    updateLessonStatsOnGrade(lesson.id, { score: 72, tier: "Partial" }, false);
-    const missingText = missingKeywords.length
-      ? `Missing ideas to mention: ${missingKeywords.slice(0, 4).join(", ")}.`
-      : "Add more specificity to the response.";
-    setFeedbackState(
-      feedback,
-      "warning",
-      `Partially correct — you are on the right track, but the response needs more specificity. ${missingText}`
-    );
-    saveProgress();
-    refreshLessonChrome();
-    return;
+
+  if (!requiredConceptGroups.length || conceptMatches >= requiredConceptMatches) {
+    result.score += 40;
+  } else {
+    result.feedback.push(`Missing key business concepts. Found ${conceptMatches} of ${requiredConceptMatches} required concept groups.`);
   }
-  updateLessonStatsOnGrade(lesson.id, { score: 55, tier: "Developing" }, false);
-  const missingText = missingKeywords.length
-    ? `Missing ideas to mention: ${missingKeywords.slice(0, 4).join(", ")}.`
-    : "";
-  setFeedbackState(
-    feedback,
-    "error",
-    `Not correct yet. Build the response around the likely table or data source, the business meaning, and one practical action. ${missingText}`.trim()
-  );
+
+  if (lengthPass) {
+    result.score += 20;
+  } else {
+    result.feedback.push("Answer is too short. Add more detail about the data, the business meaning, and the recommended action.");
+  }
+
+  result.score = Math.min(100, result.score);
+  result.passed = result.score >= 70;
+  return result;
+}
+function resetQuery() {
+  const lesson = getCurrentLesson();
+  const queryBox = document.getElementById("query");
+  const feedback = document.getElementById("feedback");
+  const output = document.getElementById("output");
+
+  attempts = 0;
+  lastRunQuery = "";
+
+  if (queryBox) {
+    queryBox.value = lesson && !isTextChallenge(lesson) ? (lesson.starterQuery || "") : "";
+  }
+  if (feedback) {
+    feedback.innerText = "";
+    feedback.classList.remove("success", "error", "warning");
+  }
+  if (output) output.innerHTML = "";
+
   saveProgress();
   refreshLessonChrome();
 }
+
 function resetScenario() {
   const box = document.getElementById("scenario-response");
   const feedback = document.getElementById("scenario-feedback");
@@ -4096,6 +4124,12 @@ async function requestAiCompanion(userMessage) {
 /* duplicate removed during stabilization pass */
 /* duplicate removed during stabilization pass */
 /* duplicate removed during stabilization pass */
+window.runQuery = runQuery;
+window.resetQuery = resetQuery;
+window.resetScenario = resetScenario;
+window.nextLesson = nextLesson;
+window.prevLesson = prevLesson;
+
 window.showCareopsOverview = function () {
   appState.currentView = "overview";
   attempts = 0;
