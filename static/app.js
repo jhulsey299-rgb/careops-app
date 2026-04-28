@@ -4232,7 +4232,7 @@ refreshLessonChrome();
 }
 }
 
-function normalizeResult{
+function normalizeResult(result) {
   return JSON.stringify({
     columns: result.columns,
     values: result.values
