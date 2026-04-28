@@ -4019,6 +4019,59 @@ function formatSQLGradeFeedback(grade) {
   const items = (grade.feedback || []).map(item => "• " + item).join("\n");
   return `Score: ${grade.score}/100 (${grade.tier})\n${items}`;
 }
+function generateHint(userQuery, lesson) {
+  const parsed = parseSQL(userQuery || "");
+  const expectedParsed = parseSQL(lesson.solutionQuery || lesson.expectedAnswer || lesson.thirdHint || "");
+
+  const expectedCols =
+    (lesson.expected && lesson.expected.columns) ||
+    lesson.expectedColumns ||
+    expectedParsed.columns ||
+    [];
+
+  const expectedTable =
+    (lesson.expected && lesson.expected.table) ||
+    lesson.expectedTable ||
+    expectedParsed.table ||
+    (lesson.relevantTables && lesson.relevantTables[0]) ||
+    "";
+
+  if (!parsed.raw || !parsed.raw.includes("select")) {
+    return lesson.hint || "Start with a SELECT statement.";
+  }
+
+  if (parsed.raw.includes(" and ") && parsed.raw.includes("select") && parsed.raw.includes("from")) {
+    return "Columns should be separated by commas, not AND.";
+  }
+
+  if (!parsed.raw.includes("from")) {
+    return "You are missing a FROM clause.";
+  }
+
+  if (expectedTable && parsed.table && parsed.table !== expectedTable) {
+    const dist = levenshtein(parsed.table, expectedTable);
+
+    if (dist <= 3 || parsed.table.startsWith(expectedTable.slice(0, 5))) {
+      return `Table name looks misspelled. Did you mean "${expectedTable}"?`;
+    }
+
+    return `Use the correct table: ${expectedTable}`;
+  }
+
+  if (expectedCols.length) {
+    const missing = expectedCols.filter(c => !parsed.columns.includes(c));
+
+    if (missing.length) {
+      return `Missing column(s): ${missing.join(", ")}`;
+    }
+
+    if (JSON.stringify(parsed.columns) !== JSON.stringify(expectedCols)) {
+      return `Column order should be: ${expectedCols.join(", ")}`;
+    }
+  }
+
+  return lesson.hint || "Check your SQL syntax carefully.";
+}
 function runQuery() {
   const lesson = getCurrentLesson();
   const output = document.getElementById("output");
