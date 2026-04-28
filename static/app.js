@@ -1,3 +1,4 @@
+APP.JS
 const STORAGE_KEY = "careops_curriculum_master_v2";
 
 let appState = {
@@ -157,9 +158,9 @@ const GLOSSARY_TERMS = [
   { term: "Denial Rate", category: "financial", definition: "The share of claims or dollars that are denied by payers.", why: "It helps leaders measure financial leakage and prioritize revenue cycle improvement.", example: "A 9% denial rate means roughly 9 out of 100 claims or claim dollars are denied, depending on the definition used." },
   { term: "Payer", category: "financial", definition: "The organization or program responsible for reimbursing a claim.", why: "Payer segmentation often explains reimbursement, denial, and LOS variation.", example: "Common payer groups include Medicare, Medicaid, Commercial, and Self Pay." },
   { term: "Payer Mix", category: "financial", definition: "The distribution of patients, visits, or dollars across payer categories.", why: "Payer mix shapes reimbursement risk, margin, and financial planning.", example: "A facility with more Medicare and Medicaid may have a different financial profile than one with more commercial volume." },
-  { term: "Gross Charges", category: "financial", definition: "The full billed amount before adjustments, write-offs, and collections.", why: "Gross charges show billing activity but usually overstate true realized revenue.", example: "Gross charges are often used as the starting point for estimating net revenue." },
+  { term: "Gross Charges", category: "financial", definition: "The full billed amount before adjustments, write-offs, and claim collections.", why: "Gross charges show billing activity but usually overstate true realized revenue.", example: "Gross charges are often used as the starting point for estimating net revenue." },
   { term: "Net Revenue", category: "financial", definition: "The portion of gross charges that the organization expects to realize after contractual adjustments and nonpayment.", why: "Net revenue is a more realistic measure of financial performance than gross charges alone.", example: "Some analyses estimate net revenue as a percentage of gross charges." },
-  { term: "Collections", category: "financial", definition: "Actual cash received from payers or patients.", why: "Collections matter because billed charges alone do not equal money received.", example: "A hospital may bill one amount but collect less after payer adjudication." },
+  { term: "Claim Collections", category: "financial", definition: "Actual billed/reimbursed activity from payers or patients.", why: "Claim Collections matter because billed charges alone do not equal money received.", example: "A hospital may bill one amount but collect less after payer adjudication." },
   { term: "RVU", category: "financial", definition: "Relative Value Unit, a standardized measure of service intensity often used in provider compensation and productivity.", why: "RVUs help compare provider output even when procedures differ.", example: "A provider contract may include RVU-based compensation targets." },
   { term: "KPI", category: "analytics", definition: "Key Performance Indicator, a metric used to monitor whether performance is on target.", why: "KPIs focus leadership attention on the few measures that matter most.", example: "LOS, readmission rate, and denial rate are common hospital KPIs." },
   { term: "Benchmark", category: "analytics", definition: "A comparison point used to judge whether performance is strong, average, or weak.", why: "Benchmarks help leaders know whether a number is actually good or bad.", example: "A denial rate may be compared against an internal or industry benchmark." },
@@ -192,7 +193,6 @@ const schema = {
     { name: "appointments", description: "Scheduled appointments tied to patients and providers.", keyColumns: ["appointment_id"], notableColumns: ["appointment_id","patient_id","provider_id","department_id","facility","department","status","date"], sampleRows: [] },
     { name: "charges", description: "Financial charges tied to patients and encounters.", keyColumns: ["charge_id"], notableColumns: ["charge_id","patient_id","encounter_id","amount","payer","charge_type"], sampleRows: [] },
     { name: "claims", description: "Claims tied to patients and encounters.", keyColumns: ["claim_id"], notableColumns: ["claim_id","patient_id","encounter_id","payer","claim_status","billed_amount"], sampleRows: [] },
-    { name: "payments", description: "Payments tied to patients, encounters, and payers.", keyColumns: ["payment_id"], notableColumns: ["payment_id","patient_id","encounter_id","payer","payment_amount","payment_date"], sampleRows: [] },
     { name: "discharges", description: "Discharge workflow details including delays and disposition.", keyColumns: ["discharge_id"], notableColumns: ["discharge_id","encounter_id","patient_id","facility","department","discharge_disposition","discharge_order_minutes","departure_minutes","delayed_for_transport"], sampleRows: [] },
     { name: "readmissions", description: "Thirty-day readmission tracking.", keyColumns: ["readmission_id"], notableColumns: ["readmission_id","index_encounter_id","readmit_encounter_id","patient_id","facility","readmit_within_30_days","days_to_readmit"], sampleRows: [] },
     { name: "observations", description: "Observation stays and conversion details.", keyColumns: ["observation_id"], notableColumns: ["observation_id","encounter_id","patient_id","facility","department","obs_hours","converted_to_inpatient","code_44_flag"], sampleRows: [] }
@@ -208,8 +208,6 @@ const schema = {
     "appointments.department_id = departments.department_id",
     "charges.encounter_id = encounters.encounter_id",
     "claims.encounter_id = encounters.encounter_id",
-    "payments.encounter_id = encounters.encounter_id",
-    "payments.patient_id = patients.patient_id",
     "discharges.encounter_id = encounters.encounter_id",
     "readmissions.patient_id = patients.patient_id",
     "observations.encounter_id = encounters.encounter_id"
@@ -1335,12 +1333,12 @@ Explain how you would validate the data before presenting it and what checks you
             sql_focus: ["SUM", "Financial metrics"],
             relevantTables: ["charges"],
             joinHint: "No join is needed for a basic total charge metric.",
-            summary: "Gross charges show billed activity before adjustments, denials, or collections. They are useful, but they are not the same as cash collected.",
+            summary: "Gross charges show billed activity before adjustments, denials, or claim collections. They are useful, but they are not the same as cash collected.",
             bullets: [
               "SUM(amount) adds charge dollars across rows.",
               "Charges are gross billed values, not guaranteed revenue.",
               "Charge totals help quantify service activity and financial exposure.",
-              "Leaders should avoid treating charges as actual collections.",
+              "Leaders should avoid treating charges as actual claim collections.",
               "Financial metrics require clear definitions."
             ],
             example: "Hospital example: a high-charge department may have high service intensity but not necessarily high net revenue.",
@@ -1410,7 +1408,7 @@ Explain how you would validate the data before presenting it and what checks you
             summary: "Payer mix influences reimbursement, denial patterns, and financial risk. Aggregating by payer helps leaders see where dollars are concentrated.",
             bullets: [
               "Payer categories often reimburse differently.",
-              "High charge volume under one payer may not equal high collections.",
+              "High charge volume under one payer may not equal high claim collections.",
               "Payer grouping supports revenue cycle prioritization.",
               "Claims are usually better for denial analysis than charges alone.",
               "Payer mix should be interpreted with both volume and dollars."
@@ -1438,36 +1436,36 @@ Explain how you would validate the data before presenting it and what checks you
           {
             kind: "concept",
             id: "cf7",
-            title: "Payments vs Charges",
+            title: "Claims vs Charges",
             objective: "Distinguish billed activity from actual payment activity.",
-            sql_focus: ["SUM", "Payments", "Net revenue"],
-            relevantTables: ["payments", "charges", "claims"],
-            joinHint: "Use payments for cash received and charges or claims for billed value.",
-            summary: "Payments represent money received. Charges represent billed amounts. Comparing the two helps leaders understand revenue realization.",
+            sql_focus: ["SUM", "Claims", "Net revenue"],
+            relevantTables: ["charges", "claims"],
+            joinHint: "Use claims for billed/reimbursed activity and charges or claims for billed value.",
+            summary: "Claims represent reimbursement activity. Charges represent billed amounts. Comparing the two helps leaders understand revenue cycle performance.",
             bullets: [
               "Charges show gross billed value.",
-              "Payments show cash received or posted payment activity.",
-              "Collections are usually lower than gross charges.",
+              "Claims show payer reimbursement status and billed activity.",
+              "Claim Collections are usually lower than gross charges.",
               "Payment data is crucial for revenue cycle performance.",
               "Do not use charges alone to claim revenue was collected."
             ],
-            example: "Hospital example: a department may generate high charges but lower payments due to payer mix or denials.",
+            example: "Hospital example: a department may generate high charges but lower paid claim activity due to payer mix or denials.",
             executiveTakeaway: { show: false }
           },
           {
             kind: "challenge",
             id: "cf8",
-            title: "Total Payments by Payer",
+            title: "Total Billed by Payer",
             objective: "Summarize payment activity by payer.",
             sql_focus: ["SELECT", "SUM", "GROUP BY"],
-            relevantTables: ["payments"],
-            joinHint: "Use payments if your dataset includes payment_amount and payer.",
-            challengeCriteria: "Return payer and total payment_amount by payer. Label the result total_payments.",
+            relevantTables: ["claims"],
+            joinHint: "Use claims if your dataset includes billed_amount and payer.",
+            challengeCriteria: "Return payer and total billed_amount by payer. Label the result total_claims.",
             starterQuery: "",
-            solutionQuery: "SELECT payer, SUM(payment_amount) AS total_payments FROM payments GROUP BY payer;",
-            hint: "Group payments by payer.",
-            smartHint: "Use SUM(payment_amount), not SUM(billed_amount).",
-            thirdHint: "SELECT payer, SUM(payment_amount) AS total_payments FROM payments GROUP BY payer;",
+            solutionQuery: "SELECT payer, SUM(billed_amount) AS total_claims FROM claims GROUP BY payer;",
+            hint: "Group claims by payer.",
+            smartHint: "Use SUM(billed_amount), not SUM(billed_amount).",
+            thirdHint: "SELECT payer, SUM(billed_amount) AS total_claims FROM claims GROUP BY payer;",
             explanation: "This shows where received payment dollars are coming from by payer.",
             executiveTakeaway: { show: false }
           },
@@ -1475,12 +1473,12 @@ Explain how you would validate the data before presenting it and what checks you
             kind: "scenario",
             id: "cf9",
             title: "Scenario: Financial Snapshot",
-            objective: "Explain why charges and payments should not be treated as the same metric.",
-            relevantTables: ["charges", "claims", "payments"],
-            joinHint: "Think about which table represents billed value versus cash received.",
-            summary: "A finance leader asks why gross charges increased but cash did not increase at the same rate.",
-            prompt: "Explain how you would investigate this using charges, claims, and payments. Mention gross charges, payments or collections, payer mix, and why a rise in charges does not automatically mean a rise in cash.",
-            expectedKeywords: ["charges", "payments", "payer", "collections", "claims"],
+            objective: "Explain why charges and claims should not be treated as the same metric.",
+            relevantTables: ["charges", "claims"],
+            joinHint: "Think about which table represents billed value versus billed/reimbursed activity.",
+            summary: "A finance leader asks why gross charges increased but paid claims did not increase at the same rate.",
+            prompt: "Explain how you would investigate this using charges, claims, and claims. Mention gross charges, claims or claim collections, payer mix, and why a rise in charges does not automatically mean a rise in paid claims.",
+            expectedKeywords: ["charges", "payer", "claim collections", "claims"],
             minLength: 110,
             minimumKeywordMatches: 3,
             feedbackGuide: "A strong answer separates gross billed activity from payment activity and identifies payer mix or claim status as possible drivers.",
@@ -1831,7 +1829,7 @@ Explain how you would validate the data before presenting it and what checks you
             title: "Combining Metrics for Leadership",
             objective: "Understand why leadership reports usually combine volume, financial, utilization, and operational metrics.",
             sql_focus: ["Multiple aggregates", "Interpretation"],
-            relevantTables: ["encounters", "charges", "claims", "payments"],
+            relevantTables: ["encounters", "charges", "claims"],
             joinHint: "Combine tables only when the metric definitions require it and the join grain is clear.",
             summary: "Real hospital reporting rarely uses one metric. Leadership needs a balanced view of volume, financial performance, utilization, and operational flow.",
             bullets: [
@@ -1841,7 +1839,7 @@ Explain how you would validate the data before presenting it and what checks you
               "Operational metrics explain throughput and bottlenecks.",
               "Good reporting connects metrics to decisions."
             ],
-            example: "Hospital example: a department with high volume, high no-shows, and low payments may need a different response than one with high volume and strong collections.",
+            example: "Hospital example: a department with high volume, high no-shows, and low claims may need a different response than one with high volume and strong claim collections.",
             executiveTakeaway: { show: false }
           },
           {
@@ -1867,7 +1865,7 @@ Explain how you would validate the data before presenting it and what checks you
             title: "Ordering for Action",
             objective: "Use ORDER BY to prioritize what leaders see first.",
             sql_focus: ["ORDER BY", "Prioritization"],
-            relevantTables: ["encounters", "claims", "charges", "payments"],
+            relevantTables: ["encounters", "claims", "charges"],
             joinHint: "Sorting comes after aggregation when prioritizing summarized results.",
             summary: "Ordering is not cosmetic. It determines which risks, opportunities, or problems are most visible to decision-makers.",
             bullets: [
@@ -1939,7 +1937,7 @@ Explain how you would validate the data before presenting it and what checks you
             title: "Insight Statements",
             objective: "Translate a metric result into a leadership-ready insight.",
             sql_focus: ["Interpretation", "Executive communication"],
-            relevantTables: ["encounters", "claims", "payments", "appointments"],
+            relevantTables: ["encounters", "claims", "appointments"],
             joinHint: "The query creates the evidence; the insight explains why it matters.",
             summary: "An analyst's job is not finished when the query runs. The result must be translated into what leadership should understand or do next.",
             bullets: [
@@ -1975,10 +1973,10 @@ Explain what this means, why it matters, and what revenue cycle should investiga
             requiredConceptMatches: 2,
             bonusConceptGroups: [
               ["authorization", "coding", "documentation", "medical necessity"],
-              ["revenue", "cash", "financial", "collections"]
+              ["revenue", "cash", "financial", "claim collections"]
             ],
             feedbackGuide: "A strong answer explains that the payer represents concentrated financial leakage and recommends reviewing denial causes such as authorization, documentation, coding, or coverage rules.",
-            exemplarAnswer: `This means denied billed dollars are concentrated in one payer group, creating a revenue risk that may reduce collections. Revenue cycle should investigate denial reasons such as authorization, documentation, coding, or medical necessity issues before assuming the problem is purely payer behavior.`,
+            exemplarAnswer: `This means denied billed dollars are concentrated in one payer group, creating a revenue risk that may reduce claim collections. Revenue cycle should investigate denial reasons such as authorization, documentation, coding, or medical necessity issues before assuming the problem is purely payer behavior.`,
             hint: "Connect the payer finding to financial leakage and a next investigation step.",
             smartHint: "Mention denial causes such as authorization, documentation, coding, or medical necessity.",
             thirdHint: "Explain what it means, why it matters, and what should be reviewed next.",
@@ -1990,7 +1988,7 @@ Explain what this means, why it matters, and what revenue cycle should investiga
             id: "cr9",
             title: "Scenario: Core Executive Performance Snapshot",
             objective: "Design a balanced Core-level report for leadership.",
-            relevantTables: ["encounters", "patients", "claims", "payments", "appointments", "discharges", "observations"],
+            relevantTables: ["encounters", "patients", "claims", "appointments", "discharges", "observations"],
             joinHint: "Pick metrics that answer the leadership question without overloading the report.",
             summary: "The executive team wants a one-page operational and financial snapshot for the month.",
             prompt: "Describe the report you would build. Include at least four metrics across different domains, such as encounter volume, unique patients, payer or payment performance, no-shows, discharge delays, observation hours, or denied dollars. Explain why each metric belongs in the snapshot and what leadership could do with it.",
@@ -3627,12 +3625,11 @@ function generateMockData() {
   const encounters = [];
   const charges = [];
   const claims = [];
-  const payments = [];
   const appointments = [];
   const discharges = [];
   const observations = [];
   const readmissions = [];
-  let chargeId = 1, claimId = 1, paymentId = 1, appointmentId = 1, dischargeId = 1, observationId = 1, readmissionId = 1;
+  let chargeId = 1, claimId = 1, appointmentId = 1, dischargeId = 1, observationId = 1, readmissionId = 1;
   for (let i = 1; i <= 120; i++) {
     const patientId = (i % 60) + 1;
     const dept = departments[(i-1)%departments.length];
@@ -3695,14 +3692,6 @@ function generateMockData() {
       billed_amount: amount * 1.4
     });
 
-    payments.push({
-      payment_id: paymentId++,
-      patient_id: patientId,
-      encounter_id: i,
-      payer: ["Medicare","Medicaid","Commercial","Self Pay"][i % 4],
-      payment_amount: i % 7 === 0 ? amount * 0.15 : amount * 0.82,
-      payment_date: dischargeDate
-    });
 
     discharges.push({
       discharge_id: dischargeId++,
@@ -3743,11 +3732,11 @@ function generateMockData() {
   }
 
   schema.tables.forEach(table => {
-    const rows = {patients, providers, departments, encounters, appointments, charges, claims, payments, discharges, readmissions, observations}[table.name] || [];
+    const rows = {patients, providers, departments, encounters, appointments, charges, claims, discharges, readmissions, observations}[table.name] || [];
     table.sampleRows = rows.slice(0, 5);
   });
 
-  return { patients, providers, departments, encounters, appointments, charges, claims, payments, discharges, readmissions, observations };
+  return { patients, providers, departments, encounters, appointments, charges, claims, discharges, readmissions, observations };
 }
 
 function initDatabase() {
@@ -3767,7 +3756,6 @@ function initDatabase() {
         seedTable("appointments", data.appointments);
         seedTable("charges", data.charges);
         seedTable("claims", data.claims);
-        seedTable("payments", data.payments);
         seedTable("discharges", data.discharges);
         seedTable("readmissions", data.readmissions);
         seedTable("observations", data.observations);
@@ -3786,7 +3774,6 @@ function createTables() {
   sqlDb.run(`CREATE TABLE appointments (appointment_id INTEGER, patient_id INTEGER, provider_id INTEGER, department_id INTEGER, facility TEXT, department TEXT, status TEXT, date TEXT);`);
   sqlDb.run(`CREATE TABLE charges (charge_id INTEGER, patient_id INTEGER, encounter_id INTEGER, amount REAL, payer TEXT, charge_type TEXT);`);
   sqlDb.run(`CREATE TABLE claims (claim_id INTEGER, patient_id INTEGER, encounter_id INTEGER, payer TEXT, claim_status TEXT, billed_amount REAL);`);
-  sqlDb.run(`CREATE TABLE payments (payment_id INTEGER, patient_id INTEGER, encounter_id INTEGER, payer TEXT, payment_amount REAL, payment_date TEXT);`);
   sqlDb.run(`CREATE TABLE discharges (discharge_id INTEGER, encounter_id INTEGER, patient_id INTEGER, facility TEXT, department TEXT, discharge_disposition TEXT, discharge_order_minutes INTEGER, departure_minutes INTEGER, delayed_for_transport INTEGER);`);
   sqlDb.run(`CREATE TABLE readmissions (readmission_id INTEGER, index_encounter_id INTEGER, readmit_encounter_id INTEGER, patient_id INTEGER, facility TEXT, readmit_within_30_days INTEGER, days_to_readmit INTEGER);`);
   sqlDb.run(`CREATE TABLE observations (observation_id INTEGER, encounter_id INTEGER, patient_id INTEGER, facility TEXT, department TEXT, obs_hours INTEGER, converted_to_inpatient INTEGER, code_44_flag INTEGER);`);
