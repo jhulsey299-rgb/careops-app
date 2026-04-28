@@ -2651,26 +2651,25 @@ function ensureCurriculumLessonListStyles() {
 function isCategoryExpanded(categoryId) {
   return (appState.expandedCategoryIds || []).includes(categoryId);
 }
+function setOnlyCategoryExpanded(categoryId) {
+  appState.expandedCategoryIds = categoryId ? [categoryId] : [];
+}
 function toggleCategoryExpanded(categoryId) {
-  const expanded = new Set(appState.expandedCategoryIds || []);
-  if (expanded.has(categoryId)) expanded.delete(categoryId);
-  else expanded.add(categoryId);
-  appState.expandedCategoryIds = Array.from(expanded);
+  if (isCategoryExpanded(categoryId)) {
+    appState.expandedCategoryIds = [];
+  } else {
+    setOnlyCategoryExpanded(categoryId);
+  }
   saveProgress();
   renderAll();
 }
 function ensureCurrentCategoryExpanded() {
   const categoryId = appState.currentCategoryId;
   if (!categoryId) return;
-  const expanded = new Set(appState.expandedCategoryIds || []);
-  if (!expanded.has(categoryId)) {
-    expanded.add(categoryId);
-    appState.expandedCategoryIds = Array.from(expanded);
-  }
+  setOnlyCategoryExpanded(categoryId);
 }
 function renderCurriculumNav() {
   ensureCurriculumLessonListStyles();
-  ensureCurrentCategoryExpanded();
   const list = document.getElementById("category-list");
   if (!list) return;
   list.innerHTML = "";
@@ -2706,7 +2705,13 @@ function renderCurriculumNav() {
       }
       appState.currentView = "lesson";
       attempts = 0;
-      ensureCurrentCategoryExpanded();
+
+      if (isCategoryExpanded(category.id)) {
+        appState.expandedCategoryIds = [];
+      } else {
+        setOnlyCategoryExpanded(category.id);
+      }
+
       saveProgress();
       renderAll();
     });
