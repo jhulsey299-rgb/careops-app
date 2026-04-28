@@ -1,3 +1,16 @@
+function resetQuery() {
+  const input = document.querySelector("#sql-input");
+  const output = document.querySelector("#query-output");
+  const feedback = document.querySelector("#feedback");
+
+  if (input) input.value = "";
+  if (output) output.innerHTML = "";
+  if (feedback) feedback.innerHTML = "";
+
+  if (typeof attempts !== "undefined") attempts = 0;
+  if (window.currentLessonState) window.currentLessonState.attempts = 0;
+}
+
 const STORAGE_KEY = "careops_curriculum_master_v2";
 let appState = {
   currentTrackId: "track_foundations",
