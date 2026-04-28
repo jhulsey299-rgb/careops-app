@@ -4225,10 +4225,12 @@ Explanation:
 ${finalExplanation}`
       );
     }
-    saveProgress();
-    refreshLessonChrome();
-  }
-function normalizeResult(result) {
+   saveProgress();
+refreshLessonChrome();
+}
+}
+
+function normalizeResult{
   return JSON.stringify({
     columns: result.columns,
     values: result.values
