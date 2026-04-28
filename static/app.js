@@ -1,3 +1,18 @@
+
+function resetQuery() {
+  const input = document.querySelector("#sql-input");
+  const output = document.querySelector("#query-output");
+  const feedback = document.querySelector("#feedback");
+
+  if (input) input.value = "";
+  if (output) output.innerHTML = "";
+  if (feedback) feedback.innerHTML = "";
+
+  if (typeof attempts !== "undefined") attempts = 0;
+  if (window.currentLessonState) window.currentLessonState.attempts = 0;
+}
+
+
 const STORAGE_KEY = "careops_curriculum_master_v2";
 let appState = {
   currentTrackId: "track_foundations",
@@ -4241,18 +4256,7 @@ function gradeAnswer(userInput, lessonContent) {
   result.passed = result.score >= 70;
   return result;
 }
-function resetQuery() {
-  const lesson = getCurrentLesson();
-  const queryBox = document.getElementById("query");
-  const feedback = document.getElementById("feedback");
-  const output = document.getElementById("output");
 
-  attempts = 0;
-  lastRunQuery = "";
-
-  if (queryBox) {
-    queryBox.value = lesson && !isTextChallenge(lesson) ? (lesson.starterQuery || "") : "";
-  }
   if (feedback) {
     feedback.innerText = "";
     feedback.classList.remove("success", "error", "warning");
@@ -5186,3 +5190,52 @@ function attachPersistentNavigationDelegates() {
     }
   });
 }
+
+
+const hintParts = [];
+const lowerQuery = query.toLowerCase();
+
+if (attempts === 1 && lesson.hint) {
+  hintParts.push(lesson.hint);
+}
+
+if (!lowerQuery.includes("from")) {
+  hintParts.push("You're missing a FROM clause.");
+}
+
+const tables = (lesson.relevantTables || []).map(t => t.toLowerCase());
+const tableMatch = lowerQuery.match(/from\s+([a-z_]+)/);
+
+if (tableMatch) {
+  const usedTable = tableMatch[1];
+  if (!tables.includes(usedTable)) {
+    if (usedTable.startsWith("encoun")) {
+      hintParts.push('Table name looks misspelled. Did you mean "encounters"?');
+    } else {
+      hintParts.push(`Table "${usedTable}" does not exist in this lesson.`);
+    }
+  }
+}
+
+if (lesson.expectedColumns) {
+  const expected = lesson.expectedColumns.map(c => c.toLowerCase());
+  const selectMatch = lowerQuery.match(/select\s+(.*?)\s+from/);
+
+  if (selectMatch) {
+    const selected = selectMatch[1]
+      .split(",")
+      .map(c => c.trim().replace(/;$/, ""));
+
+    const missing = expected.filter(c => !selected.includes(c));
+
+    if (missing.length > 0) {
+      hintParts.push(`Missing columns: ${missing.join(", ")}`);
+    }
+  }
+}
+
+if (lowerQuery.includes("select") && lowerQuery.includes(" and ")) {
+  hintParts.push("Columns should be separated by commas, not AND.");
+}
+
+const nextHint = hintParts.join(" ");
