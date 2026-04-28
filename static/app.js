@@ -3803,52 +3803,14 @@ function setFeedbackState(element, state, message) {
   if (state) element.classList.add(state);
   element.innerText = message;
 }
-function checkAnswer() {
-  runQuery();
-}
-function resetQuery() {
-  const queryBox = document.getElementById("query");
-  const feedback = document.getElementById("feedback");
-  const output = document.getElementById("output");
-  if (queryBox) queryBox.value = "";
-  if (feedback) {
-    feedback.classList.remove("success", "error", "warning");
-    feedback.innerText = "";
-  }
-  if (output) output.innerHTML = "";
-  attempts = 0;
-  lastRunQuery = "";
-}
-function submitScenario() {
-  const lesson = getCurrentLesson();
-  const box = document.getElementById("scenario-response");
-  const feedback = document.getElementById("scenario-feedback");
-  if (!lesson || lesson.type !== "scenario" || !box || !feedback) return;
-  attempts += 1;
-  const rawAnswer = box.value.trim();
-  const answer = rawAnswer.toLowerCase();
-  if (!rawAnswer) {
-    setFeedbackState(feedback, "error", "Please enter a response before submitting.");
-    return;
-  }
-  const expectedKeywords = lesson.content.expectedKeywords || [];
-  const minLength = lesson.content.minLength || 80;
-  const minimumKeywordMatches =
-    lesson.content.minimumKeywordMatches || Math.min(2, expectedKeywords.length);
-  const matchedKeywords = expectedKeywords.filter(k =>
-    answer.includes(String(k).toLowerCase())
-  );
-  const missingKeywords = expectedKeywords.filter(k =>
-    !answer.includes(String(k).toLowerCase())
-  );
-  const passed =
-    rawAnswer.length >= minLength &&
-    matchedKeywords.length >= minimumKeywordMatches;
-  const partial =
-    !passed &&
-    rawAnswer.length >= Math.max(50, Math.floor(minLength * 0.6)) &&
-    matchedKeywords.length >= 1;
-  if (passed) {
+
+function gradeAnswer(userInput, lessonContent) {
+  const result = { score: 0, feedback: [], passed: false };
+  const input = userInput.toLowerCase();
+
+  let keywordMatches = 0;
+  const grade = gradeAnswer(rawAnswer, lesson.content);
+  if (grade.passed) {
     const perfect = matchedKeywords.length >= expectedKeywords.length;
     const grade = perfect
       ? { score: 100, tier: "Perfect" }
