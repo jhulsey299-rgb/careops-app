@@ -4305,15 +4305,6 @@ function gradeAnswer(userInput, lessonContent) {
   return result;
 }
 
-  if (feedback) {
-    feedback.innerText = "";
-    feedback.classList.remove("success", "error", "warning");
-  }
-  if (output) output.innerHTML = "";
-
-  saveProgress();
-  refreshLessonChrome();
-}
 
 function resetScenario() {
   const box = document.getElementById("scenario-response");
