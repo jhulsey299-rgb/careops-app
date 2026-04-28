@@ -1,3 +1,4 @@
+APP.JS
 const STORAGE_KEY = "careops_curriculum_master_v2";
 
 let appState = {
@@ -1390,12 +1391,12 @@ Explain how you would validate the data before presenting it and what checks you
             sql_focus: ["SELECT", "AVG"],
             relevantTables: ["charges"],
             joinHint: "Use the charge row grain.",
-            challengeCriteria: "Return the average amount from charges. Label the result avg_charge_amount.",
+            challengeCriteria: "Return the average amount from charges. Label the result avg_amount.",
             starterQuery: "",
-            solutionQuery: "SELECT AVG(amount) AS avg_charge_amount FROM charges;",
+            solutionQuery: "SELECT AVG(amount) AS avg_amount FROM charges;",
             hint: "Use AVG(amount).",
             smartHint: "Remember this is average per charge row, not necessarily per encounter.",
-            thirdHint: "SELECT AVG(amount) AS avg_charge_amount FROM charges;",
+            thirdHint: "SELECT AVG(amount) AS avg_amount FROM charges;",
             explanation: "This reports the average financial value of a charge line.",
             executiveTakeaway: { show: false }
           },
@@ -3627,11 +3628,12 @@ function generateMockData() {
   const encounters = [];
   const charges = [];
   const claims = [];
+  const payments = [];
   const appointments = [];
   const discharges = [];
   const observations = [];
   const readmissions = [];
-  let chargeId = 1, claimId = 1, appointmentId = 1, dischargeId = 1, observationId = 1, readmissionId = 1;
+  let chargeId = 1, claimId = 1, paymentId = 1, appointmentId = 1, dischargeId = 1, observationId = 1, readmissionId = 1;
   for (let i = 1; i <= 120; i++) {
     const patientId = (i % 60) + 1;
     const dept = departments[(i-1)%departments.length];
@@ -3694,6 +3696,15 @@ function generateMockData() {
       billed_amount: amount * 1.4
     });
 
+    payments.push({
+      payment_id: paymentId++,
+      patient_id: patientId,
+      encounter_id: i,
+      payer: ["Medicare","Medicaid","Commercial","Self Pay"][i % 4],
+      payment_amount: i % 7 === 0 ? amount * 0.15 : amount * 0.82,
+      payment_date: dischargeDate
+    });
+
     discharges.push({
       discharge_id: dischargeId++,
       encounter_id: i,
@@ -3733,11 +3744,11 @@ function generateMockData() {
   }
 
   schema.tables.forEach(table => {
-    const rows = {patients, providers, departments, encounters, appointments, charges, claims, discharges, readmissions, observations}[table.name];
+    const rows = {patients, providers, departments, encounters, appointments, charges, claims, payments, discharges, readmissions, observations}[table.name] || [];
     table.sampleRows = rows.slice(0, 5);
   });
 
-  return { patients, providers, departments, encounters, appointments, charges, claims, discharges, readmissions, observations };
+  return { patients, providers, departments, encounters, appointments, charges, claims, payments, discharges, readmissions, observations };
 }
 
 function initDatabase() {
@@ -3757,6 +3768,7 @@ function initDatabase() {
         seedTable("appointments", data.appointments);
         seedTable("charges", data.charges);
         seedTable("claims", data.claims);
+        seedTable("payments", data.payments);
         seedTable("discharges", data.discharges);
         seedTable("readmissions", data.readmissions);
         seedTable("observations", data.observations);
@@ -3775,6 +3787,7 @@ function createTables() {
   sqlDb.run(`CREATE TABLE appointments (appointment_id INTEGER, patient_id INTEGER, provider_id INTEGER, department_id INTEGER, facility TEXT, department TEXT, status TEXT, date TEXT);`);
   sqlDb.run(`CREATE TABLE charges (charge_id INTEGER, patient_id INTEGER, encounter_id INTEGER, amount REAL, payer TEXT, charge_type TEXT);`);
   sqlDb.run(`CREATE TABLE claims (claim_id INTEGER, patient_id INTEGER, encounter_id INTEGER, payer TEXT, claim_status TEXT, billed_amount REAL);`);
+  sqlDb.run(`CREATE TABLE payments (payment_id INTEGER, patient_id INTEGER, encounter_id INTEGER, payer TEXT, payment_amount REAL, payment_date TEXT);`);
   sqlDb.run(`CREATE TABLE discharges (discharge_id INTEGER, encounter_id INTEGER, patient_id INTEGER, facility TEXT, department TEXT, discharge_disposition TEXT, discharge_order_minutes INTEGER, departure_minutes INTEGER, delayed_for_transport INTEGER);`);
   sqlDb.run(`CREATE TABLE readmissions (readmission_id INTEGER, index_encounter_id INTEGER, readmit_encounter_id INTEGER, patient_id INTEGER, facility TEXT, readmit_within_30_days INTEGER, days_to_readmit INTEGER);`);
   sqlDb.run(`CREATE TABLE observations (observation_id INTEGER, encounter_id INTEGER, patient_id INTEGER, facility TEXT, department TEXT, obs_hours INTEGER, converted_to_inpatient INTEGER, code_44_flag INTEGER);`);
@@ -5193,5 +5206,5 @@ function attachPersistentNavigationDelegates() {
       renderAll();
       return;
     }
-    });
-    }
+  });
+}
