@@ -176,6 +176,51 @@ function glossaryCategoryLabel(category) {
     analytics: "Analytics / Strategy"
   }[category] || "Reference";
 }
+/* =========================
+   SQL PARSER + UTILITIES
+========================= */
+
+function parseSQL(query) {
+  const clean = query
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .replace(/;$/, '')
+    .trim();
+
+  const selectMatch = clean.match(/select (.+?) from/);
+  const fromMatch = clean.match(/from ([a-z0-9_]+)/);
+
+  return {
+    raw: clean,
+    columns: selectMatch
+      ? selectMatch[1].split(',').map(c => c.trim())
+      : [],
+    table: fromMatch ? fromMatch[1].trim() : null
+  };
+}
+
+function levenshtein(a, b) {
+  const matrix = [];
+
+  for (let i = 0; i <= b.length; i++) matrix[i] = [i];
+  for (let j = 0; j <= a.length; j++) matrix[0][j] = j;
+
+  for (let i = 1; i <= b.length; i++) {
+    for (let j = 1; j <= a.length; j++) {
+      if (b[i - 1] === a[j - 1]) {
+        matrix[i][j] = matrix[i - 1][j - 1];
+      } else {
+        matrix[i][j] = Math.min(
+          matrix[i - 1][j - 1] + 1,
+          matrix[i][j - 1] + 1,
+          matrix[i - 1][j] + 1
+        );
+      }
+    }
+  }
+
+  return matrix[b.length][a.length];
+}
 const schema = {
   tables: [
     { name: "patients", description: "Patient demographic, insurance, and risk information.", keyColumns: ["patient_id"], notableColumns: ["patient_id","first_name","last_name","age","gender","insurance_type","risk_score","city"], sampleRows: [] },
