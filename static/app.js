@@ -364,7 +364,8 @@ const curriculum = [
             sql_focus: ["Clinical data", "Operational data", "Financial data"],
             relevantTables: ["encounters", "claims", "charges"],
             joinHint: "No join is needed for this lesson.",
-            summary: "Hospital data is not one giant spreadsheet. It is a collection of different data types that capture patient care, operations, and reimbursement.",
+          summary: `Hospital data is not one giant spreadsheet.
+It is a collection of different data types that capture patient care, operations, and reimbursement.`,
             bullets: [
               "Clinical data describes what happened medically, such as diagnoses, procedures, and care decisions.",
               "Operational data describes how care moved through the system, such as encounters, departments, and visit dates.",
