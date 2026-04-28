@@ -1,14 +1,27 @@
 function resetQuery() {
-  const input = document.querySelector("#sql-input");
-  const output = document.querySelector("#query-output");
-  const feedback = document.querySelector("#feedback");
+  const lesson = typeof getCurrentLesson === "function" ? getCurrentLesson() : null;
 
-  if (input) input.value = "";
+  const input = document.getElementById("query");
+  const output = document.getElementById("output");
+  const feedback = document.getElementById("feedback");
+
+  if (input) {
+    input.value = lesson && !isTextChallenge(lesson)
+      ? (lesson.starterQuery || "")
+      : "";
+  }
+
   if (output) output.innerHTML = "";
-  if (feedback) feedback.innerHTML = "";
 
-  if (typeof attempts !== "undefined") attempts = 0;
-  if (window.currentLessonState) window.currentLessonState.attempts = 0;
+  if (feedback) {
+    feedback.innerText = "";
+    feedback.classList.remove("success", "error", "warning");
+  }
+
+  attempts = 0;
+  lastRunQuery = "";
+
+  if (typeof saveProgress === "function") saveProgress();
 }
 
 const STORAGE_KEY = "careops_curriculum_master_v2";
