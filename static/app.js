@@ -1,5 +1,4 @@
 const STORAGE_KEY = "careops_curriculum_master_v2";
-
 let appState = {
   currentTrackId: "track_foundations",
   currentCategoryId: null,
@@ -13,19 +12,17 @@ let appState = {
   glossarySearch: "",
   glossaryCategory: ""
 };
-
 let SQL = null;
 let sqlDb = null;
 let sqlEngineReady = false;
 let attempts = 0;
 let lastRunQuery = "";
 let activeDifficultyFilter = null;
-
 const LEARNING_LEVELS = [
-  { label: "Foundations", key: "foundations", color: "#22c55e", trackId: "track_foundations" }
-  ];
+  { label: "Foundations", key: "foundations", color: "#22c55e", trackId: "track_foundations" },
+  { label: "Core", key: "core", color: "#2563eb", trackId: "track_core" }
+];
   
-
 const BUSINESS_LOGIC_MAP = {
   revenue_net_vs_gross: {
     analystFrame: "You are preparing a board-facing revenue cycle summary.",
@@ -126,7 +123,6 @@ const BUSINESS_LOGIC_MAP = {
     executiveQuestion: "What additional patient, provider, or financial context is needed to interpret the operational results?"
   }
 };
-
 const GLOSSARY_TERMS = [
   { term: "SELECT", category: "sql", definition: "Returns the columns you ask for from a table or query.", why: "SELECT is the starting point for almost every SQL query an analyst writes.", example: "SELECT patient_id, insurance_type FROM patients;" },
   { term: "WHERE", category: "sql", definition: "Filters rows so only matching records are returned.", why: "It lets analysts focus on the exact population or event they need to study.", example: "SELECT * FROM encounters WHERE length_of_stay > 5;" },
@@ -156,9 +152,9 @@ const GLOSSARY_TERMS = [
   { term: "Denial Rate", category: "financial", definition: "The share of claims or dollars that are denied by payers.", why: "It helps leaders measure financial leakage and prioritize revenue cycle improvement.", example: "A 9% denial rate means roughly 9 out of 100 claims or claim dollars are denied, depending on the definition used." },
   { term: "Payer", category: "financial", definition: "The organization or program responsible for reimbursing a claim.", why: "Payer segmentation often explains reimbursement, denial, and LOS variation.", example: "Common payer groups include Medicare, Medicaid, Commercial, and Self Pay." },
   { term: "Payer Mix", category: "financial", definition: "The distribution of patients, visits, or dollars across payer categories.", why: "Payer mix shapes reimbursement risk, margin, and financial planning.", example: "A facility with more Medicare and Medicaid may have a different financial profile than one with more commercial volume." },
-  { term: "Gross Charges", category: "financial", definition: "The full billed amount before adjustments, write-offs, and collections.", why: "Gross charges show billing activity but usually overstate true realized revenue.", example: "Gross charges are often used as the starting point for estimating net revenue." },
+  { term: "Gross Charges", category: "financial", definition: "The full billed amount before adjustments, write-offs, and claim collections.", why: "Gross charges show billing activity but usually overstate true realized revenue.", example: "Gross charges are often used as the starting point for estimating net revenue." },
   { term: "Net Revenue", category: "financial", definition: "The portion of gross charges that the organization expects to realize after contractual adjustments and nonpayment.", why: "Net revenue is a more realistic measure of financial performance than gross charges alone.", example: "Some analyses estimate net revenue as a percentage of gross charges." },
-  { term: "Collections", category: "financial", definition: "Actual cash received from payers or patients.", why: "Collections matter because billed charges alone do not equal money received.", example: "A hospital may bill one amount but collect less after payer adjudication." },
+  { term: "Claim Collections", category: "financial", definition: "Actual billed/reimbursed activity from payers or patients.", why: "Claim Collections matter because billed charges alone do not equal money received.", example: "A hospital may bill one amount but collect less after payer adjudication." },
   { term: "RVU", category: "financial", definition: "Relative Value Unit, a standardized measure of service intensity often used in provider compensation and productivity.", why: "RVUs help compare provider output even when procedures differ.", example: "A provider contract may include RVU-based compensation targets." },
   { term: "KPI", category: "analytics", definition: "Key Performance Indicator, a metric used to monitor whether performance is on target.", why: "KPIs focus leadership attention on the few measures that matter most.", example: "LOS, readmission rate, and denial rate are common hospital KPIs." },
   { term: "Benchmark", category: "analytics", definition: "A comparison point used to judge whether performance is strong, average, or weak.", why: "Benchmarks help leaders know whether a number is actually good or bad.", example: "A denial rate may be compared against an internal or industry benchmark." },
@@ -172,7 +168,6 @@ const GLOSSARY_TERMS = [
   { term: "Throughput", category: "analytics", definition: "How efficiently patients move through the care process.", why: "Throughput connects LOS, boarding, discharge timing, and capacity.", example: "A rise in discharge delays often harms throughput across the hospital." },
   { term: "Bottleneck", category: "analytics", definition: "A step in the process that slows down the overall system.", why: "Finding bottlenecks helps leaders know where to intervene first.", example: "Placement delays, pending consults, or transport waits can become bottlenecks." }
 ];
-
 function glossaryCategoryLabel(category) {
   return {
     sql: "SQL",
@@ -181,7 +176,51 @@ function glossaryCategoryLabel(category) {
     analytics: "Analytics / Strategy"
   }[category] || "Reference";
 }
+/* =========================
+   SQL PARSER + UTILITIES
+========================= */
 
+function parseSQL(query) {
+  const clean = query
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .replace(/;$/, '')
+    .trim();
+
+  const selectMatch = clean.match(/select (.+?) from/);
+  const fromMatch = clean.match(/from ([a-z0-9_]+)/);
+
+  return {
+    raw: clean,
+    columns: selectMatch
+      ? selectMatch[1].split(',').map(c => c.trim())
+      : [],
+    table: fromMatch ? fromMatch[1].trim() : null
+  };
+}
+
+function levenshtein(a, b) {
+  const matrix = [];
+
+  for (let i = 0; i <= b.length; i++) matrix[i] = [i];
+  for (let j = 0; j <= a.length; j++) matrix[0][j] = j;
+
+  for (let i = 1; i <= b.length; i++) {
+    for (let j = 1; j <= a.length; j++) {
+      if (b[i - 1] === a[j - 1]) {
+        matrix[i][j] = matrix[i - 1][j - 1];
+      } else {
+        matrix[i][j] = Math.min(
+          matrix[i - 1][j - 1] + 1,
+          matrix[i][j - 1] + 1,
+          matrix[i - 1][j] + 1
+        );
+      }
+    }
+  }
+
+  return matrix[b.length][a.length];
+}
 const schema = {
   tables: [
     { name: "patients", description: "Patient demographic, insurance, and risk information.", keyColumns: ["patient_id"], notableColumns: ["patient_id","first_name","last_name","age","gender","insurance_type","risk_score","city"], sampleRows: [] },
@@ -211,6 +250,73 @@ const schema = {
     "observations.encounter_id = encounters.encounter_id"
   ]
 };
+/* =========================
+   GRADING ENGINE
+========================= */
+
+function gradeColumns(userCols, expectedCols) {
+  let score = 0;
+  let feedback = [];
+
+  const missing = expectedCols.filter(c => !userCols.includes(c));
+  const extra = userCols.filter(c => !expectedCols.includes(c));
+
+  if (missing.length === 0 && extra.length === 0) {
+    score += 50;
+  } else {
+    score += 20;
+  }
+
+  if (missing.length) {
+    feedback.push(`Missing: ${missing.join(', ')}`);
+  }
+
+  if (extra.length) {
+    feedback.push(`Extra: ${extra.join(', ')}`);
+  }
+
+  if (JSON.stringify(userCols) === JSON.stringify(expectedCols)) {
+    score += 20;
+  } else {
+    feedback.push("Column order is incorrect");
+  }
+
+  return { score, feedback };
+}
+
+function gradeTable(userTable, expectedTable) {
+  if (!userTable) {
+    return { score: 0, feedback: ["No table used"] };
+  }
+
+  if (userTable === expectedTable) {
+    return { score: 20, feedback: [] };
+  }
+
+  return {
+    score: 0,
+    feedback: [`Wrong table (expected ${expectedTable})`]
+  };
+}
+
+function gradeQuery(userQuery, lesson) {
+  const parsed = parseSQL(userQuery);
+
+  let total = 0;
+  let feedback = [];
+
+  const col = gradeColumns(parsed.columns, lesson.expected.columns);
+  total += col.score;
+  feedback.push(...col.feedback);
+
+  const table = gradeTable(parsed.table, lesson.expected.table);
+  total += table.score;
+  feedback.push(...table.feedback);
+
+  total = Math.min(total, 100);
+
+  return { score: total, feedback };
+}
 
 const curriculum = [
   {
@@ -253,11 +359,9 @@ const curriculum = [
             relevantTables: ["encounters", "claims", "charges"],
             joinHint: "Think about whether the question is about care, operations, or money.",
             challengeCriteria: `For each question below, identify the primary type of data you would start with and explain why.
-
 1. Emergency department wait times
 2. Total billed charges for a hospital stay
 3. Diagnosis trends by quarter
-
 Use the categories clinical, operational, and financial in your explanation.`,
             starterQuery: "",
             solutionQuery: "",
@@ -310,7 +414,6 @@ Use the categories clinical, operational, and financial in your explanation.`,
             relevantTables: ["encounters"],
             joinHint: "Look for the most specific identifier in the column list.",
             challengeCriteria: `You are given a table with these columns: patient_id, encounter_id, department, and visit_date.
-
 Explain what one row in this table most likely represents and why.`,
             starterQuery: "",
             solutionQuery: "",
@@ -360,7 +463,6 @@ Explain what one row in this table most likely represents and why.`,
             relevantTables: ["patients", "encounters"],
             joinHint: "The wording of the business question should guide your table choice.",
             challengeCriteria: `A leader asks, "How many patients came to the hospital last month?"
-
 Which table is the better starting point: patients or encounters? Explain your reasoning.`,
             starterQuery: "",
             solutionQuery: "",
@@ -411,7 +513,6 @@ Which table is the better starting point: patients or encounters? Explain your r
             relevantTables: ["patients", "encounters", "charges"],
             joinHint: "Start with the table that directly captures the event being measured.",
             challengeCriteria: `You are asked, "Which department saw the most patients last week?"
-
 Should you start with patients, encounters, or charges? Explain your reasoning.`,
             starterQuery: "",
             solutionQuery: "",
@@ -485,7 +586,7 @@ Should you start with patients, encounters, or charges? Explain your reasoning.`
             challengeCriteria: "Return patient_id, encounter_id, and admit_date from encounters.",
             starterQuery: "",
             solutionQuery: "SELECT patient_id, encounter_id, admit_date FROM encounters;",
-            hint: "List the columns explicitly in the SELECT statement.",
+            hint: "List only these columns, in this order: patient_id, encounter_id, admit_date.",
             smartHint: "Use the exact column order requested: patient_id, encounter_id, admit_date.",
             thirdHint: "SELECT patient_id, encounter_id, admit_date FROM encounters;",
             explanation: "Selecting specific columns keeps the query efficient and keeps the learner focused on the fields that matter.",
@@ -914,7 +1015,6 @@ Should you start with patients, encounters, or charges? Explain your reasoning.`
             sql_focus: ["Interpretation"],
             relevantTables: ["encounters"],
             challengeCriteria: `You run a query and see the top 5 encounters with the longest length_of_stay.
-
 Explain what this result means and why it matters.`,
             starterQuery: "",
             solutionQuery: "",
@@ -941,9 +1041,7 @@ Explain what this result means and why it matters.`,
             joinHint: "Use sorting to make the output useful, then explain the meaning.",
             summary: "A leader wants insight, not raw data.",
             prompt: `A hospital executive asks: "Show me the most recent high-cost encounters."
-
 Write a query AND explain what the result means.
-
 Your answer must:
 - filter relevant encounters
 - sort results
@@ -989,7 +1087,6 @@ Your answer must:
             sql_focus: ["Reasoning"],
             relevantTables: ["encounters"],
             challengeCriteria: `You run a report and see that emergency department visits dropped to zero last week.
-
 Explain why this is likely a data issue and not a real operational change.`,
             starterQuery: "",
             solutionQuery: "",
@@ -1107,7 +1204,6 @@ Explain why this is likely a data issue and not a real operational change.`,
             sql_focus: ["Interpretation"],
             relevantTables: ["encounters"],
             challengeCriteria: `You calculate average length_of_stay and get 45 days.
-
 Explain why this result is likely incorrect and what you would check.`,
             starterQuery: "",
             solutionQuery: "",
@@ -1134,7 +1230,6 @@ Explain why this result is likely incorrect and what you would check.`,
             joinHint: "Think about validation checks before presenting to leadership.",
             summary: "A leader is about to act on your data.",
             prompt: `You are about to present a report showing a sudden spike in hospital volume.
-
 Explain how you would validate the data before presenting it and what checks you would perform.`,
             expectedKeywords: ["validate", "check", "data", "error"],
             minLength: 90,
@@ -1145,19 +1240,868 @@ Explain how you would validate the data before presenting it and what checks you
         ]
       }
     ]
+  },
+  {
+    id: "track_core",
+    title: "Core",
+    description: "Hospital metrics, aggregation, and real-world analyst thinking using volume, financial, utilization, operational, provider, department, and payment data.",
+    order: 2,
+    categories: [
+      {
+        id: "core_volume_activity",
+        title: "Volume & Activity Metrics",
+        order: 1,
+        lessons: [
+          {
+            kind: "concept",
+            id: "cv1",
+            title: "Encounter Volume as a KPI",
+            objective: "Understand how COUNT turns encounter rows into a basic hospital activity metric.",
+            sql_focus: ["COUNT", "Aggregation", "Encounter volume"],
+            relevantTables: ["encounters"],
+            joinHint: "No join is needed when the metric is only total encounter volume.",
+            summary: "Encounter volume tells leaders how much patient activity occurred. It is often the first metric used to understand workload, access, and demand.",
+            bullets: [
+              "COUNT(*) counts rows in the selected population.",
+              "In the encounters table, one row usually represents one visit or stay.",
+              "Volume is useful for staffing, capacity planning, access monitoring, and operational trend review.",
+              "Volume alone does not explain performance, but it tells you where activity is happening.",
+              "Before counting, confirm the table grain so you know what the count represents."
+            ],
+            example: "Hospital example: counting encounter rows gives total visit volume across the organization.",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "challenge",
+            id: "cv2",
+            title: "Total Encounter Volume",
+            objective: "Count total encounters across the organization.",
+            sql_focus: ["SELECT", "COUNT", "FROM"],
+            relevantTables: ["encounters"],
+            joinHint: "Use only the encounters table.",
+            challengeCriteria: "Return the total number of encounters. Label the result encounter_count.",
+            starterQuery: "",
+            solutionQuery: "SELECT COUNT(*) AS encounter_count FROM encounters;",
+            hint: "Use COUNT(*) on the encounters table.",
+            smartHint: "Alias the count as encounter_count so the output is readable.",
+            thirdHint: "SELECT COUNT(*) AS encounter_count FROM encounters;",
+            explanation: "This produces a basic activity metric: total encounter volume.",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "concept",
+            id: "cv3",
+            title: "Patient Count vs Encounter Count",
+            objective: "Distinguish total visits from unique patients.",
+            sql_focus: ["COUNT", "COUNT DISTINCT", "Grain"],
+            relevantTables: ["encounters", "patients"],
+            joinHint: "No join is needed if patient_id is already on encounters.",
+            summary: "Encounter volume and unique patient volume answer different questions. Encounters measure activity. Unique patients measure how many people were served.",
+            bullets: [
+              "COUNT(*) counts visits when used on the encounters table.",
+              "COUNT(DISTINCT patient_id) counts unique people represented in those visits.",
+              "A patient with multiple visits increases encounter volume but should count once in a unique-patient metric.",
+              "Confusing these metrics can overstate patient reach.",
+              "Leaders often need both metrics side by side."
+            ],
+            example: "Hospital example: 1,000 encounters may represent 850 unique patients if some patients visited more than once.",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "challenge",
+            id: "cv4",
+            title: "Unique Patient Volume",
+            objective: "Count unique patients represented in encounters.",
+            sql_focus: ["SELECT", "COUNT", "DISTINCT"],
+            relevantTables: ["encounters"],
+            joinHint: "Use patient_id from encounters.",
+            challengeCriteria: "Return the number of unique patients in encounters. Label the result unique_patient_count.",
+            starterQuery: "",
+            solutionQuery: "SELECT COUNT(DISTINCT patient_id) AS unique_patient_count FROM encounters;",
+            hint: "Use COUNT(DISTINCT patient_id).",
+            smartHint: "COUNT(DISTINCT patient_id) prevents counting the same patient more than once.",
+            thirdHint: "SELECT COUNT(DISTINCT patient_id) AS unique_patient_count FROM encounters;",
+            explanation: "This avoids overstating the number of people served when patients have multiple encounters.",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "concept",
+            id: "cv5",
+            title: "Department Volume",
+            objective: "Use GROUP BY to compare activity across hospital departments.",
+            sql_focus: ["GROUP BY", "COUNT"],
+            relevantTables: ["encounters", "departments"],
+            joinHint: "You can group by department from encounters, or join departments for department_name and service_line.",
+            summary: "Department volume shows where patient activity is concentrated. This is one of the most common operational summaries in hospital reporting.",
+            bullets: [
+              "GROUP BY produces one row per department.",
+              "COUNT(*) gives encounter volume within each department group.",
+              "Department volume helps leaders understand workload distribution.",
+              "High volume does not automatically mean poor performance, but it may explain operational pressure.",
+              "Readable department names usually require either a department field or a join to departments."
+            ],
+            example: "Hospital example: ED, ICU, imaging, and outpatient clinics may have very different volume patterns.",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "challenge",
+            id: "cv6",
+            title: "Encounters by Department",
+            objective: "Group encounter volume by department.",
+            sql_focus: ["SELECT", "COUNT", "GROUP BY"],
+            relevantTables: ["encounters"],
+            joinHint: "Use the department column on encounters for this version.",
+            challengeCriteria: "Return department and encounter count by department. Label the count encounter_count.",
+            starterQuery: "",
+            solutionQuery: "SELECT department, COUNT(*) AS encounter_count FROM encounters GROUP BY department;",
+            hint: "Select department and COUNT(*), then group by department.",
+            smartHint: "Any non-aggregated selected field must be in the GROUP BY.",
+            thirdHint: "SELECT department, COUNT(*) AS encounter_count FROM encounters GROUP BY department;",
+            explanation: "This creates a department-level volume summary.",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "concept",
+            id: "cv7",
+            title: "Encounter Type Mix",
+            objective: "Understand why encounter type changes how volume should be interpreted.",
+            sql_focus: ["GROUP BY", "encounter_type"],
+            relevantTables: ["encounters"],
+            joinHint: "No join is needed when encounter_type is on encounters.",
+            summary: "Hospital volume becomes more meaningful when it is separated by encounter type, such as ED, inpatient, observation, or outpatient activity.",
+            bullets: [
+              "Encounter type adds operational context to raw volume.",
+              "ED volume may suggest access and throughput pressure.",
+              "Inpatient volume affects bed capacity and staffing.",
+              "Outpatient volume may reflect clinic access and referral demand.",
+              "Mix matters because not all encounters consume the same resources."
+            ],
+            example: "Hospital example: 500 outpatient encounters and 500 inpatient encounters have very different operational implications.",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "challenge",
+            id: "cv8",
+            title: "Volume by Encounter Type",
+            objective: "Summarize encounters by encounter type.",
+            sql_focus: ["SELECT", "COUNT", "GROUP BY"],
+            relevantTables: ["encounters"],
+            joinHint: "Use only the encounters table.",
+            challengeCriteria: "Return encounter_type and encounter count by encounter_type. Sort the highest volume first.",
+            starterQuery: "",
+            solutionQuery: "SELECT encounter_type, COUNT(*) AS encounter_count FROM encounters GROUP BY encounter_type ORDER BY encounter_count DESC;",
+            hint: "Group by encounter_type and sort by the count descending.",
+            smartHint: "Use ORDER BY encounter_count DESC after the GROUP BY.",
+            thirdHint: "SELECT encounter_type, COUNT(*) AS encounter_count FROM encounters GROUP BY encounter_type ORDER BY encounter_count DESC;",
+            explanation: "This shows the mix of care activity across encounter types.",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "scenario",
+            id: "cv9",
+            title: "Scenario: How Busy Were We?",
+            objective: "Explain volume using both total encounters and unique patients.",
+            relevantTables: ["encounters"],
+            joinHint: "Start with encounters and decide whether the leader is asking about visits, people, or both.",
+            summary: "A COO asks how busy the hospital was last month and whether that reflects more visits or more unique patients.",
+            prompt: "Write a response explaining what metrics you would produce to answer this question. Include total encounters, unique patients, and why those two metrics can tell different stories.",
+            expectedKeywords: ["count", "distinct", "encounters", "patients", "volume"],
+            minLength: 100,
+            minimumKeywordMatches: 3,
+            feedbackGuide: "A strong answer explains both total encounter volume and unique patient volume, then interprets the difference between visits and people.",
+            executiveTakeaway: { show: false }
+          }
+        ]
+      },
+      {
+        id: "core_financial_metrics",
+        title: "Financial Metrics",
+        order: 2,
+        lessons: [
+          {
+            kind: "concept",
+            id: "cf1",
+            title: "Gross Charges",
+            objective: "Understand how SUM creates a gross charge metric.",
+            sql_focus: ["SUM", "Financial metrics"],
+            relevantTables: ["charges"],
+            joinHint: "No join is needed for a basic total charge metric.",
+            summary: "Gross charges show billed activity before adjustments, denials, or claim collections. They are useful, but they are not the same as cash collected.",
+            bullets: [
+              "SUM(amount) adds charge dollars across rows.",
+              "Charges are gross billed values, not guaranteed revenue.",
+              "Charge totals help quantify service activity and financial exposure.",
+              "Leaders should avoid treating charges as actual claim collections.",
+              "Financial metrics require clear definitions."
+            ],
+            example: "Hospital example: a high-charge department may have high service intensity but not necessarily high net revenue.",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "challenge",
+            id: "cf2",
+            title: "Total Gross Charges",
+            objective: "Calculate total gross charges.",
+            sql_focus: ["SELECT", "SUM"],
+            relevantTables: ["charges"],
+            joinHint: "Use only the charges table.",
+            challengeCriteria: "Return total gross charges from charges. Label the result gross_charges.",
+            starterQuery: "",
+            solutionQuery: "SELECT SUM(amount) AS gross_charges FROM charges;",
+            hint: "Use SUM(amount).",
+            smartHint: "Alias the result as gross_charges.",
+            thirdHint: "SELECT SUM(amount) AS gross_charges FROM charges;",
+            explanation: "This measures total billed charge activity.",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "concept",
+            id: "cf3",
+            title: "Average Charge Per Line",
+            objective: "Use AVG to understand typical charge size while recognizing limitations.",
+            sql_focus: ["AVG", "Financial interpretation"],
+            relevantTables: ["charges"],
+            joinHint: "No join is needed for average charge amount.",
+            summary: "Average charge amount shows the typical charge line size, but it can be distorted by outliers and does not equal average encounter cost.",
+            bullets: [
+              "AVG(amount) calculates the average charge row amount.",
+              "Charge-line average is different from encounter-level average charges.",
+              "Large procedures can distort averages.",
+              "Use the metric only if the row grain is understood.",
+              "Financial averages should always be interpreted with caution."
+            ],
+            example: "Hospital example: one operating room charge line can raise the average even if most charges are small ancillary items.",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "challenge",
+            id: "cf4",
+            title: "Average Charge Amount",
+            objective: "Calculate average charge amount across charge rows.",
+            sql_focus: ["SELECT", "AVG"],
+            relevantTables: ["charges"],
+            joinHint: "Use the charge row grain.",
+            challengeCriteria: "Return the average amount from charges. Label the result avg_amount.",
+            starterQuery: "",
+            solutionQuery: "SELECT AVG(amount) AS avg_amount FROM charges;",
+            hint: "Use AVG(amount).",
+            smartHint: "Remember this is average per charge row, not necessarily per encounter.",
+            thirdHint: "SELECT AVG(amount) AS avg_amount FROM charges;",
+            explanation: "This reports the average financial value of a charge line.",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "concept",
+            id: "cf5",
+            title: "Payer Mix and Financial Risk",
+            objective: "Understand why payer grouping matters in hospital finance.",
+            sql_focus: ["GROUP BY", "Payer mix"],
+            relevantTables: ["claims", "charges", "patients"],
+            joinHint: "Use the payer field on claims or charges when payer is already available.",
+            summary: "Payer mix influences reimbursement, denial patterns, and financial risk. Aggregating by payer helps leaders see where dollars are concentrated.",
+            bullets: [
+              "Payer categories often reimburse differently.",
+              "High charge volume under one payer may not equal high claim collections.",
+              "Payer grouping supports revenue cycle prioritization.",
+              "Claims are usually better for denial analysis than charges alone.",
+              "Payer mix should be interpreted with both volume and dollars."
+            ],
+            example: "Hospital example: Medicare, Medicaid, Commercial, and Self Pay may each carry different reimbursement risk.",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "challenge",
+            id: "cf6",
+            title: "Billed Amount by Payer",
+            objective: "Summarize billed claim dollars by payer.",
+            sql_focus: ["SELECT", "SUM", "GROUP BY", "ORDER BY"],
+            relevantTables: ["claims"],
+            joinHint: "Use claims because billed_amount and payer are on the same table.",
+            challengeCriteria: "Return payer and total billed_amount by payer. Label the total total_billed_amount and sort highest first.",
+            starterQuery: "",
+            solutionQuery: "SELECT payer, SUM(billed_amount) AS total_billed_amount FROM claims GROUP BY payer ORDER BY total_billed_amount DESC;",
+            hint: "Group by payer and sum billed_amount.",
+            smartHint: "Use ORDER BY total_billed_amount DESC so the largest payer segments appear first.",
+            thirdHint: "SELECT payer, SUM(billed_amount) AS total_billed_amount FROM claims GROUP BY payer ORDER BY total_billed_amount DESC;",
+            explanation: "This identifies which payer groups represent the largest billed-dollar exposure.",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "concept",
+            id: "cf7",
+            title: "Claims vs Charges",
+            objective: "Distinguish billed activity from actual payment activity.",
+            sql_focus: ["SUM", "Claims", "Net revenue"],
+            relevantTables: ["charges", "claims"],
+            joinHint: "Use claims for billed/reimbursed activity and charges or claims for billed value.",
+            summary: "Claims represent reimbursement activity. Charges represent billed amounts. Comparing the two helps leaders understand revenue cycle performance.",
+            bullets: [
+              "Charges show gross billed value.",
+              "Claims show payer reimbursement status and billed activity.",
+              "Claim Collections are usually lower than gross charges.",
+              "Payment data is crucial for revenue cycle performance.",
+              "Do not use charges alone to claim revenue was collected."
+            ],
+            example: "Hospital example: a department may generate high charges but lower paid claim activity due to payer mix or denials.",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "challenge",
+            id: "cf8",
+            title: "Total Billed by Payer",
+            objective: "Summarize payment activity by payer.",
+            sql_focus: ["SELECT", "SUM", "GROUP BY"],
+            relevantTables: ["claims"],
+            joinHint: "Use claims if your dataset includes billed_amount and payer.",
+            challengeCriteria: "Return payer and total billed_amount by payer. Label the result total_claims.",
+            starterQuery: "",
+            solutionQuery: "SELECT payer, SUM(billed_amount) AS total_claims FROM claims GROUP BY payer;",
+            hint: "Group claims by payer.",
+            smartHint: "Use SUM(billed_amount), not SUM(billed_amount).",
+            thirdHint: "SELECT payer, SUM(billed_amount) AS total_claims FROM claims GROUP BY payer;",
+            explanation: "This shows where received payment dollars are coming from by payer.",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "scenario",
+            id: "cf9",
+            title: "Scenario: Financial Snapshot",
+            objective: "Explain why charges and claims should not be treated as the same metric.",
+            relevantTables: ["charges", "claims"],
+            joinHint: "Think about which table represents billed value versus billed/reimbursed activity.",
+            summary: "A finance leader asks why gross charges increased but paid claims did not increase at the same rate.",
+            prompt: "Explain how you would investigate this using charges, claims, and claims. Mention gross charges, claims or claim collections, payer mix, and why a rise in charges does not automatically mean a rise in paid claims.",
+            expectedKeywords: ["charges", "payer", "claim collections", "claims"],
+            minLength: 110,
+            minimumKeywordMatches: 3,
+            feedbackGuide: "A strong answer separates gross billed activity from payment activity and identifies payer mix or claim status as possible drivers.",
+            executiveTakeaway: { show: false }
+          }
+        ]
+      },
+      {
+        id: "core_utilization_behavior",
+        title: "Utilization & Patient Behavior",
+        order: 3,
+        lessons: [
+          {
+            kind: "concept",
+            id: "cu1",
+            title: "Encounters per Patient",
+            objective: "Use grouping to measure utilization at the patient level.",
+            sql_focus: ["GROUP BY", "COUNT", "Patient utilization"],
+            relevantTables: ["encounters", "patients"],
+            joinHint: "Start with encounters because utilization is based on visit activity.",
+            summary: "Encounters per patient helps identify utilization patterns and repeat use of hospital services.",
+            bullets: [
+              "Grouping by patient_id creates one row per patient.",
+              "COUNT(*) then measures visits per patient.",
+              "Repeat utilization may reflect chronic illness, access barriers, or care coordination needs.",
+              "High utilization should trigger investigation, not blame.",
+              "Patient-level metrics require privacy and responsible interpretation."
+            ],
+            example: "Hospital example: patients with many ED visits may need outpatient support or care management.",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "challenge",
+            id: "cu2",
+            title: "Visits per Patient",
+            objective: "Count encounters for each patient.",
+            sql_focus: ["SELECT", "COUNT", "GROUP BY"],
+            relevantTables: ["encounters"],
+            joinHint: "Use encounters and group by patient_id.",
+            challengeCriteria: "Return patient_id and visit count for each patient. Label the count visit_count.",
+            starterQuery: "",
+            solutionQuery: "SELECT patient_id, COUNT(*) AS visit_count FROM encounters GROUP BY patient_id;",
+            hint: "Group by patient_id.",
+            smartHint: "COUNT(*) counts encounters within each patient group.",
+            thirdHint: "SELECT patient_id, COUNT(*) AS visit_count FROM encounters GROUP BY patient_id;",
+            explanation: "This turns encounter rows into a patient-level utilization metric.",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "concept",
+            id: "cu3",
+            title: "High Utilizers",
+            objective: "Use HAVING to identify patients above a utilization threshold.",
+            sql_focus: ["HAVING", "Thresholds"],
+            relevantTables: ["encounters"],
+            joinHint: "No join is needed for the basic high-utilizer count.",
+            summary: "High utilizers are patients whose visit count exceeds a defined threshold. The threshold must match the business question.",
+            bullets: [
+              "HAVING filters after grouping.",
+              "WHERE filters rows before grouping.",
+              "A threshold such as more than 3 visits should be clinically or operationally justified.",
+              "High utilizers may need care coordination, social support, or follow-up access.",
+              "Always validate whether repeat visits are expected for certain patient populations."
+            ],
+            example: "Hospital example: patients with more than 3 ED visits in a short period may be reviewed for case management outreach.",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "challenge",
+            id: "cu4",
+            title: "Find High Utilizers",
+            objective: "Return patients with more than 3 encounters.",
+            sql_focus: ["GROUP BY", "HAVING", "COUNT"],
+            relevantTables: ["encounters"],
+            joinHint: "Group by patient_id first, then filter the grouped count.",
+            challengeCriteria: "Return patient_id and visit_count for patients with more than 3 encounters.",
+            starterQuery: "",
+            solutionQuery: "SELECT patient_id, COUNT(*) AS visit_count FROM encounters GROUP BY patient_id HAVING COUNT(*) > 3;",
+            hint: "Use HAVING COUNT(*) > 3.",
+            smartHint: "The threshold applies after patient-level grouping.",
+            thirdHint: "SELECT patient_id, COUNT(*) AS visit_count FROM encounters GROUP BY patient_id HAVING COUNT(*) > 3;",
+            explanation: "This identifies patients who stand out by utilization volume.",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "concept",
+            id: "cu5",
+            title: "Risk Score Segmentation",
+            objective: "Use patient attributes to segment utilization results.",
+            sql_focus: ["JOIN", "GROUP BY", "Risk segmentation"],
+            relevantTables: ["patients", "encounters"],
+            joinHint: "Join encounters to patients on patient_id to bring in risk_score.",
+            summary: "Utilization becomes more actionable when combined with patient context, such as risk score or payer category.",
+            bullets: [
+              "Joining patients to encounters enriches utilization analysis.",
+              "Risk score can help prioritize outreach or care coordination.",
+              "Segmentation prevents one-size-fits-all interpretation.",
+              "High utilization with high risk may require a different response than high utilization with low risk.",
+              "Context makes utilization metrics more useful."
+            ],
+            example: "Hospital example: high-risk patients with repeat ED visits may be prioritized for care management review.",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "challenge",
+            id: "cu6",
+            title: "Utilization by Insurance Type",
+            objective: "Compare encounter volume by insurance type.",
+            sql_focus: ["JOIN", "COUNT", "GROUP BY"],
+            relevantTables: ["patients", "encounters"],
+            joinHint: "Join encounters to patients using patient_id.",
+            challengeCriteria: "Return insurance_type and encounter count by insurance_type. Label the count encounter_count.",
+            starterQuery: "",
+            solutionQuery: "SELECT p.insurance_type, COUNT(*) AS encounter_count FROM encounters e JOIN patients p ON e.patient_id = p.patient_id GROUP BY p.insurance_type;",
+            hint: "Join patients so you can group by insurance_type.",
+            smartHint: "Use encounters for visit activity and patients for insurance_type.",
+            thirdHint: "SELECT p.insurance_type, COUNT(*) AS encounter_count FROM encounters e JOIN patients p ON e.patient_id = p.patient_id GROUP BY p.insurance_type;",
+            explanation: "This compares utilization across payer-related patient segments.",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "concept",
+            id: "cu7",
+            title: "Appointment No-Shows as Utilization Signals",
+            objective: "Understand why appointment outcomes matter for access and care continuity.",
+            sql_focus: ["Appointments", "COUNT", "GROUP BY"],
+            relevantTables: ["appointments", "patients", "providers"],
+            joinHint: "Use appointments for scheduling status and optionally join providers or departments for context.",
+            summary: "No-shows are not just scheduling issues. They can affect access, revenue, provider productivity, and downstream utilization.",
+            bullets: [
+              "Appointment status can show completed, canceled, or no-show activity.",
+              "No-show volume may indicate access barriers or communication gaps.",
+              "Department-level no-show review supports operational improvement.",
+              "Provider-level no-show review should be interpreted carefully and fairly.",
+              "No-show metrics connect outpatient access to broader hospital utilization."
+            ],
+            example: "Hospital example: high no-show rates in primary care may lead to poorer chronic disease management and higher ED use.",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "challenge",
+            id: "cu8",
+            title: "No-Shows by Department",
+            objective: "Count no-show appointments by department.",
+            sql_focus: ["WHERE", "COUNT", "GROUP BY"],
+            relevantTables: ["appointments"],
+            joinHint: "Use the appointments table because status and department are available there.",
+            challengeCriteria: "Return department and no-show appointment count for appointments where status is 'No Show'. Label the count no_show_count.",
+            starterQuery: "",
+            solutionQuery: "SELECT department, COUNT(*) AS no_show_count FROM appointments WHERE status = 'No Show' GROUP BY department;",
+            hint: "Filter to status = 'No Show', then group by department.",
+            smartHint: "WHERE happens before GROUP BY.",
+            thirdHint: "SELECT department, COUNT(*) AS no_show_count FROM appointments WHERE status = 'No Show' GROUP BY department;",
+            explanation: "This identifies where missed appointments are concentrated.",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "scenario",
+            id: "cu9",
+            title: "Scenario: Patient Utilization Review",
+            objective: "Recommend a responsible next step after finding high utilizers and no-show patterns.",
+            relevantTables: ["encounters", "appointments", "patients"],
+            joinHint: "Think about how visits, appointment behavior, and patient context can be combined responsibly.",
+            summary: "Leadership sees high repeat ED use and high primary care no-shows in the same service area.",
+            prompt: "Explain what you would analyze next and why. Mention repeat encounters, no-shows, patient risk or payer context, and how this could support care coordination rather than simply blaming patients.",
+            expectedKeywords: ["repeat", "no-show", "risk", "care", "coordination"],
+            minLength: 120,
+            minimumKeywordMatches: 3,
+            feedbackGuide: "A strong answer connects utilization to access barriers, risk, and care coordination rather than treating high use as a simple patient behavior problem.",
+            executiveTakeaway: { show: false }
+          }
+        ]
+      },
+      {
+        id: "core_operational_performance",
+        title: "Operational Performance",
+        order: 4,
+        lessons: [
+          {
+            kind: "concept",
+            id: "co1",
+            title: "Throughput Metrics Beyond Volume",
+            objective: "Understand operational performance measures that describe patient flow.",
+            sql_focus: ["AVG", "MIN", "MAX", "Operational metrics"],
+            relevantTables: ["encounters", "discharges", "observations"],
+            joinHint: "Choose the table that contains the operational event or delay you are measuring.",
+            summary: "Operational performance looks at how care moves, not just how much care occurred. Throughput metrics help leaders identify bottlenecks.",
+            bullets: [
+              "Volume tells how much activity happened.",
+              "Throughput tells how efficiently activity moved through the system.",
+              "Discharge delays affect capacity and bed availability.",
+              "Observation hours can reveal utilization and flow issues.",
+              "Operational metrics often require careful definitions."
+            ],
+            example: "Hospital example: two departments with similar volume may have very different discharge delay patterns.",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "challenge",
+            id: "co2",
+            title: "Average Observation Hours",
+            objective: "Calculate average observation hours.",
+            sql_focus: ["AVG"],
+            relevantTables: ["observations"],
+            joinHint: "Use observations because obs_hours is the target metric.",
+            challengeCriteria: "Return average obs_hours from observations. Label the result avg_obs_hours.",
+            starterQuery: "",
+            solutionQuery: "SELECT AVG(obs_hours) AS avg_obs_hours FROM observations;",
+            hint: "Use AVG(obs_hours).",
+            smartHint: "Alias the metric as avg_obs_hours.",
+            thirdHint: "SELECT AVG(obs_hours) AS avg_obs_hours FROM observations;",
+            explanation: "This measures the typical observation duration.",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "concept",
+            id: "co3",
+            title: "Observation Conversion Rate",
+            objective: "Understand how conversion to inpatient can indicate utilization review patterns.",
+            sql_focus: ["SUM", "COUNT", "CASE", "Rate metrics"],
+            relevantTables: ["observations"],
+            joinHint: "No join is needed for basic observation conversion analysis.",
+            summary: "Observation conversion metrics show how often observation stays become inpatient stays. This can support utilization review and capacity analysis.",
+            bullets: [
+              "A conversion flag can be counted as a numerator.",
+              "Total observation rows provide the denominator.",
+              "Rates are often more meaningful than raw counts alone.",
+              "Conversion patterns may vary by department or facility.",
+              "Always define the numerator and denominator clearly."
+            ],
+            example: "Hospital example: a high observation-to-inpatient conversion rate may suggest initial status assignment or patient acuity differences.",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "challenge",
+            id: "co4",
+            title: "Observation Conversions",
+            objective: "Count observation stays converted to inpatient.",
+            sql_focus: ["WHERE", "COUNT"],
+            relevantTables: ["observations"],
+            joinHint: "Use observations because converted_to_inpatient is available there.",
+            challengeCriteria: "Return the count of observations where converted_to_inpatient = 1. Label the result conversion_count.",
+            starterQuery: "",
+            solutionQuery: "SELECT COUNT(*) AS conversion_count FROM observations WHERE converted_to_inpatient = 1;",
+            hint: "Filter to converted_to_inpatient = 1.",
+            smartHint: "This is a numerator count, not the full conversion rate yet.",
+            thirdHint: "SELECT COUNT(*) AS conversion_count FROM observations WHERE converted_to_inpatient = 1;",
+            explanation: "This counts observation stays that later became inpatient stays.",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "concept",
+            id: "co5",
+            title: "Discharge Delay Metrics",
+            objective: "Use discharge workflow data to measure delays after discharge orders.",
+            sql_focus: ["AVG", "Discharge workflow"],
+            relevantTables: ["discharges"],
+            joinHint: "Use discharges for order-to-departure timing fields.",
+            summary: "Discharge delay metrics help explain bed capacity pressure. They are especially valuable when leaders need to understand why patients are not leaving after discharge orders.",
+            bullets: [
+              "Discharge order time and departure time measure different workflow moments.",
+              "Delay minutes can identify operational bottlenecks.",
+              "Transport delays are one possible driver.",
+              "Department-level delay summaries help target process improvement.",
+              "These metrics should be validated because workflow documentation may vary."
+            ],
+            example: "Hospital example: if departure happens hours after discharge order, bed availability may be delayed even though the clinical discharge decision was made.",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "challenge",
+            id: "co6",
+            title: "Average Departure Delay",
+            objective: "Calculate average time from discharge order to departure.",
+            sql_focus: ["AVG", "Calculated fields"],
+            relevantTables: ["discharges"],
+            joinHint: "Use discharge_order_minutes and departure_minutes from discharges.",
+            challengeCriteria: "Return average departure delay calculated as departure_minutes - discharge_order_minutes. Label it avg_departure_delay.",
+            starterQuery: "",
+            solutionQuery: "SELECT AVG(departure_minutes - discharge_order_minutes) AS avg_departure_delay FROM discharges;",
+            hint: "Subtract discharge_order_minutes from departure_minutes inside AVG.",
+            smartHint: "AVG(departure_minutes - discharge_order_minutes)",
+            thirdHint: "SELECT AVG(departure_minutes - discharge_order_minutes) AS avg_departure_delay FROM discharges;",
+            explanation: "This estimates average delay between discharge order and physical departure.",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "concept",
+            id: "co7",
+            title: "Provider and Department Context",
+            objective: "Understand when provider or department joins add useful operational context.",
+            sql_focus: ["JOIN", "providers", "departments"],
+            relevantTables: ["encounters", "providers", "departments"],
+            joinHint: "Join encounters to providers on provider_id and departments on department_id.",
+            summary: "Provider and department context can make operational metrics more actionable, but it must be used carefully to avoid unfair interpretation.",
+            bullets: [
+              "Provider joins add specialty and provider assignment context.",
+              "Department joins add facility and service line context.",
+              "Context can explain variation that raw metrics cannot.",
+              "Provider-level reporting should consider patient mix and workflow factors.",
+              "Operational metrics should guide improvement, not blame."
+            ],
+            example: "Hospital example: high volume for one provider may reflect clinic assignment or specialty, not individual performance alone.",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "challenge",
+            id: "co8",
+            title: "Encounters by Provider Specialty",
+            objective: "Join providers to encounters and summarize volume by specialty.",
+            sql_focus: ["JOIN", "COUNT", "GROUP BY"],
+            relevantTables: ["encounters", "providers"],
+            joinHint: "Join encounters e to providers p on provider_id.",
+            challengeCriteria: "Return provider specialty and encounter count by specialty. Label the count encounter_count.",
+            starterQuery: "",
+            solutionQuery: "SELECT p.specialty, COUNT(*) AS encounter_count FROM encounters e JOIN providers p ON e.provider_id = p.provider_id GROUP BY p.specialty;",
+            hint: "Join providers so you can group by specialty.",
+            smartHint: "Use p.specialty in SELECT and GROUP BY.",
+            thirdHint: "SELECT p.specialty, COUNT(*) AS encounter_count FROM encounters e JOIN providers p ON e.provider_id = p.provider_id GROUP BY p.specialty;",
+            explanation: "This summarizes encounter volume by provider specialty.",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "scenario",
+            id: "co9",
+            title: "Scenario: Operational Bottleneck Review",
+            objective: "Explain how to investigate operational flow using observation, discharge, department, and provider context.",
+            relevantTables: ["observations", "discharges", "encounters", "departments", "providers"],
+            joinHint: "Choose metrics that match the workflow problem before joining extra context.",
+            summary: "Leadership reports bed capacity pressure even though total hospital volume is stable.",
+            prompt: "Explain what metrics you would review to investigate this issue. Mention discharge delays, observation hours or conversions, department context, and why stable volume does not rule out a throughput problem.",
+            expectedKeywords: ["discharge", "observation", "department", "throughput", "volume"],
+            minLength: 120,
+            minimumKeywordMatches: 3,
+            feedbackGuide: "A strong answer explains that stable volume can still hide throughput problems such as delayed discharges or long observation stays.",
+            executiveTakeaway: { show: false }
+          }
+        ]
+      },
+      {
+        id: "core_reporting_insight",
+        title: "Reporting & Insight",
+        order: 5,
+        lessons: [
+          {
+            kind: "concept",
+            id: "cr1",
+            title: "Combining Metrics for Leadership",
+            objective: "Understand why leadership reports usually combine volume, financial, utilization, and operational metrics.",
+            sql_focus: ["Multiple aggregates", "Interpretation"],
+            relevantTables: ["encounters", "charges", "claims"],
+            joinHint: "Combine tables only when the metric definitions require it and the join grain is clear.",
+            summary: "Real hospital reporting rarely uses one metric. Leadership needs a balanced view of volume, financial performance, utilization, and operational flow.",
+            bullets: [
+              "Volume explains workload.",
+              "Financial metrics explain billed value and payment activity.",
+              "Utilization metrics explain patient behavior and repeat use.",
+              "Operational metrics explain throughput and bottlenecks.",
+              "Good reporting connects metrics to decisions."
+            ],
+            example: "Hospital example: a department with high volume, high no-shows, and low claims may need a different response than one with high volume and strong claim collections.",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "challenge",
+            id: "cr2",
+            title: "Department Volume with Average Risk",
+            objective: "Join patients to encounters and summarize department volume with average risk score.",
+            sql_focus: ["JOIN", "COUNT", "AVG", "GROUP BY"],
+            relevantTables: ["encounters", "patients"],
+            joinHint: "Join encounters to patients on patient_id.",
+            challengeCriteria: "Return department, encounter count, and average patient risk_score by department. Label the metrics encounter_count and avg_risk_score.",
+            starterQuery: "",
+            solutionQuery: "SELECT e.department, COUNT(*) AS encounter_count, AVG(p.risk_score) AS avg_risk_score FROM encounters e JOIN patients p ON e.patient_id = p.patient_id GROUP BY e.department;",
+            hint: "Use encounters for department and patients for risk_score.",
+            smartHint: "Both COUNT(*) and AVG(p.risk_score) can be calculated after grouping by e.department.",
+            thirdHint: "SELECT e.department, COUNT(*) AS encounter_count, AVG(p.risk_score) AS avg_risk_score FROM encounters e JOIN patients p ON e.patient_id = p.patient_id GROUP BY e.department;",
+            explanation: "This adds patient context to a department-level volume report.",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "concept",
+            id: "cr3",
+            title: "Ordering for Action",
+            objective: "Use ORDER BY to prioritize what leaders see first.",
+            sql_focus: ["ORDER BY", "Prioritization"],
+            relevantTables: ["encounters", "claims", "charges"],
+            joinHint: "Sorting comes after aggregation when prioritizing summarized results.",
+            summary: "Ordering is not cosmetic. It determines which risks, opportunities, or problems are most visible to decision-makers.",
+            bullets: [
+              "Sort high-to-low when surfacing biggest volume, dollars, or risk.",
+              "Sort low-to-high when looking for lowest performance or missing activity.",
+              "Ordering supports prioritization.",
+              "Use aliases so ORDER BY is readable.",
+              "A sorted report is easier to act on than an unsorted table."
+            ],
+            example: "Hospital example: sorting denial dollars highest first helps revenue cycle leaders focus on the largest leakage areas.",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "challenge",
+            id: "cr4",
+            title: "Top Payers by Denied Dollars",
+            objective: "Rank payers by denied billed amount.",
+            sql_focus: ["WHERE", "SUM", "GROUP BY", "ORDER BY"],
+            relevantTables: ["claims"],
+            joinHint: "Use claims because payer, claim_status, and billed_amount are available there.",
+            challengeCriteria: "Return payer and denied billed amount for denied claims only. Label the total denied_billed_amount and sort highest first.",
+            starterQuery: "",
+            solutionQuery: "SELECT payer, SUM(billed_amount) AS denied_billed_amount FROM claims WHERE claim_status = 'Denied' GROUP BY payer ORDER BY denied_billed_amount DESC;",
+            hint: "Filter to denied claims before grouping.",
+            smartHint: "Use WHERE claim_status = 'Denied', then GROUP BY payer.",
+            thirdHint: "SELECT payer, SUM(billed_amount) AS denied_billed_amount FROM claims WHERE claim_status = 'Denied' GROUP BY payer ORDER BY denied_billed_amount DESC;",
+            explanation: "This prioritizes payer groups by denied dollar exposure.",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "concept",
+            id: "cr5",
+            title: "Thresholds and HAVING",
+            objective: "Use HAVING to filter summary reports to meaningful groups.",
+            sql_focus: ["HAVING", "Thresholds"],
+            relevantTables: ["encounters", "claims", "appointments"],
+            joinHint: "HAVING applies to grouped results after aggregation.",
+            summary: "Thresholds help analysts focus leadership attention on groups that are large enough or risky enough to matter.",
+            bullets: [
+              "WHERE filters raw rows before aggregation.",
+              "HAVING filters groups after aggregation.",
+              "Thresholds should be justified by the business question.",
+              "HAVING is useful for high volume departments, repeat patients, and large denied-dollar payer groups.",
+              "Do not hide important small groups if the issue is high risk."
+            ],
+            example: "Hospital example: show only departments with more than 100 encounters so leaders focus on high-volume operational areas.",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "challenge",
+            id: "cr6",
+            title: "High-Volume Departments with No-Shows",
+            objective: "Filter grouped appointment results using HAVING.",
+            sql_focus: ["WHERE", "GROUP BY", "HAVING"],
+            relevantTables: ["appointments"],
+            joinHint: "Use appointments because status and department are available there.",
+            challengeCriteria: "Return departments with more than 10 no-show appointments. Include department and no_show_count.",
+            starterQuery: "",
+            solutionQuery: "SELECT department, COUNT(*) AS no_show_count FROM appointments WHERE status = 'No Show' GROUP BY department HAVING COUNT(*) > 10;",
+            hint: "Filter to no-shows first, then use HAVING on the grouped count.",
+            smartHint: "WHERE status = 'No Show' happens before GROUP BY. HAVING COUNT(*) > 10 happens after.",
+            thirdHint: "SELECT department, COUNT(*) AS no_show_count FROM appointments WHERE status = 'No Show' GROUP BY department HAVING COUNT(*) > 10;",
+            explanation: "This identifies departments where no-show volume is high enough to require review.",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "concept",
+            id: "cr7",
+            title: "Insight Statements",
+            objective: "Translate a metric result into a leadership-ready insight.",
+            sql_focus: ["Interpretation", "Executive communication"],
+            relevantTables: ["encounters", "claims", "appointments"],
+            joinHint: "The query creates the evidence; the insight explains why it matters.",
+            summary: "An analyst's job is not finished when the query runs. The result must be translated into what leadership should understand or do next.",
+            bullets: [
+              "State what changed or stood out.",
+              "Explain why it matters operationally, financially, or clinically.",
+              "Mention what should be investigated next.",
+              "Avoid overstating causation from a summary metric alone.",
+              "Good insight is clear, cautious, and action-oriented."
+            ],
+            example: "Hospital example: 'Denied dollars are concentrated in two payer groups, so revenue cycle should review authorization and documentation workflows for those payers.'",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "challenge",
+            id: "cr8",
+            title: "Explain a Denial Finding",
+            objective: "Write an insight statement based on a payer denial summary.",
+            challengeMode: "text",
+            sql_focus: ["Interpretation", "Financial insight"],
+            relevantTables: ["claims"],
+            joinHint: "This is an interpretation exercise based on a grouped denial summary.",
+            challengeCriteria: `A payer summary shows that one payer has the highest denied billed amount.
+Explain what this means, why it matters, and what revenue cycle should investigate next.`,
+            starterQuery: "",
+            solutionQuery: "",
+            minLength: 80,
+            requiredConceptGroups: [
+              ["denied", "denial", "denials"],
+              ["payer"],
+              ["investigate", "review", "next step", "follow up"]
+            ],
+            requiredConceptMatches: 2,
+            bonusConceptGroups: [
+              ["authorization", "coding", "documentation", "medical necessity"],
+              ["revenue", "cash", "financial", "claim collections"]
+            ],
+            feedbackGuide: "A strong answer explains that the payer represents concentrated financial leakage and recommends reviewing denial causes such as authorization, documentation, coding, or coverage rules.",
+            exemplarAnswer: `This means denied billed dollars are concentrated in one payer group, creating a revenue risk that may reduce claim collections. Revenue cycle should investigate denial reasons such as authorization, documentation, coding, or medical necessity issues before assuming the problem is purely payer behavior.`,
+            hint: "Connect the payer finding to financial leakage and a next investigation step.",
+            smartHint: "Mention denial causes such as authorization, documentation, coding, or medical necessity.",
+            thirdHint: "Explain what it means, why it matters, and what should be reviewed next.",
+            explanation: "This develops executive communication from a financial metric.",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "scenario",
+            id: "cr9",
+            title: "Scenario: Core Executive Performance Snapshot",
+            objective: "Design a balanced Core-level report for leadership.",
+            relevantTables: ["encounters", "patients", "claims", "appointments", "discharges", "observations"],
+            joinHint: "Pick metrics that answer the leadership question without overloading the report.",
+            summary: "The executive team wants a one-page operational and financial snapshot for the month.",
+            prompt: "Describe the report you would build. Include at least four metrics across different domains, such as encounter volume, unique patients, payer or payment performance, no-shows, discharge delays, observation hours, or denied dollars. Explain why each metric belongs in the snapshot and what leadership could do with it.",
+            expectedKeywords: ["volume", "patients", "payer", "denied", "payment", "no-show", "discharge", "observation"],
+            minLength: 150,
+            minimumKeywordMatches: 4,
+            feedbackGuide: "A strong answer includes a balanced set of metrics across operational, financial, utilization, and throughput domains and explains how leadership would use them.",
+            executiveTakeaway: { show: false }
+          }
+        ]
+      }
+    ]
   }
 ];
-
 backfillChallengeCriteria(curriculum);
 enforceChallengeCriteria(curriculum);
-
 appState.currentTrackId = "track_foundations";
-appState.currentCategoryId = "foundation_core";
-
+appState.currentCategoryId = "foundations_core";
 function saveProgress() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
 }
-
 function loadProgress() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -1179,7 +2123,6 @@ function loadProgress() {
     console.error("Could not load progress:", error);
   }
 }
-
 function applySchemaPanelWidth() {
   const panel = document.getElementById("schema-panel");
   const shell = document.querySelector(".app-shell");
@@ -1188,7 +2131,6 @@ function applySchemaPanelWidth() {
   panel.style.width = `${width}px`;
   shell.style.gridTemplateColumns = `${width}px 14px 1fr`;
 }
-
 function initSchemaResizer() {
   const resizer = document.getElementById("schema-resizer");
   const shell = document.querySelector(".app-shell");
@@ -1216,7 +2158,6 @@ function initSchemaResizer() {
     saveProgress();
   });
 }
-
 function conceptLesson(spec) {
   return {
     id: spec.id,
@@ -1234,7 +2175,6 @@ function conceptLesson(spec) {
     executiveTakeaway: spec.executiveTakeaway || null
   };
 }
-
 function challengeLesson(spec) {
   return {
     id: spec.id,
@@ -1266,7 +2206,6 @@ function challengeLesson(spec) {
     exemplarAnswer: spec.exemplarAnswer || ""
   };
 }
-
 function scenarioLesson(spec) {
   return {
     id: spec.id,
@@ -1288,10 +2227,11 @@ function scenarioLesson(spec) {
     executiveTakeaway: spec.executiveTakeaway || null
   };
 }
-
 function normalizeCurriculum() {
   curriculum.forEach(track => {
+    track.categories = Array.isArray(track.categories) ? track.categories : [];
     track.categories.forEach(category => {
+      category.lessons = Array.isArray(category.lessons) ? category.lessons : [];
       category.lessons = category.lessons.map(lesson => {
         if (lesson.kind === "concept") return conceptLesson(lesson);
         if (lesson.kind === "challenge") return challengeLesson(lesson);
@@ -1300,15 +2240,13 @@ function normalizeCurriculum() {
     });
   });
 }
-
 function getTrack() {
-  return curriculum.find(track => track.id === appState.currentTrackId) || curriculum[0];
+  return curriculum.find(track => track.id === appState.currentTrackId) || curriculum[0] || { categories: [] };
 }
-
 function getAllCategories() {
-  return getTrack().categories || [];
+  const track = getTrack();
+  return Array.isArray(track.categories) ? track.categories : [];
 }
-
 function getCategoryById(categoryId) {
   for (const track of curriculum) {
     const category = (track.categories || []).find(category => category.id === categoryId);
@@ -1316,54 +2254,42 @@ function getCategoryById(categoryId) {
   }
   return null;
 }
-
-
 function getCurrentCategory() {
   return getAllCategories().find(category => category.id === appState.currentCategoryId) || getAllCategories()[0] || null;
 }
-
 function getAllLessons() {
-  return getAllCategories().flatMap(category => category.lessons);
+  return getAllCategories().flatMap(category => Array.isArray(category.lessons) ? category.lessons : []);
 }
-
 function getCurrentLesson() {
   return getAllLessons().find(lesson => lesson.id === appState.currentLessonId) || null;
 }
-
 function lessonsForTrack(trackId = appState.currentTrackId) {
   const track = curriculum.find(item => item.id === trackId) || curriculum[0];
   return (track?.categories || []).flatMap(category => category.lessons || []);
 }
-
 function allCurriculumLessons() {
   return curriculum.flatMap(track => (track.categories || []).flatMap(category => category.lessons || []));
 }
-
 function allCurriculumLessonIds() {
   return new Set(allCurriculumLessons().map(lesson => lesson.id));
 }
-
 function totalLessonCount() {
   return allCurriculumLessons().length;
 }
-
 function completedLessonCount() {
   const validIds = allCurriculumLessonIds();
   return [...new Set(appState.completedLessonIds || [])].filter(id => validIds.has(id)).length;
 }
-
 function currentTrackLessonCount() {
-  return totalLessonCount();
+  return lessonsForTrack(appState.currentTrackId).length;
 }
-
 function currentTrackCompletedLessonCount() {
-  return completedLessonCount();
+  const validIds = new Set(lessonsForTrack(appState.currentTrackId).map(lesson => lesson.id));
+  return [...new Set(appState.completedLessonIds || [])].filter(id => validIds.has(id)).length;
 }
-
 function isLessonCompleted(lessonId) {
   return appState.completedLessonIds.includes(lessonId);
 }
-
 function markLessonCompleted(lessonId, firstTry = false) {
   if (!isLessonCompleted(lessonId)) {
     appState.completedLessonIds.push(lessonId);
@@ -1373,7 +2299,6 @@ function markLessonCompleted(lessonId, firstTry = false) {
   }
   saveProgress();
 }
-
 function getLessonStats(lessonId) {
   if (!appState.lessonStats[lessonId]) {
     appState.lessonStats[lessonId] = {
@@ -1388,7 +2313,6 @@ function getLessonStats(lessonId) {
   }
   return appState.lessonStats[lessonId];
 }
-
 function tierRank(tier) {
   return {
     "Not Started": 0,
@@ -1398,7 +2322,6 @@ function tierRank(tier) {
     "Perfect": 4
   }[tier] || 0;
 }
-
 function updateLessonStatsOnGrade(lessonId, gradeResult, passed) {
   const stats = getLessonStats(lessonId);
   stats.attempts += 1;
@@ -1409,26 +2332,21 @@ function updateLessonStatsOnGrade(lessonId, gradeResult, passed) {
   if (tierRank(gradeResult.tier) > tierRank(stats.bestTier)) stats.bestTier = gradeResult.tier;
   if (gradeResult.score >= 90 || gradeResult.tier === "Perfect") stats.mastered = true;
 }
-
 function masteryCount() {
   return Object.values(appState.lessonStats).filter(stat => stat && stat.mastered).length;
 }
-
 function categoryComplete(category) {
   return !!category && Array.isArray(category.lessons) && category.lessons.every(lesson => isLessonCompleted(lesson.id));
 }
-
 function categoryBadgeCount() {
   return getAllCategories().filter(categoryComplete).length;
 }
-
 function levelBadgeCount() {
   return LEARNING_LEVELS.filter(level => {
     const track = curriculum.find(item => item.id === level.trackId);
     return !!track && (track.categories || []).length > 0 && (track.categories || []).every(categoryComplete);
   }).length;
 }
-
 function achievements() {
   const completed = completedLessonCount();
   const firstTry = appState.firstTryLessonIds.length;
@@ -1455,9 +2373,7 @@ function achievements() {
     { label: "Executive Whisperer", earned: catComplete("expert_decision_making"), emoji: "🧩", description: "Unlock by completing every lesson in Executive Analytics & Decision Making." }
   ];
 }
-
 let achievementTooltipEl = null;
-
 function ensureAchievementTooltipStyles() {
   if (document.getElementById("achievement-tooltip-style")) return;
   const style = document.createElement("style");
@@ -1491,7 +2407,6 @@ function ensureAchievementTooltipStyles() {
   `;
   document.head.appendChild(style);
 }
-
 function ensureAchievementTooltip() {
   ensureAchievementTooltipStyles();
   if (achievementTooltipEl && document.body.contains(achievementTooltipEl)) return achievementTooltipEl;
@@ -1501,25 +2416,21 @@ function ensureAchievementTooltip() {
   document.body.appendChild(achievementTooltipEl);
   return achievementTooltipEl;
 }
-
 function positionAchievementTooltip(event) {
   const tooltip = ensureAchievementTooltip();
   const offset = 14;
   const rect = tooltip.getBoundingClientRect();
   let left = event.clientX + offset;
   let top = event.clientY + offset;
-
   if (left + rect.width > window.innerWidth - 12) {
     left = Math.max(12, window.innerWidth - rect.width - 12);
   }
   if (top + rect.height > window.innerHeight - 12) {
     top = Math.max(12, event.clientY - rect.height - offset);
   }
-
   tooltip.style.left = left + "px";
   tooltip.style.top = top + "px";
 }
-
 function showAchievementTooltip(event, text) {
   if (!text) return;
   const tooltip = ensureAchievementTooltip();
@@ -1527,12 +2438,10 @@ function showAchievementTooltip(event, text) {
   tooltip.classList.add("visible");
   positionAchievementTooltip(event);
 }
-
 function hideAchievementTooltip() {
   if (!achievementTooltipEl) return;
   achievementTooltipEl.classList.remove("visible");
 }
-
 function attachAchievementTooltip(node, text) {
   if (!node || !text) return;
   node.dataset.unlockDescription = text;
@@ -1542,14 +2451,11 @@ function attachAchievementTooltip(node, text) {
   node.addEventListener("blur", hideAchievementTooltip);
   node.addEventListener("focus", event => showAchievementTooltip(event, text));
 }
-
 function renderAchievements() {
   const container = document.getElementById("badges-container");
   if (!container) return;
-
   ensureAchievementTooltipStyles();
   container.innerHTML = "";
-
   achievements().forEach((achievement) => {
     const chip = document.createElement("div");
     chip.className = achievement.earned ? "badge-chip" : "badge-chip locked";
@@ -1557,13 +2463,10 @@ function renderAchievements() {
     chip.setAttribute("tabindex", "0");
     chip.setAttribute("aria-label", `${achievement.label}: ${achievement.description || ""}`);
     chip.dataset.unlockDescription = achievement.description || "";
-
     attachAchievementTooltip(chip, achievement.description || "");
-
     container.appendChild(chip);
   });
 }
-
 function updateDashboard() {
   const total = currentTrackLessonCount();
   const completed = currentTrackCompletedLessonCount();
@@ -1588,7 +2491,6 @@ function updateDashboard() {
   if (trackDescription) trackDescription.innerText = "Curriculum, learning levels, completion, and mastery tracking.";
   updateLevelsPanelTheme(track.id);
 }
-
 function updateLevelsPanelTheme(trackId) {
   const panel = document.getElementById("levels-panel");
   if (!panel) return;
@@ -1604,19 +2506,15 @@ function updateLevelsPanelTheme(trackId) {
   panel.classList.add(`track-theme-${level.key}`);
   panel.style.borderColor = level.color;
 }
-
 function renderSchema() {
   const tablesWrap = document.getElementById("schema-tables");
   const relationshipsWrap = document.getElementById("schema-relationships");
-
   const activeLesson = appState.currentView === "lesson" ? getCurrentLesson() : null;
   const relevantTables = new Set(
     (activeLesson?.relevantTables || []).map(name => String(name).toLowerCase())
   );
-
   if (tablesWrap) {
     tablesWrap.innerHTML = "";
-
     schema.tables.forEach(table => {
       const details = document.createElement("details");
       details.className = "schema-card";
@@ -1624,42 +2522,33 @@ function renderSchema() {
         appState.currentView === "lesson" &&
         relevantTables.size > 0 &&
         relevantTables.has(String(table.name).toLowerCase());
-
       const summary = document.createElement("summary");
       summary.textContent = table.name;
       details.appendChild(summary);
-
       const p = document.createElement("p");
       p.innerHTML = `<strong>Description:</strong> ${table.description}<br><strong>Columns:</strong> ${table.notableColumns.join(", ")}`;
       details.appendChild(p);
-
       const actions = document.createElement("div");
       actions.className = "schema-table-actions";
-
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "schema-table-view-btn";
       btn.textContent = "Open Table Viewer";
       btn.addEventListener("click", () => openTableModal(table.name));
-
       actions.appendChild(btn);
       details.appendChild(actions);
       tablesWrap.appendChild(details);
     });
   }
-
   if (relationshipsWrap) {
     relationshipsWrap.innerHTML = "";
     const section = relationshipsWrap.closest(".schema-section");
     if (section) section.style.display = "none";
   }
 }
-
-
 function levelForTrack(trackId) {
   return LEARNING_LEVELS.find(level => level.trackId === trackId);
 }
-
 function shouldShowExecutiveTakeaway(lesson) {
   const levelKey = levelForTrack(appState.currentTrackId)?.key;
   return Boolean(
@@ -1672,84 +2561,67 @@ function shouldShowExecutiveTakeaway(lesson) {
     )
   );
 }
-
-
 function getVisibleCategories() {
   return getAllCategories();
 }
-
 function renderTrackCategoryCards() {
   const container = document.getElementById("track-category-cards");
   if (!container) return;
 
   container.innerHTML = "";
   container.style.display = "grid";
-  container.style.gridTemplateColumns = "repeat(3, minmax(220px, 1fr))";
+  container.style.gridTemplateColumns = "repeat(auto-fit, minmax(220px, 1fr))";
   container.style.gap = "18px";
 
   const cards = LEARNING_LEVELS.map(level => {
     const track = curriculum.find(item => item.id === level.trackId);
 
-if (!track) {
-  console.error("Track not found for level:", level);
-  return null; // prevents crash
-}
-    const doneCategories = track.categories.filter(categoryComplete).length;
-    const totalLessons = track.categories.flatMap(c => c.lessons).length;
-    const doneLessons = track.categories.flatMap(c => c.lessons).filter(lesson => isLessonCompleted(lesson.id)).length;
-    const percent = totalLessons ? Math.round((doneLessons.length / totalLessons) * 100) : 0;
+    if (!track) {
+      console.error("Track not found for level:", level);
+      return null;
+    }
+
+    const categories = Array.isArray(track.categories) ? track.categories : [];
+    const lessons = categories.flatMap(category => Array.isArray(category.lessons) ? category.lessons : []);
+    const doneCategoriesCount = categories.filter(categoryComplete).length;
+    const totalLessons = lessons.length;
+    const doneLessonsCount = lessons.filter(lesson => isLessonCompleted(lesson.id)).length;
+    const percent = totalLessons > 0 ? Math.round((doneLessonsCount / totalLessons) * 100) : 0;
+    const isActive = appState.currentTrackId === track.id;
 
     const card = document.createElement("button");
     card.type = "button";
-    card.className = "track-badge-card level-card" + (appState.currentTrackId === track.id ? " active" : "");
+    card.className = "track-badge-card level-card" + (isActive ? " active" : "");
+    card.style.setProperty("--level-color", level.color);
     card.style.borderColor = level.color;
 
     card.innerHTML = `
       <div class="track-badge-icon-wrap">
-        <div class="track-badge-ring" style="--badge-progress: ${percent}%; background: conic-gradient(${level.color} ${percent}%, #e2e8f0 0);">
+        <div class="track-badge-ring" style="background: conic-gradient(${level.color} ${percent}%, #e2e8f0 0);">
           <div class="track-badge-icon level-icon" style="color:${level.color};">${percent}%</div>
         </div>
       </div>
       <div class="track-badge-name">${level.label}</div>
-      <div class="track-badge-stats">${doneCategories.length} of ${track.categories.length} sections complete</div>
-      <div class="track-badge-helper">Click to view this learning level</div>
+      <div class="track-badge-stats">${doneCategoriesCount} of ${categories.length} sections complete</div>
+      <div class="track-badge-helper">${doneLessonsCount} of ${totalLessons} lessons complete</div>
     `;
 
     card.addEventListener("click", () => {
       appState.currentTrackId = track.id;
-      appState.currentCategoryId = track.categories[0]?.id || null;
+      appState.currentCategoryId = categories[0]?.id || null;
       appState.currentLessonId = null;
       appState.currentView = "overview";
       attempts = 0;
       saveProgress();
       renderAll();
-  initUiActions();
+      initUiActions();
     });
 
     return card;
-  });
+  }).filter(Boolean);
 
-  cards.slice(0, 3).forEach(card => container.appendChild(card));
-
-  if (cards.length > 3) {
-    const bottomRow = document.createElement("div");
-    bottomRow.style.gridColumn = "1 / -1";
-    bottomRow.style.display = "flex";
-    bottomRow.style.justifyContent = "center";
-    bottomRow.style.gap = "18px";
-    bottomRow.style.flexWrap = "wrap";
-
-    cards.slice(3).forEach(card => {
-      card.style.width = "calc((100% - 36px) / 3)";
-      card.style.maxWidth = "340px";
-      card.style.minWidth = "220px";
-      bottomRow.appendChild(card);
-    });
-
-    container.appendChild(bottomRow);
-  }
+  cards.forEach(card => container.appendChild(card));
 }
-
 function ensureCurriculumLessonListStyles() {
   if (document.getElementById("curriculum-lesson-list-style")) return;
   const style = document.createElement("style");
@@ -1889,46 +2761,38 @@ function ensureCurriculumLessonListStyles() {
   `;
   document.head.appendChild(style);
 }
-
 function isCategoryExpanded(categoryId) {
   return (appState.expandedCategoryIds || []).includes(categoryId);
 }
-
+function setOnlyCategoryExpanded(categoryId) {
+  appState.expandedCategoryIds = categoryId ? [categoryId] : [];
+}
 function toggleCategoryExpanded(categoryId) {
-  const expanded = new Set(appState.expandedCategoryIds || []);
-  if (expanded.has(categoryId)) expanded.delete(categoryId);
-  else expanded.add(categoryId);
-  appState.expandedCategoryIds = Array.from(expanded);
+  if (isCategoryExpanded(categoryId)) {
+    appState.expandedCategoryIds = [];
+  } else {
+    setOnlyCategoryExpanded(categoryId);
+  }
   saveProgress();
   renderAll();
 }
-
 function ensureCurrentCategoryExpanded() {
   const categoryId = appState.currentCategoryId;
   if (!categoryId) return;
-  const expanded = new Set(appState.expandedCategoryIds || []);
-  if (!expanded.has(categoryId)) {
-    expanded.add(categoryId);
-    appState.expandedCategoryIds = Array.from(expanded);
-  }
+  setOnlyCategoryExpanded(categoryId);
 }
-
 function renderCurriculumNav() {
   ensureCurriculumLessonListStyles();
-  ensureCurrentCategoryExpanded();
   const list = document.getElementById("category-list");
   if (!list) return;
   list.innerHTML = "";
-
   getAllCategories().forEach(category => {
     const wrap = document.createElement("div");
     wrap.className = "curriculum-category";
-
     const total = (category.lessons || []).length;
     const done = (category.lessons || []).filter(lesson => isLessonCompleted(lesson.id)).length;
     const mastered = (category.lessons || []).filter(lesson => getLessonStats(lesson.id).mastered).length;
     const expanded = isCategoryExpanded(category.id);
-
     const header = document.createElement("div");
     header.className = "curriculum-category-header" + (done === total ? " is-complete" : "");
     header.innerHTML = `
@@ -1945,10 +2809,8 @@ function renderCurriculumNav() {
         <button type="button" class="curriculum-category-toggle" aria-label="${expanded ? "Collapse" : "Expand"} ${category.title}" aria-expanded="${expanded ? "true" : "false"}">${expanded ? "⌄" : "›"}</button>
       </div>
     `;
-
     const mainBtn = header.querySelector(".curriculum-category-main-btn");
     const toggleBtn = header.querySelector(".curriculum-category-toggle");
-
     mainBtn?.addEventListener("click", () => {
       appState.currentCategoryId = category.id;
       if (!appState.currentLessonId || !(category.lessons || []).find(lesson => lesson.id === appState.currentLessonId)) {
@@ -1956,34 +2818,33 @@ function renderCurriculumNav() {
       }
       appState.currentView = "lesson";
       attempts = 0;
-      ensureCurrentCategoryExpanded();
+
+      if (isCategoryExpanded(category.id)) {
+        appState.expandedCategoryIds = [];
+      } else {
+        setOnlyCategoryExpanded(category.id);
+      }
+
       saveProgress();
       renderAll();
     });
-
     toggleBtn?.addEventListener("click", (event) => {
       event.stopPropagation();
       toggleCategoryExpanded(category.id);
     });
-
     wrap.appendChild(header);
-
     const body = document.createElement("div");
     body.className = "curriculum-category-body" + (expanded ? "" : " hidden");
-
     const lessonList = document.createElement("div");
     lessonList.className = "curriculum-lesson-list";
-
     (category.lessons || []).forEach(lesson => {
       const row = document.createElement("button");
       row.type = "button";
       row.className = "curriculum-lesson-row" +
         (lesson.id === appState.currentLessonId ? " is-active" : "") +
         (isLessonCompleted(lesson.id) ? " is-complete" : "");
-
       const typeLabel = lesson.type ? lesson.type.charAt(0).toUpperCase() + lesson.type.slice(1) : "Lesson";
       const statusLabel = isLessonCompleted(lesson.id) ? "Completed" : "Not started";
-
       row.innerHTML = `
         <div class="curriculum-lesson-main">
           <span class="curriculum-lesson-title">${lesson.title}</span>
@@ -1993,7 +2854,6 @@ function renderCurriculumNav() {
         </div>
         <span class="curriculum-lesson-status ${isLessonCompleted(lesson.id) ? "" : "is-pending"}">${statusLabel}</span>
       `;
-
       row.addEventListener("click", () => {
         appState.currentCategoryId = category.id;
         appState.currentLessonId = lesson.id;
@@ -2003,21 +2863,19 @@ function renderCurriculumNav() {
         saveProgress();
         renderAll();
       });
-
       lessonList.appendChild(row);
     });
-
     body.appendChild(lessonList);
     wrap.appendChild(body);
     list.appendChild(wrap);
   });
 }
-
 function renderOverview() {
   const track = getTrack();
-  const cats = track.categories;
-  const total = cats.flatMap(c => c.lessons).length;
-  const completed = cats.flatMap(c => c.lessons).filter(l => isLessonCompleted(l.id)).length;
+  const cats = Array.isArray(track.categories) ? track.categories : [];
+  const lessons = cats.flatMap(c => Array.isArray(c.lessons) ? c.lessons : []);
+  const total = lessons.length;
+  const completed = lessons.filter(l => isLessonCompleted(l.id)).length;
   const title = document.getElementById("track-overview-title");
   const desc = document.getElementById("track-overview-description");
   const trackTitleDisplay = document.getElementById("track-title-display-overview");
@@ -2036,7 +2894,7 @@ function renderOverview() {
   const resumeBtn = document.getElementById("resume-track-btn");
   if (startBtn) startBtn.onclick = function () {
     appState.currentCategoryId = track.categories[0]?.id || null;
-    appState.currentLessonId = track.categories[0]?.lessons[0]?.id || null;
+    appState.currentLessonId = cats[0]?.lessons?.[0]?.id || null;
     appState.currentView = "lesson";
     attempts = 0;
     appState.currentView = "lesson";
@@ -2044,8 +2902,8 @@ function renderOverview() {
     renderAll();
   };
   if (resumeBtn) resumeBtn.onclick = function () {
-    const firstIncomplete = track.categories.flatMap(c => c.lessons).find(l => !isLessonCompleted(l.id));
-    const lesson = firstIncomplete || track.categories[0]?.lessons[0];
+    const firstIncomplete = lessons.find(l => !isLessonCompleted(l.id));
+    const lesson = firstIncomplete || cats[0]?.lessons?.[0];
     if (!lesson) return;
     appState.currentLessonId = lesson.id;
     appState.currentCategoryId = track.categories.find(c => c.lessons.some(l => l.id === lesson.id))?.id || null;
@@ -2056,23 +2914,14 @@ function renderOverview() {
     renderAll();
   };
 }
-
-
 /* duplicate removed during stabilization pass */
-
-
-
 /* duplicate removed during stabilization pass */
-
-
-
 function cleanInstructionExpression(expression) {
   return String(expression || "")
     .replace(/\s+/g, " ")
     .replace(/\bAS\b/gi, "as")
     .trim();
 }
-
 function listToSentence(items) {
   const cleaned = (items || []).map(item => String(item || "").trim()).filter(Boolean);
   if (cleaned.length === 0) return "";
@@ -2080,7 +2929,6 @@ function listToSentence(items) {
   if (cleaned.length === 2) return cleaned[0] + " and " + cleaned[1];
   return cleaned.slice(0, -1).join(", ") + ", and " + cleaned[cleaned.length - 1];
 }
-
 function extractSelectExpressions(query) {
   const match = String(query || "").match(/select\s+([\s\S]+?)\s+from\s+/i);
   if (!match) return [];
@@ -2089,7 +2937,6 @@ function extractSelectExpressions(query) {
     .map(part => cleanInstructionExpression(part))
     .filter(Boolean);
 }
-
 function extractTableNames(query) {
   const matches = String(query || "").match(/\b(?:from|join|update|into)\s+([a-zA-Z_][\w]*)/gi) || [];
   const seen = new Set();
@@ -2104,7 +2951,6 @@ function extractTableNames(query) {
   });
   return tables;
 }
-
 function extractGroupByFields(query) {
   const match = String(query || "").match(/group\s+by\s+([\s\S]+?)(?:\s+having\s+|\s+order\s+by\s+|\s+limit\s+|;|$)/i);
   if (!match) return [];
@@ -2113,53 +2959,42 @@ function extractGroupByFields(query) {
     .map(part => cleanInstructionExpression(part))
     .filter(Boolean);
 }
-
 function extractOrderByFields(query) {
   const match = String(query || "").match(/order\s+by\s+([\s\S]+?)(?:\s+limit\s+|;|$)/i);
   if (!match) return "";
   return cleanInstructionExpression(match[1]);
 }
-
-
 function extractWhereClause(query) {
   const match = String(query || "").match(/\bwhere\s+([\s\S]+?)(?:\s+group\s+by\s+|\s+having\s+|\s+order\s+by\s+|\s+limit\s+|;|$)/i);
   return match ? match[1].trim() : "";
 }
-
 function extractGroupByClause(query) {
   const match = String(query || "").match(/\bgroup\s+by\s+([\s\S]+?)(?:\s+having\s+|\s+order\s+by\s+|\s+limit\s+|;|$)/i);
   return match ? match[1].trim() : "";
 }
-
 function extractHavingClause(query) {
   const match = String(query || "").match(/\bhaving\s+([\s\S]+?)(?:\s+order\s+by\s+|\s+limit\s+|;|$)/i);
   return match ? match[1].trim() : "";
 }
-
 function extractOrderByClause(query) {
   const match = String(query || "").match(/\border\s+by\s+([\s\S]+?)(?:\s+limit\s+|;|$)/i);
   return match ? match[1].trim() : "";
 }
-
-
 function extractLimitValue(query) {
   const match = String(query || "").match(/limit\s+(\d+)/i);
   return match ? match[1] : "";
 }
-
 function cleanExpression(expr) {
   return String(expr || "")
     .replace(/\s+/g, " ")
     .trim()
     .replace(/;$/, "");
 }
-
 function splitSelectColumns(selectClause) {
   if (!selectClause) return [];
   const parts = [];
   let current = "";
   let depth = 0;
-
   for (const char of selectClause) {
     if (char === "(") depth++;
     if (char === ")") depth--;
@@ -2170,15 +3005,12 @@ function splitSelectColumns(selectClause) {
       current += char;
     }
   }
-
   if (current.trim()) parts.push(current.trim());
   return parts;
 }
-
 function extractAlias(expr) {
   const asMatch = String(expr).match(/\bAS\s+([a-zA-Z_][\w]*)$/i);
   if (asMatch) return asMatch[1];
-
   const trimmed = String(expr).trim();
   const parts = trimmed.split(/\s+/);
   if (parts.length >= 2 && !/[()*/+-]/.test(parts[parts.length - 2])) {
@@ -2186,7 +3018,6 @@ function extractAlias(expr) {
   }
   return null;
 }
-
 function prettifyFieldName(name) {
   return String(name || "")
     .replace(/\bavg\b/gi, "average")
@@ -2196,13 +3027,10 @@ function prettifyFieldName(name) {
     .replace(/\s+/g, " ")
     .trim();
 }
-
-
 function inferMetricType(lesson, normalizedQuery) {
   const query = String(normalizedQuery || "").toLowerCase();
   const tables = Array.isArray(lesson?.relevantTables) ? lesson.relevantTables : [];
   const firstTable = tables[0] || "";
-
   if (/sum\s*\(\s*amount\s*\)\s*\*\s*0?\.82/i.test(query)) return "revenue_net_vs_gross";
   if (/avg\s*\(\s*length_of_stay\s*\)/i.test(query) || /encounter_count/i.test(query)) return "los_summary";
   if (/group\s+by\s+facility\s*,\s*department/i.test(query)) return "facility_rollup";
@@ -2211,7 +3039,6 @@ function inferMetricType(lesson, normalizedQuery) {
   if (/\bjoin\b/i.test(query)) return "join_population_enrichment";
   return null;
 }
-
 function getBusinessLogicConfig(lesson, normalizedQuery) {
   if (lesson?.businessContext?.metricType && BUSINESS_LOGIC_MAP[lesson.businessContext.metricType]) {
     return BUSINESS_LOGIC_MAP[lesson.businessContext.metricType];
@@ -2219,77 +3046,62 @@ function getBusinessLogicConfig(lesson, normalizedQuery) {
   const inferred = inferMetricType(lesson, normalizedQuery);
   return inferred ? BUSINESS_LOGIC_MAP[inferred] : null;
 }
-
 function formatFieldForPrompt(value) {
   return prettifyFieldName(String(value || "").replace(/\b[a-zA-Z_][\w]*\./g, ""));
 }
-
 function cleanIdentifier(value) {
   return String(value || "").replace(/\b[a-zA-Z_][\w]*\./g, "").trim();
 }
-
 function extractFunctionArg(expr, fnName) {
   const re = new RegExp(fnName + "\\s*\\((.+?)\\)", "i");
   const match = String(expr || "").match(re);
   return match ? cleanIdentifier(match[1]) : "";
 }
-
 function parseSelectExpressions(query) {
   const selectMatch = String(query || "").match(/select\s+(.+?)\s+from\s+/i);
   return splitSelectColumns(selectMatch ? selectMatch[1] : "");
 }
-
 function sentenceCase(text) {
   const s = String(text || "").trim();
   return s ? s.charAt(0).toUpperCase() + s.slice(1) : "";
 }
-
 function buildWhyItMatters(lesson, config) {
   if (lesson?.businessContext?.businessGoal) return lesson.businessContext.businessGoal;
   if (lesson?.executiveTakeaway?.whyItMatters) return lesson.executiveTakeaway.whyItMatters;
   if (config?.executiveQuestion) return config.executiveQuestion;
   return "";
 }
-
 function buildExplicitTaskFromQuery(lesson) {
   const query = String(lesson?.solutionQuery || lesson?.starterQuery || "").trim();
   const normalized = cleanExpression(query);
   if (!normalized) return lesson?.objective || "Write a SQL query that satisfies the lesson objective.";
-
   const lower = normalized.toLowerCase();
   const baseTableMatch = normalized.match(/\bfrom\s+([a-zA-Z_][\w]*)/i);
   const baseTable = baseTableMatch ? baseTableMatch[1] : (lesson?.relevantTables?.[0] || "the relevant table");
   const selectExpressions = parseSelectExpressions(normalized);
-
   const whereClause = (() => {
     const m = normalized.match(/\bwhere\s+([\s\S]+?)(?:\s+group\s+by\s+|\s+having\s+|\s+order\s+by\s+|\s+limit\s+|;|$)/i);
     return m ? m[1].trim() : "";
   })();
-
   const groupByClause = (() => {
     const m = normalized.match(/\bgroup\s+by\s+([\s\S]+?)(?:\s+having\s+|\s+order\s+by\s+|\s+limit\s+|;|$)/i);
     return m ? m[1].trim() : "";
   })();
-
   const havingClause = (() => {
     const m = normalized.match(/\bhaving\s+([\s\S]+?)(?:\s+order\s+by\s+|\s+limit\s+|;|$)/i);
     return m ? m[1].trim() : "";
   })();
-
   const orderByClause = (() => {
     const m = normalized.match(/\border\s+by\s+([\s\S]+?)(?:\s+limit\s+|;|$)/i);
     return m ? m[1].trim() : "";
   })();
-
   const limitValue = extractLimitValue(normalized);
-
   const joinTables = [];
   const joinRegex = /\bjoin\s+([a-zA-Z_][\w]*)/gi;
   let joinHit;
   while ((joinHit = joinRegex.exec(normalized)) !== null) {
     joinTables.push(joinHit[1]);
   }
-
   if (/\bwhere\b[\s\S]*\bin\s*\(\s*select\b/i.test(lower)) {
     const subFrom = normalized.match(/\(\s*select[\s\S]*?\bfrom\s+([a-zA-Z_][\w]*)/i);
     const nestedTable = subFrom ? subFrom[1] : "the related table";
@@ -2297,7 +3109,6 @@ function buildExplicitTaskFromQuery(lesson) {
     const subCondition = nestedWhere ? cleanInstructionExpression(nestedWhere[1]) : "the requested condition";
     return `Return all records from the \`${baseTable}\` table for rows that match a subquery against \`${nestedTable}\`, where ${subCondition}.`;
   }
-
   if (/\bjoin\b/i.test(lower)) {
     const allTables = [baseTable, ...joinTables].filter(Boolean);
     const selectedFields = selectExpressions
@@ -2314,7 +3125,6 @@ function buildExplicitTaskFromQuery(lesson) {
     if (whereClause) task += ` Keep only rows where ${cleanInstructionExpression(whereClause)}.`;
     return task;
   }
-
   const countExpr = selectExpressions.find(expr => /\bcount\s*\(/i.test(expr));
   const avgExpr = selectExpressions.find(expr => /\bavg\s*\(/i.test(expr));
   const sumExprs = selectExpressions.filter(expr => /\bsum\s*\(/i.test(expr));
@@ -2325,7 +3135,6 @@ function buildExplicitTaskFromQuery(lesson) {
   const castExpr = selectExpressions.find(expr => /\bcast\s*\(/i.test(expr));
   const dateDiffExpr = selectExpressions.find(expr => /\bjulianday\s*\(/i.test(expr));
   const textTransformExpr = selectExpressions.find(expr => /\bupper\s*\(|\blower\s*\(|\bsubstr\s*\(|\btrim\s*\(/i.test(expr));
-
   if (groupByClause && countExpr) {
     const groupFields = formatFieldForPrompt(groupByClause);
     const countAlias = extractAlias(countExpr) || "count";
@@ -2334,21 +3143,18 @@ function buildExplicitTaskFromQuery(lesson) {
     if (orderByClause) task += ` Sort the output by ${cleanInstructionExpression(orderByClause)}.`;
     return sentenceCase(task);
   }
-
   if (countExpr && avgExpr && !groupByClause) {
     const countAlias = extractAlias(countExpr) || "count";
     const avgField = formatFieldForPrompt(extractFunctionArg(avgExpr, "avg"));
     const avgAlias = extractAlias(avgExpr) || "average";
     return `Return total ${countAlias.replace(/_/g, " ")} and average ${avgField} from the \`${baseTable}\` table. Label the results \`${countAlias}\` and \`${avgAlias}\`.`;
   }
-
   if (sumExprs.length >= 2 && /0?\.82/.test(lower)) {
     const aliases = sumExprs.map(extractAlias).filter(Boolean);
     const grossAlias = aliases.find(a => /gross/i.test(a)) || aliases[0] || "gross_total";
     const netAlias = aliases.find(a => /net/i.test(a)) || aliases[1] || "estimated_net";
     return `Return total gross charges and estimated net revenue from the \`${baseTable}\` table. Assume net revenue equals 82% of gross charges and label the results \`${grossAlias}\` and \`${netAlias}\`.`;
   }
-
   if (sumExprs.length === 1 && !groupByClause) {
     const sumExpr = sumExprs[0];
     const field = formatFieldForPrompt(extractFunctionArg(sumExpr, "sum"));
@@ -2362,14 +3168,12 @@ function buildExplicitTaskFromQuery(lesson) {
     if (alias) return `Return total ${field} from the \`${baseTable}\` table and label the result \`${alias}\`.`;
     return `Return total ${field} from the \`${baseTable}\` table.`;
   }
-
   if (minExpr && maxExpr) {
     const field = formatFieldForPrompt(extractFunctionArg(minExpr, "min") || extractFunctionArg(maxExpr, "max"));
     const minAlias = extractAlias(minExpr) || "minimum_value";
     const maxAlias = extractAlias(maxExpr) || "maximum_value";
     return `Return the lowest and highest ${field} from the \`${baseTable}\` table. Label the results \`${minAlias}\` and \`${maxAlias}\`.`;
   }
-
   if (distinctExpr) {
     const field = formatFieldForPrompt(distinctExpr.replace(/^distinct\s+/i, "").replace(/\s+AS\s+.+$/i, ""));
     let task = `Return each unique ${field} from the \`${baseTable}\` table one time only.`;
@@ -2377,36 +3181,30 @@ function buildExplicitTaskFromQuery(lesson) {
     if (limitValue) task += ` Limit the output to ${limitValue} rows.`;
     return task;
   }
-
   if (caseExpr) {
     const alias = extractAlias(caseExpr) || "derived_value";
     return `Return the requested base fields from the \`${baseTable}\` table and create a derived field labeled \`${alias}\` using CASE logic that matches the lesson rule.`;
   }
-
   if (castExpr) {
     const alias = extractAlias(castExpr) || "converted_value";
     const castArg = extractFunctionArg(castExpr, "cast");
     const field = formatFieldForPrompt(castArg.split(/\s+as\s+/i)[0]);
     return `Return the requested fields from the \`${baseTable}\` table and convert ${field} into a new data type labeled \`${alias}\`.`;
   }
-
   if (dateDiffExpr) {
     const alias = extractAlias(dateDiffExpr) || "date_metric";
     return `Return the requested identifier from the \`${baseTable}\` table and calculate the date difference metric labeled \`${alias}\`.`;
   }
-
   if (textTransformExpr) {
     const alias = extractAlias(textTransformExpr) || "transformed_text";
     return `Return the requested text transformation from the \`${baseTable}\` table and label it \`${alias}\`.`;
   }
-
   if (whereClause && /^select\s+\*/i.test(lower)) {
     let task = `Return all rows from the \`${baseTable}\` table where ${cleanInstructionExpression(whereClause)}.`;
     if (orderByClause) task += ` Sort the output by ${cleanInstructionExpression(orderByClause)}.`;
     if (limitValue) task += ` Limit the output to ${limitValue} rows.`;
     return task;
   }
-
   if (whereClause) {
     const fieldLabels = selectExpressions.map(expr => {
       const bare = expr.replace(/\s+AS\s+[a-zA-Z_][\w]*$/i, "");
@@ -2420,14 +3218,12 @@ function buildExplicitTaskFromQuery(lesson) {
     if (limitValue) task += ` Limit the output to ${limitValue} rows.`;
     return task;
   }
-
   if (/^select\s+\*/i.test(lower)) {
     let task = `Return all columns from the \`${baseTable}\` table.`;
     if (orderByClause) task += ` Sort the output by ${cleanInstructionExpression(orderByClause)}.`;
     if (limitValue) task += ` Limit the output to ${limitValue} rows.`;
     return task;
   }
-
   if (selectExpressions.length) {
     const aliasLabels = selectExpressions.map(expr => extractAlias(expr)).filter(Boolean);
     if (aliasLabels.length) {
@@ -2438,34 +3234,26 @@ function buildExplicitTaskFromQuery(lesson) {
       return task;
     }
   }
-
   return lesson?.objective || `Write a SQL query using the \`${baseTable}\` table that satisfies the lesson objective.`;
 }
-
 function buildBoardLevelChallengePrompt(lesson) {
   if (!lesson) return "Write a SQL query that satisfies the lesson objective.";
-
   const direct = (lesson.challengeCriteria || "").trim();
   if (direct) return direct;
-
   const config = getBusinessLogicConfig(lesson, cleanExpression(lesson.solutionQuery || lesson.starterQuery || ""));
   const task = buildExplicitTaskFromQuery(lesson);
   const why = buildWhyItMatters(lesson, config);
-
   if (why) {
     return `${task}\n\nWhy this matters: ${why}`;
   }
-
   return task;
 }
-
 function buildChallengePrompt(lesson) {
   if (!lesson) return "Write a SQL query that satisfies the lesson objective.";
   const direct = (lesson.challengeCriteria || "").trim();
   if (direct) return direct;
   return buildBoardLevelChallengePrompt(lesson) || lesson.objective || "Write a SQL query that satisfies the lesson objective.";
 }
-
 function backfillChallengeCriteria(curriculum) {
   curriculum.forEach(track => {
     track.categories.forEach(category => {
@@ -2477,7 +3265,6 @@ function backfillChallengeCriteria(curriculum) {
     });
   });
 }
-
 function enforceChallengeCriteria(curriculum) {
   curriculum.forEach(track => {
     track.categories.forEach(category => {
@@ -2488,44 +3275,34 @@ function enforceChallengeCriteria(curriculum) {
     });
   });
 }
-
-
 function sanitizeProgressState() {
   const firstTrack = curriculum[0] || null;
   const validTrackIds = new Set(curriculum.map(track => track.id));
   const validLessonIds = allCurriculumLessonIds();
-
   appState.completedLessonIds = [...new Set((appState.completedLessonIds || []).filter(id => validLessonIds.has(id)))];
   appState.firstTryLessonIds = [...new Set((appState.firstTryLessonIds || []).filter(id => validLessonIds.has(id)))];
-
   const nextStats = {};
   Object.entries(appState.lessonStats || {}).forEach(([lessonId, stats]) => {
     if (validLessonIds.has(lessonId)) nextStats[lessonId] = stats;
   });
   appState.lessonStats = nextStats;
-
   if (!validTrackIds.has(appState.currentTrackId)) {
     appState.currentTrackId = firstTrack?.id || "track_foundations";
   }
-
   const activeTrack = getTrack();
   const validCategories = activeTrack?.categories || [];
   const validCategoryIds = new Set(validCategories.map(category => category.id));
-
   if (!validCategoryIds.has(appState.currentCategoryId)) {
     appState.currentCategoryId = validCategories[0]?.id || null;
   }
-
   const validLessonIdsForTrack = new Set(validCategories.flatMap(category => (category.lessons || []).map(lesson => lesson.id)));
   if (!validLessonIdsForTrack.has(appState.currentLessonId)) {
     appState.currentLessonId = validCategories[0]?.lessons?.[0]?.id || null;
   }
-
   if (!["overview", "lesson", "sandbox", "glossary"].includes(appState.currentView)) {
     appState.currentView = "overview";
   }
 }
-
 function ensurePatchedUiStyles() {
   if (document.getElementById("careops-patched-ui-styles")) return;
   const style = document.createElement("style");
@@ -2540,7 +3317,68 @@ function ensurePatchedUiStyles() {
     #levels-panel.track-theme-applied { border-color: #f59e0b; box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.08); }
     #levels-panel.track-theme-advanced { border-color: #ef4444; box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.08); }
     #levels-panel.track-theme-expert { border-color: #7c3aed; box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.08); }
-
+    .track-badge-card,
+    .level-card {
+      appearance: none;
+      background: #ffffff !important;
+      color: #0f172a !important;
+      border: 2px solid var(--level-color, #cbd5e1) !important;
+      border-radius: 18px !important;
+      padding: 18px 16px !important;
+      min-height: 174px;
+      cursor: pointer;
+      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06) !important;
+      transform: none;
+      transition: transform 0.16s ease, box-shadow 0.16s ease, background-color 0.16s ease, border-color 0.16s ease !important;
+    }
+    .track-badge-card:hover,
+    .level-card:hover {
+      background: #f8fafc !important;
+      color: #0f172a !important;
+      transform: translateY(-2px);
+      box-shadow: 0 14px 30px rgba(15, 23, 42, 0.10) !important;
+    }
+    .track-badge-card.active,
+    .level-card.active,
+    .track-badge-card.active:hover,
+    .level-card.active:hover {
+      background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%) !important;
+      color: #0f172a !important;
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--level-color, #2563eb) 18%, transparent), 0 14px 30px rgba(15, 23, 42, 0.10) !important;
+    }
+    .track-badge-name {
+      color: #0f172a !important;
+      font-weight: 800;
+      margin-top: 10px;
+    }
+    .track-badge-stats,
+    .track-badge-helper {
+      color: #64748b !important;
+      font-weight: 650;
+    }
+    .track-badge-helper {
+      font-size: 0.82rem;
+      margin-top: 4px;
+    }
+    .track-badge-icon-wrap {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .track-badge-ring {
+      width: 74px;
+      height: 74px;
+      border-radius: 999px;
+      padding: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .track-badge-icon.level-icon {
+      background: #ffffff;
+      border-radius: 999px;
+      box-shadow: inset 0 0 0 1px #e2e8f0;
+    }
     .track-badge-ring .level-icon,
     .track-badge-icon.level-icon {
       display: flex;
@@ -2556,35 +3394,29 @@ function ensurePatchedUiStyles() {
   `;
   document.head.appendChild(style);
 }
-
 function isTextChallenge(lesson) {
   return !!lesson && lesson.type === "challenge" && lesson.challengeMode === "text";
 }
-
 function challengeConceptMatches(lesson, answerText) {
   const text = String(answerText || "").toLowerCase();
   const requiredGroups = Array.isArray(lesson.requiredConceptGroups) && lesson.requiredConceptGroups.length
     ? lesson.requiredConceptGroups
     : (Array.isArray(lesson.acceptedConceptGroups) ? lesson.acceptedConceptGroups : []);
   const bonusGroups = Array.isArray(lesson.bonusConceptGroups) ? lesson.bonusConceptGroups : [];
-
   const matchedRequired = [];
   const missingRequired = [];
   const matchedBonus = [];
-
   requiredGroups.forEach((group) => {
     const terms = Array.isArray(group) ? group : [group];
     const didMatch = terms.some((term) => text.includes(String(term).toLowerCase()));
     if (didMatch) matchedRequired.push(terms[0]);
     else missingRequired.push(terms[0]);
   });
-
   bonusGroups.forEach((group) => {
     const terms = Array.isArray(group) ? group : [group];
     const didMatch = terms.some((term) => text.includes(String(term).toLowerCase()));
     if (didMatch) matchedBonus.push(terms[0]);
   });
-
   return {
     matchedCount: matchedRequired.length,
     missing: missingRequired,
@@ -2593,7 +3425,6 @@ function challengeConceptMatches(lesson, answerText) {
     requiredGroupCount: requiredGroups.length
   };
 }
-
 function gradeTextChallenge(lesson, rawAnswer) {
   const answer = String(rawAnswer || "").trim();
   const minLength = lesson.minLength || 60;
@@ -2618,7 +3449,6 @@ function gradeTextChallenge(lesson, rawAnswer) {
     requiredGroupCount
   };
 }
-
 function escapeHtml(str) {
   if (str === null || str === undefined) return '';
   return String(str)
@@ -2638,7 +3468,6 @@ function renderLesson() {
   document.getElementById("lesson-tables").innerHTML = `<strong>Relevant Tables:</strong> ${lesson.relevantTables.join(", ") || "—"}`;
   document.getElementById("lesson-join-hint").innerHTML = `<strong>Join Hint:</strong> ${lesson.joinHint || "—"}`;
   document.getElementById("lesson-sql-focus").innerHTML = `<strong>SQL Focus:</strong> ${(lesson.sql_focus || []).join(", ") || "—"}`;
-
   const typeBadge = document.getElementById("current-lesson-type-badge");
   const catBadge = document.getElementById("current-category-badge");
   if (typeBadge) {
@@ -2651,12 +3480,10 @@ function renderLesson() {
     catBadge.className = "difficulty-badge " + (map[level.key] || "difficulty-intermediate");
     catBadge.innerText = level.label;
   }
-
   ["concept-content","challenge-content","scenario-content","executive-takeaway"].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.classList.add("hidden");
   });
-
   if (lesson.type === "concept") {
     document.getElementById("concept-content").classList.remove("hidden");
     document.getElementById("concept-summary").innerText = lesson.content.summary;
@@ -2669,13 +3496,10 @@ function renderLesson() {
     });
     document.getElementById("concept-example").innerText = lesson.content.example || "";
   }
-
   if (lesson.type === "challenge") {
     const challengeContent = document.getElementById("challenge-content");
     challengeContent.classList.remove("hidden");
-
 let criteriaBox = document.getElementById("challenge-criteria");
-
 if (!criteriaBox) {
   criteriaBox = document.createElement("div");
   criteriaBox.id = "challenge-criteria";
@@ -2687,12 +3511,10 @@ if (!criteriaBox) {
     challengeContent.insertBefore(criteriaBox, challengeContent.firstChild);
   }
 }
-
     criteriaBox.innerHTML = `
       <h4>Your Task</h4>
       <p style="white-space: pre-line;">${escapeHtml(lesson.challengeCriteria || buildChallengePrompt(lesson) || lesson.objective || "")}</p>
     `;
-
     const query = document.getElementById("query");
     const queryLabel = challengeContent.querySelector(".query-label");
     const challengeButtons = challengeContent.querySelectorAll("button");
@@ -2713,7 +3535,6 @@ if (!criteriaBox) {
     document.getElementById("feedback").classList.remove("success","error","warning");
     document.getElementById("output").innerHTML = "";
   }
-
   if (lesson.type === "scenario") {
     document.getElementById("scenario-content").classList.remove("hidden");
     document.getElementById("scenario-summary").innerText = lesson.content.summary || "";
@@ -2721,7 +3542,6 @@ if (!criteriaBox) {
     document.getElementById("scenario-response").value = "";
     document.getElementById("scenario-feedback").innerText = "";
   }
-
   if (shouldShowExecutiveTakeaway(lesson)) {
     document.getElementById("executive-takeaway").classList.remove("hidden");
     document.getElementById("exec-metric").innerHTML = `<strong>Metric:</strong> ${lesson.executiveTakeaway.metric}`;
@@ -2730,11 +3550,7 @@ if (!criteriaBox) {
     document.getElementById("exec-action").innerHTML = `<strong>Recommended action:</strong> ${lesson.executiveTakeaway.action}`;
   }
 }
-
-
 /* duplicate removed during stabilization pass */
-
-
 function generateMockData() {
   const patients = [];
   const providers = [];
@@ -2797,7 +3613,6 @@ function generateMockData() {
       discharge_date: dischargeDate
     };
     encounters.push(encounter);
-
     appointments.push({
       appointment_id: appointmentId++,
       patient_id: patientId,
@@ -2808,7 +3623,6 @@ function generateMockData() {
       status: i % 9 === 0 ? "No Show" : "Completed",
       date: admitDate
     });
-
     const amount = 500 + (i * 37);
     charges.push({
       charge_id: chargeId++,
@@ -2826,7 +3640,6 @@ function generateMockData() {
       payer: ["Medicare","Medicaid","Commercial","Self Pay"][i % 4],
       charge_type: i % 2 === 0 ? "Professional" : "Ancillary"
     });
-
     claims.push({
       claim_id: claimId++,
       patient_id: patientId,
@@ -2835,7 +3648,6 @@ function generateMockData() {
       claim_status: i % 7 === 0 ? "Denied" : "Paid",
       billed_amount: amount * 1.4
     });
-
     discharges.push({
       discharge_id: dischargeId++,
       encounter_id: i,
@@ -2847,7 +3659,6 @@ function generateMockData() {
       departure_minutes: 60 + (i % 240),
       delayed_for_transport: i % 8 === 0 ? 1 : 0
     });
-
     if (encounter.encounter_type === "Observation") {
       observations.push({
         observation_id: observationId++,
@@ -2861,7 +3672,6 @@ function generateMockData() {
       });
     }
   }
-
   for (let i = 1; i <= 30; i++) {
     readmissions.push({
       readmission_id: readmissionId++,
@@ -2873,15 +3683,12 @@ function generateMockData() {
       days_to_readmit: 5 + (i % 25)
     });
   }
-
   schema.tables.forEach(table => {
-    const rows = {patients, providers, departments, encounters, appointments, charges, claims, discharges, readmissions, observations}[table.name];
+    const rows = {patients, providers, departments, encounters, appointments, charges, claims, discharges, readmissions, observations}[table.name] || [];
     table.sampleRows = rows.slice(0, 5);
   });
-
   return { patients, providers, departments, encounters, appointments, charges, claims, discharges, readmissions, observations };
 }
-
 function initDatabase() {
   return new Promise((resolve, reject) => {
     if (sqlEngineReady) return resolve();
@@ -2908,7 +3715,6 @@ function initDatabase() {
       .catch(reject);
   });
 }
-
 function createTables() {
   sqlDb.run(`CREATE TABLE patients (patient_id INTEGER, first_name TEXT, last_name TEXT, age INTEGER, gender TEXT, insurance_type TEXT, risk_score INTEGER, city TEXT);`);
   sqlDb.run(`CREATE TABLE providers (provider_id INTEGER, provider_name TEXT, specialty TEXT, facility TEXT);`);
@@ -2921,7 +3727,6 @@ function createTables() {
   sqlDb.run(`CREATE TABLE readmissions (readmission_id INTEGER, index_encounter_id INTEGER, readmit_encounter_id INTEGER, patient_id INTEGER, facility TEXT, readmit_within_30_days INTEGER, days_to_readmit INTEGER);`);
   sqlDb.run(`CREATE TABLE observations (observation_id INTEGER, encounter_id INTEGER, patient_id INTEGER, facility TEXT, department TEXT, obs_hours INTEGER, converted_to_inpatient INTEGER, code_44_flag INTEGER);`);
 }
-
 function seedTable(tableName, rows) {
   if (!rows.length) return;
   const cols = Object.keys(rows[0]);
@@ -2929,13 +3734,11 @@ function seedTable(tableName, rows) {
   rows.forEach(row => stmt.run(cols.map(col => row[col])));
   stmt.free();
 }
-
 function queryToResult(query) {
   const result = sqlDb.exec(query);
   if (!result.length) return { columns: [], values: [] };
   return { columns: result[0].columns, values: result[0].values };
 }
-
 function formatResultTable(result) {
   if (!result.columns.length) return "<p>No rows returned.</p>";
   let html = '<div class="query-results-table-wrap"><table class="preview-table"><thead><tr>';
@@ -2949,143 +3752,331 @@ function formatResultTable(result) {
   html += "</tbody></table></div>";
   return html;
 }
-
-function editDistance(a, b) {
-  a = String(a || "").toLowerCase();
-  b = String(b || "").toLowerCase();
-
-  const dp = Array.from({ length: a.length + 1 }, () => Array(b.length + 1).fill(0));
-
-  for (let i = 0; i <= a.length; i++) dp[i][0] = i;
-  for (let j = 0; j <= b.length; j++) dp[0][j] = j;
-
-  for (let i = 1; i <= a.length; i++) {
-    for (let j = 1; j <= b.length; j++) {
-      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
-      dp[i][j] = Math.min(
-        dp[i - 1][j] + 1,
-        dp[i][j - 1] + 1,
-        dp[i - 1][j - 1] + cost
-      );
-    }
-  }
-
-  return dp[a.length][b.length];
-}
-
-function getClosestAllowedTable(tableName, lesson) {
-  const allowedTables = (lesson && lesson.relevantTables ? lesson.relevantTables : []).map(t => String(t).toLowerCase());
-  if (!tableName || !allowedTables.length) return null;
-
-  let best = null;
-  let bestDistance = Infinity;
-
-  allowedTables.forEach(table => {
-    const distance = editDistance(tableName, table);
-    if (distance < bestDistance) {
-      best = table;
-      bestDistance = distance;
-    }
-  });
-
-  return bestDistance <= 3 ? best : null;
-}
-
-function getExecutionErrorMessage(error, query, lesson) {
+function getExecutionErrorMessage(error, queryText = "") {
   const raw = String(error && error.message ? error.message : error || "");
   const message = raw.toLowerCase();
 
-  const badTableMatch = message.match(/no such table:\s*([a-z0-9_]+)/i);
-  if (badTableMatch) {
-    const badTable = badTableMatch[1].toLowerCase();
-    const closestTable = getClosestAllowedTable(badTable, lesson);
-
-    if (closestTable) {
-      return `Table name looks misspelled. Did you mean "${closestTable}"?`;
-    }
-
-    const allowed = lesson && lesson.relevantTables && lesson.relevantTables.length
-      ? ` Use one of these lesson tables: ${lesson.relevantTables.join(", ")}.`
-      : "";
-
-    return `Table "${badTable}" does not exist in this lesson schema.${allowed}`;
+  if (/select\s+[\s\S]*,\s*and\s+[a-z_][a-z0-9_]*[\s\S]*\sfrom\s+/i.test(String(queryText || ""))) {
+    return "SQL syntax issue: do not use the word AND between SELECT columns. Use commas only. Example: SELECT patient_id, encounter_id, admit_date FROM encounters;";
   }
-
-  const lowerQuery = String(query || "").toLowerCase();
-
-  if (message.includes("syntax error")) {
-    if (/select\s+.+\s+and\s+.+\s+from/.test(lowerQuery)) {
-      return "SQL syntax error. Use commas between selected columns, not AND.";
-    }
-    return "SQL syntax error. Check commas, parentheses, aliases, and clause order.";
-  }
-
-  if (message.includes("no such column")) return "One of the columns in your query does not exist in the table you used. Check spelling and make sure every requested field belongs to the selected table.";
+  if (message.includes("syntax error")) return "SQL syntax error. Check commas, parentheses, aliases, and clause order. In SELECT lists, separate columns with commas only — do not use AND.";
+  if (message.includes("no such table")) return "One of the tables in your query does not exist in this lesson schema. Check the table name and spelling.";
+  if (message.includes("no such column")) return "One of the columns in your query does not exist in the table you used. Check the schema explorer for the exact column name.";
   if (message.includes("ambiguous")) return "A column reference is ambiguous. Add the table alias or full table.column reference.";
   return raw || "The query could not be executed.";
 }
 
+/* =========================
+   PRODUCTION SQL GRADING ENGINE
+   Structured, partial-credit SQL grading for CareOps lessons.
+========================= */
+function splitSQLList(listText) {
+  const items = [];
+  let current = "";
+  let depth = 0;
+  let quote = null;
+  const text = String(listText || "");
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (quote) {
+      current += ch;
+      if (ch === quote && text[i - 1] !== "\\") quote = null;
+      continue;
+    }
+    if (ch === "'" || ch === '"' || ch === "`") {
+      quote = ch;
+      current += ch;
+      continue;
+    }
+    if (ch === "(") depth += 1;
+    if (ch === ")") depth = Math.max(0, depth - 1);
+    if (ch === "," && depth === 0) {
+      items.push(current.trim());
+      current = "";
+    } else {
+      current += ch;
+    }
+  }
+  if (current.trim()) items.push(current.trim());
+  return items;
+}
+function normalizeSQLText(query) {
+  return String(query || "")
+    .replace(/--.*$/gm, " ")
+    .replace(/\/\*[\s\S]*?\*\//g, " ")
+    .replace(/\s+/g, " ")
+    .replace(/;\s*$/g, "")
+    .trim()
+    .toLowerCase();
+}
+function normalizeSQLIdentifier(value) {
+  return String(value || "")
+    .trim()
+    .replace(/^['"`]|['"`]$/g, "")
+    .replace(/\s+as\s+.+$/i, "")
+    .replace(/\s+.+$/i, "")
+    .replace(/^[a-z0-9_]+\./i, "")
+    .toLowerCase();
+}
+function parseSQL(query) {
+  const clean = normalizeSQLText(query);
+  const selectMatch = clean.match(/\bselect\s+([\s\S]+?)\s+from\s+/i);
+  const fromMatch = clean.match(/\bfrom\s+([a-z0-9_\.]+)/i);
+  const whereMatch = clean.match(/\bwhere\s+([\s\S]+?)(\s+group\s+by\s+|\s+having\s+|\s+order\s+by\s+|\s+limit\s+|$)/i);
+  const groupMatch = clean.match(/\bgroup\s+by\s+([\s\S]+?)(\s+having\s+|\s+order\s+by\s+|\s+limit\s+|$)/i);
+  const havingMatch = clean.match(/\bhaving\s+([\s\S]+?)(\s+order\s+by\s+|\s+limit\s+|$)/i);
+  const orderMatch = clean.match(/\border\s+by\s+([\s\S]+?)(\s+limit\s+|$)/i);
+  const limitMatch = clean.match(/\blimit\s+(\d+)/i);
+  const selectRaw = selectMatch ? selectMatch[1].trim() : "";
+  const columnsRaw = selectRaw ? splitSQLList(selectRaw) : [];
+  const columns = columnsRaw.map(normalizeSQLIdentifier).filter(Boolean);
+  const aggregateFunctions = [];
+  ["count", "sum", "avg", "min", "max"].forEach(fn => {
+    if (new RegExp("\\b" + fn + "\\s*\\(", "i").test(clean)) aggregateFunctions.push(fn);
+  });
+  return {
+    raw: clean,
+    selectRaw,
+    columnsRaw,
+    columns,
+    table: fromMatch ? normalizeSQLIdentifier(fromMatch[1]) : null,
+    where: whereMatch ? whereMatch[1].trim() : "",
+    groupByRaw: groupMatch ? groupMatch[1].trim() : "",
+    groupBy: groupMatch ? splitSQLList(groupMatch[1]).map(normalizeSQLIdentifier).filter(Boolean) : [],
+    having: havingMatch ? havingMatch[1].trim() : "",
+    orderByRaw: orderMatch ? orderMatch[1].trim() : "",
+    orderBy: orderMatch ? splitSQLList(orderMatch[1]).map(normalizeSQLIdentifier).filter(Boolean) : [],
+    limit: limitMatch ? Number(limitMatch[1]) : null,
+    aggregateFunctions
+  };
+}
+function arraysEqualStrict(a, b) {
+  return Array.isArray(a) && Array.isArray(b) && a.length === b.length && a.every((v, i) => v === b[i]);
+}
+function sameMembers(a, b) {
+  return Array.isArray(a) && Array.isArray(b) && a.length === b.length && a.every(v => b.includes(v));
+}
+function sqlClauseExpectation(expected, prop) {
+  return Boolean(expected && expected[prop] && String(expected[prop]).trim());
+}
+function gradeSQLQuery(userQuery, lesson, executionResult, solutionResult) {
+  const user = parseSQL(userQuery);
+  const expected = parseSQL(lesson.solutionQuery || lesson.expectedAnswer || "");
+  let score = 0;
+  const feedback = [];
+  const hints = [];
+  const criticalIssues = [];
+
+  if (!user.selectRaw) {
+    feedback.push("Missing SELECT clause.");
+    hints.push("Start with SELECT and list the requested columns.");
+    criticalIssues.push("select");
+  } else if (user.selectRaw === "*" && expected.selectRaw !== "*") {
+    score += 10;
+    feedback.push("SELECT * returns extra columns; list only the requested fields.");
+    hints.push("Replace * with the specific requested columns.");
+  } else {
+    const expectedCols = expected.columns;
+    const missingCols = expectedCols.filter(col => !user.columns.includes(col));
+    const extraCols = user.columns.filter(col => !expectedCols.includes(col));
+    const exactColumns = arraysEqualStrict(user.columns, expectedCols);
+    const sameColumnSet = sameMembers(user.columns, expectedCols);
+    if (exactColumns) {
+      score += 30;
+    } else if (sameColumnSet) {
+      score += 22;
+      feedback.push("The right columns are present, but the column order does not match the expected output.");
+      hints.push("Use the exact column order shown in the task or expected answer.");
+      criticalIssues.push("column_order");
+    } else {
+      score += Math.max(0, 12 - (missingCols.length * 4) - (extraCols.length * 2));
+      if (missingCols.length) feedback.push("Missing column(s): " + missingCols.join(", ") + ".");
+      if (extraCols.length) feedback.push("Extra column(s): " + extraCols.join(", ") + ".");
+      hints.push("Check the requested SELECT fields against the task instructions.");
+      criticalIssues.push("columns");
+    }
+  }
+
+  if (!user.table) {
+    feedback.push("Missing FROM table.");
+    hints.push("Add FROM with the correct table name.");
+    criticalIssues.push("table");
+  } else if (user.table === expected.table) {
+    score += 20;
+  } else {
+    feedback.push("Incorrect table. Expected: " + expected.table + ".");
+    hints.push("Use FROM " + expected.table + ".");
+    criticalIssues.push("table");
+  }
+
+  if (sqlClauseExpectation(expected, "where")) {
+    if (!user.where) {
+      feedback.push("Missing WHERE filter.");
+      hints.push("Add the WHERE condition required by the lesson.");
+      criticalIssues.push("where");
+    } else if (user.where === expected.where || expected.where.split(/\s+and\s+|\s+or\s+/).every(part => user.where.includes(part.trim()))) {
+      score += 15;
+    } else {
+      score += 7;
+      feedback.push("WHERE clause is present but does not fully match the required filter.");
+      hints.push("Compare your WHERE condition to the task wording.");
+    }
+  } else {
+    score += user.where ? 8 : 15;
+    if (user.where) feedback.push("This lesson does not require a WHERE filter; make sure the filter does not change the requested output.");
+  }
+
+  if (expected.groupBy.length) {
+    if (arraysEqualStrict(user.groupBy, expected.groupBy)) {
+      score += 10;
+    } else if (sameMembers(user.groupBy, expected.groupBy)) {
+      score += 7;
+      feedback.push("GROUP BY fields are present but not in the expected order.");
+    } else {
+      feedback.push("Missing or incorrect GROUP BY.");
+      hints.push("Group by the same field(s) used in the expected answer.");
+    }
+  } else {
+    score += user.groupBy.length ? 5 : 10;
+  }
+
+  if (expected.aggregateFunctions.length) {
+    const missingAgg = expected.aggregateFunctions.filter(fn => !user.aggregateFunctions.includes(fn));
+    if (!missingAgg.length) {
+      score += 10;
+    } else {
+      feedback.push("Missing aggregate function(s): " + missingAgg.join(", ") + ".");
+      hints.push("Use the aggregate function requested by the lesson, such as COUNT, SUM, or AVG.");
+    }
+  } else {
+    score += 10;
+  }
+
+  if (expected.orderBy.length) {
+    if (user.orderByRaw === expected.orderByRaw) {
+      score += 8;
+    } else if (user.orderBy.length) {
+      score += 4;
+      feedback.push("ORDER BY is present but does not fully match the expected sorting.");
+    } else {
+      feedback.push("Missing ORDER BY sorting.");
+      hints.push("Add ORDER BY exactly as requested.");
+    }
+  } else {
+    score += 8;
+  }
+
+  if (expected.limit !== null) {
+    if (user.limit === expected.limit) {
+      score += 7;
+    } else {
+      feedback.push("Missing or incorrect LIMIT. Expected LIMIT " + expected.limit + ".");
+      hints.push("Add LIMIT " + expected.limit + " to control the row count.");
+    }
+  } else {
+    score += 7;
+  }
+
+  const exactResult = normalizeResult(executionResult || { columns: [], values: [] }) === normalizeResult(solutionResult || { columns: [], values: [] });
+  if (exactResult) score += 10;
+  else feedback.push("Your query ran, but the returned output does not match the expected result.");
+
+  score = Math.max(0, Math.min(100, Math.round(score)));
+  let tier = "Needs Work";
+  if (score >= 95) tier = "Excellent";
+  else if (score >= 85) tier = "Strong";
+  else if (score >= 70) tier = "Partial";
+
+  const primaryHint = hints[0] || lesson.smartHint || lesson.hint || "Compare your SELECT, FROM, filters, and grouping to the task.";
+  return {
+    score,
+    tier,
+    passed: exactResult,
+    exactResult,
+    criticalIssues,
+    feedback: feedback.length ? feedback : ["The query structure is close. Compare the returned output to the expected result."],
+    hint: primaryHint,
+    parsed: user,
+    expected
+  };
+}
+function formatSQLGradeFeedback(grade) {
+  const items = (grade.feedback || []).map(item => "• " + item).join("\n");
+  return `Score: ${grade.score}/100 (${grade.tier})\n${items}`;
+}
 function runQuery() {
   const lesson = getCurrentLesson();
   const output = document.getElementById("output");
   const feedback = document.getElementById("feedback");
   const queryBox = document.getElementById("query");
-
   if (!lesson || (lesson.kind !== "challenge" && lesson.type !== "challenge") || !queryBox) return;
-
   const query = queryBox.value.trim();
   lastRunQuery = query;
-
   if (!query) {
     setFeedbackState(feedback, "error", isTextChallenge(lesson) ? "Please enter a response before submitting." : "Please enter a query before running it.");
     if (output) output.innerHTML = "";
     return;
   }
-
   if (isTextChallenge(lesson)) {
     if (output) output.innerHTML = "";
     attempts += 1;
     const result = gradeTextChallenge(lesson, query);
-
     if (result.passed) {
-      updateLessonStatsOnGrade(lesson.id, attempts === 1 ? { score: 100, tier: "Perfect" } : { score: 92, tier: "Strong" }, true);
+      const grade = attempts === 1 ? { score: 100, tier: "Perfect" } : { score: 92, tier: "Strong" };
+      updateLessonStatsOnGrade(lesson.id, grade, true);
       markLessonCompleted(lesson.id, attempts === 1);
-      setFeedbackState(
-        feedback,
-        "success",
-        `${lesson.feedbackGuide || "Correct — your explanation shows the right reasoning."} Score: ${attempts === 1 ? 100 : 92}/100.`
-      );
+      setFeedbackState(feedback, "success", (lesson.feedbackGuide || "Correct — your explanation shows the right reasoning.") + " Score: " + grade.score + "/100 (" + grade.tier + ").");
       attempts = 0;
       saveProgress();
       refreshLessonChrome();
       return;
     }
-
     const missingText = result.missing.length ? ` Missing ideas to mention: ${result.missing.slice(0, 3).join(", ")}.` : "";
-
     if (result.partial && attempts < 3) {
       setFeedbackState(feedback, "warning", `You are on the right track, but the explanation is incomplete.${missingText}`);
       saveProgress();
       refreshLessonChrome();
       return;
     }
-
     if (attempts < 3) {
-      const nextHint = attempts === 1 ? (lesson.hint || "Focus on what one row represents and why.") : (lesson.smartHint || lesson.thirdHint || lesson.hint || "Use the business wording and the table grain to guide your answer.");
+     function generateHint(userQuery, lesson) {
+  const parsed = parseSQL(userQuery);
+
+  const expectedCols = lesson.expected.columns;
+  const expectedTable = lesson.expected.table;
+
+  const missing = expectedCols.filter(c => !parsed.columns.includes(c));
+  if (missing.length) {
+    return `Missing column(s): ${missing.join(', ')}`;
+  }
+
+  if (parsed.table && parsed.table !== expectedTable) {
+    const dist = levenshtein(parsed.table, expectedTable);
+
+    if (dist <= 3) {
+      return `Table name looks misspelled. Did you mean "${expectedTable}"?`;
+    }
+
+    return `Use table: ${expectedTable}`;
+  }
+
+  if (JSON.stringify(parsed.columns) !== JSON.stringify(expectedCols)) {
+    return "Columns must be in the correct order.";
+  }
+
+  return "Check syntax carefully.";
+}
       setFeedbackState(feedback, "warning", `Not correct yet. Hint ${attempts}: ${nextHint}${missingText}`);
       saveProgress();
       refreshLessonChrome();
       return;
     }
-
     setFeedbackState(
       feedback,
       "error",
       `You have used all 3 attempts.
-
 Suggested Answer:
 ${lesson.exemplarAnswer || lesson.explanation || "Review the lesson and try again."}
-
 Explanation:
 ${lesson.explanation || lesson.feedbackGuide || "This lesson is testing your reasoning, not verbatim wording."}`
     );
@@ -3093,71 +4084,62 @@ ${lesson.explanation || lesson.feedbackGuide || "This lesson is testing your rea
     refreshLessonChrome();
     return;
   }
-
   const hintOne =
     lesson.hint ||
     "Start with the correct table and make sure you are selecting the required fields.";
-
   const hintTwo =
     lesson.smartHint ||
     lesson.secondHint ||
     "Double-check the exact columns, filters, joins, or grouping needed to match the lesson objective.";
-
   const finalExplanation =
     lesson.explanation ||
     "This answer is correct because it uses the right table, selects the required fields, and returns the expected result for the lesson objective.";
-
   try {
     const result = queryToResult(query);
     if (output) output.innerHTML = formatResultTable(result);
-
     const solutionResult = queryToResult(lesson.solutionQuery);
-    const passed = normalizeResult(result) === normalizeResult(solutionResult);
-
-    if (passed) {
-      const grade = gradePass();
-      updateLessonStatsOnGrade(lesson.id, grade, true);
+    const grade = gradeSQLQuery(query, lesson, result, solutionResult);
+    if (grade.passed) {
+      const passGrade = gradePass();
+      const finalGrade = { score: Math.max(passGrade.score, grade.score), tier: passGrade.tier };
+      updateLessonStatsOnGrade(lesson.id, finalGrade, true);
       markLessonCompleted(lesson.id, attempts === 0);
       setFeedbackState(
         feedback,
         "success",
-        `Correct — your query returned the expected result. Score: ${grade.score}/100 (${grade.tier}).`
+        "Correct — your query returned the expected result. Score: " + finalGrade.score + "/100 (" + finalGrade.tier + ")."
       );
       attempts = 0;
       saveProgress();
       refreshLessonChrome();
       return;
     }
-
     attempts += 1;
-
+    const gradeText = formatSQLGradeFeedback(grade);
     if (attempts === 1) {
-      setFeedbackState(feedback, "warning", `Not correct yet. Hint 1: ${hintOne}`);
+      setFeedbackState(feedback, "warning", `Not correct yet. Hint 1: ${grade.hint}\n${gradeText}`);
     } else if (attempts === 2) {
-      setFeedbackState(feedback, "warning", `Still not correct. Hint 2: ${hintTwo}`);
+      const secondHint = lesson.smartHint || grade.hint || hintTwo;
+      setFeedbackState(feedback, "warning", `Still not correct. Hint 2: ${secondHint}\n${gradeText}`);
     } else {
       setFeedbackState(
         feedback,
         "error",
         `You have used all 3 attempts.
-
+Score: ${grade.score}/100 (${grade.tier})
+${(grade.feedback || []).map(item => "• " + item).join("\n")}
 Correct Answer:
 ${lesson.solutionQuery}
-
 Explanation:
 ${finalExplanation}`
       );
     }
-
     saveProgress();
     refreshLessonChrome();
   } catch (error) {
     if (output) output.innerHTML = "";
-
     attempts += 1;
-
-    const executionMessage = getExecutionErrorMessage(error, query, lesson);
-
+    const executionMessage = getExecutionErrorMessage(error, query);
     if (attempts === 1) {
       setFeedbackState(
         feedback,
@@ -3175,15 +4157,12 @@ ${finalExplanation}`
         feedback,
         "error",
         `You have used all 3 attempts.
-
 Correct Answer:
 ${lesson.solutionQuery}
-
 Explanation:
 ${finalExplanation}`
       );
     }
-
     saveProgress();
     refreshLessonChrome();
   }
@@ -3194,7 +4173,6 @@ function normalizeResult(result) {
     values: result.values
   });
 }
-
 function gradePass() {
   if (attempts === 0) return { score: 100, tier: "Perfect" };
   if (attempts === 1) return { score: 92, tier: "Strong" };
@@ -3209,119 +4187,77 @@ function refreshLessonChrome() {
   removeLevelsPanelOverviewButton();
   renderTrackCategoryCards();
 }
-
 function setFeedbackState(element, state, message) {
   if (!element) return;
   element.classList.remove("success", "error", "warning");
   if (state) element.classList.add(state);
   element.innerText = message;
 }
-function checkAnswer() {
-  runQuery();
+
+function gradeAnswer(userInput, lessonContent) {
+  const result = { score: 0, feedback: [], passed: false };
+  const input = String(userInput || "").toLowerCase();
+  const lesson = lessonContent || {};
+
+  const expectedKeywords = lesson.expectedKeywords || [];
+  const minimumKeywordMatches = lesson.minimumKeywordMatches || 0;
+  const minLength = lesson.minLength || 0;
+
+  let keywordMatches = 0;
+  expectedKeywords.forEach(keyword => {
+    if (input.includes(String(keyword).toLowerCase())) keywordMatches += 1;
+  });
+
+  const requiredConceptGroups = lesson.requiredConceptGroups || [];
+  const requiredConceptMatches = lesson.requiredConceptMatches || 0;
+  let conceptMatches = 0;
+  requiredConceptGroups.forEach(group => {
+    if ((group || []).some(term => input.includes(String(term).toLowerCase()))) {
+      conceptMatches += 1;
+    }
+  });
+
+  const lengthPass = input.length >= minLength;
+
+  if (!expectedKeywords.length || keywordMatches >= minimumKeywordMatches) {
+    result.score += 40;
+  } else {
+    result.feedback.push(`Missing key ideas. Found ${keywordMatches} of ${minimumKeywordMatches} required keywords.`);
+  }
+
+  if (!requiredConceptGroups.length || conceptMatches >= requiredConceptMatches) {
+    result.score += 40;
+  } else {
+    result.feedback.push(`Missing key business concepts. Found ${conceptMatches} of ${requiredConceptMatches} required concept groups.`);
+  }
+
+  if (lengthPass) {
+    result.score += 20;
+  } else {
+    result.feedback.push("Answer is too short. Add more detail about the data, the business meaning, and the recommended action.");
+  }
+
+  result.score = Math.min(100, result.score);
+  result.passed = result.score >= 70;
+  return result;
 }
 function resetQuery() {
+  const lesson = getCurrentLesson();
   const queryBox = document.getElementById("query");
   const feedback = document.getElementById("feedback");
   const output = document.getElementById("output");
 
-  if (queryBox) queryBox.value = "";
-  if (feedback) {
-    feedback.classList.remove("success", "error", "warning");
-    feedback.innerText = "";
-  }
-  if (output) output.innerHTML = "";
-
   attempts = 0;
   lastRunQuery = "";
-}
 
-function submitScenario() {
-  const lesson = getCurrentLesson();
-  const box = document.getElementById("scenario-response");
-  const feedback = document.getElementById("scenario-feedback");
-
-  if (!lesson || lesson.type !== "scenario" || !box || !feedback) return;
-
-  attempts += 1;
-
-  const rawAnswer = box.value.trim();
-  const answer = rawAnswer.toLowerCase();
-
-  if (!rawAnswer) {
-    setFeedbackState(feedback, "error", "Please enter a response before submitting.");
-    return;
+  if (queryBox) {
+    queryBox.value = lesson && !isTextChallenge(lesson) ? (lesson.starterQuery || "") : "";
   }
-
-  const expectedKeywords = lesson.content.expectedKeywords || [];
-  const minLength = lesson.content.minLength || 80;
-  const minimumKeywordMatches =
-    lesson.content.minimumKeywordMatches || Math.min(2, expectedKeywords.length);
-
-  const matchedKeywords = expectedKeywords.filter(k =>
-    answer.includes(String(k).toLowerCase())
-  );
-  const missingKeywords = expectedKeywords.filter(k =>
-    !answer.includes(String(k).toLowerCase())
-  );
-
-  const passed =
-    rawAnswer.length >= minLength &&
-    matchedKeywords.length >= minimumKeywordMatches;
-
-  const partial =
-    !passed &&
-    rawAnswer.length >= Math.max(50, Math.floor(minLength * 0.6)) &&
-    matchedKeywords.length >= 1;
-
-  if (passed) {
-    const perfect = matchedKeywords.length >= expectedKeywords.length;
-    const grade = perfect
-      ? { score: 100, tier: "Perfect" }
-      : { score: 92, tier: "Strong" };
-
-    updateLessonStatsOnGrade(lesson.id, grade, true);
-    markLessonCompleted(lesson.id, attempts === 1);
-
-    setFeedbackState(
-      feedback,
-      "success",
-      `Correct — ${lesson.content.feedbackGuide || "You covered the right business context, likely data source, and practical action."}`
-    );
-
-    saveProgress();
-    refreshLessonChrome();
-    return;
+  if (feedback) {
+    feedback.innerText = "";
+    feedback.classList.remove("success", "error", "warning");
   }
-
-  if (partial) {
-    updateLessonStatsOnGrade(lesson.id, { score: 72, tier: "Partial" }, false);
-
-    const missingText = missingKeywords.length
-      ? `Missing ideas to mention: ${missingKeywords.slice(0, 4).join(", ")}.`
-      : "Add more specificity to the response.";
-
-    setFeedbackState(
-      feedback,
-      "warning",
-      `Partially correct — you are on the right track, but the response needs more specificity. ${missingText}`
-    );
-
-    saveProgress();
-    refreshLessonChrome();
-    return;
-  }
-
-  updateLessonStatsOnGrade(lesson.id, { score: 55, tier: "Developing" }, false);
-
-  const missingText = missingKeywords.length
-    ? `Missing ideas to mention: ${missingKeywords.slice(0, 4).join(", ")}.`
-    : "";
-
-  setFeedbackState(
-    feedback,
-    "error",
-    `Not correct yet. Build the response around the likely table or data source, the business meaning, and one practical action. ${missingText}`.trim()
-  );
+  if (output) output.innerHTML = "";
 
   saveProgress();
   refreshLessonChrome();
@@ -3333,7 +4269,6 @@ function resetScenario() {
   if (box) box.value = "";
   if (feedback) feedback.innerText = "";
 }
-
 function markConceptComplete() {
   const lesson = getCurrentLesson();
   if (!lesson || lesson.type !== "concept") return;
@@ -3342,7 +4277,6 @@ function markConceptComplete() {
   saveProgress();
   renderAll();
 }
-
 function nextLesson() {
   const lessons = getAllLessons();
   const idx = lessons.findIndex(item => item.id === appState.currentLessonId);
@@ -3363,7 +4297,6 @@ function nextLesson() {
   saveProgress();
   renderAll();
 }
-
 function prevLesson() {
   const lessons = getAllLessons();
   const idx = lessons.findIndex(item => item.id === appState.currentLessonId);
@@ -3385,7 +4318,6 @@ function prevLesson() {
   saveProgress();
   renderAll();
 }
-
 function resetAllProgress() {
   if (!window.confirm("Reset all progress for CareOps SQL Analyst?")) return;
   const firstTrack = curriculum[0] || null;
@@ -3404,7 +4336,6 @@ function resetAllProgress() {
   showOverview();
   renderAll();
 }
-
 function openTableModal(tableName) {
   const overlay = document.getElementById("table-modal-overlay");
   const table = schema.tables.find(item => item.name === tableName);
@@ -3435,38 +4366,29 @@ function openTableModal(tableName) {
   previewContent.innerHTML = html;
   overlay.classList.remove("hidden");
 }
-
 function closeTableModal(event) {
   if (event && event.target && event.target.id && event.target.id !== "table-modal-overlay") return;
   const overlay = document.getElementById("table-modal-overlay");
   if (overlay) overlay.classList.add("hidden");
 }
-
-
 /* duplicate removed during stabilization pass */
-
-
 const AI_API_CONFIG = {
   endpoint: "/api/ai-companion",
   method: "POST",
   timeoutMs: 15000
 };
-
 let sandboxDb = null;
 let aiThread = [];
-
 function showSection(sectionId) {
   ["track-overview", "lesson-workspace", "sandbox-workspace", "glossary-workspace"].forEach((id) => {
     const el = document.getElementById(id);
     if (el) el.classList.toggle("hidden", id !== sectionId);
   });
 }
-
 function showLessonWorkspace() {
   appState.currentView = "lesson";
   showSection("lesson-workspace");
 }
-
 function ensureCurrentLesson() {
   if (appState.currentLessonId) return;
   const firstTrack = getTrack();
@@ -3475,19 +4397,9 @@ function ensureCurrentLesson() {
   if (firstCategory) appState.currentCategoryId = firstCategory.id;
   if (firstLesson) appState.currentLessonId = firstLesson.id;
 }
-
-
 /* duplicate removed during stabilization pass */
-
-
-
 /* duplicate removed during stabilization pass */
-
-
-
 /* duplicate removed during stabilization pass */
-
-
 function setMessageState(elementId, state, message) {
   const el = document.getElementById(elementId);
   if (!el) return;
@@ -3499,7 +4411,6 @@ function setMessageState(elementId, state, message) {
   el.classList.add(state);
   el.textContent = message;
 }
-
 async function initializeSandboxDatabase() {
   if (!SQL) return;
   sandboxDb = new SQL.Database();
@@ -3507,7 +4418,6 @@ async function initializeSandboxDatabase() {
   createTablesForDb(sandboxDb);
   Object.entries(mockData).forEach(([tableName, rows]) => seedTableIntoDb(sandboxDb, tableName, rows));
 }
-
 function createTablesForDb(db) {
   db.run(`
     CREATE TABLE patients (patient_id INTEGER, first_name TEXT, last_name TEXT, age INTEGER, gender TEXT, insurance_type TEXT, risk_score REAL, city TEXT);
@@ -3522,7 +4432,6 @@ function createTablesForDb(db) {
     CREATE TABLE observations (observation_id INTEGER, encounter_id INTEGER, patient_id INTEGER, facility TEXT, department TEXT, obs_hours INTEGER, converted_to_inpatient INTEGER, code_44_flag INTEGER);
   `);
 }
-
 function seedTableIntoDb(db, tableName, rows) {
   if (!rows || !rows.length) return;
   const keys = Object.keys(rows[0]);
@@ -3531,26 +4440,15 @@ function seedTableIntoDb(db, tableName, rows) {
   rows.forEach((row) => stmt.run(keys.map((key) => row[key])));
   stmt.free();
 }
-
 async function resetSandbox() {
   await initializeSandboxDatabase();
   document.getElementById("sandbox-output").innerHTML = "";
   setMessageState("sandbox-feedback", "success", "Sandbox reset. You are back to a clean mock environment.");
   syncSandboxStarterQuery();
 }
-
-
 /* duplicate removed during stabilization pass */
-
-
-
 /* duplicate removed during stabilization pass */
-
-
-
 /* duplicate removed during stabilization pass */
-
-
 function aiContextPayload() {
   const lesson = getCurrentLesson();
   return {
@@ -3570,22 +4468,14 @@ function aiContextPayload() {
     }
   };
 }
-
-
 /* duplicate removed during stabilization pass */
-
-
 function setAiStatus(text, isLive = false) {
   const pill = document.getElementById("ai-status-pill");
   if (!pill) return;
   pill.textContent = text;
   pill.classList.toggle("is-ready", !!isLive);
 }
-
-
 /* duplicate removed during stabilization pass */
-
-
 async function requestAiCompanion(userMessage) {
   const payload = {
     message: userMessage,
@@ -3612,29 +4502,16 @@ async function requestAiCompanion(userMessage) {
     return fallbackAiResponse(userMessage);
   }
 }
-
-
-
-
 /* duplicate removed during stabilization pass */
-
-
-
 /* duplicate removed during stabilization pass */
-
-
-
 /* duplicate removed during stabilization pass */
-
-
-
 /* duplicate removed during stabilization pass */
-
-
-
-
 /* duplicate removed during stabilization pass */
-
+window.runQuery = runQuery;
+window.resetQuery = resetQuery;
+window.resetScenario = resetScenario;
+window.nextLesson = nextLesson;
+window.prevLesson = prevLesson;
 
 window.showCareopsOverview = function () {
   appState.currentView = "overview";
@@ -3642,29 +4519,24 @@ window.showCareopsOverview = function () {
   saveProgress();
   renderAll();
 };
-
 window.showCareopsLessons = function () {
   attempts = 0;
   showLessonsWorkspace();
   saveProgress();
   renderAll();
 };
-
 window.showCareopsSandbox = function () {
   appState.currentView = "sandbox";
   attempts = 0;
   saveProgress();
   renderAll();
 };
-
 window.showCareopsGlossary = function () {
   appState.currentView = "glossary";
   attempts = 0;
   saveProgress();
   renderAll();
 };
-
-
 document.addEventListener("DOMContentLoaded", async function () {
   ensurePatchedUiStyles();
   normalizeCurriculum();
@@ -3687,27 +4559,20 @@ document.addEventListener("DOMContentLoaded", async function () {
   window.addEventListener("scroll", hideAchievementTooltip, true);
   window.addEventListener("resize", hideAchievementTooltip);
 });
-
-
 /* ================= PATCHED SANDBOX / AI / MOBILE BEHAVIOR ================= */
-
 let sandboxModeState = "free";
 let selectedSandboxPromptId = null;
-
 function setSandboxModeUi(isSandbox) {
   document.body.classList.toggle("sandbox-mode", !!isSandbox);
 }
-
 function defaultSandboxQuery() {
   return "SELECT * FROM patients;";
 }
-
 function getSandboxPromptOptions() {
   const current = getCurrentLesson();
   const lessons = (typeof getAllLessons === "function" ? getAllLessons() : []).filter(
     (lesson) => lesson && (lesson.starterQuery || lesson.solutionQuery)
   );
-
   const prompts = [];
   if (current && (current.starterQuery || current.solutionQuery)) {
     prompts.push({
@@ -3718,7 +4583,6 @@ function getSandboxPromptOptions() {
       tables: Array.isArray(current.relevantTables) ? current.relevantTables : []
     });
   }
-
   lessons.slice(0, 12).forEach((lesson) => {
     if (current && lesson.id === current.id) return;
     prompts.push({
@@ -3729,22 +4593,18 @@ function getSandboxPromptOptions() {
       tables: Array.isArray(lesson.relevantTables) ? lesson.relevantTables : []
     });
   });
-
   return prompts;
 }
-
 function getSelectedSandboxPrompt() {
   const prompts = getSandboxPromptOptions();
   return prompts.find((prompt) => prompt.id === selectedSandboxPromptId) || null;
 }
-
 function renderSandboxLessonContext(prompt = null) {
   const panel = document.getElementById("sandbox-lesson-context");
   const titleEl = document.getElementById("sandbox-lesson-title");
   const objectiveEl = document.getElementById("sandbox-lesson-objective");
   const tablesEl = document.getElementById("sandbox-lesson-tables");
   if (!panel || !titleEl || !objectiveEl || !tablesEl) return;
-
   if (sandboxModeState !== "guided" || !prompt) {
     panel.classList.add("hidden");
     titleEl.textContent = "Choose a guided prompt.";
@@ -3752,7 +4612,6 @@ function renderSandboxLessonContext(prompt = null) {
     tablesEl.innerHTML = "";
     return;
   }
-
   panel.classList.remove("hidden");
   titleEl.textContent = prompt.title || "Guided prompt";
   objectiveEl.textContent = prompt.objective || "Use this guided prompt in the sandbox.";
@@ -3761,38 +4620,30 @@ function renderSandboxLessonContext(prompt = null) {
     ? tables.map((table) => `<div class="sandbox-schema-pill"><span>${escapeHtml(table)}</span><code>${escapeHtml(table)}</code></div>`).join("")
     : '<p class="sandbox-note">No related tables were supplied for this prompt.</p>';
 }
-
 function applySandboxPrompt(prompt, silent = false) {
   if (!prompt) return;
   selectedSandboxPromptId = prompt.id || null;
   sandboxModeState = "guided";
-
   const box = document.getElementById("sandbox-query");
   if (box) box.value = prompt.query || "";
-
   renderSandboxLessonContext(prompt);
-
   const holder = document.getElementById("sandbox-prompt-list");
   holder?.querySelectorAll(".sandbox-prompt-card").forEach((card) => {
     card.classList.toggle("active", card.getAttribute("data-prompt-id") === String(prompt.id));
   });
-
   if (!silent) {
     setMessageState("sandbox-feedback", "success", `Loaded guided prompt: ${prompt.title}`);
   }
 }
-
 function renderSandboxPromptList() {
   const holder = document.getElementById("sandbox-prompt-list");
   if (!holder) return;
-
   const prompts = getSandboxPromptOptions();
   if (!prompts.length) {
     holder.innerHTML = '<p class="sandbox-note">No guided prompts are available yet. Open a lesson first, then return to the sandbox.</p>';
     renderSandboxLessonContext(null);
     return;
   }
-
   holder.innerHTML = prompts.map((prompt) => `
     <div class="sandbox-prompt-card ${prompt.id === selectedSandboxPromptId ? "active" : ""}" data-prompt-id="${escapeHtml(prompt.id)}">
       <h5>${escapeHtml(prompt.title)}</h5>
@@ -3802,7 +4653,6 @@ function renderSandboxPromptList() {
       </div>
     </div>
   `).join("");
-
   holder.querySelectorAll(".sandbox-prompt-card").forEach((card) => {
     card.onclick = () => {
       const prompt = prompts.find((item) => item.id === card.getAttribute("data-prompt-id"));
@@ -3811,7 +4661,6 @@ function renderSandboxPromptList() {
       document.getElementById("sandbox-query")?.focus();
     };
   });
-
   if (selectedSandboxPromptId) {
     const selected = prompts.find((prompt) => prompt.id === selectedSandboxPromptId);
     renderSandboxLessonContext(selected || null);
@@ -3819,21 +4668,17 @@ function renderSandboxPromptList() {
     renderSandboxLessonContext(null);
   }
 }
-
 function setSandboxMode(mode = "free") {
   sandboxModeState = mode === "guided" ? "guided" : "free";
-
   const guidedPanel = document.getElementById("sandbox-guided-panel");
   const guidedBtn = document.getElementById("sandbox-guided-btn");
   const freeBtn = document.getElementById("sandbox-free-btn");
   const box = document.getElementById("sandbox-query");
-
   if (sandboxModeState === "guided") {
     guidedPanel?.classList.remove("hidden");
     guidedBtn?.classList.add("active");
     freeBtn?.classList.remove("active");
     renderSandboxPromptList();
-
     const selected = getSelectedSandboxPrompt();
     if (selected) {
       applySandboxPrompt(selected, true);
@@ -3843,7 +4688,6 @@ function setSandboxMode(mode = "free") {
     }
     return;
   }
-
   guidedPanel?.classList.add("hidden");
   freeBtn?.classList.add("active");
   guidedBtn?.classList.remove("active");
@@ -3853,11 +4697,9 @@ function setSandboxMode(mode = "free") {
     box.value = defaultSandboxQuery();
   }
 }
-
 function syncSandboxStarterQuery() {
   const box = document.getElementById("sandbox-query");
   if (!box) return;
-
   if (sandboxModeState === "guided") {
     const selected = getSelectedSandboxPrompt();
     if (selected) {
@@ -3865,17 +4707,14 @@ function syncSandboxStarterQuery() {
       return;
     }
   }
-
   if (!box.value.trim()) {
     box.value = defaultSandboxQuery();
   }
   renderSandboxLessonContext(null);
 }
-
 function ensureGlossaryWorkspace() {
   let workspace = document.getElementById("glossary-workspace");
   if (workspace) return workspace;
-
   const playArea = document.querySelector(".play-area") || document.querySelector(".main-content") || document.body;
   workspace = document.createElement("section");
   workspace.id = "glossary-workspace";
@@ -3883,27 +4722,22 @@ function ensureGlossaryWorkspace() {
   playArea.appendChild(workspace);
   return workspace;
 }
-
 function setGlossaryModeUi(isGlossary) {
   document.body.classList.toggle("glossary-mode", !!isGlossary);
   if (isGlossary) document.body.classList.remove("sandbox-mode");
 }
-
 function ensureGlossaryNavButton() {
   let button = document.getElementById("open-glossary-btn");
   if (button) return button;
-
   const sandboxBtn = document.getElementById("open-sandbox-btn") || document.getElementById("nav-sandbox-btn") || Array.from(document.querySelectorAll("button")).find((btn) => String(btn.textContent || "").trim().toLowerCase() === "sandbox");
   const resetBtn = Array.from(document.querySelectorAll("button")).find((btn) => /reset progress/i.test(String(btn.textContent || "")));
   const parent = sandboxBtn?.parentElement || resetBtn?.parentElement || document.querySelector(".main-nav-actions") || document.querySelector(".dashboard-actions.main-nav-actions") || document.querySelector(".dashboard-actions");
   if (!parent) return null;
-
   button = document.createElement("button");
   button.type = "button";
   button.id = "open-glossary-btn";
   button.className = "glossary-nav-btn";
   button.textContent = "Glossary";
-
   if (resetBtn && resetBtn.parentElement === parent) {
     parent.insertBefore(button, resetBtn);
   } else if (sandboxBtn && sandboxBtn.parentElement === parent) {
@@ -3911,14 +4745,11 @@ function ensureGlossaryNavButton() {
   } else {
     parent.appendChild(button);
   }
-
   return button;
 }
-
 function getFilteredGlossaryTerms() {
   const query = String(appState.glossarySearch || "").trim().toLowerCase();
   const activeCategory = String(appState.glossaryCategory || "").trim().toLowerCase();
-
   return GLOSSARY_TERMS.filter((item) => {
     const matchesCategory = !activeCategory || item.category === activeCategory;
     const haystack = [item.term, item.definition, item.why, item.example, glossaryCategoryLabel(item.category)].join(" ").toLowerCase();
@@ -3926,7 +4757,6 @@ function getFilteredGlossaryTerms() {
     return matchesCategory && matchesQuery;
   });
 }
-
 function renderGlossaryCard(item) {
   return `
     <article class="glossary-card glossary-card-${escapeHtml(item.category)}">
@@ -3952,11 +4782,9 @@ function renderGlossaryCard(item) {
     </article>
   `;
 }
-
 function renderGlossary() {
   const workspace = ensureGlossaryWorkspace();
   const filteredTerms = getFilteredGlossaryTerms();
-
   workspace.innerHTML = `
     <div class="glossary-page">
       <div class="glossary-header-card">
@@ -3966,7 +4794,6 @@ function renderGlossary() {
           <p>Definitions for SQL, hospital operations, finance, and analytics terms used throughout the CareOps curriculum.</p>
         </div>
       </div>
-
       <div class="glossary-toolbar">
         <div>
           <label class="glossary-label" for="glossary-search-input">Search Terms</label>
@@ -3983,9 +4810,7 @@ function renderGlossary() {
           </div>
         </div>
       </div>
-
       <div class="glossary-results-meta">${filteredTerms.length} terms shown</div>
-
       ${filteredTerms.length ? `<div class="glossary-card-grid">${filteredTerms.map(renderGlossaryCard).join("")}</div>` : `
         <div class="glossary-empty-state">
           <h3>No terms matched</h3>
@@ -3994,7 +4819,6 @@ function renderGlossary() {
       `}
     </div>
   `;
-
   const input = document.getElementById("glossary-search-input");
   if (input) {
     input.addEventListener("input", (event) => {
@@ -4003,7 +4827,6 @@ function renderGlossary() {
       renderGlossary();
     });
   }
-
   workspace.querySelectorAll("[data-glossary-filter]").forEach((button) => {
     button.addEventListener("click", () => {
       appState.glossaryCategory = button.getAttribute("data-glossary-filter") || "";
@@ -4012,7 +4835,6 @@ function renderGlossary() {
     });
   });
 }
-
 function showGlossaryWorkspace() {
   appState.currentView = "glossary";
   setGlossaryModeUi(true);
@@ -4020,7 +4842,6 @@ function showGlossaryWorkspace() {
   renderGlossary();
   document.getElementById("glossary-workspace")?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
-
 function showOverview() {
   appState.currentView = "overview";
   setSandboxModeUi(false);
@@ -4028,7 +4849,6 @@ function showOverview() {
   showSection("track-overview");
   document.getElementById("track-overview")?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
-
 function showLessonsWorkspace() {
   ensureCurrentLesson();
   appState.currentView = "lesson";
@@ -4037,7 +4857,6 @@ function showLessonsWorkspace() {
   showSection("lesson-workspace");
   document.getElementById("lesson-workspace")?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
-
 function showSandboxWorkspace() {
   appState.currentView = "sandbox";
   setSandboxModeUi(true);
@@ -4045,7 +4864,6 @@ function showSandboxWorkspace() {
   setSandboxMode(sandboxModeState);
   document.getElementById("sandbox-query")?.focus();
 }
-
 function formatSandboxResultTable(result) {
   const columns = Array.isArray(result?.columns) ? result.columns : [];
   const values = Array.isArray(result?.values) ? result.values : [];
@@ -4066,7 +4884,6 @@ function formatSandboxResultTable(result) {
   out += "</tbody></table></div>";
   return out;
 }
-
 function runSandboxQuery() {
   const query = (document.getElementById("sandbox-query")?.value || "").trim();
   if (!query) {
@@ -4077,7 +4894,6 @@ function runSandboxQuery() {
     setMessageState("sandbox-feedback", "warning", "Sandbox database is still loading. Try again in a moment.");
     return;
   }
-
   try {
     const execResult = sandboxDb.exec(query);
     const first = Array.isArray(execResult) && execResult.length ? execResult[0] : null;
@@ -4098,7 +4914,6 @@ function runSandboxQuery() {
     setMessageState("sandbox-feedback", "error", getExecutionErrorMessage(error));
   }
 }
-
 function formatAiResponseBody(text) {
   const safe = escapeHtml(String(text || ""));
   const sections = safe.split(/\n{2,}/).filter(Boolean);
@@ -4111,11 +4926,9 @@ function formatAiResponseBody(text) {
     return `<p>${lines.join("<br>")}</p>`;
   }).join("");
 }
-
 function renderAiMessages() {
   const holder = document.getElementById("ai-messages");
   if (!holder) return;
-
   if (!aiThread.length) {
     holder.innerHTML = `
       <div class="ai-message assistant">
@@ -4127,7 +4940,6 @@ function renderAiMessages() {
       </div>`;
     return;
   }
-
   holder.innerHTML = aiThread.map((msg) => `
     <div class="ai-message ${msg.role}">
       <div class="ai-message-role">${msg.role === "user" ? "You" : "AI companion"}</div>
@@ -4136,14 +4948,12 @@ function renderAiMessages() {
   `).join("");
   holder.scrollTop = holder.scrollHeight;
 }
-
 function fallbackAiResponse(userMessage) {
   const lesson = getCurrentLesson();
   const prompt = String(userMessage || "").toLowerCase();
   const lessonTitle = lesson?.title || "the current topic";
   const objective = lesson?.objective || "the question you are exploring";
   const relevantTables = lesson?.relevantTables?.length ? lesson.relevantTables.join(", ") : "the relevant tables";
-
   if (prompt.includes("readmission")) {
     return [
       "Readmissions matter because they can signal breakdowns in discharge planning, follow-up access, medication reconciliation, or care coordination.",
@@ -4156,7 +4966,6 @@ function fallbackAiResponse(userMessage) {
       "- length of stay, case management involvement, and ED bounce-backs"
     ].join("\n");
   }
-
   if (prompt.includes("los") || prompt.includes("length of stay")) {
     return [
       "Length of stay matters because it affects capacity, throughput, staffing pressure, and cost of care.",
@@ -4169,7 +4978,6 @@ function fallbackAiResponse(userMessage) {
       "- provider or unit variation"
     ].join("\n");
   }
-
   if (prompt.includes("code") || prompt.includes("sql") || prompt.includes("query")) {
     return [
       `You are working on ${lessonTitle}.`,
@@ -4180,7 +4988,6 @@ function fallbackAiResponse(userMessage) {
       "Tell me exactly what output you want and I will write or improve the SQL for you."
     ].join("\n");
   }
-
   return [
     `You are currently in ${lessonTitle}.`,
     `Objective: ${objective}`,
@@ -4193,58 +5000,45 @@ function fallbackAiResponse(userMessage) {
     "- help translate the result for leaders"
   ].join("\n");
 }
-
 async function sendAiMessage(prefill = null) {
   const input = document.getElementById("ai-input");
   const message = (prefill || input?.value || "").trim();
   if (!message) return;
-
   aiThread.push({ role: "user", content: message });
   renderAiMessages();
   if (input) input.value = "";
-
   const reply = await requestAiCompanion(message);
   aiThread.push({ role: "assistant", content: reply });
   renderAiMessages();
 }
-
 function clearAiChat() {
   aiThread = [];
   renderAiMessages();
 }
-
 function scrollToAiCompanion() {
   const target = document.getElementById("ai-companion-section") || document.getElementById("ai-input");
   target?.scrollIntoView({ behavior: "smooth", block: "start" });
   document.getElementById("ai-input")?.focus();
 }
-
 function updateAiContextBanner() {
   if (!aiThread.length) renderAiMessages();
 }
-
-
 function removeLevelsPanelOverviewButton() {
   const panel = document.getElementById("levels-panel");
   if (!panel) return;
-
   const overviewBtn =
     panel.querySelector("#open-overview-btn") ||
     Array.from(panel.querySelectorAll("button")).find((button) =>
       String(button.textContent || "").trim().toLowerCase() === "track overview"
     );
-
   if (!overviewBtn) return;
-
   const wrapper = overviewBtn.closest(".side-panel-actions, .levels-panel-action-row, .panel-action-row");
   if (wrapper) {
     wrapper.remove();
     return;
   }
-
   overviewBtn.remove();
 }
-
 function renderAll() {
   applySchemaPanelWidth();
   renderSchema();
@@ -4267,7 +5061,6 @@ function renderAll() {
   removeLevelsPanelOverviewButton();
   attachPersistentNavigationDelegates();
 }
-
 function initUiActions() {
   const openOverviewBtn = document.getElementById("open-overview-btn");
   if (openOverviewBtn) {
@@ -4280,7 +5073,6 @@ function initUiActions() {
       document.getElementById("track-overview")?.scrollIntoView({ behavior: "smooth", block: "start" });
     };
   }
-
   const openSandboxBtn = document.getElementById("open-sandbox-btn");
   if (openSandboxBtn) {
     openSandboxBtn.onclick = () => {
@@ -4292,7 +5084,6 @@ function initUiActions() {
       document.getElementById("sandbox-workspace")?.scrollIntoView({ behavior: "smooth", block: "start" });
     };
   }
-
   const openGlossaryBtn = ensureGlossaryNavButton();
   if (openGlossaryBtn) {
     openGlossaryBtn.onclick = () => {
@@ -4303,7 +5094,6 @@ function initUiActions() {
       renderAll();
     };
   }
-
   const toggleBtn = document.getElementById("toggle-levels-panel-btn");
   const panel = document.getElementById("levels-panel");
   if (toggleBtn && panel) {
@@ -4313,10 +5103,8 @@ function initUiActions() {
       toggleBtn.setAttribute("aria-expanded", panel.classList.contains("collapsed") ? "false" : "true");
     };
   }
-
   const runSandboxBtn = document.getElementById("run-sandbox-btn");
   if (runSandboxBtn) runSandboxBtn.onclick = runSandboxQuery;
-
   const resetSandboxBtn = document.getElementById("reset-sandbox-btn");
   if (resetSandboxBtn) {
     resetSandboxBtn.onclick = () => {
@@ -4326,7 +5114,6 @@ function initUiActions() {
       setSandboxMode("free");
     };
   }
-
   const guidedBtn = document.getElementById("sandbox-guided-btn");
   const freeBtn = document.getElementById("sandbox-free-btn");
   if (guidedBtn) guidedBtn.onclick = () => {
@@ -4336,7 +5123,6 @@ function initUiActions() {
   if (freeBtn) freeBtn.onclick = () => {
     setSandboxMode("free");
   };
-
   const askAiAboutQueryBtn = document.getElementById("sandbox-send-ai-btn");
   if (askAiAboutQueryBtn) {
     askAiAboutQueryBtn.onclick = () => {
@@ -4351,10 +5137,8 @@ function initUiActions() {
       scrollToAiCompanion();
     };
   }
-
   const sendAiBtn = document.getElementById("send-ai-btn");
   if (sendAiBtn) sendAiBtn.onclick = () => sendAiMessage();
-
   const aiInput = document.getElementById("ai-input");
   if (aiInput && !aiInput.dataset.enterBound) {
     aiInput.dataset.enterBound = "true";
@@ -4366,20 +5150,16 @@ function initUiActions() {
     });
   }
 }
-
 function attachPersistentNavigationDelegates() {
   if (window.__careopsNavDelegatePatchedV2) return;
   window.__careopsNavDelegatePatchedV2 = true;
-
   document.addEventListener("click", function (event) {
     const button = event.target.closest("button");
     if (!button) return;
     const label = String(button.textContent || "").trim().toLowerCase();
-
     const isOverview = button.id === "open-overview-btn" || button.id === "nav-overview-btn" || label === "track overview";
     const isSandbox = button.id === "open-sandbox-btn" || button.id === "nav-sandbox-btn" || label === "sandbox" || label === "sql sandbox";
     const isGlossary = button.id === "open-glossary-btn" || label === "glossary";
-
     if (isOverview) {
       event.preventDefault();
       attempts = 0;
@@ -4388,7 +5168,6 @@ function attachPersistentNavigationDelegates() {
       renderAll();
       return;
     }
-
     if (isSandbox) {
       event.preventDefault();
       attempts = 0;
@@ -4397,7 +5176,6 @@ function attachPersistentNavigationDelegates() {
       renderAll();
       return;
     }
-
     if (isGlossary) {
       event.preventDefault();
       attempts = 0;
