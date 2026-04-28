@@ -250,6 +250,74 @@ const schema = {
     "observations.encounter_id = encounters.encounter_id"
   ]
 };
+/* =========================
+   GRADING ENGINE
+========================= */
+
+function gradeColumns(userCols, expectedCols) {
+  let score = 0;
+  let feedback = [];
+
+  const missing = expectedCols.filter(c => !userCols.includes(c));
+  const extra = userCols.filter(c => !expectedCols.includes(c));
+
+  if (missing.length === 0 && extra.length === 0) {
+    score += 50;
+  } else {
+    score += 20;
+  }
+
+  if (missing.length) {
+    feedback.push(`Missing: ${missing.join(', ')}`);
+  }
+
+  if (extra.length) {
+    feedback.push(`Extra: ${extra.join(', ')}`);
+  }
+
+  if (JSON.stringify(userCols) === JSON.stringify(expectedCols)) {
+    score += 20;
+  } else {
+    feedback.push("Column order is incorrect");
+  }
+
+  return { score, feedback };
+}
+
+function gradeTable(userTable, expectedTable) {
+  if (!userTable) {
+    return { score: 0, feedback: ["No table used"] };
+  }
+
+  if (userTable === expectedTable) {
+    return { score: 20, feedback: [] };
+  }
+
+  return {
+    score: 0,
+    feedback: [`Wrong table (expected ${expectedTable})`]
+  };
+}
+
+function gradeQuery(userQuery, lesson) {
+  const parsed = parseSQL(userQuery);
+
+  let total = 0;
+  let feedback = [];
+
+  const col = gradeColumns(parsed.columns, lesson.expected.columns);
+  total += col.score;
+  feedback.push(...col.feedback);
+
+  const table = gradeTable(parsed.table, lesson.expected.table);
+  total += table.score;
+  feedback.push(...table.feedback);
+
+  total = Math.min(total, 100);
+
+  return { score: total, feedback };
+}
+
 const curriculum = [
   {
     id: "track_foundations",
