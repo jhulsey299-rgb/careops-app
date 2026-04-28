@@ -4039,7 +4039,33 @@ function runQuery() {
       return;
     }
     if (attempts < 3) {
-      const nextHint = attempts === 1 ? (lesson.hint || "Focus on what one row represents and why.") : (lesson.smartHint || lesson.thirdHint || lesson.hint || "Use the business wording and the table grain to guide your answer.");
+     function generateHint(userQuery, lesson) {
+  const parsed = parseSQL(userQuery);
+
+  const expectedCols = lesson.expected.columns;
+  const expectedTable = lesson.expected.table;
+
+  const missing = expectedCols.filter(c => !parsed.columns.includes(c));
+  if (missing.length) {
+    return `Missing column(s): ${missing.join(', ')}`;
+  }
+
+  if (parsed.table && parsed.table !== expectedTable) {
+    const dist = levenshtein(parsed.table, expectedTable);
+
+    if (dist <= 3) {
+      return `Table name looks misspelled. Did you mean "${expectedTable}"?`;
+    }
+
+    return `Use table: ${expectedTable}`;
+  }
+
+  if (JSON.stringify(parsed.columns) !== JSON.stringify(expectedCols)) {
+    return "Columns must be in the correct order.";
+  }
+
+  return "Check syntax carefully.";
+}
       setFeedbackState(feedback, "warning", `Not correct yet. Hint ${attempts}: ${nextHint}${missingText}`);
       saveProgress();
       refreshLessonChrome();
