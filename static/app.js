@@ -4168,8 +4168,24 @@ ${lesson.explanation || lesson.feedbackGuide || "This lesson is testing your rea
   const finalExplanation =
     lesson.explanation ||
     "This answer is correct because it uses the right table, selects the required fields, and returns the expected result for the lesson objective.";
-  try {
-    const result = queryToResult(query);
+  const preGrade = gradeSQLQuery(
+  query,
+  lesson,
+  { columns: [], values: [] },
+  queryToResult(lesson.solutionQuery)
+);
+
+if (preGrade.criticalIssues && preGrade.criticalIssues.includes("table")) {
+  attempts += 1;
+  setFeedbackState(
+    feedback,
+    "warning",
+    `Not correct yet. Hint ${attempts}: ${preGrade.hint}`
+  );
+  saveProgress();
+  refreshLessonChrome();
+  return;
+}
     if (output) output.innerHTML = formatResultTable(result);
     const solutionResult = queryToResult(lesson.solutionQuery);
     const grade = gradeSQLQuery(query, lesson, result, solutionResult);
