@@ -4226,7 +4226,6 @@ ${finalExplanation}`
     }
     saveProgress();
     refreshLessonChrome();
-    }
   } catch (error) {
     if (output) output.innerHTML = "";
     attempts += 1;
