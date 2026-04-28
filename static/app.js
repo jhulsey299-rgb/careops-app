@@ -473,8 +473,8 @@ Should you start with patients, encounters, or charges? Explain your reasoning.`
             challengeCriteria: "Return patient_id, encounter_id, and admit_date from encounters.",
             starterQuery: "",
             solutionQuery: "SELECT patient_id, encounter_id, admit_date FROM encounters;",
-            hint: "List the columns explicitly in the SELECT statement.",
-            smartHint: "Use patient_id, encounter_id, and admit_date in that order or any order.",
+            hint: "List only these columns, in this order: patient_id, encounter_id, admit_date.",
+            smartHint: "Use the exact column order requested: patient_id, encounter_id, admit_date.",
             thirdHint: "SELECT patient_id, encounter_id, admit_date FROM encounters;",
             explanation: "Selecting specific columns keeps the query efficient and keeps the learner focused on the fields that matter.",
             executiveTakeaway: { show: false }
@@ -3652,6 +3652,245 @@ function getExecutionErrorMessage(error, queryText = "") {
   if (message.includes("ambiguous")) return "A column reference is ambiguous. Add the table alias or full table.column reference.";
   return raw || "The query could not be executed.";
 }
+
+/* =========================
+   PRODUCTION SQL GRADING ENGINE
+   Structured, partial-credit SQL grading for CareOps lessons.
+========================= */
+function splitSQLList(listText) {
+  const items = [];
+  let current = "";
+  let depth = 0;
+  let quote = null;
+  const text = String(listText || "");
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (quote) {
+      current += ch;
+      if (ch === quote && text[i - 1] !== "\\") quote = null;
+      continue;
+    }
+    if (ch === "'" || ch === '"' || ch === "`") {
+      quote = ch;
+      current += ch;
+      continue;
+    }
+    if (ch === "(") depth += 1;
+    if (ch === ")") depth = Math.max(0, depth - 1);
+    if (ch === "," && depth === 0) {
+      items.push(current.trim());
+      current = "";
+    } else {
+      current += ch;
+    }
+  }
+  if (current.trim()) items.push(current.trim());
+  return items;
+}
+function normalizeSQLText(query) {
+  return String(query || "")
+    .replace(/--.*$/gm, " ")
+    .replace(/\/\*[\s\S]*?\*\//g, " ")
+    .replace(/\s+/g, " ")
+    .replace(/;\s*$/g, "")
+    .trim()
+    .toLowerCase();
+}
+function normalizeSQLIdentifier(value) {
+  return String(value || "")
+    .trim()
+    .replace(/^['"`]|['"`]$/g, "")
+    .replace(/\s+as\s+.+$/i, "")
+    .replace(/\s+.+$/i, "")
+    .replace(/^[a-z0-9_]+\./i, "")
+    .toLowerCase();
+}
+function parseSQL(query) {
+  const clean = normalizeSQLText(query);
+  const selectMatch = clean.match(/\bselect\s+([\s\S]+?)\s+from\s+/i);
+  const fromMatch = clean.match(/\bfrom\s+([a-z0-9_\.]+)/i);
+  const whereMatch = clean.match(/\bwhere\s+([\s\S]+?)(\s+group\s+by\s+|\s+having\s+|\s+order\s+by\s+|\s+limit\s+|$)/i);
+  const groupMatch = clean.match(/\bgroup\s+by\s+([\s\S]+?)(\s+having\s+|\s+order\s+by\s+|\s+limit\s+|$)/i);
+  const havingMatch = clean.match(/\bhaving\s+([\s\S]+?)(\s+order\s+by\s+|\s+limit\s+|$)/i);
+  const orderMatch = clean.match(/\border\s+by\s+([\s\S]+?)(\s+limit\s+|$)/i);
+  const limitMatch = clean.match(/\blimit\s+(\d+)/i);
+  const selectRaw = selectMatch ? selectMatch[1].trim() : "";
+  const columnsRaw = selectRaw ? splitSQLList(selectRaw) : [];
+  const columns = columnsRaw.map(normalizeSQLIdentifier).filter(Boolean);
+  const aggregateFunctions = [];
+  ["count", "sum", "avg", "min", "max"].forEach(fn => {
+    if (new RegExp("\\b" + fn + "\\s*\\(", "i").test(clean)) aggregateFunctions.push(fn);
+  });
+  return {
+    raw: clean,
+    selectRaw,
+    columnsRaw,
+    columns,
+    table: fromMatch ? normalizeSQLIdentifier(fromMatch[1]) : null,
+    where: whereMatch ? whereMatch[1].trim() : "",
+    groupByRaw: groupMatch ? groupMatch[1].trim() : "",
+    groupBy: groupMatch ? splitSQLList(groupMatch[1]).map(normalizeSQLIdentifier).filter(Boolean) : [],
+    having: havingMatch ? havingMatch[1].trim() : "",
+    orderByRaw: orderMatch ? orderMatch[1].trim() : "",
+    orderBy: orderMatch ? splitSQLList(orderMatch[1]).map(normalizeSQLIdentifier).filter(Boolean) : [],
+    limit: limitMatch ? Number(limitMatch[1]) : null,
+    aggregateFunctions
+  };
+}
+function arraysEqualStrict(a, b) {
+  return Array.isArray(a) && Array.isArray(b) && a.length === b.length && a.every((v, i) => v === b[i]);
+}
+function sameMembers(a, b) {
+  return Array.isArray(a) && Array.isArray(b) && a.length === b.length && a.every(v => b.includes(v));
+}
+function sqlClauseExpectation(expected, prop) {
+  return Boolean(expected && expected[prop] && String(expected[prop]).trim());
+}
+function gradeSQLQuery(userQuery, lesson, executionResult, solutionResult) {
+  const user = parseSQL(userQuery);
+  const expected = parseSQL(lesson.solutionQuery || lesson.expectedAnswer || "");
+  let score = 0;
+  const feedback = [];
+  const hints = [];
+  const criticalIssues = [];
+
+  if (!user.selectRaw) {
+    feedback.push("Missing SELECT clause.");
+    hints.push("Start with SELECT and list the requested columns.");
+    criticalIssues.push("select");
+  } else if (user.selectRaw === "*" && expected.selectRaw !== "*") {
+    score += 10;
+    feedback.push("SELECT * returns extra columns; list only the requested fields.");
+    hints.push("Replace * with the specific requested columns.");
+  } else {
+    const expectedCols = expected.columns;
+    const missingCols = expectedCols.filter(col => !user.columns.includes(col));
+    const extraCols = user.columns.filter(col => !expectedCols.includes(col));
+    const exactColumns = arraysEqualStrict(user.columns, expectedCols);
+    const sameColumnSet = sameMembers(user.columns, expectedCols);
+    if (exactColumns) {
+      score += 30;
+    } else if (sameColumnSet) {
+      score += 22;
+      feedback.push("The right columns are present, but the column order does not match the expected output.");
+      hints.push("Use the exact column order shown in the task or expected answer.");
+      criticalIssues.push("column_order");
+    } else {
+      score += Math.max(0, 12 - (missingCols.length * 4) - (extraCols.length * 2));
+      if (missingCols.length) feedback.push("Missing column(s): " + missingCols.join(", ") + ".");
+      if (extraCols.length) feedback.push("Extra column(s): " + extraCols.join(", ") + ".");
+      hints.push("Check the requested SELECT fields against the task instructions.");
+      criticalIssues.push("columns");
+    }
+  }
+
+  if (!user.table) {
+    feedback.push("Missing FROM table.");
+    hints.push("Add FROM with the correct table name.");
+    criticalIssues.push("table");
+  } else if (user.table === expected.table) {
+    score += 20;
+  } else {
+    feedback.push("Incorrect table. Expected: " + expected.table + ".");
+    hints.push("Use FROM " + expected.table + ".");
+    criticalIssues.push("table");
+  }
+
+  if (sqlClauseExpectation(expected, "where")) {
+    if (!user.where) {
+      feedback.push("Missing WHERE filter.");
+      hints.push("Add the WHERE condition required by the lesson.");
+      criticalIssues.push("where");
+    } else if (user.where === expected.where || expected.where.split(/\s+and\s+|\s+or\s+/).every(part => user.where.includes(part.trim()))) {
+      score += 15;
+    } else {
+      score += 7;
+      feedback.push("WHERE clause is present but does not fully match the required filter.");
+      hints.push("Compare your WHERE condition to the task wording.");
+    }
+  } else {
+    score += user.where ? 8 : 15;
+    if (user.where) feedback.push("This lesson does not require a WHERE filter; make sure the filter does not change the requested output.");
+  }
+
+  if (expected.groupBy.length) {
+    if (arraysEqualStrict(user.groupBy, expected.groupBy)) {
+      score += 10;
+    } else if (sameMembers(user.groupBy, expected.groupBy)) {
+      score += 7;
+      feedback.push("GROUP BY fields are present but not in the expected order.");
+    } else {
+      feedback.push("Missing or incorrect GROUP BY.");
+      hints.push("Group by the same field(s) used in the expected answer.");
+    }
+  } else {
+    score += user.groupBy.length ? 5 : 10;
+  }
+
+  if (expected.aggregateFunctions.length) {
+    const missingAgg = expected.aggregateFunctions.filter(fn => !user.aggregateFunctions.includes(fn));
+    if (!missingAgg.length) {
+      score += 10;
+    } else {
+      feedback.push("Missing aggregate function(s): " + missingAgg.join(", ") + ".");
+      hints.push("Use the aggregate function requested by the lesson, such as COUNT, SUM, or AVG.");
+    }
+  } else {
+    score += 10;
+  }
+
+  if (expected.orderBy.length) {
+    if (user.orderByRaw === expected.orderByRaw) {
+      score += 8;
+    } else if (user.orderBy.length) {
+      score += 4;
+      feedback.push("ORDER BY is present but does not fully match the expected sorting.");
+    } else {
+      feedback.push("Missing ORDER BY sorting.");
+      hints.push("Add ORDER BY exactly as requested.");
+    }
+  } else {
+    score += 8;
+  }
+
+  if (expected.limit !== null) {
+    if (user.limit === expected.limit) {
+      score += 7;
+    } else {
+      feedback.push("Missing or incorrect LIMIT. Expected LIMIT " + expected.limit + ".");
+      hints.push("Add LIMIT " + expected.limit + " to control the row count.");
+    }
+  } else {
+    score += 7;
+  }
+
+  const exactResult = normalizeResult(executionResult || { columns: [], values: [] }) === normalizeResult(solutionResult || { columns: [], values: [] });
+  if (exactResult) score += 10;
+  else feedback.push("Your query ran, but the returned output does not match the expected result.");
+
+  score = Math.max(0, Math.min(100, Math.round(score)));
+  let tier = "Needs Work";
+  if (score >= 95) tier = "Excellent";
+  else if (score >= 85) tier = "Strong";
+  else if (score >= 70) tier = "Partial";
+
+  const primaryHint = hints[0] || lesson.smartHint || lesson.hint || "Compare your SELECT, FROM, filters, and grouping to the task.";
+  return {
+    score,
+    tier,
+    passed: exactResult,
+    exactResult,
+    criticalIssues,
+    feedback: feedback.length ? feedback : ["The query structure is close. Compare the returned output to the expected result."],
+    hint: primaryHint,
+    parsed: user,
+    expected
+  };
+}
+function formatSQLGradeFeedback(grade) {
+  const items = (grade.feedback || []).map(item => "• " + item).join("\n");
+  return `Score: ${grade.score}/100 (${grade.tier})\n${items}`;
+}
 function runQuery() {
   const lesson = getCurrentLesson();
   const output = document.getElementById("output");
@@ -3720,15 +3959,16 @@ ${lesson.explanation || lesson.feedbackGuide || "This lesson is testing your rea
     const result = queryToResult(query);
     if (output) output.innerHTML = formatResultTable(result);
     const solutionResult = queryToResult(lesson.solutionQuery);
-    const passed = normalizeResult(result) === normalizeResult(solutionResult);
-    if (passed) {
-      const grade = gradePass();
-      updateLessonStatsOnGrade(lesson.id, grade, true);
+    const grade = gradeSQLQuery(query, lesson, result, solutionResult);
+    if (grade.passed) {
+      const passGrade = gradePass();
+      const finalGrade = { score: Math.max(passGrade.score, grade.score), tier: passGrade.tier };
+      updateLessonStatsOnGrade(lesson.id, finalGrade, true);
       markLessonCompleted(lesson.id, attempts === 0);
       setFeedbackState(
         feedback,
         "success",
-        "Correct — your query returned the expected result. Score: " + grade.score + "/100 (" + grade.tier + ")."
+        "Correct — your query returned the expected result. Score: " + finalGrade.score + "/100 (" + finalGrade.tier + ")."
       );
       attempts = 0;
       saveProgress();
@@ -3736,15 +3976,19 @@ ${lesson.explanation || lesson.feedbackGuide || "This lesson is testing your rea
       return;
     }
     attempts += 1;
+    const gradeText = formatSQLGradeFeedback(grade);
     if (attempts === 1) {
-      setFeedbackState(feedback, "warning", `Not correct yet. Hint 1: ${hintOne}`);
+      setFeedbackState(feedback, "warning", `Not correct yet. Hint 1: ${grade.hint}\n${gradeText}`);
     } else if (attempts === 2) {
-      setFeedbackState(feedback, "warning", `Still not correct. Hint 2: ${hintTwo}`);
+      const secondHint = lesson.smartHint || grade.hint || hintTwo;
+      setFeedbackState(feedback, "warning", `Still not correct. Hint 2: ${secondHint}\n${gradeText}`);
     } else {
       setFeedbackState(
         feedback,
         "error",
         `You have used all 3 attempts.
+Score: ${grade.score}/100 (${grade.tier})
+${(grade.feedback || []).map(item => "• " + item).join("\n")}
 Correct Answer:
 ${lesson.solutionQuery}
 Explanation:
