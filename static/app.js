@@ -4056,15 +4056,20 @@ function gradeSQLQuery(userQuery, lesson, executionResult, solutionResult) {
   }
 
   // 6. WHERE
-  if (expected.hasWhere) {
-    if (user.hasWhere) {
-      score += 10;
-    } else {
-      feedback.push("Missing WHERE filter.");
-      hints.push("Add the required WHERE condition.");
-      criticalIssues.push("where");
-    }
+if (expected.hasWhere) {
+  if (!user.hasWhere) {
+    feedback.push("Missing WHERE filter.");
+    hints.push("Add the required WHERE condition.");
+    criticalIssues.push("where");
+  } else if (normalizeSQLClause(user.whereClause) === normalizeSQLClause(expected.whereClause)) {
+    score += 10;
+  } else {
+    feedback.push("WHERE filter does not match the expected condition.");
+    hints.push(`Expected filter: WHERE ${expected.whereClause}`);
+    criticalIssues.push("where");
+    score += 4;
   }
+}
 
   // 7. GROUP BY
   if (expected.groupBy.length) {
