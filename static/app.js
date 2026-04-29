@@ -207,21 +207,80 @@ function glossaryCategoryLabel(category) {
 ========================= */
 
 function parseSQL(query) {
-  const clean = query
-    .toLowerCase()
-    .replace(/\s+/g, ' ')
-    .replace(/;$/, '')
+  const original = String(query || "").trim();
+
+  const clean = original
+    .replace(/--.*$/gm, "")
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .replace(/\s+/g, " ")
+    .replace(/;$/, "")
     .trim();
 
-  const selectMatch = clean.match(/select (.+?) from/);
-  const fromMatch = clean.match(/from ([a-z0-9_]+)/);
+  const lower = clean.toLowerCase();
+
+  const selectMatch = clean.match(/^select\s+([\s\S]+?)\s+from\s+/i);
+  const fromMatch = clean.match(/\sfrom\s+([a-zA-Z_][\w]*)/i);
+  const whereMatch = clean.match(/\swhere\s+([\s\S]+?)(\s+group\s+by|\s+order\s+by|\s+limit|$)/i);
+  const groupByMatch = clean.match(/\sgroup\s+by\s+([\s\S]+?)(\s+order\s+by|\s+limit|$)/i);
+  const orderByMatch = clean.match(/\sorder\s+by\s+([\s\S]+?)(\s+limit|$)/i);
+  const limitMatch = clean.match(/\slimit\s+(\d+)/i);
+
+  const selectRaw = selectMatch ? selectMatch[1].trim() : "";
+  const table = fromMatch ? fromMatch[1].trim().toLowerCase() : null;
+
+  const columns = selectRaw
+    ? selectRaw
+        .split(",")
+        .map(c => c.trim())
+        .map(c => c.replace(/\s+as\s+["']?[^"']+["']?$/i, "").trim())
+        .map(c => c.replace(/\s+["']?[^"'\s]+["']?$/i, "").trim())
+        .map(c => c.includes(".") ? c.split(".").pop().trim() : c)
+        .map(c => c.toLowerCase())
+    : [];
+
+  const aggregateFunctions = [];
+  ["count", "sum", "avg", "min", "max"].forEach(fn => {
+    if (new RegExp("\\b" + fn + "\\s*\\(", "i").test(clean)) {
+      aggregateFunctions.push(fn);
+    }
+  });
+
+  const groupBy = groupByMatch
+    ? groupByMatch[1]
+        .split(",")
+        .map(x => x.trim().toLowerCase())
+        .map(x => x.includes(".") ? x.split(".").pop().trim() : x)
+    : [];
+
+  const orderBy = orderByMatch
+    ? orderByMatch[1]
+        .split(",")
+        .map(x => x.trim().toLowerCase())
+        .map(x => x.replace(/\s+asc$/i, "").replace(/\s+desc$/i, "").trim())
+        .map(x => x.includes(".") ? x.split(".").pop().trim() : x)
+    : [];
+
+  const joins = [...clean.matchAll(/\bjoin\s+([a-zA-Z_][\w]*)/gi)].map(m => m[1].toLowerCase());
 
   return {
-    raw: clean,
-    columns: selectMatch
-      ? selectMatch[1].split(',').map(c => c.trim())
-      : [],
-    table: fromMatch ? fromMatch[1].trim() : null
+    original,
+    clean,
+    raw: lower,
+    selectRaw: selectRaw.toLowerCase(),
+    columns,
+    table,
+    whereClause: whereMatch ? whereMatch[1].trim().toLowerCase() : "",
+    groupBy,
+    orderBy,
+    limit: limitMatch ? Number(limitMatch[1]) : null,
+    aggregateFunctions,
+    joins,
+    hasSelect: /^select\b/i.test(clean),
+    hasFrom: /\sfrom\s+[a-zA-Z_][\w]*/i.test(clean),
+    hasWhere: /\swhere\s+/i.test(clean),
+    hasGroupBy: /\sgroup\s+by\s+/i.test(clean),
+    hasOrderBy: /\sorder\s+by\s+/i.test(clean),
+    hasLimit: /\slimit\s+\d+/i.test(clean)
   };
 }
 
