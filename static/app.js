@@ -893,175 +893,177 @@ Should you start with patients, encounters, or charges? Explain your reasoning.`
         ]
       },
       {
-        id: "foundations_sorting_interpreting",
-        title: "Sorting & Interpreting Results",
-        order: 4,
-        lessons: [
-          {
-            kind: "concept",
-            id: "s16",
-            title: "ORDER BY Basics",
-            objective: "Understand how to sort query results.",
-            sql_focus: ["ORDER BY"],
-            relevantTables: ["encounters"],
-            joinHint: "No join needed.",
-            summary: "ORDER BY controls how results are sorted.",
-            bullets: [
-              "Sorting helps you understand patterns in data.",
-              "Most analysis requires ordering results.",
-              "Default sort is ascending (ASC)."
-            ],
-            example: "SELECT * FROM encounters ORDER BY visit_date;",
-            executiveTakeaway: { show: false }
-          },
-          {
-            kind: "challenge",
-            id: "s17",
-            title: "Sort by Date",
-            objective: "Order encounters by visit date.",
-            sql_focus: ["ORDER BY"],
-            relevantTables: ["encounters"],
-            challengeCriteria: "Return all encounters sorted by visit_date.",
-            starterQuery: "",
-            solutionQuery: "SELECT * FROM encounters ORDER BY visit_date;",
-            hint: "Use ORDER BY.",
-            smartHint: "ORDER BY visit_date",
-            thirdHint: "SELECT * FROM encounters ORDER BY visit_date;",
-            explanation: "Sorting by date allows you to view records chronologically.",
-            executiveTakeaway: { show: false }
-          },
-          {
-            kind: "concept",
-            id: "s18",
-            title: "ASC vs DESC",
-            objective: "Understand sort direction.",
-            sql_focus: ["ASC", "DESC"],
-            relevantTables: ["encounters"],
-            joinHint: "No join needed.",
-            summary: "ASC sorts low to high. DESC sorts high to low.",
-            bullets: [
-              "DESC is commonly used for most recent or highest values.",
-              "ASC is useful for timelines or smallest values.",
-              "Direction changes interpretation."
-            ],
-            example: "SELECT * FROM encounters ORDER BY visit_date DESC;",
-            executiveTakeaway: { show: false }
-          },
-          {
-            kind: "challenge",
-            id: "s19",
-            title: "Most Recent Visits",
-            objective: "Return newest encounters first.",
-            sql_focus: ["ORDER BY", "DESC"],
-            relevantTables: ["encounters"],
-            challengeCriteria: "Return encounters sorted with the most recent visits first.",
-            starterQuery: "",
-            solutionQuery: "SELECT * FROM encounters ORDER BY visit_date DESC;",
-            hint: "Use DESC.",
-            smartHint: "ORDER BY visit_date DESC",
-            thirdHint: "SELECT * FROM encounters ORDER BY visit_date DESC;",
-            explanation: "Descending order shows most recent activity first.",
-            executiveTakeaway: { show: false }
-          },
-          {
-            kind: "concept",
-            id: "s20",
-            title: "Multiple Sort Fields",
-            objective: "Sort by more than one column.",
-            sql_focus: ["ORDER BY multiple"],
-            relevantTables: ["encounters"],
-            joinHint: "No join needed.",
-            summary: "You can sort by multiple columns to organize results more precisely.",
-            bullets: [
-              "First column controls primary order.",
-              "Second column breaks ties.",
-              "Multi-column sorting is useful for grouped analysis."
-            ],
-            example: "SELECT * FROM encounters ORDER BY department, visit_date DESC;",
-            executiveTakeaway: { show: false }
-          },
-          {
-            kind: "challenge",
-            id: "s21",
-            title: "Sort by Department and Date",
-            objective: "Apply multi-column sorting.",
-            sql_focus: ["ORDER BY"],
-            relevantTables: ["encounters"],
-            challengeCriteria: "Sort encounters by department, then by most recent visit_date.",
-            starterQuery: "",
-            solutionQuery: "SELECT * FROM encounters ORDER BY department, visit_date DESC;",
-            hint: "Use two columns in ORDER BY.",
-            smartHint: "ORDER BY department, visit_date DESC",
-            thirdHint: "SELECT * FROM encounters ORDER BY department, visit_date DESC;",
-            explanation: "Multi-column sorting helps structure grouped data.",
-            executiveTakeaway: { show: false }
-          },
-          {
-            kind: "concept",
-            id: "s22",
-            title: "Interpreting Results",
-            objective: "Understand what query output actually means.",
-            sql_focus: ["Interpretation"],
-            relevantTables: ["encounters"],
-            joinHint: "No join needed.",
-            summary: "SQL output is useless unless you can explain what it means.",
-            bullets: [
-              "Data answers questions, but analysts must interpret it.",
-              "Sorting highlights trends and outliers.",
-              "Analysts must translate data into insight.",
-              "Executives do not want raw data. They want meaning.",
-              "A strong analyst explains the operational implication of the result."
-            ],
-            example: "Hospital example: if the top results show high LOS, that may indicate capacity issues, discharge delays, or complex cases.",
-            executiveTakeaway: { show: false }
-          },
-          {
-            kind: "challenge",
-            id: "s23",
-            title: "Explain the Output",
-            objective: "Translate data into plain English.",
-            challengeMode: "text",
-            sql_focus: ["Interpretation"],
-            relevantTables: ["encounters"],
-            challengeCriteria: `You run a query and see the top 5 encounters with the longest length_of_stay.
+{
+  id: "foundations_sorting_interpreting",
+  title: "Sorting & Interpreting Results",
+  order: 4,
+  lessons: [
+    {
+      kind: "concept",
+      id: "s16",
+      title: "ORDER BY Basics",
+      objective: "Understand how to sort query results.",
+      sql_focus: ["ORDER BY"],
+      relevantTables: ["encounters"],
+      joinHint: "No join needed.",
+      summary: "ORDER BY controls how results are sorted.",
+      bullets: [
+        "Sorting helps you understand patterns in data.",
+        "Most analysis requires ordering results.",
+        "Default sort is ascending (ASC)."
+      ],
+      example: "SELECT * FROM encounters ORDER BY admit_date;",
+      executiveTakeaway: { show: false }
+    },
+    {
+      kind: "challenge",
+      id: "s17",
+      title: "Sort by Date",
+      objective: "Order encounters by admit date.",
+      sql_focus: ["ORDER BY"],
+      relevantTables: ["encounters"],
+      challengeCriteria: "Return all encounters sorted by admit_date.",
+      starterQuery: "",
+      solutionQuery: "SELECT * FROM encounters ORDER BY admit_date;",
+      hint: "Use ORDER BY.",
+      smartHint: "ORDER BY admit_date",
+      thirdHint: "SELECT * FROM encounters ORDER BY admit_date;",
+      explanation: "Sorting by date allows you to view records chronologically.",
+      executiveTakeaway: { show: false }
+    },
+    {
+      kind: "concept",
+      id: "s18",
+      title: "ASC vs DESC",
+      objective: "Understand sort direction.",
+      sql_focus: ["ASC", "DESC"],
+      relevantTables: ["encounters"],
+      joinHint: "No join needed.",
+      summary: "ASC sorts low to high. DESC sorts high to low.",
+      bullets: [
+        "DESC is commonly used for most recent or highest values.",
+        "ASC is useful for timelines or smallest values.",
+        "Direction changes interpretation."
+      ],
+      example: "SELECT * FROM encounters ORDER BY admit_date DESC;",
+      executiveTakeaway: { show: false }
+    },
+    {
+      kind: "challenge",
+      id: "s19",
+      title: "Most Recent Visits",
+      objective: "Return newest encounters first.",
+      sql_focus: ["ORDER BY", "DESC"],
+      relevantTables: ["encounters"],
+      challengeCriteria: "Return encounters sorted with the most recent visits first.",
+      starterQuery: "",
+      solutionQuery: "SELECT * FROM encounters ORDER BY admit_date DESC;",
+      hint: "Use DESC.",
+      smartHint: "ORDER BY admit_date DESC",
+      thirdHint: "SELECT * FROM encounters ORDER BY admit_date DESC;",
+      explanation: "Descending order shows most recent activity first.",
+      executiveTakeaway: { show: false }
+    },
+    {
+      kind: "concept",
+      id: "s20",
+      title: "Multiple Sort Fields",
+      objective: "Sort by more than one column.",
+      sql_focus: ["ORDER BY multiple"],
+      relevantTables: ["encounters"],
+      joinHint: "No join needed.",
+      summary: "You can sort by multiple columns to organize results more precisely.",
+      bullets: [
+        "First column controls primary order.",
+        "Second column breaks ties.",
+        "Multi-column sorting is useful for grouped analysis."
+      ],
+      example: "SELECT * FROM encounters ORDER BY department, admit_date DESC;",
+      executiveTakeaway: { show: false }
+    },
+    {
+      kind: "challenge",
+      id: "s21",
+      title: "Sort by Department and Date",
+      objective: "Apply multi-column sorting.",
+      sql_focus: ["ORDER BY"],
+      relevantTables: ["encounters"],
+      challengeCriteria: "Sort encounters by department, then by most recent admit_date.",
+      starterQuery: "",
+      solutionQuery: "SELECT * FROM encounters ORDER BY department, admit_date DESC;",
+      hint: "Use two columns in ORDER BY.",
+      smartHint: "ORDER BY department, admit_date DESC",
+      thirdHint: "SELECT * FROM encounters ORDER BY department, admit_date DESC;",
+      explanation: "Multi-column sorting helps structure grouped data.",
+      executiveTakeaway: { show: false }
+    },
+    {
+      kind: "concept",
+      id: "s22",
+      title: "Interpreting Results",
+      objective: "Understand what query output actually means.",
+      sql_focus: ["Interpretation"],
+      relevantTables: ["encounters"],
+      joinHint: "No join needed.",
+      summary: "SQL output is useless unless you can explain what it means.",
+      bullets: [
+        "Data answers questions, but analysts must interpret it.",
+        "Sorting highlights trends and outliers.",
+        "Analysts must translate data into insight.",
+        "Executives do not want raw data. They want meaning.",
+        "A strong analyst explains the operational implication of the result."
+      ],
+      example: "Hospital example: if the top results show high LOS, that may indicate capacity issues, discharge delays, or complex cases.",
+      executiveTakeaway: { show: false }
+    },
+    {
+      kind: "challenge",
+      id: "s23",
+      title: "Explain the Output",
+      objective: "Translate data into plain English.",
+      challengeMode: "text",
+      sql_focus: ["Interpretation"],
+      relevantTables: ["encounters"],
+      challengeCriteria: `You run a query and see the top 5 encounters with the longest length_of_stay.
 Explain what this result means and why it matters.`,
-            starterQuery: "",
-            solutionQuery: "",
-            minLength: 50,
-            requiredConceptGroups: [
-              ["long", "length of stay", "los"],
-              ["impact", "important", "matters", "problem", "issue"]
-            ],
-            requiredConceptMatches: 1,
-            feedbackGuide: "Correct — long length of stay can indicate operational or capacity issues.",
-            exemplarAnswer: `This result shows the encounters with the longest length of stay, which may indicate inefficiencies, complex cases, or delays in discharge. This matters because long stays impact hospital capacity and cost.`,
-            hint: "Think about why long stays matter operationally.",
-            smartHint: "Long LOS affects capacity and cost.",
-            thirdHint: "Explain both what it shows and why it matters.",
-            explanation: "This is the first step in thinking like an analyst, not just writing SQL.",
-            executiveTakeaway: { show: false }
-          },
-          {
-            kind: "scenario",
-            id: "s24",
-            title: "Scenario: Executive Request",
-            objective: "Deliver sorted and interpretable data.",
-            relevantTables: ["encounters"],
-            joinHint: "Use sorting to make the output useful, then explain the meaning.",
-            summary: "A leader wants insight, not raw data.",
-            prompt: `A hospital executive asks: "Show me the most recent high-cost encounters."
+      starterQuery: "",
+      solutionQuery: "",
+      minLength: 50,
+      requiredConceptGroups: [
+        ["long", "length of stay", "los"],
+        ["impact", "important", "matters", "problem", "issue"]
+      ],
+      requiredConceptMatches: 1,
+      feedbackGuide: "Correct — long length of stay can indicate operational or capacity issues.",
+      exemplarAnswer: `This result shows the encounters with the longest length of stay, which may indicate inefficiencies, complex cases, or delays in discharge. This matters because long stays impact hospital capacity and cost.`,
+      hint: "Think about why long stays matter operationally.",
+      smartHint: "Long LOS affects capacity and cost.",
+      thirdHint: "Explain both what it shows and why it matters.",
+      explanation: "This is the first step in thinking like an analyst, not just writing SQL.",
+      executiveTakeaway: { show: false }
+    },
+    {
+      kind: "scenario",
+      id: "s24",
+      title: "Scenario: Executive Request",
+      objective: "Deliver sorted and interpretable data.",
+      relevantTables: ["encounters"],
+      joinHint: "Use sorting to make the output useful, then explain the meaning.",
+      summary: "A leader wants insight, not raw data.",
+      prompt: `A hospital executive asks: "Show me the most recent high-cost encounters."
 Write a query AND explain what the result means.
 Your answer must:
 - filter relevant encounters
 - sort results
 - explain what leadership should take away`,
-            expectedKeywords: ["select", "where", "order", "desc"],
-            minLength: 80,
-            minimumKeywordMatches: 2,
-            feedbackGuide: "A strong answer includes sorting, filtering, and a clear explanation of what leadership should learn from the data.",
-            executiveTakeaway: { show: false }
-          }
-        ]
+      expectedKeywords: ["select", "where", "order", "desc"],
+      minLength: 80,
+      minimumKeywordMatches: 2,
+      feedbackGuide: "A strong answer includes sorting, filtering, and a clear explanation of what leadership should learn from the data.",
+      executiveTakeaway: { show: false }
+    }
+  ]
+}
       },
       {
         id: "foundations_data_quality",
