@@ -4186,6 +4186,8 @@ if (preGrade.criticalIssues && preGrade.criticalIssues.includes("table")) {
   refreshLessonChrome();
   return;
 }
+      try {
+    const result = queryToResult(query);
     if (output) output.innerHTML = formatResultTable(result);
     const solutionResult = queryToResult(lesson.solutionQuery);
     const grade = gradeSQLQuery(query, lesson, result, solutionResult);
