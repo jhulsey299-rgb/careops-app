@@ -3946,7 +3946,519 @@ function sameMembers(a, b) {
 function sqlClauseExpectation(expected, prop) {
   return Boolean(expected && expected[prop] && String(expected[prop]).trim());
 }
+function normalizeSQLClause(clause) {
+  return String(clause || "")
+    .toLowerCase()
+    .replace(/["'`;]/g, "")
+    .replace(/\s+/g, " ")
+    .replace(/\s*=\s*/g, "=")
+    .replace(/\s*>\s*/g, ">")
+    .replace(/\s*<\s*/g, "<")
+    .replace(/\s*,\s*/g, ",")
+    .trim();
+}
 
+function normalizeResult(result) {
+  if (!result || !Array.isArray(result.columns) || !Array.isArray(result.values)) {
+    return JSON.stringify({ columns: [], values: [] });
+  }
+
+  return JSON.stringify({
+    columns: result.columns.map(col => String(col).toLowerCase()),
+    values: result.values
+  });
+}
+
+function arraysEqualStrict(a, b) {
+  if (!Array.isArray(a) || !Array.isArray(b)) return false;
+  if (a.length !== b.length) return false;
+  return a.every((value, index) => value === b[index]);
+}
+
+function sameMembers(a, b) {
+  if (!Array.isArray(a) || !Array.isArray(b)) return false;
+  if (a.length !== b.length) return false;
+  const aa = [...a].sort();
+  const bb = [...b].sort();
+  return aa.every((value, index) => value === bb[index]);
+}
+
+function getExpectedSQL(lesson) {
+  return lesson.solutionQuery || lesson.expectedAnswer || lesson.thirdHint || "";
+}
+
+function getExpectedTable(lesson, expectedParsed) {
+  return (
+    (lesson.expected && lesson.expected.table) ||
+    lesson.expectedTable ||
+    expectedParsed.table ||
+    (lesson.relevantTables && lesson.relevantTables[0]) ||
+    ""
+  );
+}
+
+function getExpectedColumns(lesson, expectedParsed) {
+  return (
+    (lesson.expected && lesson.expected.columns) ||
+    lesson.expectedColumns ||
+    expectedParsed.columns ||
+    []
+  );
+}
+
+function gradeSQLQuery(userQuery, lesson, executionResult, solutionResult, options = {}) {
+  const user = parseSQL(userQuery || "");
+  const expected = parseSQL(getExpectedSQL(lesson));
+
+  let score = 0;
+  const feedback = [];
+  const hints = [];
+  const criticalIssues = [];
+
+  const expectedTable = getExpectedTable(lesson, expected);
+  const expectedCols = getExpectedColumns(lesson, expected);
+
+  if (!/\bselect\b/i.test(userQuery || "")) {
+    return {
+      passed: false,
+      score: 0,
+      tier: "Needs Work",
+      feedback: ["Missing SELECT clause."],
+      hint: "Start your query with SELECT.",
+      criticalIssues: ["select"]
+    };
+  }
+
+  score += 10;
+
+  if (!/\bfrom\b/i.test(userQuery || "")) {
+    return {
+      passed: false,
+      score: 15,
+      tier: "Needs Work",
+      feedback: ["Missing FROM clause."],
+      hint: expectedTable
+        ? `Add FROM ${expectedTable} after your selected columns.`
+        : "Add a FROM clause after your selected columns.",
+      criticalIssues: ["from", "table"]
+    };
+  }
+
+  if (!user.table) {
+    return {
+      passed: false,
+      score: 20,
+      tier: "Needs Work",
+      feedback: ["Missing table name after FROM."],
+      hint: expectedTable ? `Use FROM ${expectedTable}.` : "Add the correct table after FROM.",
+      criticalIssues: ["table"]
+    };
+  }
+
+  if (expectedTable && user.table !== expectedTable) {
+    return {
+      passed: false,
+      score: 25,
+      tier: "Needs Work",
+      feedback: [`Wrong table. Expected ${expectedTable}, but found ${user.table}.`],
+      hint: `Use FROM ${expectedTable}.`,
+      criticalIssues: ["table"]
+    };
+  }
+
+  score += 20;
+
+  if (!user.selectRaw) {
+    feedback.push("Missing SELECT fields.");
+    hints.push("List the requested fields after SELECT.");
+    criticalIssues.push("columns");
+  } else if (user.selectRaw === "*" && expected.selectRaw !== "*") {
+    score += 10;
+    feedback.push("SELECT * returns extra columns.");
+    hints.push(expectedCols.length ? `Select only: ${expectedCols.join(", ")}.` : "List only the requested fields.");
+    criticalIssues.push("columns");
+  } else if (expectedCols.length) {
+    const missingCols = expectedCols.filter(col => !user.columns.includes(col));
+    const extraCols = user.columns.filter(col => !expectedCols.includes(col));
+
+    if (arraysEqualStrict(user.columns, expectedCols)) {
+      score += 30;
+    } else if (sameMembers(user.columns, expectedCols)) {
+      score += 24;
+      feedback.push("Correct columns, but the order is different from the expected output.");
+      hints.push(`Use this order: ${expectedCols.join(", ")}.`);
+      criticalIssues.push("column_order");
+    } else {
+      if (missingCols.length) feedback.push("Missing column(s): " + missingCols.join(", ") + ".");
+      if (extraCols.length) feedback.push("Extra column(s): " + extraCols.join(", ") + ".");
+      hints.push("Check the requested SELECT fields.");
+      criticalIssues.push("columns");
+      score += Math.max(0, 12 - missingCols.length * 4 - extraCols.length * 2);
+    }
+  } else {
+    score += 20;
+  }
+
+  if (expected.aggregateFunctions && expected.aggregateFunctions.length) {
+    const missingAggs = expected.aggregateFunctions.filter(fn => !user.aggregateFunctions.includes(fn));
+    if (!missingAggs.length) {
+      score += 10;
+    } else {
+      feedback.push("Missing aggregate function(s): " + missingAggs.join(", ") + ".");
+      hints.push("Use the requested aggregate function.");
+      criticalIssues.push("aggregation");
+    }
+  }
+
+  if (expected.hasWhere) {
+    if (!user.hasWhere) {
+      feedback.push("Missing WHERE filter.");
+      hints.push("Add the required WHERE condition.");
+      criticalIssues.push("where");
+    } else if (normalizeSQLClause(user.whereClause) === normalizeSQLClause(expected.whereClause)) {
+      score += 10;
+    } else {
+      feedback.push("WHERE filter does not match the expected condition.");
+      hints.push(`Expected filter: WHERE ${expected.whereClause}`);
+      criticalIssues.push("where");
+      score += 4;
+    }
+  }
+
+  if (expected.groupBy && expected.groupBy.length) {
+    if (!user.hasGroupBy) {
+      feedback.push("Missing GROUP BY clause.");
+      hints.push(`Add GROUP BY ${expected.groupBy.join(", ")}.`);
+      criticalIssues.push("group_by");
+    } else if (sameMembers(user.groupBy, expected.groupBy)) {
+      score += 10;
+    } else {
+      feedback.push("GROUP BY does not match the expected grouping.");
+      hints.push(`Expected GROUP BY ${expected.groupBy.join(", ")}.`);
+      criticalIssues.push("group_by");
+      score += 4;
+    }
+  }
+
+  if (expected.orderBy && expected.orderBy.length) {
+    if (!user.hasOrderBy) {
+      feedback.push("Missing ORDER BY clause.");
+      hints.push(`Add ORDER BY ${expected.orderBy.join(", ")}.`);
+      criticalIssues.push("order_by");
+    } else if (sameMembers(user.orderBy, expected.orderBy)) {
+      score += 8;
+    } else {
+      feedback.push("ORDER BY does not match the expected sort.");
+      hints.push(`Expected ORDER BY ${expected.orderBy.join(", ")}.`);
+      criticalIssues.push("order_by");
+      score += 3;
+    }
+  }
+
+  if (expected.limit !== null) {
+    if (!user.hasLimit) {
+      feedback.push("Missing LIMIT clause.");
+      hints.push(`Add LIMIT ${expected.limit}.`);
+      criticalIssues.push("limit");
+    } else if (user.limit === expected.limit) {
+      score += 7;
+    } else {
+      feedback.push(`LIMIT should be ${expected.limit}.`);
+      hints.push(`Use LIMIT ${expected.limit}.`);
+      criticalIssues.push("limit");
+      score += 2;
+    }
+  }
+
+  if (expected.joins && expected.joins.length) {
+    const missingJoins = expected.joins.filter(tbl => !user.joins.includes(tbl));
+
+    if (!missingJoins.length) {
+      score += 10;
+    } else {
+      feedback.push("Missing JOIN table(s): " + missingJoins.join(", ") + ".");
+      hints.push("Add the required JOIN(s) from the solution query.");
+      criticalIssues.push("join");
+      score += 3;
+    }
+  }
+
+  let passed = false;
+
+  if (!options.precheck) {
+    const normalizedUserResult = normalizeResult(executionResult);
+    const normalizedSolutionResult = normalizeResult(solutionResult);
+    passed = normalizedUserResult === normalizedSolutionResult;
+
+    if (passed) {
+      score = Math.max(score, 95);
+    } else {
+      feedback.push("Returned result does not match the expected output.");
+      hints.push("The query runs, but the output differs from the expected answer.");
+      score = Math.min(score, 89);
+    }
+  }
+
+  score = Math.max(0, Math.min(100, Math.round(score)));
+
+  const tier =
+    score >= 95 ? "Excellent" :
+    score >= 85 ? "Strong" :
+    score >= 70 ? "Close" :
+    score >= 50 ? "Developing" :
+    "Needs Work";
+
+  return {
+    passed,
+    score,
+    tier,
+    feedback,
+    hint: hints[0] || lesson.smartHint || lesson.hint || "Compare your query to the lesson instructions.",
+    criticalIssues,
+    parsed: user,
+    expected
+  };
+}
+
+function formatSQLGradeFeedback(grade) {
+  const feedback = grade.feedback || [];
+  const primaryIssue = feedback[0] || "Review your query against the expected result.";
+  const details = feedback.slice(1);
+
+  let message = `Score: ${grade.score}/100 (${grade.tier})`;
+  message += `\nPrimary issue: ${primaryIssue}`;
+
+  if (grade.hint) {
+    message += `\nHint: ${grade.hint}`;
+  }
+
+  if (details.length) {
+    message += `\nDetails:\n${details.map(item => "• " + item).join("\n")}`;
+  }
+
+  return message;
+}
+
+function generateHint(userQuery, lesson) {
+  const grade = gradeSQLQuery(userQuery, lesson, null, null, { precheck: true });
+  return grade.hint || lesson.smartHint || lesson.hint || "Review the SQL structure and compare it to the lesson task.";
+}
+
+function runQuery() {
+  const lesson = getCurrentLesson();
+  const output = document.getElementById("output");
+  const feedback = document.getElementById("feedback");
+  const queryBox = document.getElementById("query");
+
+  if (!lesson || (lesson.kind !== "challenge" && lesson.type !== "challenge") || !queryBox) return;
+
+  const query = queryBox.value.trim();
+  lastRunQuery = query;
+
+  if (!query) {
+    setFeedbackState(
+      feedback,
+      "error",
+      isTextChallenge(lesson)
+        ? "Please enter a response before submitting."
+        : "Please enter a query before running it."
+    );
+    if (output) output.innerHTML = "";
+    return;
+  }
+
+  if (isTextChallenge(lesson)) {
+    if (output) output.innerHTML = "";
+    attempts += 1;
+
+    const result = gradeTextChallenge(lesson, query);
+
+    if (result.passed) {
+      const grade = attempts === 1 ? { score: 100, tier: "Perfect" } : { score: 92, tier: "Strong" };
+      updateLessonStatsOnGrade(lesson.id, grade, true);
+      markLessonCompleted(lesson.id, attempts === 1);
+      setFeedbackState(
+        feedback,
+        "success",
+        (lesson.feedbackGuide || "Correct — your explanation shows the right reasoning.") +
+          " Score: " + grade.score + "/100 (" + grade.tier + ")."
+      );
+      attempts = 0;
+      saveProgress();
+      refreshLessonChrome();
+      return;
+    }
+
+    const missingText = result.missing && result.missing.length
+      ? ` Missing ideas to mention: ${result.missing.slice(0, 3).join(", ")}.`
+      : "";
+
+    if (result.partial && attempts < 3) {
+      setFeedbackState(
+        feedback,
+        "warning",
+        `You are on the right track, but the explanation is incomplete.${missingText}`
+      );
+      saveProgress();
+      refreshLessonChrome();
+      return;
+    }
+
+    if (attempts < 3) {
+      const nextHint = lesson.smartHint || lesson.hint || "Use the lesson objective and include the required ideas.";
+      setFeedbackState(
+        feedback,
+        "warning",
+        `Not correct yet. Hint ${attempts}: ${nextHint}${missingText}`
+      );
+      saveProgress();
+      refreshLessonChrome();
+      return;
+    }
+
+    setFeedbackState(
+      feedback,
+      "error",
+      `You have used all 3 attempts.
+Suggested Answer:
+${lesson.exemplarAnswer || lesson.explanation || "Review the lesson and try again."}
+Explanation:
+${lesson.explanation || lesson.feedbackGuide || "This lesson is testing your reasoning, not verbatim wording."}`
+    );
+    saveProgress();
+    refreshLessonChrome();
+    return;
+  }
+
+  const finalExplanation =
+    lesson.explanation ||
+    "This answer is correct because it uses the right table, selects the required fields, and returns the expected result for the lesson objective.";
+
+  const preGrade = gradeSQLQuery(query, lesson, null, null, { precheck: true });
+
+  if (
+    preGrade.criticalIssues &&
+    preGrade.criticalIssues.some(issue => ["select", "from", "table"].includes(issue))
+  ) {
+    attempts += 1;
+
+    if (attempts < 3) {
+      setFeedbackState(
+        feedback,
+        "warning",
+        `Not correct yet. Hint ${attempts}: ${preGrade.hint}`
+      );
+    } else {
+      setFeedbackState(
+        feedback,
+        "error",
+        `You have used all 3 attempts.
+Score: ${preGrade.score}/100 (${preGrade.tier})
+${(preGrade.feedback || []).map(item => "• " + item).join("\n")}
+Correct Answer:
+${lesson.solutionQuery}
+Explanation:
+${finalExplanation}`
+      );
+    }
+
+    if (output) output.innerHTML = "";
+    saveProgress();
+    refreshLessonChrome();
+    return;
+  }
+
+  try {
+    const result = queryToResult(query);
+    if (output) output.innerHTML = formatResultTable(result);
+
+    const solutionResult = queryToResult(lesson.solutionQuery);
+    const grade = gradeSQLQuery(query, lesson, result, solutionResult);
+
+    if (grade.passed) {
+      const passGrade = gradePass();
+      const finalGrade = {
+        score: Math.max(passGrade.score, grade.score),
+        tier: passGrade.tier
+      };
+
+      updateLessonStatsOnGrade(lesson.id, finalGrade, true);
+      markLessonCompleted(lesson.id, attempts === 0);
+
+      setFeedbackState(
+        feedback,
+        "success",
+        "Correct — your query returned the expected result. Score: " +
+          finalGrade.score +
+          "/100 (" +
+          finalGrade.tier +
+          ")."
+      );
+
+      attempts = 0;
+      saveProgress();
+      refreshLessonChrome();
+      return;
+    }
+
+    attempts += 1;
+    const gradeText = formatSQLGradeFeedback(grade);
+
+    if (attempts < 3) {
+      setFeedbackState(
+        feedback,
+        "warning",
+        `Not correct yet. Hint ${attempts}: ${grade.hint}
+${gradeText}`
+      );
+    } else {
+      setFeedbackState(
+        feedback,
+        "error",
+        `You have used all 3 attempts.
+${gradeText}
+Correct Answer:
+${lesson.solutionQuery}
+Explanation:
+${finalExplanation}`
+      );
+    }
+
+    saveProgress();
+    refreshLessonChrome();
+  } catch (error) {
+    if (output) output.innerHTML = "";
+    attempts += 1;
+
+    const executionMessage = getExecutionErrorMessage(error, query);
+    const hint =
+      executionMessage ||
+      lesson.smartHint ||
+      lesson.hint ||
+      "Check your SQL syntax and table/column names.";
+
+    if (attempts < 3) {
+      setFeedbackState(
+        feedback,
+        "warning",
+        `Not correct yet. Hint ${attempts}: ${hint}`
+      );
+    } else {
+      setFeedbackState(
+        feedback,
+        "error",
+        `You have used all 3 attempts.
+Correct Answer:
+${lesson.solutionQuery}
+Explanation:
+${finalExplanation}`
+      );
+    }
+
+    saveProgress();
+    refreshLessonChrome();
+  }
+}
 function gradePass() {
   if (attempts === 0) return { score: 100, tier: "Perfect" };
   if (attempts === 1) return { score: 92, tier: "Strong" };
