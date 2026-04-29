@@ -4142,16 +4142,24 @@ if (expectedNeedsWhere) {
     }
   }
 
-  if (expected.joins && expected.joins.length) {
-    const missingJoins = expected.joins.filter(tbl => !user.joins.includes(tbl));
+   const expectedAliasMatch = getExpectedSQL(lesson).match(/\bas\s+["']?([^"',;]+)["']?/i);
+  const userAliasMatch = String(userQuery || "").match(/\bas\s+["']?([^"',;]+)["']?/i);
 
-    if (!missingJoins.length) {
-      score += 10;
-    } else {
-      feedback.push("Missing JOIN table(s): " + missingJoins.join(", ") + ".");
-      hints.push("Add the required JOIN(s) from the solution query.");
-      criticalIssues.push("join");
+  if (expectedAliasMatch) {
+    const expectedAlias = expectedAliasMatch[1].trim().toLowerCase();
+    const userAlias = userAliasMatch ? userAliasMatch[1].trim().toLowerCase() : "";
+
+    if (!userAlias) {
+      feedback.push(`Missing alias. Expected alias: ${expectedAliasMatch[1].trim()}.`);
+      hints.push(`Use AS "${expectedAliasMatch[1].trim()}".`);
+      criticalIssues.push("alias");
+    } else if (userAlias !== expectedAlias) {
+      feedback.push(`Alias does not match. Expected: ${expectedAliasMatch[1].trim()}.`);
+      hints.push(`Use AS "${expectedAliasMatch[1].trim()}".`);
+      criticalIssues.push("alias");
       score += 3;
+    } else {
+      score += 8;
     }
   }
 
