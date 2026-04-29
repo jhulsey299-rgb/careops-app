@@ -4271,7 +4271,12 @@ ${lesson.explanation || lesson.feedbackGuide || "This lesson is testing your rea
   queryToResult(lesson.solutionQuery)
 );
 
-if (preGrade.criticalIssues && preGrade.criticalIssues.includes("table")) {
+if (
+  preGrade.criticalIssues &&
+  preGrade.criticalIssues.some(issue =>
+    ["select", "from", "table"].includes(issue)
+  )
+) {
   attempts += 1;
   setFeedbackState(
     feedback,
