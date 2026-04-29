@@ -4198,13 +4198,13 @@ if (expectedNeedsWhere) {
     const normalizedSolutionResult = normalizeResult(solutionResult);
     passed = normalizedUserResult === normalizedSolutionResult;
 
-    if (passed) {
-      score = Math.max(score, 95);
-    } else {
-      feedback.push("Returned result does not match the expected output.");
-      hints.push("The query runs, but the output differs from the expected answer.");
-      score = Math.min(score, 89);
-    }
+   if (passed) {
+  score = Math.max(score, 95);
+} else if (!criticalIssues.length) {
+  feedback.push("Returned result does not match the expected output.");
+  hints.push("The query runs, but the output differs from the expected answer.");
+  score = Math.min(score, 89);
+}
   }
 
   score = Math.max(0, Math.min(100, Math.round(score)));
