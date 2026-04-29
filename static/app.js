@@ -4083,39 +4083,68 @@ if (expected.hasWhere) {
 }
 
   // 7. GROUP BY
-  if (expected.groupBy.length) {
-    if (sameMembers(user.groupBy, expected.groupBy)) {
-      score += 10;
-    } else {
-      feedback.push("GROUP BY does not match the expected grouping.");
-      hints.push(`Group by: ${expected.groupBy.join(", ")}.`);
-      criticalIssues.push("group_by");
-    }
+if (expected.groupBy.length) {
+  if (!user.hasGroupBy) {
+    feedback.push("Missing GROUP BY clause.");
+    hints.push(`Add GROUP BY ${expected.groupBy.join(", ")}.`);
+    criticalIssues.push("group_by");
+  } else if (sameMembers(user.groupBy, expected.groupBy)) {
+    score += 10;
+  } else {
+    feedback.push("GROUP BY does not match the expected grouping.");
+    hints.push(`Expected GROUP BY ${expected.groupBy.join(", ")}.`);
+    criticalIssues.push("group_by");
+    score += 4;
   }
+}
 
-  // 8. ORDER BY
-  if (expected.orderBy.length) {
-    if (sameMembers(user.orderBy, expected.orderBy)) {
-      score += 8;
-    } else {
-      feedback.push("ORDER BY does not match the expected sort.");
-      hints.push(`Order by: ${expected.orderBy.join(", ")}.`);
-      criticalIssues.push("order_by");
-    }
+// 8. ORDER BY
+if (expected.orderBy.length) {
+  if (!user.hasOrderBy) {
+    feedback.push("Missing ORDER BY clause.");
+    hints.push(`Add ORDER BY ${expected.orderBy.join(", ")}.`);
+    criticalIssues.push("order_by");
+  } else if (sameMembers(user.orderBy, expected.orderBy)) {
+    score += 8;
+  } else {
+    feedback.push("ORDER BY does not match the expected sort.");
+    hints.push(`Expected ORDER BY ${expected.orderBy.join(", ")}.`);
+    criticalIssues.push("order_by");
+    score += 3;
   }
+}
 
-  // 9. LIMIT
-  if (expected.limit !== null) {
-    if (user.limit === expected.limit) {
-      score += 7;
-    } else {
-      feedback.push(`LIMIT should be ${expected.limit}.`);
-      hints.push(`Use LIMIT ${expected.limit}.`);
-      criticalIssues.push("limit");
-    }
+// 9. LIMIT
+if (expected.limit !== null) {
+  if (!user.hasLimit) {
+    feedback.push("Missing LIMIT clause.");
+    hints.push(`Add LIMIT ${expected.limit}.`);
+    criticalIssues.push("limit");
+  } else if (user.limit === expected.limit) {
+    score += 7;
+  } else {
+    feedback.push(`LIMIT should be ${expected.limit}.`);
+    hints.push(`Use LIMIT ${expected.limit}.`);
+    criticalIssues.push("limit");
+    score += 2;
   }
+}
 
-  // 10. Result match decides pass
+// 10. JOIN
+if (expected.joins && expected.joins.length) {
+  const missingJoins = expected.joins.filter(tbl => !user.joins.includes(tbl));
+
+  if (!missingJoins.length) {
+    score += 10;
+  } else {
+    feedback.push("Missing JOIN table(s): " + missingJoins.join(", ") + ".");
+    hints.push("Add the required JOIN(s) from the solution query.");
+    criticalIssues.push("join");
+    score += 3;
+  }
+}
+
+  // 11. Result match decides pass
   const normalizedUserResult = normalizeResult(executionResult);
   const normalizedSolutionResult = normalizeResult(solutionResult);
   const passed = normalizedUserResult === normalizedSolutionResult;
