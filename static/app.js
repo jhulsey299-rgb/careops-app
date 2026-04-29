@@ -275,7 +275,7 @@ function parseSQL(query) {
     limit: limitMatch ? Number(limitMatch[1]) : null,
     aggregateFunctions,
     joins,
-    hasSelect: /^select\b/i.test(clean),
+    hasSelect: /\bselect\b/i.test(clean),
     hasFrom: /\sfrom\s+[a-zA-Z_][\w]*/i.test(clean),
     hasWhere: /\swhere\s+/i.test(clean),
     hasGroupBy: /\sgroup\s+by\s+/i.test(clean),
