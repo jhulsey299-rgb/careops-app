@@ -3966,16 +3966,38 @@ function extractAlias(sql) {
   return match ? match[1].trim() : "";
 }
 
+function extractOrderParts(sql) {
+  const match = String(sql || "").match(/\border\s+by\s+([\s\S]*?)(\blimit\b|;|$)/i);
+  if (!match) return [];
+
+  return match[1]
+    .split(",")
+    .map(part => part.trim())
+    .filter(Boolean)
+    .map(part => {
+      const direction = /\s+desc$/i.test(part) ? "desc" : "asc";
+      const column = part
+        .replace(/\s+asc$/i, "")
+        .replace(/\s+desc$/i, "")
+        .trim()
+        .toLowerCase()
+        .split(".")
+        .pop();
+
+      return { column, direction };
+    });
+}
+
 function gradeSQLQuery(userQuery, lesson, executionResult, solutionResult, options = {}) {
   const user = parseSQL(userQuery || "");
-  const expected = parseSQL(getExpectedSQL(lesson));
+  const expectedSQL = getExpectedSQL(lesson);
+  const expected = parseSQL(expectedSQL);
 
   let score = 0;
   const feedback = [];
   const hints = [];
   const criticalIssues = [];
 
-  const expectedSQL = getExpectedSQL(lesson);
   const expectedTable = getExpectedTable(lesson, expected);
   const expectedCols = getExpectedColumns(lesson, expected);
 
@@ -4126,18 +4148,38 @@ function gradeSQLQuery(userQuery, lesson, executionResult, solutionResult, optio
     }
   }
 
-  if (expected.orderBy && expected.orderBy.length) {
-    if (!user.hasOrderBy) {
+  const expectedOrderParts = extractOrderParts(expectedSQL);
+  const userOrderParts = extractOrderParts(userQuery);
+
+  if (expectedOrderParts.length) {
+    if (!userOrderParts.length) {
       feedback.push("Missing ORDER BY clause.");
-      hints.push(`Add ORDER BY ${expected.orderBy.join(", ")}.`);
+      hints.push(`Add ORDER BY ${expectedOrderParts.map(x => `${x.column}${x.direction === "desc" ? " DESC" : ""}`).join(", ")}.`);
       criticalIssues.push("order_by");
-    } else if (sameMembers(user.orderBy, expected.orderBy)) {
-      score += 8;
     } else {
-      feedback.push("ORDER BY does not match the expected sort.");
-      hints.push(`Expected ORDER BY ${expected.orderBy.join(", ")}.`);
-      criticalIssues.push("order_by");
-      score += 3;
+      const expectedOrderCols = expectedOrderParts.map(x => x.column);
+      const userOrderCols = userOrderParts.map(x => x.column);
+
+      if (!sameMembers(userOrderCols, expectedOrderCols)) {
+        feedback.push("ORDER BY does not match the expected column.");
+        hints.push(`Expected ORDER BY ${expectedOrderCols.join(", ")}.`);
+        criticalIssues.push("order_by");
+        score += 3;
+      } else {
+        const directionMismatch = expectedOrderParts.find((part, index) => {
+          const userPart = userOrderParts[index];
+          return !userPart || userPart.direction !== part.direction;
+        });
+
+        if (directionMismatch) {
+          feedback.push(`ORDER BY direction is incorrect. Expected ${directionMismatch.direction.toUpperCase()}.`);
+          hints.push(`Use ${directionMismatch.direction.toUpperCase()} for correct sorting.`);
+          criticalIssues.push("order_direction");
+          score += 4;
+        } else {
+          score += 8;
+        }
+      }
     }
   }
 
