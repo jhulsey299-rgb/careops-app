@@ -3961,6 +3961,11 @@ function getExpectedColumns(lesson, expectedParsed) {
   );
 }
 
+function extractAlias(sql) {
+  const match = String(sql || "").match(/\bas\s+["']?([^"',;]+)["']?/i);
+  return match ? match[1].trim() : "";
+}
+
 function gradeSQLQuery(userQuery, lesson, executionResult, solutionResult, options = {}) {
   const user = parseSQL(userQuery || "");
   const expected = parseSQL(getExpectedSQL(lesson));
@@ -3970,6 +3975,7 @@ function gradeSQLQuery(userQuery, lesson, executionResult, solutionResult, optio
   const hints = [];
   const criticalIssues = [];
 
+  const expectedSQL = getExpectedSQL(lesson);
   const expectedTable = getExpectedTable(lesson, expected);
   const expectedCols = getExpectedColumns(lesson, expected);
 
@@ -3980,7 +3986,9 @@ function gradeSQLQuery(userQuery, lesson, executionResult, solutionResult, optio
       tier: "Needs Work",
       feedback: ["Missing SELECT clause."],
       hint: "Start your query with SELECT.",
-      criticalIssues: ["select"]
+      criticalIssues: ["select"],
+      parsed: user,
+      expected
     };
   }
 
@@ -3995,7 +4003,9 @@ function gradeSQLQuery(userQuery, lesson, executionResult, solutionResult, optio
       hint: expectedTable
         ? `Add FROM ${expectedTable} after your selected columns.`
         : "Add a FROM clause after your selected columns.",
-      criticalIssues: ["from", "table"]
+      criticalIssues: ["from", "table"],
+      parsed: user,
+      expected
     };
   }
 
@@ -4006,7 +4016,9 @@ function gradeSQLQuery(userQuery, lesson, executionResult, solutionResult, optio
       tier: "Needs Work",
       feedback: ["Missing table name after FROM."],
       hint: expectedTable ? `Use FROM ${expectedTable}.` : "Add the correct table after FROM.",
-      criticalIssues: ["table"]
+      criticalIssues: ["table"],
+      parsed: user,
+      expected
     };
   }
 
@@ -4017,7 +4029,9 @@ function gradeSQLQuery(userQuery, lesson, executionResult, solutionResult, optio
       tier: "Needs Work",
       feedback: [`Wrong table. Expected ${expectedTable}, but found ${user.table}.`],
       hint: `Use FROM ${expectedTable}.`,
-      criticalIssues: ["table"]
+      criticalIssues: ["table"],
+      parsed: user,
+      expected
     };
   }
 
@@ -4054,6 +4068,38 @@ function gradeSQLQuery(userQuery, lesson, executionResult, solutionResult, optio
     score += 20;
   }
 
+  const expectedNeedsWhere =
+    expected.hasWhere ||
+    Boolean(expected.whereClause) ||
+    /\bwhere\b/i.test(expectedSQL) ||
+    /\bwhere\b/i.test(lesson.challengeCriteria || "");
+
+  const userWhereMatch = String(userQuery || "").match(/\bwhere\b\s+([\s\S]*?)(\bgroup\s+by\b|\bhaving\b|\border\s+by\b|\blimit\b|;|$)/i);
+  const userWhereClause = userWhereMatch ? userWhereMatch[1].trim() : "";
+
+  const expectedWhereMatch = String(expectedSQL || "").match(/\bwhere\b\s+([\s\S]*?)(\bgroup\s+by\b|\bhaving\b|\border\s+by\b|\blimit\b|;|$)/i);
+  const expectedWhereClause = expectedWhereMatch ? expectedWhereMatch[1].trim() : expected.whereClause;
+
+  if (expectedNeedsWhere) {
+    if (!userWhereClause) {
+      feedback.push("Missing WHERE filter.");
+      hints.push(expectedWhereClause ? `Add WHERE ${expectedWhereClause}.` : "Add the required WHERE condition.");
+      criticalIssues.push("where");
+    } else if (
+      expectedWhereClause &&
+      normalizeSQLClause(userWhereClause) === normalizeSQLClause(expectedWhereClause)
+    ) {
+      score += 10;
+    } else if (expectedWhereClause) {
+      feedback.push("WHERE filter does not match the expected condition.");
+      hints.push(`Expected filter: WHERE ${expectedWhereClause}`);
+      criticalIssues.push("where");
+      score += 4;
+    } else {
+      score += 6;
+    }
+  }
+
   if (expected.aggregateFunctions && expected.aggregateFunctions.length) {
     const missingAggs = expected.aggregateFunctions.filter(fn => !user.aggregateFunctions.includes(fn));
     if (!missingAggs.length) {
@@ -4064,38 +4110,6 @@ function gradeSQLQuery(userQuery, lesson, executionResult, solutionResult, optio
       criticalIssues.push("aggregation");
     }
   }
-
-const expectedNeedsWhere =
-  expected.hasWhere ||
-  Boolean(expected.whereClause) ||
-  /\bwhere\b/i.test(getExpectedSQL(lesson)) ||
-  /\bwhere\b/i.test(lesson.challengeCriteria || "");
-
-const userWhereMatch = String(userQuery || "").match(/\bwhere\b\s+([\s\S]*?)(\bgroup\s+by\b|\bhaving\b|\border\s+by\b|\blimit\b|;|$)/i);
-const userWhereClause = userWhereMatch ? userWhereMatch[1].trim() : "";
-
-const expectedWhereMatch = String(getExpectedSQL(lesson) || "").match(/\bwhere\b\s+([\s\S]*?)(\bgroup\s+by\b|\bhaving\b|\border\s+by\b|\blimit\b|;|$)/i);
-const expectedWhereClause = expectedWhereMatch ? expectedWhereMatch[1].trim() : expected.whereClause;
-
-if (expectedNeedsWhere) {
-  if (!userWhereClause) {
-    feedback.push("Missing WHERE filter.");
-    hints.push(expectedWhereClause ? `Add WHERE ${expectedWhereClause}.` : "Add the required WHERE condition.");
-    criticalIssues.push("where");
-  } else if (
-    expectedWhereClause &&
-    normalizeSQLClause(userWhereClause) === normalizeSQLClause(expectedWhereClause)
-  ) {
-    score += 10;
-  } else if (expectedWhereClause) {
-    feedback.push("WHERE filter does not match the expected condition.");
-    hints.push(`Expected filter: WHERE ${expectedWhereClause}`);
-    criticalIssues.push("where");
-    score += 4;
-  } else {
-    score += 6;
-  }
-}
 
   if (expected.groupBy && expected.groupBy.length) {
     if (!user.hasGroupBy) {
@@ -4142,24 +4156,34 @@ if (expectedNeedsWhere) {
     }
   }
 
-   const expectedAliasMatch = getExpectedSQL(lesson).match(/\bas\s+["']?([^"',;]+)["']?/i);
-  const userAliasMatch = String(userQuery || "").match(/\bas\s+["']?([^"',;]+)["']?/i);
+  const expectedAlias = extractAlias(expectedSQL);
+  const userAlias = extractAlias(userQuery);
 
-  if (expectedAliasMatch) {
-    const expectedAlias = expectedAliasMatch[1].trim().toLowerCase();
-    const userAlias = userAliasMatch ? userAliasMatch[1].trim().toLowerCase() : "";
-
+  if (expectedAlias) {
     if (!userAlias) {
-      feedback.push(`Missing alias. Expected alias: ${expectedAliasMatch[1].trim()}.`);
-      hints.push(`Use AS "${expectedAliasMatch[1].trim()}".`);
+      feedback.push(`Missing alias. Expected alias: ${expectedAlias}.`);
+      hints.push(`Use AS "${expectedAlias}".`);
       criticalIssues.push("alias");
-    } else if (userAlias !== expectedAlias) {
-      feedback.push(`Alias does not match. Expected: ${expectedAliasMatch[1].trim()}.`);
-      hints.push(`Use AS "${expectedAliasMatch[1].trim()}".`);
+    } else if (normalizeSQLClause(userAlias) !== normalizeSQLClause(expectedAlias)) {
+      feedback.push(`Alias does not match. Expected alias: ${expectedAlias}.`);
+      hints.push(`Use AS "${expectedAlias}".`);
       criticalIssues.push("alias");
       score += 3;
     } else {
       score += 8;
+    }
+  }
+
+  if (expected.joins && expected.joins.length) {
+    const missingJoins = expected.joins.filter(tbl => !user.joins.includes(tbl));
+
+    if (!missingJoins.length) {
+      score += 10;
+    } else {
+      feedback.push("Missing JOIN table(s): " + missingJoins.join(", ") + ".");
+      hints.push("Add the required JOIN(s) from the solution query.");
+      criticalIssues.push("join");
+      score += 3;
     }
   }
 
@@ -4170,13 +4194,13 @@ if (expectedNeedsWhere) {
     const normalizedSolutionResult = normalizeResult(solutionResult);
     passed = normalizedUserResult === normalizedSolutionResult;
 
-   if (passed) {
-  score = Math.max(score, 95);
-} else if (!criticalIssues.length) {
-  feedback.push("Returned result does not match the expected output.");
-  hints.push("The query runs, but the output differs from the expected answer.");
-  score = Math.min(score, 89);
-}
+    if (passed) {
+      score = Math.max(score, 95);
+    } else if (!criticalIssues.length) {
+      feedback.push("Returned result does not match the expected output.");
+      hints.push("The query runs, but the output differs from the expected answer.");
+      score = Math.min(score, 89);
+    }
   }
 
   score = Math.max(0, Math.min(100, Math.round(score)));
@@ -4223,6 +4247,7 @@ function generateHint(userQuery, lesson) {
   const grade = gradeSQLQuery(userQuery, lesson, null, null, { precheck: true });
   return grade.hint || lesson.smartHint || lesson.hint || "Review the SQL structure and compare it to the lesson task.";
 }
+
 function runQuery() {
   const lesson = getCurrentLesson();
   const output = document.getElementById("output");
