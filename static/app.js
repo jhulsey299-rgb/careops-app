@@ -4065,22 +4065,31 @@ function gradeSQLQuery(userQuery, lesson, executionResult, solutionResult, optio
     }
   }
 
- const expectedNeedsWhere =
+const expectedNeedsWhere =
   expected.hasWhere ||
   Boolean(expected.whereClause) ||
   /\bwhere\b/i.test(getExpectedSQL(lesson)) ||
   /\bwhere\b/i.test(lesson.challengeCriteria || "");
 
+const userWhereMatch = String(userQuery || "").match(/\bwhere\b\s+([\s\S]*?)(\bgroup\s+by\b|\bhaving\b|\border\s+by\b|\blimit\b|;|$)/i);
+const userWhereClause = userWhereMatch ? userWhereMatch[1].trim() : "";
+
+const expectedWhereMatch = String(getExpectedSQL(lesson) || "").match(/\bwhere\b\s+([\s\S]*?)(\bgroup\s+by\b|\bhaving\b|\border\s+by\b|\blimit\b|;|$)/i);
+const expectedWhereClause = expectedWhereMatch ? expectedWhereMatch[1].trim() : expected.whereClause;
+
 if (expectedNeedsWhere) {
-  if (!user.hasWhere) {
+  if (!userWhereClause) {
     feedback.push("Missing WHERE filter.");
-    hints.push(expected.whereClause ? `Add WHERE ${expected.whereClause}.` : "Add the required WHERE condition.");
+    hints.push(expectedWhereClause ? `Add WHERE ${expectedWhereClause}.` : "Add the required WHERE condition.");
     criticalIssues.push("where");
-  } else if (expected.whereClause && normalizeSQLClause(user.whereClause) === normalizeSQLClause(expected.whereClause)) {
+  } else if (
+    expectedWhereClause &&
+    normalizeSQLClause(userWhereClause) === normalizeSQLClause(expectedWhereClause)
+  ) {
     score += 10;
-  } else if (expected.whereClause) {
+  } else if (expectedWhereClause) {
     feedback.push("WHERE filter does not match the expected condition.");
-    hints.push(`Expected filter: WHERE ${expected.whereClause}`);
+    hints.push(`Expected filter: WHERE ${expectedWhereClause}`);
     criticalIssues.push("where");
     score += 4;
   } else {
