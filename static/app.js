@@ -4130,13 +4130,23 @@ function gradeSQLQuery(userQuery, lesson, executionResult, solutionResult) {
 }
 
 function formatSQLGradeFeedback(grade) {
-  const items = (grade.feedback || []).map(item => "• " + item).join("\n");
+  const feedback = grade.feedback || [];
+  const primaryIssue = feedback[0] || "Review your query against the expected result.";
+  const details = feedback.slice(1);
 
-  if (!items) {
-    return `Score: ${grade.score}/100 (${grade.tier})`;
+  let message = `Score: ${grade.score}/100 (${grade.tier})`;
+
+  message += `\nPrimary issue: ${primaryIssue}`;
+
+  if (grade.hint) {
+    message += `\nHint: ${grade.hint}`;
   }
 
-  return `Score: ${grade.score}/100 (${grade.tier})\n${items}`;
+  if (details.length) {
+    message += `\nDetails:\n${details.map(item => "• " + item).join("\n")}`;
+  }
+
+  return message;
 }
 function generateHint(userQuery, lesson) {
   const parsed = parseSQL(userQuery || "");
