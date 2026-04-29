@@ -4243,7 +4243,6 @@ function generateHint(userQuery, lesson) {
   const grade = gradeSQLQuery(userQuery, lesson, null, null, { precheck: true });
   return grade.hint || lesson.smartHint || lesson.hint || "Review the SQL structure and compare it to the lesson task.";
 }
-
 function runQuery() {
   const lesson = getCurrentLesson();
   const output = document.getElementById("output");
@@ -4274,15 +4273,20 @@ function runQuery() {
     const result = gradeTextChallenge(lesson, query);
 
     if (result.passed) {
-      const grade = attempts === 1 ? { score: 100, tier: "Perfect" } : { score: 92, tier: "Strong" };
+      const grade = attempts === 1
+        ? { score: 100, tier: "Perfect" }
+        : { score: 92, tier: "Strong" };
+
       updateLessonStatsOnGrade(lesson.id, grade, true);
       markLessonCompleted(lesson.id, attempts === 1);
+
       setFeedbackState(
         feedback,
         "success",
         (lesson.feedbackGuide || "Correct — your explanation shows the right reasoning.") +
           " Score: " + grade.score + "/100 (" + grade.tier + ")."
       );
+
       attempts = 0;
       saveProgress();
       refreshLessonChrome();
@@ -4293,24 +4297,15 @@ function runQuery() {
       ? ` Missing ideas to mention: ${result.missing.slice(0, 3).join(", ")}.`
       : "";
 
-    if (result.partial && attempts < 3) {
-      setFeedbackState(
-        feedback,
-        "warning",
-        `You are on the right track, but the explanation is incomplete.${missingText}`
-      );
-      saveProgress();
-      refreshLessonChrome();
-      return;
-    }
-
     if (attempts < 3) {
       const nextHint = lesson.smartHint || lesson.hint || "Use the lesson objective and include the required ideas.";
+
       setFeedbackState(
         feedback,
         "warning",
         `Not correct yet. Hint ${attempts}: ${nextHint}${missingText}`
       );
+
       saveProgress();
       refreshLessonChrome();
       return;
@@ -4325,6 +4320,7 @@ ${lesson.exemplarAnswer || lesson.explanation || "Review the lesson and try agai
 Explanation:
 ${lesson.explanation || lesson.feedbackGuide || "This lesson is testing your reasoning, not verbatim wording."}`
     );
+
     saveProgress();
     refreshLessonChrome();
     return;
@@ -4336,27 +4332,24 @@ ${lesson.explanation || lesson.feedbackGuide || "This lesson is testing your rea
 
   const preGrade = gradeSQLQuery(query, lesson, null, null, { precheck: true });
 
-  if (
-    preGrade.criticalIssues &&
-   preGrade.criticalIssues.some(issue =>
-  ["select", "from", "table", "where", "group_by", "order_by", "limit", "aggregation", "join"].includes(issue)
-)
-  ) {
+  if (preGrade.criticalIssues && preGrade.criticalIssues.length) {
     attempts += 1;
+
+    if (output) output.innerHTML = "";
 
     if (attempts < 3) {
       setFeedbackState(
         feedback,
         "warning",
-        `Not correct yet. Hint ${attempts}: ${preGrade.hint}`
+        `Not correct yet. Hint ${attempts}: ${preGrade.hint}
+${formatSQLGradeFeedback(preGrade)}`
       );
     } else {
       setFeedbackState(
         feedback,
         "error",
         `You have used all 3 attempts.
-Score: ${preGrade.score}/100 (${preGrade.tier})
-${(preGrade.feedback || []).map(item => "• " + item).join("\n")}
+${formatSQLGradeFeedback(preGrade)}
 Correct Answer:
 ${lesson.solutionQuery}
 Explanation:
@@ -4364,7 +4357,6 @@ ${finalExplanation}`
       );
     }
 
-    if (output) output.innerHTML = "";
     saveProgress();
     refreshLessonChrome();
     return;
