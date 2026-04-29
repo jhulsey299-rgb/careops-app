@@ -3830,6 +3830,7 @@ function normalizeSQLIdentifier(value) {
 }
 function parseSQL(query) {
   const clean = normalizeSQLText(query);
+
   const selectMatch = clean.match(/\bselect\s+([\s\S]+?)\s+from\s+/i);
   const fromMatch = clean.match(/\bfrom\s+([a-z0-9_\.]+)/i);
   const whereMatch = clean.match(/\bwhere\s+([\s\S]+?)(\s+group\s+by\s+|\s+having\s+|\s+order\s+by\s+|\s+limit\s+|$)/i);
@@ -3837,27 +3838,58 @@ function parseSQL(query) {
   const havingMatch = clean.match(/\bhaving\s+([\s\S]+?)(\s+order\s+by\s+|\s+limit\s+|$)/i);
   const orderMatch = clean.match(/\border\s+by\s+([\s\S]+?)(\s+limit\s+|$)/i);
   const limitMatch = clean.match(/\blimit\s+(\d+)/i);
+
   const selectRaw = selectMatch ? selectMatch[1].trim() : "";
   const columnsRaw = selectRaw ? splitSQLList(selectRaw) : [];
   const columns = columnsRaw.map(normalizeSQLIdentifier).filter(Boolean);
+
   const aggregateFunctions = [];
   ["count", "sum", "avg", "min", "max"].forEach(fn => {
-    if (new RegExp("\\b" + fn + "\\s*\\(", "i").test(clean)) aggregateFunctions.push(fn);
+    if (new RegExp("\\b" + fn + "\\s*\\(", "i").test(clean)) {
+      aggregateFunctions.push(fn);
+    }
   });
+
+  const joins = [...clean.matchAll(/\bjoin\s+([a-z0-9_\.]+)/gi)]
+    .map(m => normalizeSQLIdentifier(m[1]))
+    .filter(Boolean);
+
+  const whereClause = whereMatch ? whereMatch[1].trim() : "";
+
   return {
-    raw: clean,
+    original: String(query || ""),
+    clean,
+    raw: clean.toLowerCase(),
+
     selectRaw,
     columnsRaw,
     columns,
+
     table: fromMatch ? normalizeSQLIdentifier(fromMatch[1]) : null,
-    where: whereMatch ? whereMatch[1].trim() : "",
+
+    where: whereClause,
+    whereClause,
+
     groupByRaw: groupMatch ? groupMatch[1].trim() : "",
     groupBy: groupMatch ? splitSQLList(groupMatch[1]).map(normalizeSQLIdentifier).filter(Boolean) : [],
+
     having: havingMatch ? havingMatch[1].trim() : "",
+
     orderByRaw: orderMatch ? orderMatch[1].trim() : "",
     orderBy: orderMatch ? splitSQLList(orderMatch[1]).map(normalizeSQLIdentifier).filter(Boolean) : [],
+
     limit: limitMatch ? Number(limitMatch[1]) : null,
-    aggregateFunctions
+
+    aggregateFunctions,
+    joins,
+
+    hasSelect: /\bselect\b/i.test(clean),
+    hasFrom: /\bfrom\s+[a-z0-9_\.]+/i.test(clean),
+    hasWhere: /\bwhere\b/i.test(clean),
+    hasGroupBy: /\bgroup\s+by\b/i.test(clean),
+    hasHaving: /\bhaving\b/i.test(clean),
+    hasOrderBy: /\border\s+by\b/i.test(clean),
+    hasLimit: /\blimit\s+\d+/i.test(clean)
   };
 }
 function arraysEqualStrict(a, b) {
