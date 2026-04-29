@@ -4180,7 +4180,6 @@ function formatSQLGradeFeedback(grade) {
   const details = feedback.slice(1);
 
   let message = `Score: ${grade.score}/100 (${grade.tier})`;
-
   message += `\nPrimary issue: ${primaryIssue}`;
 
   if (grade.hint) {
@@ -4193,6 +4192,7 @@ function formatSQLGradeFeedback(grade) {
 
   return message;
 }
+
 function generateHint(userQuery, lesson) {
   const parsed = parseSQL(userQuery || "");
   const expectedParsed = parseSQL(lesson.solutionQuery || lesson.expectedAnswer || lesson.thirdHint || "");
