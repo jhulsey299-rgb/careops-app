@@ -3762,17 +3762,136 @@ function formatResultTable(result) {
   html += "</tbody></table></div>";
   return html;
 }
+function getAllSchemaTableNames() {
+  return (schema?.tables || []).map(t => String(t.name || "").toLowerCase()).filter(Boolean);
+}
+
+function getSchemaTable(tableName) {
+  const normalized = String(tableName || "").toLowerCase();
+  return (schema?.tables || []).find(t => String(t.name || "").toLowerCase() === normalized) || null;
+}
+
+function getAllSchemaColumns() {
+  const columns = [];
+
+  (schema?.tables || []).forEach(table => {
+    const tableName = String(table.name || "").toLowerCase();
+    const tableCols = [
+      ...(table.keyColumns || []),
+      ...(table.notableColumns || [])
+    ];
+
+    tableCols.forEach(col => {
+      columns.push({
+        table: tableName,
+        column: String(col || "").toLowerCase()
+      });
+    });
+  });
+
+  return columns;
+}
+
+function getSchemaColumnsForTable(tableName) {
+  const table = getSchemaTable(tableName);
+  if (!table) return [];
+
+  return [
+    ...(table.keyColumns || []),
+    ...(table.notableColumns || [])
+  ].map(col => String(col || "").toLowerCase());
+}
+
+function closestSchemaMatch(value, candidates) {
+  const target = String(value || "").toLowerCase();
+  if (!target || !Array.isArray(candidates) || !candidates.length) return "";
+
+  let best = "";
+  let bestDistance = Infinity;
+
+  candidates.forEach(candidate => {
+    const distance = levenshtein(target, String(candidate || "").toLowerCase());
+    if (distance < bestDistance) {
+      best = candidate;
+      bestDistance = distance;
+    }
+  });
+
+  return bestDistance <= 4 ? best : "";
+}
+
+function extractMissingTableName(message) {
+  const match = String(message || "").match(/no such table:\s*([a-zA-Z_][\w]*)/i);
+  return match ? match[1].toLowerCase() : "";
+}
+
+function extractMissingColumnName(message) {
+  const match = String(message || "").match(/no such column:\s*([a-zA-Z_][\w\.]*)/i);
+  if (!match) return "";
+  return match[1].split(".").pop().toLowerCase();
+}
+
 function getExecutionErrorMessage(error, queryText = "") {
   const raw = String(error && error.message ? error.message : error || "");
   const message = raw.toLowerCase();
+  const query = String(queryText || "");
 
-  if (/select\s+[\s\S]*,\s*and\s+[a-z_][a-z0-9_]*[\s\S]*\sfrom\s+/i.test(String(queryText || ""))) {
-    return "SQL syntax issue: do not use the word AND between SELECT columns. Use commas only. Example: SELECT patient_id, encounter_id, admit_date FROM encounters;";
+  if (/select\s+[\s\S]*,\s*and\s+[a-z_][a-z0-9_]*[\s\S]*\sfrom\s+/i.test(query)) {
+    return "SQL syntax issue: do not use AND between SELECT columns. Use commas only. Example: SELECT patient_id, encounter_id, admit_date FROM encounters;";
   }
-  if (message.includes("syntax error")) return "SQL syntax error. Check commas, parentheses, aliases, and clause order. In SELECT lists, separate columns with commas only — do not use AND.";
-  if (message.includes("no such table")) return "One of the tables in your query does not exist in this lesson schema. Check the table name and spelling.";
-  if (message.includes("no such column")) return "One of the columns in your query does not exist in the table you used. Check the schema explorer for the exact column name.";
-  if (message.includes("ambiguous")) return "A column reference is ambiguous. Add the table alias or full table.column reference.";
+
+  if (message.includes("no such table")) {
+    const missingTable = extractMissingTableName(raw);
+    const validTables = getAllSchemaTableNames();
+    const suggestion = closestSchemaMatch(missingTable, validTables);
+
+    if (missingTable && suggestion) {
+      return `Table "${missingTable}" does not exist. Did you mean "${suggestion}"? Valid tables include: ${validTables.join(", ")}.`;
+    }
+
+    return `That table does not exist in the CareOps schema. Valid tables include: ${validTables.join(", ")}.`;
+  }
+
+  if (message.includes("no such column")) {
+    const missingColumn = extractMissingColumnName(raw);
+    const parsed = typeof parseSQL === "function" ? parseSQL(query) : null;
+    const userTable = parsed?.table || "";
+    const tableColumns = userTable ? getSchemaColumnsForTable(userTable) : [];
+    const allColumns = getAllSchemaColumns();
+
+    const tableSuggestion = closestSchemaMatch(missingColumn, tableColumns);
+    if (missingColumn && userTable && tableSuggestion) {
+      return `Column "${missingColumn}" does not exist on "${userTable}". Did you mean "${tableSuggestion}"? Check the Schema Explorer for exact column names.`;
+    }
+
+    const globalSuggestion = closestSchemaMatch(
+      missingColumn,
+      allColumns.map(item => item.column)
+    );
+
+    if (missingColumn && globalSuggestion) {
+      const foundTables = allColumns
+        .filter(item => item.column === globalSuggestion)
+        .map(item => item.table);
+
+      return `Column "${missingColumn}" does not exist. Did you mean "${globalSuggestion}"? It appears on: ${[...new Set(foundTables)].join(", ")}.`;
+    }
+
+    if (userTable && tableColumns.length) {
+      return `Column "${missingColumn || "unknown"}" does not exist on "${userTable}". Available columns include: ${tableColumns.join(", ")}.`;
+    }
+
+    return "One of the columns in your query does not exist. Check the Schema Explorer for the exact column name.";
+  }
+
+  if (message.includes("ambiguous")) {
+    return "A column reference is ambiguous. Use table.column format or a table alias so SQL knows which table the column comes from.";
+  }
+
+  if (message.includes("syntax error")) {
+    return "SQL syntax error. Check clause order: SELECT → FROM → WHERE → GROUP BY → ORDER BY → LIMIT. Also check commas, quotes, parentheses, and aliases.";
+  }
+
   return raw || "The query could not be executed.";
 }
 
