@@ -3946,6 +3946,17 @@ function sameMembers(a, b) {
 function sqlClauseExpectation(expected, prop) {
   return Boolean(expected && expected[prop] && String(expected[prop]).trim());
 }
+function normalizeSQLClause(clause) {
+  return String(clause || "")
+    .toLowerCase()
+    .replace(/["']/g, "")
+    .replace(/\s+/g, " ")
+    .replace(/\s*=\s*/g, "=")
+    .replace(/\s*>\s*/g, ">")
+    .replace(/\s*<\s*/g, "<")
+    .replace(/\s*,\s*/g, ",")
+    .trim();
+}
 function gradeSQLQuery(userQuery, lesson, executionResult, solutionResult) {
   const user = parseSQL(userQuery);
   const expected = parseSQL(lesson.solutionQuery || lesson.expectedAnswer || lesson.thirdHint || "");
