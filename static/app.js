@@ -892,7 +892,6 @@ Should you start with patients, encounters, or charges? Explain your reasoning.`
           }
         ]
       },
-      {
 {
   id: "foundations_sorting_interpreting",
   title: "Sorting & Interpreting Results",
