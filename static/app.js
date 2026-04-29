@@ -4110,20 +4110,28 @@ function gradeSQLQuery(userQuery, lesson, executionResult, solutionResult, optio
     }
   }
 
-  if (expected.hasWhere) {
-    if (!user.hasWhere) {
-      feedback.push("Missing WHERE filter.");
-      hints.push("Add the required WHERE condition.");
-      criticalIssues.push("where");
-    } else if (normalizeSQLClause(user.whereClause) === normalizeSQLClause(expected.whereClause)) {
-      score += 10;
-    } else {
-      feedback.push("WHERE filter does not match the expected condition.");
-      hints.push(`Expected filter: WHERE ${expected.whereClause}`);
-      criticalIssues.push("where");
-      score += 4;
-    }
+ const expectedNeedsWhere =
+  expected.hasWhere ||
+  Boolean(expected.whereClause) ||
+  /\bwhere\b/i.test(getExpectedSQL(lesson)) ||
+  /\bwhere\b/i.test(lesson.challengeCriteria || "");
+
+if (expectedNeedsWhere) {
+  if (!user.hasWhere) {
+    feedback.push("Missing WHERE filter.");
+    hints.push(expected.whereClause ? `Add WHERE ${expected.whereClause}.` : "Add the required WHERE condition.");
+    criticalIssues.push("where");
+  } else if (expected.whereClause && normalizeSQLClause(user.whereClause) === normalizeSQLClause(expected.whereClause)) {
+    score += 10;
+  } else if (expected.whereClause) {
+    feedback.push("WHERE filter does not match the expected condition.");
+    hints.push(`Expected filter: WHERE ${expected.whereClause}`);
+    criticalIssues.push("where");
+    score += 4;
+  } else {
+    score += 6;
   }
+}
 
   if (expected.groupBy && expected.groupBy.length) {
     if (!user.hasGroupBy) {
