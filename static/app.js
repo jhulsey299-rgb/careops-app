@@ -4338,7 +4338,9 @@ ${lesson.explanation || lesson.feedbackGuide || "This lesson is testing your rea
 
   if (
     preGrade.criticalIssues &&
-    preGrade.criticalIssues.some(issue => ["select", "from", "table"].includes(issue))
+   preGrade.criticalIssues.some(issue =>
+  ["select", "from", "table", "where", "group_by", "order_by", "limit", "aggregation", "join"].includes(issue)
+)
   ) {
     attempts += 1;
 
