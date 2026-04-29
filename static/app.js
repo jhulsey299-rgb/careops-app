@@ -5336,8 +5336,8 @@ function runSandboxQuery() {
         ? "Sandbox query ran successfully."
         : "Query executed successfully. No result rows were returned."
     );
-  } catch (error) {
-    setMessageState("sandbox-feedback", "error", getExecutionErrorMessage(error));
+  } catch (
+  setMessageState("sandbox-feedback", "error", getExecutionErrorMessage(error, query));
   }
 }
 function formatAiResponseBody(text) {
