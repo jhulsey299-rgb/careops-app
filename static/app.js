@@ -2277,8 +2277,175 @@ Explain what this means, why it matters, and what revenue cycle should investiga
         ]
       }
     ]
-  }
-];
+],
+    {
+  id: "intermediate_derived_fields_case",
+  title: "Derived Fields & CASE Logic",
+  order: 2,
+  lessons: [
+    {
+      kind: "concept",
+      id: "i10",
+      title: "Calculated Fields",
+      objective: "Create new output fields from existing columns.",
+      sql_focus: ["SELECT", "Calculated fields", "Aliases"],
+      relevantTables: ["discharges"],
+      joinHint: "Use only the discharges table for this lesson.",
+      summary: "Calculated fields let analysts create meaningful metrics directly in SQL instead of only returning raw columns.",
+      bullets: [
+        "A calculated field is created from an expression in the SELECT clause.",
+        "Calculated fields should usually be aliased with AS.",
+        "Operational metrics often come from subtracting one timestamp or numeric value from another.",
+        "Calculated fields make raw workflow data easier to interpret.",
+        "A strong analyst creates output that answers the business question directly."
+      ],
+      example: "Hospital example: departure_minutes - discharge_order_minutes calculates how long a patient remained after the discharge order.",
+      executiveTakeaway: { show: false }
+    },
+    {
+      kind: "challenge",
+      id: "i11",
+      title: "Calculate Departure Delay",
+      objective: "Create a calculated field for discharge delay.",
+      sql_focus: ["SELECT", "Calculated fields", "AS"],
+      relevantTables: ["discharges"],
+      joinHint: "Use only the discharges table.",
+      challengeCriteria: "Return discharge_id and a calculated field called departure_delay using departure_minutes - discharge_order_minutes.",
+      starterQuery: "",
+      solutionQuery: "SELECT discharge_id, departure_minutes - discharge_order_minutes AS departure_delay FROM discharges;",
+      hint: "Subtract discharge_order_minutes from departure_minutes.",
+      smartHint: "Use AS departure_delay to name the calculated field.",
+      thirdHint: "SELECT discharge_id, departure_minutes - discharge_order_minutes AS departure_delay FROM discharges;",
+      explanation: "This creates a usable operational delay metric from two raw workflow fields.",
+      executiveTakeaway: { show: false }
+    },
+    {
+      kind: "concept",
+      id: "i12",
+      title: "CASE Basics",
+      objective: "Use CASE to create conditional labels in query output.",
+      sql_focus: ["CASE", "WHEN", "THEN", "ELSE", "END"],
+      relevantTables: ["encounters"],
+      joinHint: "Use only the encounters table for this lesson.",
+      summary: "CASE lets analysts translate raw values into meaningful categories, flags, or labels.",
+      bullets: [
+        "CASE evaluates conditions in order.",
+        "WHEN defines the condition.",
+        "THEN defines the output when the condition is true.",
+        "ELSE defines the fallback value.",
+        "END closes the CASE expression."
+      ],
+      example: "Hospital example: CASE WHEN length_of_stay > 3 THEN 'Long Stay' ELSE 'Standard Stay' END AS los_category.",
+      executiveTakeaway: { show: false }
+    },
+    {
+      kind: "challenge",
+      id: "i13",
+      title: "Create a LOS Category",
+      objective: "Use CASE to classify encounters by length of stay.",
+      sql_focus: ["SELECT", "CASE", "WHEN", "THEN", "ELSE", "END"],
+      relevantTables: ["encounters"],
+      joinHint: "Use only the encounters table.",
+      challengeCriteria: "Return encounter_id and a CASE field called los_category where length_of_stay greater than 3 is 'Long Stay' and all others are 'Standard Stay'.",
+      starterQuery: "",
+      solutionQuery: "SELECT encounter_id, CASE WHEN length_of_stay > 3 THEN 'Long Stay' ELSE 'Standard Stay' END AS los_category FROM encounters;",
+      hint: "Use CASE WHEN length_of_stay > 3 THEN 'Long Stay'.",
+      smartHint: "Remember to close the CASE expression with END AS los_category.",
+      thirdHint: "SELECT encounter_id, CASE WHEN length_of_stay > 3 THEN 'Long Stay' ELSE 'Standard Stay' END AS los_category FROM encounters;",
+      explanation: "This turns a numeric LOS value into a readable category for analysis.",
+      executiveTakeaway: { show: false }
+    },
+    {
+      kind: "concept",
+      id: "i14",
+      title: "Boolean Flags",
+      objective: "Create 0/1 flags that can be counted or summed later.",
+      sql_focus: ["CASE", "Flags", "0/1 logic"],
+      relevantTables: ["encounters"],
+      joinHint: "Use only the encounters table for this lesson.",
+      summary: "Boolean-style flags are useful because they turn conditions into values that can be counted, summed, or filtered later.",
+      bullets: [
+        "A flag usually returns 1 when a condition is true and 0 when it is false.",
+        "Flags are useful for KPI numerator logic.",
+        "SUM(flag) can count how many records met the condition.",
+        "Clear aliases make flags easier to reuse.",
+        "Many dashboard measures start as row-level flags."
+      ],
+      example: "Hospital example: CASE WHEN department = 'Emergency Department' THEN 1 ELSE 0 END AS ed_flag.",
+      executiveTakeaway: { show: false }
+    },
+    {
+      kind: "challenge",
+      id: "i15",
+      title: "Create an ED Flag",
+      objective: "Use CASE to create a 0/1 Emergency Department flag.",
+      sql_focus: ["SELECT", "CASE", "Flag"],
+      relevantTables: ["encounters"],
+      joinHint: "Use only the encounters table.",
+      challengeCriteria: "Return encounter_id and a field called ed_flag that equals 1 when department is 'Emergency Department' and 0 otherwise.",
+      starterQuery: "",
+      solutionQuery: "SELECT encounter_id, CASE WHEN department = 'Emergency Department' THEN 1 ELSE 0 END AS ed_flag FROM encounters;",
+      hint: "Use CASE WHEN department = 'Emergency Department' THEN 1 ELSE 0 END.",
+      smartHint: "Alias the CASE expression as ed_flag.",
+      thirdHint: "SELECT encounter_id, CASE WHEN department = 'Emergency Department' THEN 1 ELSE 0 END AS ed_flag FROM encounters;",
+      explanation: "This creates a reusable row-level flag for ED encounters.",
+      executiveTakeaway: { show: false }
+    },
+    {
+      kind: "concept",
+      id: "i16",
+      title: "Multiple CASE Branches",
+      objective: "Create more than two categories using multiple WHEN clauses.",
+      sql_focus: ["CASE", "Multiple WHEN"],
+      relevantTables: ["encounters"],
+      joinHint: "Use only the encounters table for this lesson.",
+      summary: "CASE can classify records into several categories using multiple WHEN clauses.",
+      bullets: [
+        "Multiple WHEN clauses allow tiered classification.",
+        "CASE stops at the first matching condition.",
+        "Order matters when conditions overlap.",
+        "ELSE catches anything not covered by earlier conditions.",
+        "Tiered categories are common in risk, LOS, and cost analysis."
+      ],
+      example: "Hospital example: classify LOS as Short, Moderate, or Long depending on length_of_stay.",
+      executiveTakeaway: { show: false }
+    },
+    {
+      kind: "challenge",
+      id: "i17",
+      title: "Create LOS Tiers",
+      objective: "Use multiple WHEN clauses to classify length of stay.",
+      sql_focus: ["SELECT", "CASE", "Multiple WHEN"],
+      relevantTables: ["encounters"],
+      joinHint: "Use only the encounters table.",
+      challengeCriteria: "Return encounter_id and a field called los_tier. Use 'Short' when length_of_stay is less than 3, 'Moderate' when length_of_stay is between 3 and 7, and 'Long' otherwise.",
+      starterQuery: "",
+      solutionQuery: "SELECT encounter_id, CASE WHEN length_of_stay < 3 THEN 'Short' WHEN length_of_stay BETWEEN 3 AND 7 THEN 'Moderate' ELSE 'Long' END AS los_tier FROM encounters;",
+      hint: "Use multiple WHEN clauses inside one CASE expression.",
+      smartHint: "The final ELSE can be 'Long'.",
+      thirdHint: "SELECT encounter_id, CASE WHEN length_of_stay < 3 THEN 'Short' WHEN length_of_stay BETWEEN 3 AND 7 THEN 'Moderate' ELSE 'Long' END AS los_tier FROM encounters;",
+      explanation: "This creates tiered LOS categories that are easier to interpret than raw numbers alone.",
+      executiveTakeaway: { show: false }
+    },
+    {
+      kind: "scenario",
+      id: "i18",
+      title: "Scenario: Build Analyst-Ready Fields",
+      objective: "Explain how derived fields and CASE logic improve reporting.",
+      relevantTables: ["encounters", "discharges"],
+      joinHint: "Think about how calculated fields and flags make raw data easier to use.",
+      summary: "A leader wants a report that is easier to interpret than raw encounter and discharge fields.",
+      prompt: "Describe how you would use calculated fields and CASE logic to make the report more useful. Mention at least two examples, such as departure_delay, los_category, los_tier, or ed_flag, and explain why these fields help leadership understand the data.",
+      expectedKeywords: ["case", "calculated", "flag", "delay", "category", "leadership"],
+      minLength: 90,
+      minimumKeywordMatches: 3,
+      feedbackGuide: "A strong answer explains that derived fields turn raw data into meaningful metrics, categories, or flags that leadership can interpret quickly.",
+      executiveTakeaway: { show: false }
+      ]
+    }
+  ]
+      }
+};
 backfillChallengeCriteria(curriculum);
 enforceChallengeCriteria(curriculum);
 appState.currentTrackId = "track_foundations";
