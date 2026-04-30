@@ -2099,6 +2099,7 @@ Explain what this means, why it matters, and what revenue cycle should investiga
             minimumKeywordMatches: 4,
             feedbackGuide: "A strong answer includes a balanced set of metrics across operational, financial, utilization, and throughput domains and explains how leadership would use them.",
             executiveTakeaway: { show: false }
+            ]
           }
         ]
       },
