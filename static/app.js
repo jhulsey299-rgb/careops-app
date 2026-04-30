@@ -46,7 +46,8 @@ let lastRunQuery = "";
 let activeDifficultyFilter = null;
 const LEARNING_LEVELS = [
   { label: "Foundations", key: "foundations", color: "#22c55e", trackId: "track_foundations" },
-  { label: "Core", key: "core", color: "#2563eb", trackId: "track_core" }
+  { label: "Core", key: "core", color: "#2563eb", trackId: "track_core" },
+  { label: "Intermediate SQL", key: "intermediate", color: "#7c3aed", trackId: "track_intermediate" }
 ];
   
 const BUSINESS_LOGIC_MAP = {
