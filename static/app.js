@@ -4605,14 +4605,16 @@ ${finalExplanation}`
       );
     } else {
       setFeedbackState(
-        feedback,
-        "error",
-        `You have used all 3 attempts.
+  feedback,
+  "error",
+  `You have used all 3 attempts.
+${hint}
+
 Correct Answer:
 ${lesson.solutionQuery}
 Explanation:
 ${finalExplanation}`
-      );
+);
     }
 
     saveProgress();
