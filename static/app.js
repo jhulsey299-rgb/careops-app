@@ -2103,6 +2103,181 @@ Explain what this means, why it matters, and what revenue cycle should investiga
       }
     ]
   }
+   },
+  {
+    id: "track_intermediate",
+    title: "Intermediate SQL",
+    description: "Intermediate SQL learning path focused on advanced filtering, analyst logic, and real-world cohort building.",
+    order: 3,
+    categories: [
+      {
+        id: "intermediate_advanced_filtering",
+        title: "Advanced Filtering Logic",
+        order: 1,
+        lessons: [
+          {
+            kind: "concept",
+            id: "i1",
+            title: "AND vs OR",
+            objective: "Understand how AND and OR change the population returned by a query.",
+            sql_focus: ["WHERE", "AND", "OR"],
+            relevantTables: ["encounters"],
+            joinHint: "Use only the encounters table for this lesson.",
+            summary: "AND narrows a population because every condition must be true. OR broadens a population because either condition can be true.",
+            bullets: [
+              "AND requires all listed conditions to be true.",
+              "OR returns rows where at least one condition is true.",
+              "Using OR when you meant AND can greatly inflate results.",
+              "Using AND when you meant OR can accidentally exclude valid rows.",
+              "Healthcare analysts must match SQL logic to the exact population definition."
+            ],
+            example: "Hospital example: ED encounters with LOS greater than 3 days requires AND. ED encounters or ICU encounters requires OR.",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "challenge",
+            id: "i2",
+            title: "Filter ED Long-Stay Encounters",
+            objective: "Use AND to return encounters that meet two conditions.",
+            sql_focus: ["SELECT", "FROM", "WHERE", "AND"],
+            relevantTables: ["encounters"],
+            joinHint: "Use only the encounters table.",
+            challengeCriteria: "Return all rows from encounters where department equals 'Emergency Department' and length_of_stay is greater than 3.",
+            starterQuery: "",
+            solutionQuery: "SELECT * FROM encounters WHERE department = 'Emergency Department' AND length_of_stay > 3;",
+            hint: "Both conditions must be true, so use AND.",
+            smartHint: "Filter department first, then add length_of_stay > 3 with AND.",
+            thirdHint: "SELECT * FROM encounters WHERE department = 'Emergency Department' AND length_of_stay > 3;",
+            explanation: "This query identifies ED encounters that also exceeded the LOS threshold. Both conditions are required.",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "concept",
+            id: "i3",
+            title: "Multiple Conditions",
+            objective: "Combine several filters to define a more precise cohort.",
+            sql_focus: ["WHERE", "AND", "Multiple filters"],
+            relevantTables: ["encounters"],
+            joinHint: "Use only the encounters table for this lesson.",
+            summary: "Real hospital questions often require more than one filter. Each added condition changes the cohort being studied.",
+            bullets: [
+              "Multiple filters help define a precise population.",
+              "The more conditions you add with AND, the smaller the population usually becomes.",
+              "Each condition should map directly to the business question.",
+              "Good analysts can explain why every filter exists.",
+              "Unnecessary filters can create misleading results."
+            ],
+            example: "Hospital example: inpatient encounters at a specific facility with LOS greater than 5 days is a multi-condition cohort.",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "challenge",
+            id: "i4",
+            title: "Build a Precise Encounter Cohort",
+            objective: "Use multiple AND conditions to define a focused operational cohort.",
+            sql_focus: ["SELECT", "FROM", "WHERE", "AND"],
+            relevantTables: ["encounters"],
+            joinHint: "Use only the encounters table.",
+            challengeCriteria: "Return all rows from encounters where facility equals 'Tidelands Waccamaw', status equals 'Inpatient', and length_of_stay is greater than 5.",
+            starterQuery: "",
+            solutionQuery: "SELECT * FROM encounters WHERE facility = 'Tidelands Waccamaw' AND status = 'Inpatient' AND length_of_stay > 5;",
+            hint: "Use three WHERE conditions joined with AND.",
+            smartHint: "You need facility, status, and length_of_stay filters.",
+            thirdHint: "SELECT * FROM encounters WHERE facility = 'Tidelands Waccamaw' AND status = 'Inpatient' AND length_of_stay > 5;",
+            explanation: "This query narrows the data to a specific facility, status, and LOS threshold.",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "concept",
+            id: "i5",
+            title: "Parentheses Logic",
+            objective: "Use parentheses to control how AND and OR are evaluated.",
+            sql_focus: ["WHERE", "AND", "OR", "Parentheses"],
+            relevantTables: ["encounters"],
+            joinHint: "Use only the encounters table for this lesson.",
+            summary: "Parentheses control logical grouping. Without them, SQL may evaluate AND and OR in a way that does not match the business question.",
+            bullets: [
+              "Parentheses make complex logic explicit.",
+              "AND usually evaluates before OR.",
+              "Complex filters should be grouped for readability and accuracy.",
+              "Incorrect grouping can change the population dramatically.",
+              "Parentheses are especially important when combining department groups with thresholds."
+            ],
+            example: "Hospital example: ED or ICU encounters with LOS greater than 3 should group the departments together before applying the LOS condition.",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "challenge",
+            id: "i6",
+            title: "Group Department Logic",
+            objective: "Use parentheses to filter multiple departments with a shared LOS threshold.",
+            sql_focus: ["SELECT", "FROM", "WHERE", "AND", "OR", "Parentheses"],
+            relevantTables: ["encounters"],
+            joinHint: "Use only the encounters table.",
+            challengeCriteria: "Return all rows from encounters where department is either 'Emergency Department' or 'ICU' and length_of_stay is greater than 3.",
+            starterQuery: "",
+            solutionQuery: "SELECT * FROM encounters WHERE (department = 'Emergency Department' OR department = 'ICU') AND length_of_stay > 3;",
+            hint: "Group the department options in parentheses before applying the LOS filter.",
+            smartHint: "Use (department = 'Emergency Department' OR department = 'ICU') AND length_of_stay > 3.",
+            thirdHint: "SELECT * FROM encounters WHERE (department = 'Emergency Department' OR department = 'ICU') AND length_of_stay > 3;",
+            explanation: "The parentheses ensure the LOS threshold applies to both ED and ICU encounters.",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "concept",
+            id: "i7",
+            title: "BETWEEN for Ranges",
+            objective: "Use BETWEEN to filter values within a range.",
+            sql_focus: ["WHERE", "BETWEEN"],
+            relevantTables: ["encounters"],
+            joinHint: "Use only the encounters table for this lesson.",
+            summary: "BETWEEN returns rows where a value falls within a lower and upper bound. It is useful for ranges like LOS, age, dates, and dollar amounts.",
+            bullets: [
+              "BETWEEN includes both endpoints.",
+              "It is cleaner than writing >= and <= separately.",
+              "It works well for numeric ranges and date ranges.",
+              "Range filters should be chosen carefully because endpoints matter.",
+              "Hospital analysts often use ranges for LOS, age bands, and cost tiers."
+            ],
+            example: "Hospital example: encounters with length_of_stay BETWEEN 3 AND 7 can represent moderate-length stays.",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "challenge",
+            id: "i8",
+            title: "Filter Moderate LOS Encounters",
+            objective: "Use BETWEEN to return encounters within a LOS range.",
+            sql_focus: ["SELECT", "FROM", "WHERE", "BETWEEN"],
+            relevantTables: ["encounters"],
+            joinHint: "Use only the encounters table.",
+            challengeCriteria: "Return all rows from encounters where length_of_stay is between 3 and 7.",
+            starterQuery: "",
+            solutionQuery: "SELECT * FROM encounters WHERE length_of_stay BETWEEN 3 AND 7;",
+            hint: "Use BETWEEN with the lower and upper LOS values.",
+            smartHint: "BETWEEN 3 AND 7 includes both 3 and 7.",
+            thirdHint: "SELECT * FROM encounters WHERE length_of_stay BETWEEN 3 AND 7;",
+            explanation: "This query returns encounters whose LOS falls within the defined moderate range.",
+            executiveTakeaway: { show: false }
+          },
+          {
+            kind: "scenario",
+            id: "i9",
+            title: "Scenario: Build a Review Cohort",
+            objective: "Use advanced filtering logic to define a cohort for operational review.",
+            relevantTables: ["encounters"],
+            joinHint: "Use only the encounters table. Focus on precise filtering logic.",
+            summary: "A hospital operations leader wants to review higher-acuity operational activity.",
+            prompt: "Write a query that returns encounters from either the Emergency Department or ICU where length_of_stay is greater than 3. Then briefly explain why parentheses matter in this query.",
+            expectedKeywords: ["select", "from", "where", "or", "and", "parentheses"],
+            minLength: 60,
+            minimumKeywordMatches: 3,
+            feedbackGuide: "A strong answer uses grouped OR logic for the departments, applies the LOS threshold with AND, and explains that parentheses make the department logic apply correctly.",
+            executiveTakeaway: { show: false }
+          }
+        ]
+      }
+    ]
+  }
 ];
 backfillChallengeCriteria(curriculum);
 enforceChallengeCriteria(curriculum);
