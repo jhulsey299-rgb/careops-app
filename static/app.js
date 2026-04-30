@@ -2101,10 +2101,7 @@ Explain what this means, why it matters, and what revenue cycle should investiga
             executiveTakeaway: { show: false }
           }
         ]
-      }
-    ]
-  }
-   },
+      },
   {
     id: "track_intermediate",
     title: "Intermediate SQL",
