@@ -2095,16 +2095,22 @@ Explain what this means, why it matters, and what revenue cycle should investiga
             prompt: "Describe the report you would build. Include at least four metrics across different domains, such as encounter volume, unique patients, payer or payment performance, no-shows, discharge delays, observation hours, or denied dollars. Explain why each metric belongs in the snapshot and what leadership could do with it.",
             expectedKeywords: ["volume", "patients", "payer", "denied", "payment", "no-show", "discharge", "observation"],
             minLength: 150,
-            minimumKeywordMatches: 4,
-feedbackGuide: "A strong answer explains that derived fields turn raw data into meaningful metrics, categories, or flags that leadership can interpret quickly.",
+           minimumKeywordMatches: 4,
+feedbackGuide: "A strong answer includes a balanced set of metrics across operational, financial, utilization, and throughput domains and explains how leadership would use them.",
 executiveTakeaway: { show: false }
-    }
-  ]
+          }
+        ]
       }
     ]
   },
-{
-  id: "intermediate_advanced_filtering",
+  {
+    id: "track_intermediate",
+    title: "Intermediate SQL",
+    description: "Intermediate SQL learning path focused on advanced filtering, analyst logic, and real-world cohort building.",
+    order: 3,
+    categories: [
+      {
+        id: "intermediate_advanced_filtering",
   title: "Advanced Filtering Logic",
   order: 1,
   lessons: [
