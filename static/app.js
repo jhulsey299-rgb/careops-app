@@ -2275,10 +2275,8 @@ Explain what this means, why it matters, and what revenue cycle should investiga
             executiveTakeaway: { show: false }
           }
         ]
-      }
-    ]
-],
-    {
+      },
+      {
   id: "intermediate_derived_fields_case",
   title: "Derived Fields & CASE Logic",
   order: 2,
