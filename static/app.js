@@ -2440,9 +2440,175 @@ feedbackGuide: "A strong answer explains that derived fields turn raw data into 
 executiveTakeaway: { show: false }
           }
         ]
-      }
-    ]
-  }
+      ],
+    {
+  id: "intermediate_joins_multitable",
+  title: "Joins & Multi-Table Analysis",
+  order: 3,
+  lessons: [
+    {
+      kind: "concept",
+      id: "i19",
+      title: "Why Joins Matter",
+      objective: "Understand why hospital analysis often requires combining operational, patient, provider, and financial context.",
+      sql_focus: ["JOIN", "Table relationships", "Context"],
+      relevantTables: ["encounters", "patients", "providers", "departments"],
+      joinHint: "Start with the table that matches the event, then join only the context needed.",
+      summary: "Joins let analysts connect the event being measured to the context needed to explain it.",
+      bullets: [
+        "Encounters usually describe visit activity.",
+        "Patients add demographic, insurance, or risk context.",
+        "Providers add specialty or clinician assignment context.",
+        "Departments add facility, service line, and operational unit context.",
+        "A good join starts with a clear reason for adding another table."
+      ],
+      example: "Hospital example: encounters can show visit volume, but joining patients can show whether that volume is concentrated by insurance type or risk level.",
+      executiveTakeaway: { show: false }
+    },
+    {
+      kind: "challenge",
+      id: "i20",
+      title: "Add Patient Context",
+      objective: "Join encounters to patients to view encounter activity with insurance context.",
+      sql_focus: ["JOIN", "SELECT", "FROM"],
+      relevantTables: ["encounters", "patients"],
+      joinHint: "Join encounters to patients on patient_id.",
+      challengeCriteria: "Return encounter_id, patient_id, and insurance_type by joining encounters to patients.",
+      starterQuery: "",
+      solutionQuery: "SELECT e.encounter_id, e.patient_id, p.insurance_type FROM encounters e JOIN patients p ON e.patient_id = p.patient_id;",
+      hint: "Use encounters as e and patients as p.",
+      smartHint: "The join key is patient_id.",
+      thirdHint: "SELECT e.encounter_id, e.patient_id, p.insurance_type FROM encounters e JOIN patients p ON e.patient_id = p.patient_id;",
+      explanation: "This adds patient-level insurance context to visit-level encounter records.",
+      executiveTakeaway: { show: false }
+    },
+    {
+      kind: "concept",
+      id: "i21",
+      title: "Choosing the Starting Table",
+      objective: "Choose the table that matches the grain of the business question before joining other context.",
+      sql_focus: ["Grain", "JOIN planning", "Starting table"],
+      relevantTables: ["patients", "encounters", "claims", "charges"],
+      joinHint: "Pick the event table first, then enrich it with related tables.",
+      summary: "The starting table matters because it controls the grain of the result.",
+      bullets: [
+        "Use encounters when the question is about visits or stays.",
+        "Use patients when the question is about people.",
+        "Use claims when the question is about reimbursement or denial status.",
+        "Use charges when the question is about billed line activity.",
+        "Joining too early can create duplicate rows or misleading totals."
+      ],
+      example: "Hospital example: to analyze denied dollars, start with claims rather than patients because the denial event lives on the claim.",
+      executiveTakeaway: { show: false }
+    },
+    {
+      kind: "challenge",
+      id: "i22",
+      title: "Join Provider Specialty",
+      objective: "Join encounters to providers to add specialty context.",
+      sql_focus: ["JOIN", "Provider context"],
+      relevantTables: ["encounters", "providers"],
+      joinHint: "Join encounters to providers using provider_id.",
+      challengeCriteria: "Return encounter_id, provider_id, and specialty by joining encounters to providers.",
+      starterQuery: "",
+      solutionQuery: "SELECT e.encounter_id, e.provider_id, p.specialty FROM encounters e JOIN providers p ON e.provider_id = p.provider_id;",
+      hint: "Use provider_id as the join key.",
+      smartHint: "encounters has provider_id, and providers has provider_id.",
+      thirdHint: "SELECT e.encounter_id, e.provider_id, p.specialty FROM encounters e JOIN providers p ON e.provider_id = p.provider_id;",
+      explanation: "This adds provider specialty context to each encounter.",
+      executiveTakeaway: { show: false }
+    },
+    {
+      kind: "concept",
+      id: "i23",
+      title: "Avoiding Join Duplication",
+      objective: "Understand how joins can accidentally multiply rows and distort metrics.",
+      sql_focus: ["JOIN grain", "Duplicates", "Overcounting"],
+      relevantTables: ["encounters", "charges", "claims"],
+      joinHint: "Check the grain of both tables before joining.",
+      summary: "Joins can multiply rows when one record on the left matches many records on the right.",
+      bullets: [
+        "One encounter can have many charge rows.",
+        "Joining encounters to charges may create multiple rows per encounter.",
+        "COUNT(*) after a one-to-many join may no longer count encounters.",
+        "Use COUNT(DISTINCT encounter_id) when you need unique encounters after a one-to-many join.",
+        "Always ask what one row represents after the join."
+      ],
+      example: "Hospital example: joining encounters to charges can inflate encounter counts because one encounter may have several billed charge lines.",
+      executiveTakeaway: { show: false }
+    },
+    {
+      kind: "challenge",
+      id: "i24",
+      title: "Protect Encounter Counts After a Join",
+      objective: "Use COUNT DISTINCT to avoid overcounting encounters after joining charges.",
+      sql_focus: ["JOIN", "COUNT DISTINCT", "Grain"],
+      relevantTables: ["encounters", "charges"],
+      joinHint: "Join on encounter_id, then count distinct encounter_id.",
+      challengeCriteria: "Return the unique encounter count after joining encounters to charges. Label the result encounter_count.",
+      starterQuery: "",
+      solutionQuery: "SELECT COUNT(DISTINCT e.encounter_id) AS encounter_count FROM encounters e JOIN charges c ON e.encounter_id = c.encounter_id;",
+      hint: "Use COUNT(DISTINCT e.encounter_id).",
+      smartHint: "A normal COUNT(*) may overcount after joining to charges.",
+      thirdHint: "SELECT COUNT(DISTINCT e.encounter_id) AS encounter_count FROM encounters e JOIN charges c ON e.encounter_id = c.encounter_id;",
+      explanation: "This protects the encounter count from being inflated by multiple charge rows per encounter.",
+      executiveTakeaway: { show: false }
+    },
+    {
+      kind: "concept",
+      id: "i25",
+      title: "Multi-Table Reporting",
+      objective: "Build reports that combine operational volume with patient or financial context.",
+      sql_focus: ["JOIN", "GROUP BY", "Multi-table reporting"],
+      relevantTables: ["encounters", "patients", "claims"],
+      joinHint: "Join only the tables needed for the selected columns and metrics.",
+      summary: "Multi-table reports become useful when the join adds context that changes the interpretation.",
+      bullets: [
+        "Operational reports often start with encounters.",
+        "Patient joins can add insurance, risk, age, or demographic context.",
+        "Claim joins can add payer, denial, or billed amount context.",
+        "Grouped reporting after a join requires careful grain awareness.",
+        "Every joined table should answer a specific business need."
+      ],
+      example: "Hospital example: encounter volume by insurance type requires encounters for visit activity and patients for insurance type.",
+      executiveTakeaway: { show: false }
+    },
+    {
+      kind: "challenge",
+      id: "i26",
+      title: "Encounter Volume by Insurance Type",
+      objective: "Use a join and grouping to summarize encounter volume by insurance type.",
+      sql_focus: ["JOIN", "COUNT", "GROUP BY"],
+      relevantTables: ["encounters", "patients"],
+      joinHint: "Join encounters to patients on patient_id.",
+      challengeCriteria: "Return insurance_type and encounter count by insurance_type. Label the count encounter_count.",
+      starterQuery: "",
+      solutionQuery: "SELECT p.insurance_type, COUNT(*) AS encounter_count FROM encounters e JOIN patients p ON e.patient_id = p.patient_id GROUP BY p.insurance_type;",
+      hint: "Use patients for insurance_type and encounters for visit activity.",
+      smartHint: "Select p.insurance_type, COUNT(*), then GROUP BY p.insurance_type.",
+      thirdHint: "SELECT p.insurance_type, COUNT(*) AS encounter_count FROM encounters e JOIN patients p ON e.patient_id = p.patient_id GROUP BY p.insurance_type;",
+      explanation: "This combines encounter activity with patient insurance context.",
+      executiveTakeaway: { show: false }
+    },
+    {
+      kind: "scenario",
+      id: "i27",
+      title: "Scenario: Join Strategy Review",
+      objective: "Explain how to choose join paths without creating misleading results.",
+      relevantTables: ["patients", "encounters", "providers", "charges", "claims"],
+      joinHint: "Focus on starting table, grain, join key, and overcounting risk.",
+      summary: "A leader wants a report combining visit activity, payer context, provider context, and billed dollars.",
+      prompt: "Explain how you would plan the join strategy before writing SQL. Mention the starting table, grain, join keys, and how you would avoid overcounting when joining one-to-many tables like charges.",
+      expectedKeywords: ["join", "grain", "encounters", "patient_id", "encounter_id", "distinct", "overcount"],
+      minLength: 120,
+      minimumKeywordMatches: 4,
+      feedbackGuide: "A strong answer starts with the table that matches the event being measured, identifies the join keys, and explains how to avoid inflated counts from one-to-many joins.",
+      executiveTakeaway: { show: false }
+        }     
+      ]
+    }
+  ]
+}
 ];
 backfillChallengeCriteria(curriculum);
 enforceChallengeCriteria(curriculum);
