@@ -2437,14 +2437,15 @@ executiveTakeaway: { show: false }
       prompt: "Describe how you would use calculated fields and CASE logic to make the report more useful. Mention at least two examples, such as departure_delay, los_category, los_tier, or ed_flag, and explain why these fields help leadership understand the data.",
       expectedKeywords: ["case", "calculated", "flag", "delay", "category", "leadership"],
       minLength: 90,
-      minimumKeywordMatches: 3,
-      feedbackGuide: "A strong answer explains that derived fields turn raw data into meaningful metrics, categories, or flags that leadership can interpret quickly.",
-      executiveTakeaway: { show: false }
-      ]
-    }
-  ]
+    minimumKeywordMatches: 3,
+feedbackGuide: "A strong answer explains that derived fields turn raw data into meaningful metrics, categories, or flags that leadership can interpret quickly.",
+executiveTakeaway: { show: false }
+          }
+        ]
       }
-};
+    ]
+  }
+];
 backfillChallengeCriteria(curriculum);
 enforceChallengeCriteria(curriculum);
 appState.currentTrackId = "track_foundations";
