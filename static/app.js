@@ -2440,7 +2440,7 @@ feedbackGuide: "A strong answer explains that derived fields turn raw data into 
 executiveTakeaway: { show: false }
           }
         ]
-      ],
+      },
     {
   id: "intermediate_joins_multitable",
   title: "Joins & Multi-Table Analysis",
