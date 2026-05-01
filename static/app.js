@@ -821,7 +821,6 @@ Should you start with patients, encounters, or charges? Explain your reasoning.`
   ],
   example: "Hospital example: ED encounters with LOS greater than 3 days requires AND. ED encounters or ICU encounters requires OR.",
   executiveTakeaway: { show: false }
-}
           },
           {
             kind: "challenge",
