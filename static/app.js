@@ -2097,14 +2097,15 @@ Explain what this means, why it matters, and what revenue cycle should investiga
             expectedKeywords: ["volume", "patients", "payer", "denied", "payment", "no-show", "discharge", "observation"],
             minLength: 150,
             minimumKeywordMatches: 4,
-                 feedbackGuide: "A strong answer explains that derived fields turn raw data into meaningful metrics, categories, or flags that leadership can interpret quickly.",
-      executiveTakeaway: { show: false }
+feedbackGuide: "A strong answer explains that derived fields turn raw data into meaningful metrics, categories, or flags that leadership can interpret quickly.",
+executiveTakeaway: { show: false }
     }
   ]
       }
     ]
   }
-];
+,
+{
     id: "track_intermediate",
     title: "Intermediate SQL",
     description: "Intermediate SQL learning path focused on advanced filtering, analyst logic, and real-world cohort building.",
