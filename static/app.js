@@ -2102,8 +2102,7 @@ executiveTakeaway: { show: false }
   ]
       }
     ]
-  }
-,
+  },
 {
   id: "intermediate_advanced_filtering",
   title: "Advanced Filtering Logic",
