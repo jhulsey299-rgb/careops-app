@@ -2269,8 +2269,6 @@ executiveTakeaway: { show: false }
       executiveTakeaway: { show: false }
     }
   ]
-}
-        ]
       },
       {
   id: "intermediate_derived_fields_case",
