@@ -804,24 +804,24 @@ Should you start with patients, encounters, or charges? Explain your reasoning.`
             explanation: "This query teaches how business thresholds become filter logic. A leader says long stay, and the analyst defines the threshold clearly.",
             executiveTakeaway: { show: false }
           },
-          {
-            kind: "concept",
-            id: "t5",
-            title: "AND / OR Logic",
-            objective: "Use multiple conditions in one filter.",
-            sql_focus: ["WHERE", "AND", "OR"],
-            relevantTables: ["encounters"],
-            joinHint: "No join is needed for this lesson.",
-            summary: "AND narrows the result. OR broadens it.",
-            bullets: [
-              "AND means both conditions must be true.",
-              "OR means either condition can be true.",
-              "The business question tells you which one to use.",
-              "Bad logic changes the population and can completely distort the answer.",
-              "Always ask whether the question is asking for overlap or for multiple possible groups."
-            ],
-            example: "Hospital example: if a manager wants ED encounters with length_of_stay greater than 3 days, both conditions must be true.",
-            executiveTakeaway: { show: false }
+          { kind: "concept",
+  id: "t5",
+  title: "AND vs OR",
+  objective: "Understand how AND and OR change the population returned by a query.",
+  sql_focus: ["WHERE", "AND", "OR"],
+  relevantTables: ["encounters"],
+  joinHint: "No join is needed for this lesson.",
+  summary: "AND narrows a population because every condition must be true. OR broadens a population because either condition can be true.",
+  bullets: [
+    "AND requires all listed conditions to be true.",
+    "OR returns rows where at least one condition is true.",
+    "Using OR when you meant AND can greatly inflate results.",
+    "Using AND when you meant OR can accidentally exclude valid rows.",
+    "Healthcare analysts must match SQL logic to the exact population definition."
+  ],
+  example: "Hospital example: ED encounters with LOS greater than 3 days requires AND. ED encounters or ICU encounters requires OR.",
+  executiveTakeaway: { show: false }
+}
           },
           {
             kind: "challenge",
