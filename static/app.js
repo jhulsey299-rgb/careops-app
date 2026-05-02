@@ -2961,7 +2961,7 @@ executiveTakeaway: { show: false }
         }
       ]
     }
-  ]
+  ],
 {
   id: "track_advanced_sql",
   title: "Advanced SQL",
