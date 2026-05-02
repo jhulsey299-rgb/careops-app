@@ -2962,7 +2962,6 @@ executiveTakeaway: { show: false }
   ]
 },
 {
-{
   id: "track_advanced_sql",
   title: "Advanced SQL",
   description: "Advanced SQL learning path for CareOps hospital analytics: CTEs, window functions, trends, advanced KPIs, and executive-ready analysis.",
