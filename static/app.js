@@ -3718,9 +3718,7 @@ executiveTakeaway: { show: false }
       ]
     }
   ]
-}
 ];
-
 backfillChallengeCriteria(curriculum);
 enforceChallengeCriteria(curriculum);
 appState.currentTrackId = "track_foundations";
