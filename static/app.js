@@ -2604,12 +2604,366 @@ executiveTakeaway: { show: false }
       minimumKeywordMatches: 4,
       feedbackGuide: "A strong answer starts with the table that matches the event being measured, identifies the join keys, and explains how to avoid inflated counts from one-to-many joins.",
       executiveTakeaway: { show: false }
-        }     
+        }
+      ]
+    },
+
+    {
+      id: "intermediate_kpi_logic",
+      title: "Conditional Aggregation & KPI Logic",
+      order: 4,
+      lessons: [
+        {
+          kind: "concept",
+          id: "k1",
+          title: "From Counts to KPIs",
+          objective: "Understand how analysts turn raw counts into meaningful performance metrics.",
+          sql_focus: ["COUNT", "SUM", "KPI thinking"],
+          relevantTables: ["encounters", "appointments", "claims"],
+          joinHint: "KPIs start with defining numerator and denominator clearly.",
+          summary: "A KPI is not just a count. It is a structured metric that answers a specific business question using a numerator and denominator.",
+          bullets: [
+            "A KPI requires a clear definition.",
+            "Numerator = what you are measuring.",
+            "Denominator = total eligible population.",
+            "Rates are often more meaningful than raw counts.",
+            "Bad KPI definitions lead to misleading conclusions."
+          ],
+          example: "Hospital example: no-show rate = no-show appointments divided by total scheduled appointments.",
+          executiveTakeaway: { show: false }
+        },
+        {
+          kind: "concept",
+          id: "k2",
+          title: "CASE Inside Aggregations",
+          objective: "Use CASE within SUM to count specific conditions.",
+          sql_focus: ["SUM", "CASE", "Conditional aggregation"],
+          relevantTables: ["appointments"],
+          joinHint: "CASE returns values that can be summed into counts.",
+          summary: "CASE inside SUM allows you to count only rows that meet a condition without filtering out the rest of the dataset.",
+          bullets: [
+            "CASE returns 1 or 0 for each row.",
+            "SUM adds the 1s to produce a count.",
+            "This allows multiple metrics in one query.",
+            "It avoids losing denominator context.",
+            "This is foundational for KPI building."
+          ],
+          example: "Hospital example: SUM(CASE WHEN status = 'No Show' THEN 1 ELSE 0 END) counts no-shows.",
+          executiveTakeaway: { show: false }
+        },
+        {
+          kind: "challenge",
+          id: "k3",
+          title: "Count No-Show Appointments",
+          objective: "Use CASE inside SUM to count no-shows.",
+          sql_focus: ["SELECT", "SUM", "CASE"],
+          relevantTables: ["appointments"],
+          joinHint: "Use appointments because status is available.",
+          challengeCriteria: "Return total no-show appointments. Label the result no_show_count.",
+          starterQuery: "",
+          solutionQuery: "SELECT SUM(CASE WHEN status = 'No Show' THEN 1 ELSE 0 END) AS no_show_count FROM appointments;",
+          hint: "Use SUM with CASE returning 1 for no-shows.",
+          smartHint: "CASE WHEN status = 'No Show' THEN 1 ELSE 0 END",
+          thirdHint: "SELECT SUM(CASE WHEN status = 'No Show' THEN 1 ELSE 0 END) AS no_show_count FROM appointments;",
+          explanation: "This counts only no-show rows without filtering out other appointment types.",
+          executiveTakeaway: { show: false }
+        },
+        {
+          kind: "concept",
+          id: "k4",
+          title: "Building Rates",
+          objective: "Combine numerator and denominator into a rate.",
+          sql_focus: ["SUM", "COUNT", "Division"],
+          relevantTables: ["appointments"],
+          joinHint: "Rates require both numerator and denominator in the same query.",
+          summary: "Rates provide context by comparing a subset to the total population.",
+          bullets: [
+            "Numerator divided by denominator creates a rate.",
+            "Always confirm both pieces are defined correctly.",
+            "Avoid integer division errors.",
+            "Rates are more interpretable than raw counts.",
+            "Misdefined denominators create misleading KPIs."
+          ],
+          example: "Hospital example: no-show rate = no-show count / total appointments.",
+          executiveTakeaway: { show: false }
+        },
+        {
+          kind: "challenge",
+          id: "k5",
+          title: "Calculate No-Show Rate",
+          objective: "Calculate a KPI rate using CASE and COUNT.",
+          sql_focus: ["SUM", "COUNT", "Division"],
+          relevantTables: ["appointments"],
+          joinHint: "Use SUM for numerator and COUNT(*) for denominator.",
+          challengeCriteria: "Return no_show_rate using no-show count divided by total appointments.",
+          starterQuery: "",
+          solutionQuery: "SELECT SUM(CASE WHEN status = 'No Show' THEN 1 ELSE 0 END) * 1.0 / COUNT(*) AS no_show_rate FROM appointments;",
+          hint: "Divide SUM(CASE...) by COUNT(*).",
+          smartHint: "Multiply by 1.0 to avoid integer division.",
+          thirdHint: "SELECT SUM(CASE WHEN status = 'No Show' THEN 1 ELSE 0 END) * 1.0 / COUNT(*) AS no_show_rate FROM appointments;",
+          explanation: "This calculates the percentage of missed appointments.",
+          executiveTakeaway: { show: false }
+        },
+        {
+          kind: "concept",
+          id: "k6",
+          title: "KPIs by Group",
+          objective: "Calculate KPIs across departments or categories.",
+          sql_focus: ["GROUP BY", "SUM", "CASE"],
+          relevantTables: ["appointments"],
+          joinHint: "Grouping allows KPI comparison across segments.",
+          summary: "KPIs become more useful when broken down by department, payer, or provider.",
+          bullets: [
+            "Grouping allows comparison across units.",
+            "Each group gets its own numerator and denominator.",
+            "This supports operational decision-making.",
+            "Different groups may have different performance patterns.",
+            "Grouped KPIs highlight where action is needed."
+          ],
+          example: "Hospital example: no-show rate by department.",
+          executiveTakeaway: { show: false }
+        },
+        {
+          kind: "challenge",
+          id: "k7",
+          title: "No-Show Rate by Department",
+          objective: "Calculate a KPI grouped by department.",
+          sql_focus: ["GROUP BY", "SUM", "CASE"],
+          relevantTables: ["appointments"],
+          joinHint: "Use department as grouping column.",
+          challengeCriteria: "Return department and no-show rate by department.",
+          starterQuery: "",
+          solutionQuery: "SELECT department, SUM(CASE WHEN status = 'No Show' THEN 1 ELSE 0 END) * 1.0 / COUNT(*) AS no_show_rate FROM appointments GROUP BY department;",
+          hint: "Group by department.",
+          smartHint: "Each department has its own numerator and denominator.",
+          thirdHint: "SELECT department, SUM(CASE WHEN status = 'No Show' THEN 1 ELSE 0 END) * 1.0 / COUNT(*) AS no_show_rate FROM appointments GROUP BY department;",
+          explanation: "This compares performance across departments.",
+          executiveTakeaway: { show: false }
+        },
+        {
+          kind: "concept",
+          id: "k8",
+          title: "Multiple KPIs at Once",
+          objective: "Build multiple KPIs in one query using CASE.",
+          sql_focus: ["SUM", "CASE", "Multiple metrics"],
+          relevantTables: ["claims"],
+          joinHint: "Each KPI uses its own CASE logic.",
+          summary: "Analysts often calculate multiple KPIs in a single query for efficiency and comparison.",
+          bullets: [
+            "Each KPI has its own CASE logic.",
+            "Multiple SUM(CASE...) expressions can coexist.",
+            "This creates compact, powerful reports.",
+            "Ensure each metric is clearly labeled.",
+            "Avoid mixing incompatible definitions."
+          ],
+          example: "Hospital example: approved claims vs denied claims counts in one query.",
+          executiveTakeaway: { show: false }
+        },
+        {
+          kind: "challenge",
+          id: "k9",
+          title: "Claims Status Breakdown",
+          objective: "Calculate multiple KPI counts in one query.",
+          sql_focus: ["SUM", "CASE"],
+          relevantTables: ["claims"],
+          joinHint: "Use claim_status field.",
+          challengeCriteria: "Return approved_count and denied_count using CASE logic.",
+          starterQuery: "",
+          solutionQuery: "SELECT SUM(CASE WHEN claim_status = 'Approved' THEN 1 ELSE 0 END) AS approved_count, SUM(CASE WHEN claim_status = 'Denied' THEN 1 ELSE 0 END) AS denied_count FROM claims;",
+          hint: "Use two CASE expressions.",
+          smartHint: "Each SUM handles a different status.",
+          thirdHint: "SELECT SUM(CASE WHEN claim_status = 'Approved' THEN 1 ELSE 0 END) AS approved_count, SUM(CASE WHEN claim_status = 'Denied' THEN 1 ELSE 0 END) AS denied_count FROM claims;",
+          explanation: "This produces multiple KPIs in one query.",
+          executiveTakeaway: { show: false }
+        },
+        {
+          kind: "scenario",
+          id: "k10",
+          title: "Scenario: KPI Design Review",
+          objective: "Explain how to design a KPI correctly.",
+          relevantTables: ["appointments", "claims", "encounters"],
+          joinHint: "Focus on numerator, denominator, and logic.",
+          summary: "A leader asks for a KPI but gives a vague definition.",
+          prompt: "Explain how you would define the KPI before writing SQL. Mention numerator, denominator, filtering logic, and why definition clarity matters.",
+          expectedKeywords: ["numerator", "denominator", "kpi", "logic", "definition"],
+          minLength: 100,
+          minimumKeywordMatches: 3,
+          feedbackGuide: "A strong answer defines numerator and denominator clearly and explains why ambiguous KPI definitions lead to misleading results.",
+          executiveTakeaway: { show: false }
+        }
+      ]
+    },
+
+    {
+      id: "intermediate_aggregation_patterns",
+      title: "Aggregation Patterns & Multi-Level Analysis",
+      order: 5,
+      lessons: [
+        {
+          kind: "concept",
+          id: "i28",
+          title: "From Simple Aggregation to Real Metrics",
+          objective: "Understand how real-world metrics require combining multiple aggregations.",
+          sql_focus: ["GROUP BY", "SUM", "COUNT"],
+          relevantTables: ["encounters", "claims"],
+          joinHint: "Start with a grouped result, then think about how to compare it.",
+          summary: "Basic aggregation answers simple questions. Real metrics compare groups, calculate percentages, and provide context.",
+          bullets: [
+            "GROUP BY creates summarized groups.",
+            "Real metrics often compare a group to a total.",
+            "Percentages require both a numerator and denominator.",
+            "Aggregation can happen at multiple levels.",
+            "Thinking in metrics is more important than writing syntax."
+          ],
+          example: "Hospital example: department volume is useful, but percent of total volume is more meaningful.",
+          executiveTakeaway: { show: false }
+        },
+        {
+          kind: "challenge",
+          id: "i29",
+          title: "Department Volume",
+          objective: "Build a grouped aggregation.",
+          sql_focus: ["GROUP BY", "COUNT"],
+          relevantTables: ["encounters"],
+          joinHint: "Use encounters only.",
+          challengeCriteria: "Return department and encounter count by department.",
+          starterQuery: "",
+          solutionQuery: "SELECT department, COUNT(*) AS encounter_count FROM encounters GROUP BY department;",
+          hint: "Group by department.",
+          smartHint: "COUNT(*) per department.",
+          thirdHint: "SELECT department, COUNT(*) FROM encounters GROUP BY department;",
+          explanation: "This is the base aggregation used for more complex metrics.",
+          executiveTakeaway: { show: false }
+        },
+        {
+          kind: "concept",
+          id: "i30",
+          title: "Percent of Total",
+          objective: "Understand how to compare a group to an overall total.",
+          sql_focus: ["SUM", "Subquery thinking"],
+          relevantTables: ["encounters"],
+          joinHint: "You may need a total separate from the grouped result.",
+          summary: "Percent of total is one of the most common metrics in hospital reporting.",
+          bullets: [
+            "Percent = group value divided by total value.",
+            "Requires both grouped aggregation and overall total.",
+            "Totals may come from a separate query or subquery.",
+            "Percentages provide context, not just volume.",
+            "Leaders often care more about percentages than raw counts."
+          ],
+          example: "Hospital example: ED may represent 35% of total hospital encounters.",
+          executiveTakeaway: { show: false }
+        },
+        {
+          kind: "challenge",
+          id: "i31",
+          title: "Percent of Total Volume",
+          objective: "Calculate department share of total encounters.",
+          sql_focus: ["GROUP BY", "Subquery", "COUNT"],
+          relevantTables: ["encounters"],
+          joinHint: "Use a subquery to get total encounters.",
+          challengeCriteria: "Return department, encounter_count, and percent_of_total.",
+          starterQuery: "",
+          solutionQuery: "SELECT department, COUNT(*) AS encounter_count, COUNT(*) * 1.0 / (SELECT COUNT(*) FROM encounters) AS percent_of_total FROM encounters GROUP BY department;",
+          hint: "Divide by total encounters.",
+          smartHint: "Use a subquery for total.",
+          thirdHint: "COUNT(*) / (SELECT COUNT(*) FROM encounters)",
+          explanation: "This compares each department to overall hospital activity.",
+          executiveTakeaway: { show: false }
+        },
+        {
+          kind: "concept",
+          id: "i32",
+          title: "Aggregating After Joins",
+          objective: "Understand how joins impact grouped results.",
+          sql_focus: ["JOIN", "GROUP BY"],
+          relevantTables: ["encounters", "patients"],
+          joinHint: "Join first, then aggregate.",
+          summary: "Joins allow grouping by fields not in the base table.",
+          bullets: [
+            "Joins add context before aggregation.",
+            "Grouping can be done on joined fields.",
+            "Joins must be understood to avoid duplication.",
+            "Aggregation after join changes interpretation.",
+            "Always confirm grain before grouping."
+          ],
+          example: "Hospital example: encounter volume by insurance type requires joining patients.",
+          executiveTakeaway: { show: false }
+        },
+        {
+          kind: "challenge",
+          id: "i33",
+          title: "Volume by Insurance Type",
+          objective: "Join and aggregate.",
+          sql_focus: ["JOIN", "GROUP BY", "COUNT"],
+          relevantTables: ["encounters", "patients"],
+          joinHint: "Join on patient_id.",
+          challengeCriteria: "Return insurance_type and encounter count.",
+          starterQuery: "",
+          solutionQuery: "SELECT p.insurance_type, COUNT(*) AS encounter_count FROM encounters e JOIN patients p ON e.patient_id = p.patient_id GROUP BY p.insurance_type;",
+          hint: "Join then group.",
+          smartHint: "Use patients for insurance_type.",
+          thirdHint: "GROUP BY p.insurance_type",
+          explanation: "This combines join logic with aggregation.",
+          executiveTakeaway: { show: false }
+        },
+        {
+          kind: "concept",
+          id: "i34",
+          title: "Top-N Analysis",
+          objective: "Identify highest performing groups.",
+          sql_focus: ["ORDER BY", "LIMIT"],
+          relevantTables: ["encounters"],
+          joinHint: "Sort after aggregation.",
+          summary: "Top-N analysis helps identify the highest or lowest performing groups.",
+          bullets: [
+            "ORDER BY sorts aggregated results.",
+            "DESC shows highest values first.",
+            "LIMIT restricts output.",
+            "Top-N is used in nearly every dashboard.",
+            "Ranking prepares for window functions."
+          ],
+          example: "Hospital example: top 5 departments by encounter volume.",
+          executiveTakeaway: { show: false }
+        },
+        {
+          kind: "challenge",
+          id: "i35",
+          title: "Top 5 Departments",
+          objective: "Find highest volume departments.",
+          sql_focus: ["GROUP BY", "ORDER BY", "LIMIT"],
+          relevantTables: ["encounters"],
+          joinHint: "Group first, then sort.",
+          challengeCriteria: "Return top 5 departments by encounter volume.",
+          starterQuery: "",
+          solutionQuery: "SELECT department, COUNT(*) AS encounter_count FROM encounters GROUP BY department ORDER BY encounter_count DESC LIMIT 5;",
+          hint: "Sort descending.",
+          smartHint: "Use LIMIT 5.",
+          thirdHint: "ORDER BY encounter_count DESC LIMIT 5",
+          explanation: "This identifies highest activity departments.",
+          executiveTakeaway: { show: false }
+        },
+        {
+          kind: "scenario",
+          id: "i36",
+          title: "Scenario: Executive Volume Breakdown",
+          objective: "Combine aggregation techniques into a real-world explanation.",
+          relevantTables: ["encounters", "patients"],
+          joinHint: "Think about grouping, percent, and context.",
+          summary: "Leadership wants to understand where hospital activity is concentrated.",
+          prompt: "Explain how you would show department volume, percent of total, and payer mix. Describe the queries and why each metric matters.",
+          expectedKeywords: ["group", "percent", "join", "volume", "insurance"],
+          minLength: 130,
+          minimumKeywordMatches: 4,
+          feedbackGuide: "A strong answer combines grouping, percent-of-total logic, and joins to provide context.",
+          executiveTakeaway: { show: false }
+        }
       ]
     }
   ]
 }
 ];
+
 backfillChallengeCriteria(curriculum);
 enforceChallengeCriteria(curriculum);
 appState.currentTrackId = "track_foundations";
