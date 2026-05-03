@@ -3714,9 +3714,11 @@ executiveTakeaway: { show: false }
           minimumKeywordMatches: 4,
           feedbackGuide: "A strong answer turns advanced SQL work into a clear, cautious, action-oriented executive explanation.",
           executiveTakeaway: { show: false }
-         }
-  ]
-}
+            }
+        ]
+      }
+    ]
+  }
 ];
 backfillChallengeCriteria(curriculum);
 enforceChallengeCriteria(curriculum);
