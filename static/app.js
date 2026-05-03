@@ -2958,6 +2958,8 @@ executiveTakeaway: { show: false }
           minimumKeywordMatches: 4,
           feedbackGuide: "A strong answer combines grouping, percent-of-total logic, and joins to provide context.",
           executiveTakeaway: { show: false }
+     }
+      ]
     }
   ]
 },
