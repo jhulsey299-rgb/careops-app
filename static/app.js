@@ -4600,10 +4600,10 @@ executiveTakeaway: { show: false }
           minimumKeywordMatches: 6,
           feedbackGuide: "A strong final answer demonstrates end-to-end analyst thinking: definition, validation, SQL design, root cause, and executive communication.",
           executiveTakeaway: { show: false }
-              ]
-    }
-  ]
-}
+      }
+    ]
+  }
+]
 ];
 
 backfillChallengeCriteria(curriculum);
