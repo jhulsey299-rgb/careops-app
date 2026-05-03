@@ -4609,6 +4609,9 @@ executiveTakeaway: { show: false }
 
 backfillChallengeCriteria(curriculum);
 enforceChallengeCriteria(curriculum);
+// ===== Expose scenario functions to HTML =====
+window.submitScenario = submitScenario;
+window.resetScenario = resetScenario;
 appState.currentTrackId = "track_foundations";
 appState.currentCategoryId = "foundations_core";
 function saveProgress() {
