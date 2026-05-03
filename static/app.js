@@ -7244,7 +7244,7 @@ function gradeAnswer(userInput, lessonContent) {
   result.passed = result.score >= 70;
   return result;
 }
-
+};
 
 function submitScenario() {
   const lesson = getCurrentLesson();
