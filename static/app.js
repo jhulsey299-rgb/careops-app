@@ -7220,31 +7220,7 @@ function gradeAnswer(userInput, lessonContent) {
   result.passed = result.score >= 70;
   return result;
 }
-  const lengthPass = input.length >= minLength;
 
-  if (!expectedKeywords.length || keywordMatches >= minimumKeywordMatches) {
-    result.score += 40;
-  } else {
-    result.feedback.push(`Missing key ideas. Found ${keywordMatches} of ${minimumKeywordMatches} required keywords.`);
-  }
-
-  if (!requiredConceptGroups.length || conceptMatches >= requiredConceptMatches) {
-    result.score += 40;
-  } else {
-    result.feedback.push(`Missing key business concepts. Found ${conceptMatches} of ${requiredConceptMatches} required concept groups.`);
-  }
-
-  if (lengthPass) {
-    result.score += 20;
-  } else {
-    result.feedback.push("Answer is too short. Add more detail about the data, the business meaning, and the recommended action.");
-  }
-
-  result.score = Math.min(100, result.score);
-  result.passed = result.score >= 70;
-  return result;
-}
-};
 
 function submitScenario() {
   const lesson = getCurrentLesson();
