@@ -7243,11 +7243,68 @@ function gradeAnswer(userInput, lessonContent) {
 }
 
 
-function resetScenario() {
+function submitScenario() {
+  const lesson = getCurrentLesson();
   const box = document.getElementById("scenario-response");
   const feedback = document.getElementById("scenario-feedback");
-  if (box) box.value = "";
-  if (feedback) feedback.innerText = "";
+
+  if (!lesson || lesson.kind !== "scenario" || !box) return;
+
+  const answer = box.value.trim();
+
+  if (!answer) {
+    setFeedbackState(feedback, "error", "Please enter your scenario response before submitting.");
+    return;
+  }
+
+  attempts += 1;
+
+  const grade = gradeAnswer(answer, lesson.content);
+
+  if (grade.passed) {
+    updateLessonStatsOnGrade(lesson.id, { score: grade.score, tier: grade.tier }, true);
+    markLessonCompleted(lesson.id, attempts === 1);
+
+    setFeedbackState(
+      feedback,
+      "success",
+      `Strong work. Score: ${grade.score}/100 (${grade.tier}).
+${lesson.content.feedbackGuide || "Your answer shows good analyst reasoning."}`
+    );
+
+    attempts = 0;
+    saveProgress();
+    refreshLessonChrome();
+    return;
+  }
+
+  if (attempts < 3) {
+    setFeedbackState(
+      feedback,
+      "warning",
+      `Not quite yet. Score: ${grade.score}/100 (${grade.tier}).
+${grade.feedback.join("\n")}
+Try adding: ${grade.missing.slice(0, 4).join(", ")}.`
+    );
+
+    saveProgress();
+    refreshLessonChrome();
+    return;
+  }
+
+  setFeedbackState(
+    feedback,
+    "error",
+    `You have used all 3 attempts.
+Score: ${grade.score}/100 (${grade.tier}).
+${grade.feedback.join("\n")}
+
+Suggested Answer:
+${lesson.content.exemplarAnswer || lesson.content.feedbackGuide || "Review the prompt and include metric definition, data source, validation, drivers, and leadership next steps."}`
+  );
+
+  saveProgress();
+  refreshLessonChrome();
 }
 function markConceptComplete() {
   const lesson = getCurrentLesson();
