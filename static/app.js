@@ -4725,7 +4725,7 @@ function scenarioLesson(spec) {
     type: "scenario",
     title: spec.title,
     objective: spec.objective,
-    sql_focus: [],
+    sql_focus: spec.sql_focus || [],
     relevantTables: spec.relevantTables || [],
     joinHint: spec.joinHint || "Think about data sources, grain, and business meaning.",
     content: {
@@ -4734,7 +4734,11 @@ function scenarioLesson(spec) {
       expectedKeywords: spec.expectedKeywords || [],
       minLength: spec.minLength || 100,
       minimumKeywordMatches: spec.minimumKeywordMatches || 2,
-      feedbackGuide: spec.feedbackGuide || ""
+      feedbackGuide: spec.feedbackGuide || "",
+      requiredConceptGroups: spec.requiredConceptGroups || [],
+      requiredConceptMatches: spec.requiredConceptMatches || 0,
+      bonusConceptGroups: spec.bonusConceptGroups || [],
+      exemplarAnswer: spec.exemplarAnswer || ""
     },
     executiveTakeaway: spec.executiveTakeaway || null
   };
