@@ -4598,12 +4598,13 @@ executiveTakeaway: { show: false }
           expectedKeywords: ["definition", "source", "validate", "sql", "segment", "driver", "limitation", "next"],
           minLength: 220,
           minimumKeywordMatches: 6,
-          feedbackGuide: "A strong final answer demonstrates end-to-end analyst thinking: definition, validation, SQL design, root cause, and executive communication.",
+                    feedbackGuide: "A strong final answer demonstrates end-to-end analyst thinking: definition, validation, SQL design, root cause, and executive communication.",
           executiveTakeaway: { show: false }
-      }
-    ]
-  }
-]
+        }
+      ]
+    }
+  ]
+}
 ];
 
 backfillChallengeCriteria(curriculum);
