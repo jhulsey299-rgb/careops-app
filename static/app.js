@@ -7150,7 +7150,7 @@ function setFeedbackState(element, state, message) {
 }
 
 function gradeAnswer(userInput, lessonContent) {
-  const result = { score: 0, feedback: [], passed: false };
+  const result = { score: 0, feedback: [], passed: false, missing: [] };
   const input = String(userInput || "").toLowerCase();
   const lesson = lessonContent || {};
 
@@ -7161,17 +7161,62 @@ function gradeAnswer(userInput, lessonContent) {
   let keywordMatches = 0;
   expectedKeywords.forEach(keyword => {
     if (input.includes(String(keyword).toLowerCase())) keywordMatches += 1;
+    else result.missing.push(keyword);
   });
 
   const requiredConceptGroups = lesson.requiredConceptGroups || [];
   const requiredConceptMatches = lesson.requiredConceptMatches || 0;
+
   let conceptMatches = 0;
   requiredConceptGroups.forEach(group => {
+    const matched = (group || []).some(term => input.includes(String(term).toLowerCase()));
+    if (matched) conceptMatches += 1;
+    else result.missing.push(group[0]);
+  });
+
+  const bonusConceptGroups = lesson.bonusConceptGroups || [];
+  let bonusMatches = 0;
+  bonusConceptGroups.forEach(group => {
     if ((group || []).some(term => input.includes(String(term).toLowerCase()))) {
-      conceptMatches += 1;
+      bonusMatches += 1;
     }
   });
 
+  if (!expectedKeywords.length || keywordMatches >= minimumKeywordMatches) {
+    result.score += 35;
+  } else {
+    result.feedback.push(`Missing key ideas: ${result.missing.slice(0, 4).join(", ")}.`);
+  }
+
+  if (!requiredConceptGroups.length || conceptMatches >= requiredConceptMatches) {
+    result.score += 35;
+  } else {
+    result.feedback.push(`Missing required business concepts. Found ${conceptMatches} of ${requiredConceptMatches}.`);
+  }
+
+  if (input.length >= minLength) {
+    result.score += 20;
+  } else {
+    result.feedback.push("Answer is too short. Add more detail about the data, business meaning, and next action.");
+  }
+
+  if (input.includes("leadership") || input.includes("executive") || input.includes("impact") || input.includes("next step")) {
+    result.score += 5;
+  }
+
+  result.score += Math.min(5, bonusMatches * 2);
+  result.score = Math.max(0, Math.min(100, Math.round(result.score)));
+
+  result.tier =
+    result.score >= 95 ? "Excellent" :
+    result.score >= 85 ? "Strong" :
+    result.score >= 70 ? "Passing" :
+    result.score >= 50 ? "Developing" :
+    "Needs Work";
+
+  result.passed = result.score >= 70;
+  return result;
+}
   const lengthPass = input.length >= minLength;
 
   if (!expectedKeywords.length || keywordMatches >= minimumKeywordMatches) {
