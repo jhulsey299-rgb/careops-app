@@ -3720,7 +3720,7 @@ executiveTakeaway: { show: false }
         ]
       }
     ]
-  }
+  },
 {
   id: "track_executive_analyst",
   title: "Executive Analyst",
