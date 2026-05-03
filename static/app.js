@@ -7221,7 +7221,21 @@ function gradeAnswer(userInput, lessonContent) {
   return result;
 }
 
+function resetScenario() {
+  const box = document.getElementById("scenario-response");
+  const feedback = document.getElementById("scenario-feedback");
 
+  if (box) box.value = "";
+
+  if (feedback) {
+    feedback.innerText = "";
+    feedback.classList.remove("success", "error", "warning");
+  }
+
+  attempts = 0;
+
+  if (typeof saveProgress === "function") saveProgress();
+}
 function submitScenario() {
   const lesson = getCurrentLesson();
   const box = document.getElementById("scenario-response");
