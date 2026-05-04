@@ -5913,59 +5913,7 @@ function ensurePatchedUiStyles() {
   `;
   document.head.appendChild(style);
 }
-if (isTextChallenge(lesson)) {
-  if (output) output.innerHTML = "";
-  attempts += 1;
 
-  const lessonContent = getWrittenLessonContent(lesson);
-  const grade = gradeAnswer(query, lessonContent);
-
-  if (grade.passed) {
-    updateLessonStatsOnGrade(lesson.id, { score: grade.score, tier: grade.tier }, true);
-    markLessonCompleted(lesson.id, attempts === 1);
-
-    setFeedbackState(
-      feedback,
-      "success",
-      `Strong work. Score: ${grade.score}/100 (${grade.tier}).
-${lessonContent.feedbackGuide || "Your answer shows good analyst reasoning."}`
-    );
-
-    attempts = 0;
-    saveProgress();
-    refreshLessonChrome();
-    return;
-  }
-
-  if (attempts < 3) {
-    setFeedbackState(
-      feedback,
-      "warning",
-      `Not quite yet. Score: ${grade.score}/100 (${grade.tier}).
-${grade.feedback.join("\n")}
-Try adding: ${grade.missing.slice(0, 4).join(", ")}.`
-    );
-
-    saveProgress();
-    refreshLessonChrome();
-    return;
-  }
-
-  setFeedbackState(
-    feedback,
-    "error",
-    `You have used all 3 attempts.
-Score: ${grade.score}/100 (${grade.tier}).
-${grade.feedback.join("\n")}
-
-Suggested Answer:
-${lessonContent.exemplarAnswer || lessonContent.feedbackGuide || "Review the prompt and include definition, source, logic, validation, and next action."}`
-  );
-
-  saveProgress();
-  refreshLessonChrome();
-  return;
-}
 function challengeConceptMatches(lesson, answerText) {
   const text = String(answerText || "").toLowerCase();
   const requiredGroups = Array.isArray(lesson.requiredConceptGroups) && lesson.requiredConceptGroups.length
