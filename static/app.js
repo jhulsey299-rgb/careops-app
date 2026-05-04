@@ -6959,32 +6959,64 @@ function runQuery() {
     return;
   }
 
-  if (isTextChallenge(lesson)) {
-    if (output) output.innerHTML = "";
-    attempts += 1;
+if (isTextChallenge(lesson)) {
+  if (output) output.innerHTML = "";
+  attempts += 1;
 
-    const result = gradeTextChallenge(lesson, query);
+  const lessonContent = getWrittenLessonContent(lesson);
+  const grade = gradeAnswer(query, lessonContent);
 
-    if (result.passed) {
-      const grade = attempts === 1
-        ? { score: 100, tier: "Perfect" }
-        : { score: 92, tier: "Strong" };
+  if (grade.passed) {
+    updateLessonStatsOnGrade(
+      lesson.id,
+      { score: grade.score, tier: grade.tier },
+      true
+    );
 
-      updateLessonStatsOnGrade(lesson.id, grade, true);
-      markLessonCompleted(lesson.id, attempts === 1);
+    markLessonCompleted(lesson.id, attempts === 1);
 
-      setFeedbackState(
-        feedback,
-        "success",
-        (lesson.feedbackGuide || "Correct — your explanation shows the right reasoning.") +
-          " Score: " + grade.score + "/100 (" + grade.tier + ")."
-      );
+    setFeedbackState(
+      feedback,
+      "success",
+      `Strong work. Score: ${grade.score}/100 (${grade.tier}).
+${lessonContent.feedbackGuide || "Your answer shows strong analyst reasoning."}`
+    );
 
-      attempts = 0;
-      saveProgress();
-      refreshLessonChrome();
-      return;
-    }
+    attempts = 0;
+    saveProgress();
+    refreshLessonChrome();
+    return;
+  }
+
+  if (attempts < 3) {
+    setFeedbackState(
+      feedback,
+      "warning",
+      `Not quite yet. Score: ${grade.score}/100 (${grade.tier}).
+${grade.feedback.join("\n")}
+Try adding: ${grade.missing.slice(0, 4).join(", ")}.`
+    );
+
+    saveProgress();
+    refreshLessonChrome();
+    return;
+  }
+
+  setFeedbackState(
+    feedback,
+    "error",
+    `You have used all 3 attempts.
+Score: ${grade.score}/100 (${grade.tier}).
+${grade.feedback.join("\n")}
+
+Suggested Answer:
+${lessonContent.exemplarAnswer || lessonContent.feedbackGuide || "Review the prompt and include definition, source, logic, validation, and next action."}`
+  );
+
+  saveProgress();
+  refreshLessonChrome();
+  return;
+}
 
     const missingText = result.missing && result.missing.length
       ? ` Missing ideas to mention: ${result.missing.slice(0, 3).join(", ")}.`
