@@ -6918,7 +6918,26 @@ function generateHint(userQuery, lesson) {
   const grade = gradeSQLQuery(userQuery, lesson, null, null, { precheck: true });
   return grade.hint || lesson.smartHint || lesson.hint || "Review the SQL structure and compare it to the lesson task.";
 }
+function getWrittenLessonContent(lesson) {
+  if (!lesson) return {};
 
+  if (lesson.content) {
+    return lesson.content;
+  }
+
+  return {
+    summary: lesson.summary || "",
+    prompt: lesson.challengeCriteria || lesson.prompt || lesson.objective || "",
+    expectedKeywords: lesson.expectedKeywords || [],
+    minLength: lesson.minLength || 60,
+    minimumKeywordMatches: lesson.minimumKeywordMatches || 0,
+    requiredConceptGroups: lesson.requiredConceptGroups || [],
+    requiredConceptMatches: lesson.requiredConceptMatches || 0,
+    bonusConceptGroups: lesson.bonusConceptGroups || [],
+    feedbackGuide: lesson.feedbackGuide || lesson.explanation || "",
+    exemplarAnswer: lesson.exemplarAnswer || lesson.explanation || ""
+  };
+}
 function runQuery() {
   const lesson = getCurrentLesson();
   const output = document.getElementById("output");
