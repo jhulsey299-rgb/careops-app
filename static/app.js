@@ -7153,61 +7153,158 @@ function setFeedbackState(element, state, message) {
 }
 
 function gradeAnswer(userInput, lessonContent) {
-  const result = { score: 0, feedback: [], passed: false, missing: [] };
-  const input = String(userInput || "").toLowerCase();
+  const result = {
+    score: 0,
+    feedback: [],
+    passed: false,
+    missing: [],
+    tier: "Needs Work",
+    keywordMatches: 0,
+    conceptMatches: 0,
+    structureScore: 0,
+    depthScore: 0
+  };
+
+  const inputRaw = String(userInput || "").trim();
+  const input = inputRaw.toLowerCase();
   const lesson = lessonContent || {};
 
   const expectedKeywords = lesson.expectedKeywords || [];
   const minimumKeywordMatches = lesson.minimumKeywordMatches || 0;
   const minLength = lesson.minLength || 0;
 
-  let keywordMatches = 0;
   expectedKeywords.forEach(keyword => {
-    if (input.includes(String(keyword).toLowerCase())) keywordMatches += 1;
-    else result.missing.push(keyword);
+    const k = String(keyword).toLowerCase();
+    if (input.includes(k)) {
+      result.keywordMatches += 1;
+    } else {
+      result.missing.push(keyword);
+    }
   });
 
   const requiredConceptGroups = lesson.requiredConceptGroups || [];
   const requiredConceptMatches = lesson.requiredConceptMatches || 0;
 
-  let conceptMatches = 0;
   requiredConceptGroups.forEach(group => {
-    const matched = (group || []).some(term => input.includes(String(term).toLowerCase()));
-    if (matched) conceptMatches += 1;
-    else result.missing.push(group[0]);
+    const matched = (group || []).some(term =>
+      input.includes(String(term).toLowerCase())
+    );
+
+    if (matched) {
+      result.conceptMatches += 1;
+    } else if (group && group.length) {
+      result.missing.push(group[0]);
+    }
   });
 
   const bonusConceptGroups = lesson.bonusConceptGroups || [];
   let bonusMatches = 0;
+
   bonusConceptGroups.forEach(group => {
-    if ((group || []).some(term => input.includes(String(term).toLowerCase()))) {
-      bonusMatches += 1;
+    const matched = (group || []).some(term =>
+      input.includes(String(term).toLowerCase())
+    );
+    if (matched) bonusMatches += 1;
+  });
+
+  const structureChecks = [
+    { name: "metric definition", keywords: ["definition", "define", "metric", "kpi"] },
+    { name: "numerator / denominator", keywords: ["numerator", "denominator"] },
+    { name: "data source", keywords: ["source", "table", "claims", "encounters", "appointments", "patients", "discharges", "observations"] },
+    { name: "logic / eligibility", keywords: ["eligibility", "eligible", "criteria", "filter", "include", "exclude", "exclusion", "inclusion"] },
+    { name: "validation", keywords: ["validate", "validation", "check", "reconcile", "duplicate", "null", "missing", "outlier"] },
+    { name: "ownership / governance", keywords: ["owner", "approval", "governance", "standard", "documentation", "document"] },
+    { name: "driver / segmentation", keywords: ["segment", "driver", "department", "payer", "facility", "provider", "trend"] },
+    { name: "action / next step", keywords: ["next step", "recommend", "investigate", "review", "follow up", "action"] }
+  ];
+
+  const missingStructure = [];
+
+  structureChecks.forEach(section => {
+    const hit = section.keywords.some(k => input.includes(k));
+    if (hit) {
+      result.structureScore += 5;
+    } else {
+      missingStructure.push(section.name);
     }
   });
 
-  if (!expectedKeywords.length || keywordMatches >= minimumKeywordMatches) {
-    result.score += 35;
+  const depthIndicators = [
+    "because",
+    "so that",
+    "this matters",
+    "impact",
+    "risk",
+    "driver",
+    "trend",
+    "compare",
+    "before presenting",
+    "leadership",
+    "executive",
+    "next step",
+    "investigate"
+  ];
+
+  depthIndicators.forEach(word => {
+    if (input.includes(word)) {
+      result.depthScore += 2;
+    }
+  });
+
+  result.depthScore = Math.min(result.depthScore, 15);
+
+  if (!expectedKeywords.length || result.keywordMatches >= minimumKeywordMatches) {
+    result.score += 30;
   } else {
-    result.feedback.push(`Missing key ideas: ${result.missing.slice(0, 4).join(", ")}.`);
+    result.feedback.push(
+      `Missing key ideas: ${result.missing.slice(0, 5).join(", ")}.`
+    );
   }
 
-  if (!requiredConceptGroups.length || conceptMatches >= requiredConceptMatches) {
-    result.score += 35;
+  if (!requiredConceptGroups.length || result.conceptMatches >= requiredConceptMatches) {
+    result.score += 25;
   } else {
-    result.feedback.push(`Missing required business concepts. Found ${conceptMatches} of ${requiredConceptMatches}.`);
+    result.feedback.push(
+      `Missing required business concepts. Found ${result.conceptMatches} of ${requiredConceptMatches}.`
+    );
   }
 
-  if (input.length >= minLength) {
-    result.score += 20;
+  if (inputRaw.length >= minLength) {
+    result.score += 15;
   } else {
-    result.feedback.push("Answer is too short. Add more detail about the data, business meaning, and next action.");
+    result.feedback.push(
+      "Answer is too short. Add more detail about the data, business meaning, and next action."
+    );
   }
 
-  if (input.includes("leadership") || input.includes("executive") || input.includes("impact") || input.includes("next step")) {
-    result.score += 5;
+  result.score += result.structureScore;
+  result.score += result.depthScore;
+  result.score += Math.min(10, bonusMatches * 3);
+
+  const wordCount = inputRaw.split(/\s+/).filter(Boolean).length;
+
+  if (wordCount < 20) {
+    result.score -= 20;
+    result.feedback.push("Response is too minimal for analyst-level thinking.");
   }
 
-  result.score += Math.min(5, bonusMatches * 2);
+  if (wordCount < 35 && minLength >= 100) {
+    result.score -= 10;
+    result.feedback.push("Add a fuller explanation with definition, source, logic, validation, and action.");
+  }
+
+  if (result.structureScore < 20) {
+    result.feedback.push(
+      `Your answer lacks structured analyst thinking. Consider adding: ${missingStructure.slice(0, 4).join(", ")}.`
+    );
+  }
+
+  if (result.depthScore < 6) {
+    result.feedback.push(
+      "Add more reasoning. Explain why the issue matters, what could drive it, and what leadership should do next."
+    );
+  }
+
   result.score = Math.max(0, Math.min(100, Math.round(result.score)));
 
   result.tier =
@@ -7218,9 +7315,13 @@ function gradeAnswer(userInput, lessonContent) {
     "Needs Work";
 
   result.passed = result.score >= 70;
+
+  if (result.passed && result.feedback.length === 0) {
+    result.feedback.push("Strong analyst response. You addressed the key ideas with enough structure and business context.");
+  }
+
   return result;
 }
-
 function resetScenario() {
   const box = document.getElementById("scenario-response");
   const feedback = document.getElementById("scenario-feedback");
