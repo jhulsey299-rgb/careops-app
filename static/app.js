@@ -7422,7 +7422,8 @@ function submitScenario() {
 
   attempts += 1;
 
-  const grade = gradeAnswer(answer, lesson.content);
+const lessonContent = getWrittenLessonContent(lesson);
+const grade = gradeAnswer(answer, lessonContent);
 
   if (grade.passed) {
     updateLessonStatsOnGrade(lesson.id, { score: grade.score, tier: grade.tier }, true);
