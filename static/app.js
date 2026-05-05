@@ -6959,76 +6959,42 @@ function runQuery() {
     return;
   }
 
-if (isTextChallenge(lesson)) {
-  if (output) output.innerHTML = "";
-  attempts += 1;
+  if (isTextChallenge(lesson)) {
+    if (output) output.innerHTML = "";
+    attempts += 1;
 
-  const lessonContent = getWrittenLessonContent(lesson);
-  const grade = gradeAnswer(query, lessonContent);
+    const lessonContent = getWrittenLessonContent(lesson);
+    const grade = gradeAnswer(query, lessonContent);
 
-  if (grade.passed) {
-    updateLessonStatsOnGrade(
-      lesson.id,
-      { score: grade.score, tier: grade.tier },
-      true
-    );
+    if (grade.passed) {
+      updateLessonStatsOnGrade(
+        lesson.id,
+        { score: grade.score, tier: grade.tier },
+        true
+      );
 
-    markLessonCompleted(lesson.id, attempts === 1);
-
-    setFeedbackState(
-      feedback,
-      "success",
-      `Strong work. Score: ${grade.score}/100 (${grade.tier}).
-${lessonContent.feedbackGuide || "Your answer shows strong analyst reasoning."}`
-    );
-
-    attempts = 0;
-    saveProgress();
-    refreshLessonChrome();
-    return;
-  }
-
-  if (attempts < 3) {
-    setFeedbackState(
-      feedback,
-      "warning",
-      `Not quite yet. Score: ${grade.score}/100 (${grade.tier}).
-${grade.feedback.join("\n")}
-Try adding: ${grade.missing.slice(0, 4).join(", ")}.`
-    );
-
-    saveProgress();
-    refreshLessonChrome();
-    return;
-  }
-
-  setFeedbackState(
-    feedback,
-    "error",
-    `You have used all 3 attempts.
-Score: ${grade.score}/100 (${grade.tier}).
-${grade.feedback.join("\n")}
-
-Suggested Answer:
-${lessonContent.exemplarAnswer || lessonContent.feedbackGuide || "Review the prompt and include definition, source, logic, validation, and next action."}`
-  );
-
-  saveProgress();
-  refreshLessonChrome();
-  return;
-}
-
-    const missingText = result.missing && result.missing.length
-      ? ` Missing ideas to mention: ${result.missing.slice(0, 3).join(", ")}.`
-      : "";
-
-    if (attempts < 3) {
-      const nextHint = lesson.smartHint || lesson.hint || "Use the lesson objective and include the required ideas.";
+      markLessonCompleted(lesson.id, attempts === 1);
 
       setFeedbackState(
         feedback,
+        "success",
+        `Strong work. Score: ${grade.score}/100 (${grade.tier}).
+${lessonContent.feedbackGuide || "Your answer shows strong analyst reasoning."}`
+      );
+
+      attempts = 0;
+      saveProgress();
+      refreshLessonChrome();
+      return;
+    }
+
+    if (attempts < 3) {
+      setFeedbackState(
+        feedback,
         "warning",
-        `Not correct yet. Hint ${attempts}: ${nextHint}${missingText}`
+        `Not quite yet. Score: ${grade.score}/100 (${grade.tier}).
+${grade.feedback.join("\n")}
+Try adding: ${grade.missing.slice(0, 4).join(", ")}.`
       );
 
       saveProgress();
@@ -7040,12 +7006,14 @@ ${lessonContent.exemplarAnswer || lessonContent.feedbackGuide || "Review the pro
       feedback,
       "error",
       `You have used all 3 attempts.
+Score: ${grade.score}/100 (${grade.tier}).
+${grade.feedback.join("\n")}
+
 Suggested Answer:
-${lesson.exemplarAnswer || lesson.explanation || "Review the lesson and try again."}
-Explanation:
-${lesson.explanation || lesson.feedbackGuide || "This lesson is testing your reasoning, not verbatim wording."}`
+${lessonContent.exemplarAnswer || lessonContent.feedbackGuide || "Review the prompt and include definition, source, logic, validation, and next action."}`
     );
 
+    attempts = 0;
     saveProgress();
     refreshLessonChrome();
     return;
@@ -7080,6 +7048,7 @@ ${lesson.solutionQuery}
 Explanation:
 ${finalExplanation}`
       );
+      attempts = 0;
     }
 
     saveProgress();
@@ -7107,11 +7076,7 @@ ${finalExplanation}`
       setFeedbackState(
         feedback,
         "success",
-        "Correct — your query returned the expected result. Score: " +
-          finalGrade.score +
-          "/100 (" +
-          finalGrade.tier +
-          ")."
+        `Correct — your query returned the expected result. Score: ${finalGrade.score}/100 (${finalGrade.tier}).`
       );
 
       attempts = 0;
@@ -7141,6 +7106,7 @@ ${lesson.solutionQuery}
 Explanation:
 ${finalExplanation}`
       );
+      attempts = 0;
     }
 
     saveProgress();
@@ -7164,16 +7130,17 @@ ${finalExplanation}`
       );
     } else {
       setFeedbackState(
-  feedback,
-  "error",
-  `You have used all 3 attempts.
+        feedback,
+        "error",
+        `You have used all 3 attempts.
 ${hint}
 
 Correct Answer:
 ${lesson.solutionQuery}
 Explanation:
 ${finalExplanation}`
-);
+      );
+      attempts = 0;
     }
 
     saveProgress();
