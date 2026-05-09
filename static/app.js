@@ -4629,13 +4629,16 @@ function loadProgress() {
       appState = {
         ...appState,
         ...parsed,
-        lessonStats: parsed.lessonStats || {},
-        completedLessonIds: parsed.completedLessonIds || [],
-        firstTryLessonIds: parsed.firstTryLessonIds || [],
-        expandedCategoryIds: parsed.expandedCategoryIds || [],
-        glossarySearch: parsed.glossarySearch || "",
-        glossaryCategory: parsed.glossaryCategory || ""
-      };
+          lessonStats: parsed.lessonStats || {},
+  completedLessonIds: parsed.completedLessonIds || [],
+  firstTryLessonIds: parsed.firstTryLessonIds || [],
+  xp: Number(parsed.xp || 0),
+  xpEvents: parsed.xpEvents || {},
+  analystLevel: Number(parsed.analystLevel || 1),
+  expandedCategoryIds: parsed.expandedCategoryIds || [],
+  glossarySearch: parsed.glossarySearch || "",
+  glossaryCategory: parsed.glossaryCategory || ""
+};
     }
   } catch (error) {
     console.error("Could not load progress:", error);
