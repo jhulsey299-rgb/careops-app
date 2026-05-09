@@ -4815,6 +4815,61 @@ function currentTrackCompletedLessonCount() {
 function isLessonCompleted(lessonId) {
   return appState.completedLessonIds.includes(lessonId);
 }
+function xpForLessonCompletion(lesson, firstTry) {
+  if (!lesson) return 0;
+
+  const baseByType = {
+    concept: 10,
+    challenge: 25,
+    scenario: 35
+  };
+
+  const base = baseByType[lesson.type || lesson.kind] || 20;
+  const firstTryBonus = firstTry ? 10 : 0;
+
+  return base + firstTryBonus;
+}
+
+function getAnalystLevelFromXP(xp) {
+  const value = Number(xp || 0);
+
+  if (value >= 5000) return 10;
+  if (value >= 4000) return 9;
+  if (value >= 3200) return 8;
+  if (value >= 2500) return 7;
+  if (value >= 1900) return 6;
+  if (value >= 1400) return 5;
+  if (value >= 950) return 4;
+  if (value >= 550) return 3;
+  if (value >= 225) return 2;
+  return 1;
+}
+
+function awardLessonXP(lessonId, firstTry) {
+  if (!lessonId) return 0;
+
+  appState.xpEvents = appState.xpEvents || {};
+
+  // Prevent double-awarding XP for refreshing/reclicking completed lessons
+  if (appState.xpEvents[lessonId]) return 0;
+
+  const lesson = typeof getLessonById === "function"
+    ? getLessonById(lessonId)
+    : getAllLessons().find(l => l.id === lessonId);
+
+  const xpAwarded = xpForLessonCompletion(lesson, firstTry);
+
+  appState.xp = Number(appState.xp || 0) + xpAwarded;
+  appState.analystLevel = getAnalystLevelFromXP(appState.xp);
+
+  appState.xpEvents[lessonId] = {
+    xp: xpAwarded,
+    firstTry: !!firstTry,
+    completedAt: new Date().toISOString()
+  };
+
+  return xpAwarded;
+}
 function markLessonCompleted(lessonId, firstTry = false) {
   if (!isLessonCompleted(lessonId)) {
     appState.completedLessonIds.push(lessonId);
