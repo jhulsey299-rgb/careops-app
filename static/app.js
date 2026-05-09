@@ -33,10 +33,13 @@ let appState = {
   completedLessonIds: [],
   firstTryLessonIds: [],
   schemaPanelWidth: 320,
-  lessonStats: {},
-  expandedCategoryIds: [],
-  glossarySearch: "",
-  glossaryCategory: ""
+lessonStats: {},
+xp: 0,
+xpEvents: {},
+analystLevel: 1,
+expandedCategoryIds: [],
+glossarySearch: "",
+glossaryCategory: ""
 };
 let SQL = null;
 let sqlDb = null;
