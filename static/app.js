@@ -1,3 +1,12 @@
+function isTextChallenge(lesson) {
+  if (!lesson) return false;
+
+  return (
+    lesson.challengeMode === "text" ||
+    lesson.kind === "scenario" ||
+    lesson.type === "scenario"
+  );
+}
 function resetQuery() {
   const lesson = typeof getCurrentLesson === "function" ? getCurrentLesson() : null;
 
