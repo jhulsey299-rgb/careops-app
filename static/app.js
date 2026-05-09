@@ -4871,12 +4871,28 @@ function awardLessonXP(lessonId, firstTry) {
   return xpAwarded;
 }
 function markLessonCompleted(lessonId, firstTry = false) {
-  if (!isLessonCompleted(lessonId)) {
+  if (!lessonId) return;
+
+  appState.completedLessonIds = Array.isArray(appState.completedLessonIds)
+    ? appState.completedLessonIds
+    : [];
+
+  appState.firstTryLessonIds = Array.isArray(appState.firstTryLessonIds)
+    ? appState.firstTryLessonIds
+    : [];
+
+  const alreadyCompleted = appState.completedLessonIds.includes(lessonId);
+
+  if (!alreadyCompleted) {
     appState.completedLessonIds.push(lessonId);
+
+    if (firstTry && !appState.firstTryLessonIds.includes(lessonId)) {
+      appState.firstTryLessonIds.push(lessonId);
+    }
+
+    awardLessonXP(lessonId, firstTry);
   }
-  if (firstTry && !appState.firstTryLessonIds.includes(lessonId)) {
-    appState.firstTryLessonIds.push(lessonId);
-  }
+
   saveProgress();
 }
 function getLessonStats(lessonId) {
