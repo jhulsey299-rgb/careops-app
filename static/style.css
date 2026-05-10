@@ -465,6 +465,51 @@ body.resizing-schema #schema-resizer::before {
         transform: translateX(100%);
     }
 }
+/* ================= XP STATUS ================= */
+
+.xp-status-card {
+    margin-top: 10px;
+    padding: 12px 14px;
+    border: 1px solid #dbeafe;
+    border-radius: 14px;
+    background: #eff6ff;
+    color: #0f172a;
+    max-width: 360px;
+}
+
+.xp-status-top {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    font-weight: 800;
+    font-size: 0.9rem;
+}
+
+.xp-points {
+    color: #2563eb;
+}
+
+.xp-bar {
+    margin-top: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: #dbeafe;
+    overflow: hidden;
+}
+
+.xp-bar-fill {
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #2563eb 0%, #60a5fa 100%);
+    transition: width 0.25s ease;
+}
+
+.xp-status-sub {
+    margin-top: 6px;
+    color: #64748b;
+    font-size: 0.8rem;
+    font-weight: 650;
+}
 /* ================= Achievements / Badges ================= */
 .badges-section {
     padding: 18px;
