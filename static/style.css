@@ -474,7 +474,12 @@ body.resizing-schema #schema-resizer::before {
     border-radius: 14px;
     background: #eff6ff;
     color: #0f172a;
-    max-width: 360px;
+    max-width: none;
+}
+
+.xp-status-card .xp-status-top {
+    display: flex;
+    justify-content: space-between;
 }
 
 .xp-status-top {
