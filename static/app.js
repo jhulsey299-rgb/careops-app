@@ -7289,6 +7289,7 @@ function renderXPStatus() {
     card.id = "xp-status";
     card.className = "xp-status-card";
     target.appendChild(card);
+    card.className = "dashboard-card xp-status-card";
   }
 
   const xp = Number(appState.xp || 0);
