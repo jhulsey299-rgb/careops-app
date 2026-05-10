@@ -7320,6 +7320,7 @@ function refreshLessonChrome() {
   renderCurriculumNav();
   removeLevelsPanelOverviewButton();
   renderTrackCategoryCards();
+  renderXPStatus();
 }
 function setFeedbackState(element, state, message) {
   if (!element) return;
