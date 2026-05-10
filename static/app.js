@@ -7238,6 +7238,80 @@ function gradePass() {
   if (attempts === 1) return { score: 92, tier: "Strong" };
   return { score: 82, tier: "Passing" };
 }
+function getNextAnalystLevelXP() {
+  const level = Number(appState.analystLevel || 1);
+
+  const thresholds = {
+    1: 225,
+    2: 550,
+    3: 950,
+    4: 1400,
+    5: 1900,
+    6: 2500,
+    7: 3200,
+    8: 4000,
+    9: 5000,
+    10: 5000
+  };
+
+  return thresholds[level] || 5000;
+}
+
+function getCurrentLevelFloorXP() {
+  const level = Number(appState.analystLevel || 1);
+
+  const floors = {
+    1: 0,
+    2: 225,
+    3: 550,
+    4: 950,
+    5: 1400,
+    6: 1900,
+    7: 2500,
+    8: 3200,
+    9: 4000,
+    10: 5000
+  };
+
+  return floors[level] || 0;
+}
+
+function renderXPStatus() {
+  const target =
+    document.getElementById("xp-status") ||
+    document.getElementById("track-title-display")?.parentElement;
+
+  if (!target) return;
+
+  let card = document.getElementById("xp-status");
+
+  if (!card) {
+    card = document.createElement("div");
+    card.id = "xp-status";
+    card.className = "xp-status-card";
+    target.appendChild(card);
+  }
+
+  const xp = Number(appState.xp || 0);
+  const level = Number(appState.analystLevel || 1);
+  const floor = getCurrentLevelFloorXP();
+  const next = getNextAnalystLevelXP();
+  const progress = next === floor ? 100 : Math.round(((xp - floor) / (next - floor)) * 100);
+  const safeProgress = Math.max(0, Math.min(100, progress));
+
+  card.innerHTML = `
+    <div class="xp-status-top">
+      <span class="xp-label">Analyst Level ${level}</span>
+      <span class="xp-points">${xp.toLocaleString()} XP</span>
+    </div>
+    <div class="xp-bar">
+      <div class="xp-bar-fill" style="width: ${safeProgress}%"></div>
+    </div>
+    <div class="xp-status-sub">
+      ${level >= 10 ? "Max level reached" : `${Math.max(0, next - xp).toLocaleString()} XP to Level ${level + 1}`}
+    </div>
+  `;
+}
 function refreshLessonChrome() {
   applySchemaPanelWidth();
   renderSchema();
