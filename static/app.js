@@ -7278,9 +7278,8 @@ function getCurrentLevelFloorXP() {
 
 function renderXPStatus() {
   const target =
-    document.getElementById("xp-status") ||
-    document.getElementById("track-title-display")?.parentElement;
-
+  document.getElementById("xp-status-host") ||
+  document.querySelector(".top-dashboard");
   if (!target) return;
 
   let card = document.getElementById("xp-status");
