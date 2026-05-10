@@ -4636,9 +4636,9 @@ function loadProgress() {
     const parsed = JSON.parse(raw);
     if (parsed && typeof parsed === "object") {
       appState = {
-        ...appState,
-        ...parsed,
-          lessonStats: parsed.lessonStats || {},
+  ...appState,
+  ...parsed,
+  lessonStats: parsed.lessonStats || {},
   completedLessonIds: parsed.completedLessonIds || [],
   firstTryLessonIds: parsed.firstTryLessonIds || [],
   xp: Number(parsed.xp || 0),
