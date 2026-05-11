@@ -8380,6 +8380,7 @@ function renderAll() {
   initUiActions();
   removeLevelsPanelOverviewButton();
   attachPersistentNavigationDelegates();
+  renderXPStatus();
 }
 function initUiActions() {
   const openOverviewBtn = document.getElementById("open-overview-btn");
