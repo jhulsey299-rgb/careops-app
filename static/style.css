@@ -468,52 +468,49 @@ body.resizing-schema #schema-resizer::before {
 /* ================= XP STATUS ================= */
 
 .xp-status-card {
-    margin-top: 10px;
-    padding: 12px 14px;
-    border: 1px solid #dbeafe;
-    border-radius: 14px;
-    background: #eff6ff;
-    color: #0f172a;
+    margin-top: 0;
+    padding: 18px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: var(--panel);
+    color: var(--text);
     max-width: none;
+    box-shadow: var(--shadow-sm);
 }
 
 .xp-status-card .xp-status-top {
     display: flex;
     justify-content: space-between;
-}
-
-.xp-status-top {
-    display: flex;
-    justify-content: space-between;
     gap: 12px;
     font-weight: 800;
-    font-size: 0.9rem;
+    font-size: 0.95rem;
 }
 
 .xp-points {
-    color: #2563eb;
+    color: var(--primary);
 }
 
 .xp-bar {
-    margin-top: 8px;
-    height: 8px;
+    margin-top: 12px;
+    height: 13px;
     border-radius: 999px;
-    background: #dbeafe;
+    background: linear-gradient(180deg, #e2e8f0 0%, #dbe4ef 100%);
     overflow: hidden;
+    box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.08);
 }
 
 .xp-bar-fill {
     height: 100%;
     border-radius: 999px;
-    background: linear-gradient(90deg, #2563eb 0%, #60a5fa 100%);
+    background: linear-gradient(90deg, var(--primary) 0%, #60a5fa 100%);
     transition: width 0.25s ease;
 }
 
 .xp-status-sub {
-    margin-top: 6px;
-    color: #64748b;
-    font-size: 0.8rem;
-    font-weight: 650;
+    margin-top: 8px;
+    color: var(--text-faint);
+    font-size: 0.9rem;
+    font-weight: 600;
 }
 /* ================= Achievements / Badges ================= */
 .badges-section {
