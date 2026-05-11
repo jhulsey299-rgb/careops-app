@@ -5072,6 +5072,16 @@ function renderAchievements() {
     container.appendChild(chip);
   });
 }
+function getLearningBadgeForTrack(trackId = appState.currentTrackId) {
+  const badges = typeof LEARNING_BADGES !== "undefined" ? LEARNING_BADGES : [];
+  return badges.find(badge => badge.trackId === trackId) || badges[0] || null;
+}
+
+function getLearningBadgeIndex(trackId = appState.currentTrackId) {
+  const badges = typeof LEARNING_BADGES !== "undefined" ? LEARNING_BADGES : [];
+  const index = badges.findIndex(badge => badge.trackId === trackId);
+  return index >= 0 ? index + 1 : 1;
+}
 function updateDashboard() {
   const total = currentTrackLessonCount();
   const completed = currentTrackCompletedLessonCount();
