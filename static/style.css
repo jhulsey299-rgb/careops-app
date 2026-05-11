@@ -594,9 +594,21 @@ body.resizing-schema #schema-resizer::before {
 }
 .track-category-cards {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    grid-template-columns: repeat(6, minmax(0, 1fr));
     gap: 18px;
     margin-top: 16px;
+}
+
+.track-category-cards > .track-badge-card {
+    grid-column: span 2;
+}
+
+.track-category-cards > .track-badge-card:nth-child(4) {
+    grid-column: 2 / span 2;
+}
+
+.track-category-cards > .track-badge-card:nth-child(5) {
+    grid-column: 4 / span 2;
 }
 /* ================= Track Badge Cards ================= */
 .track-badge-card {
