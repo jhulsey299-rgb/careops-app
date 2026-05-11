@@ -7278,8 +7278,9 @@ function getCurrentLevelFloorXP() {
 
 function renderXPStatus() {
   const target =
-  document.getElementById("xp-status-host") ||
-  document.querySelector(".top-dashboard");
+    document.getElementById("xp-status-host") ||
+    document.querySelector(".top-dashboard");
+
   if (!target) return;
 
   let card = document.getElementById("xp-status");
@@ -7287,9 +7288,8 @@ function renderXPStatus() {
   if (!card) {
     card = document.createElement("div");
     card.id = "xp-status";
-    card.className = "xp-status-card";
-    target.appendChild(card);
     card.className = "dashboard-card xp-status-card";
+    target.appendChild(card);
   }
 
   const xp = Number(appState.xp || 0);
