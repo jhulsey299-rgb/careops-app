@@ -4947,7 +4947,7 @@ function categoryBadgeCount() {
   return getAllCategories().filter(categoryComplete).length;
 }
 function levelBadgeCount() {
-  return LEARNING_LEVELS.filter(level => {
+  return LEARNING_BADGES.filter(level => {
     const track = curriculum.find(item => item.id === level.trackId);
     return !!track && (track.categories || []).length > 0 && (track.categories || []).every(categoryComplete);
   }).length;
@@ -5091,7 +5091,7 @@ function updateDashboard() {
   }
   if (badgeCount) {
   const earned = levelBadgeCount();
-  const totalLevels = LEARNING_LEVELS.length;
+  const totalLevels = LEARNING_BADGES.length;
   const mastered = masteryCount();
 
   badgeCount.innerText =
@@ -5157,7 +5157,7 @@ function renderSchema() {
   }
 }
 function levelForTrack(trackId) {
-  return LEARNING_LEVELS.find(level => level.trackId === trackId);
+  return LEARNING_BADGES.find(level => level.trackId === trackId);
 }
 function shouldShowExecutiveTakeaway(lesson) {
   const levelKey = levelForTrack(appState.currentTrackId)?.key;
@@ -5183,7 +5183,7 @@ function renderTrackCategoryCards() {
   container.style.gridTemplateColumns = "repeat(auto-fit, minmax(220px, 1fr))";
   container.style.gap = "18px";
 
-  const cards = LEARNING_LEVELS.map(level => {
+  const cards = LEARNING_BADGES.map(level => {
     const track = curriculum.find(item => item.id === level.trackId);
 
     if (!track) {
