@@ -386,9 +386,10 @@ body.resizing-schema #schema-resizer::before {
 /* ================= Dashboard ================= */
 .top-dashboard {
     display: grid;
-    grid-template-columns: repeat(3, minmax(220px, 1fr));
+    grid-template-columns: repeat(3, minmax(240px, 1fr));
     gap: 16px;
     margin-bottom: 18px;
+    align-items: stretch;
 }
 .dashboard-card {
     padding: 18px;
