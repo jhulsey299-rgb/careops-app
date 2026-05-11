@@ -1734,6 +1734,23 @@ body.resizing-schema #schema-resizer::before {
     border-color: #fca5a5;
 }
 /* ================= Stronger Mobile Layout ================= */
+.level-panel-heading {
+    margin-bottom: 10px;
+}
+
+.level-panel-heading-title {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: var(--text);
+    margin: 0 0 4px;
+}
+
+.level-panel-heading-subtitle {
+    font-size: 0.92rem;
+    font-weight: 650;
+    color: var(--text-faint);
+    margin: 0;
+}
 @media (max-width: 900px) {
     body {
         padding: 10px;
