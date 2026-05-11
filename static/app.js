@@ -7629,21 +7629,32 @@ function prevLesson() {
 }
 function resetAllProgress() {
   if (!window.confirm("Reset all progress for CareOps SQL Analyst?")) return;
+
   const firstTrack = curriculum[0] || null;
+
   appState.completedLessonIds = [];
   appState.firstTryLessonIds = [];
   appState.lessonStats = {};
+  appState.xp = 0;
+  appState.xpEvents = {};
+  appState.analystLevel = 1;
+
   appState.currentTrackId = firstTrack?.id || "track_foundations";
   appState.currentCategoryId = firstTrack?.categories?.[0]?.id || null;
   appState.currentLessonId = firstTrack?.categories?.[0]?.lessons?.[0]?.id || null;
   appState.currentView = "overview";
+
   activeDifficultyFilter = null;
   appState.glossarySearch = "";
   appState.glossaryCategory = "";
+
   attempts = 0;
+  lastRunQuery = "";
+
   saveProgress();
   showOverview();
   renderAll();
+  renderXPStatus();
 }
 function openTableModal(tableName) {
   const overlay = document.getElementById("table-modal-overlay");
