@@ -5090,8 +5090,13 @@ function updateDashboard() {
     currentLevelDisplay.innerText = current ? `${current.title}${currentStats && currentStats.bestTier !== "Not Started" ? ` · ${currentStats.bestTier}` : ""}` : "No lesson selected";
   }
   if (badgeCount) {
-    badgeCount.innerText = `${levelBadgeCount()} learning level badges earned · ${masteryCount()} mastered`;
-  }
+  const earned = levelBadgeCount();
+  const totalLevels = LEARNING_LEVELS.length;
+  const mastered = masteryCount();
+
+  badgeCount.innerText =
+    `${earned} / ${totalLevels} Learning Badges earned · ${mastered} mastered`;
+}
   if (trackTitle) trackTitle.innerText = track.title;
   if (trackDescription) trackDescription.innerText = "Curriculum, learning levels, completion, and mastery tracking.";
   updateLevelsPanelTheme(track.id);
