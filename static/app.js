@@ -5098,7 +5098,7 @@ function updateDashboard() {
     `${earned} / ${totalLevels} Learning Badges earned · ${mastered} mastered`;
 }
   if (trackTitle) trackTitle.innerText = track.title;
-  if (trackDescription) trackDescription.innerText = "Curriculum, learning levels, completion, and mastery tracking.";
+  if (trackDescription) trackDescription.innerText = "Curriculum, learning badges, completion, and mastery tracking.";
   updateLevelsPanelTheme(track.id);
 }
 function updateLevelsPanelTheme(trackId) {
