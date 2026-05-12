@@ -7337,6 +7337,26 @@ function renderXPStatus() {
     </div>
   `;
 }
+function updateLessonsPanelHeader() {
+  const panel = document.getElementById("levels-panel");
+  if (!panel) return;
+
+  const track = getTrack();
+  const badge = getLearningBadgeForTrack(track?.id);
+  const levelNumber = getLearningBadgeIndex(track?.id);
+
+  const firstHeading =
+    panel.querySelector(".level-panel-heading") ||
+    panel.querySelector("h2, h3");
+
+  if (!firstHeading) return;
+
+  firstHeading.className = "level-panel-heading";
+  firstHeading.innerHTML = `
+    <p class="level-panel-heading-title">Level ${levelNumber}</p>
+    <p class="level-panel-heading-subtitle">${badge?.label || track?.title || "Current Level"}</p>
+  `;
+}
 function refreshLessonChrome() {
   applySchemaPanelWidth();
   renderSchema();
