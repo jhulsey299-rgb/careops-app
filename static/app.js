@@ -7363,6 +7363,7 @@ function refreshLessonChrome() {
   renderAchievements();
   updateDashboard();
   renderCurriculumNav();
+  updateLessonsPanelHeader();
   removeLevelsPanelOverviewButton();
   renderTrackCategoryCards();
   renderXPStatus();
