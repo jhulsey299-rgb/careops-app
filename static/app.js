@@ -5083,33 +5083,43 @@ function getLearningBadgeIndex(trackId = appState.currentTrackId) {
   return index >= 0 ? index + 1 : 1;
 }
 function updateDashboard() {
-  const total = currentTrackLessonCount();
-  const completed = currentTrackCompletedLessonCount();
+  const total = totalLessonCount();
+  const completed = completedLessonCount();
   const current = getCurrentLesson();
   const track = getTrack();
+
   const progressText = document.getElementById("progress-text");
   const progressBar = document.getElementById("progress-bar");
   const currentLevelDisplay = document.getElementById("current-level-display");
-  const badgeCount = document.getElementById("badge-count");
   const trackTitle = document.getElementById("track-title");
   const trackDescription = document.getElementById("track-description");
-  if (progressText) progressText.innerText = `${completed} / ${total} lessons completed`;
-  if (progressBar) progressBar.style.width = `${total ? (completed / total) * 100 : 0}%`;
+
+  if (progressText) {
+    progressText.innerText = `${completed} / ${total} lessons completed`;
+  }
+
+  if (progressBar) {
+    progressBar.style.width = `${total ? (completed / total) * 100 : 0}%`;
+  }
+
   if (currentLevelDisplay) {
     const currentStats = current ? getLessonStats(current.id) : null;
-    currentLevelDisplay.innerText = current ? `${current.title}${currentStats && currentStats.bestTier !== "Not Started" ? ` · ${currentStats.bestTier}` : ""}` : "No lesson selected";
+    currentLevelDisplay.innerText = current
+      ? `${current.title}${currentStats && currentStats.bestTier !== "Not Started" ? ` · ${currentStats.bestTier}` : ""}`
+      : "No lesson selected";
   }
-  if (badgeCount) {
-  const earned = levelBadgeCount();
-  const totalLevels = LEARNING_BADGES.length;
-  const mastered = masteryCount();
 
-  badgeCount.innerText =
-    `${earned} / ${totalLevels} Learning Badges earned · ${mastered} mastered`;
-}
-  if (trackTitle) trackTitle.innerText = track.title;
-  if (trackDescription) trackDescription.innerText = "Curriculum, learning badges, completion, and mastery tracking.";
-  updateLevelsPanelTheme(track.id);
+  if (trackTitle && track) {
+    trackTitle.innerText = track.title;
+  }
+
+  if (trackDescription) {
+    trackDescription.innerText = "Curriculum, learning badges, completion, and mastery tracking.";
+  }
+
+  if (track?.id && typeof updateLevelsPanelTheme === "function") {
+    updateLevelsPanelTheme(track.id);
+  }
 }
 function updateLevelsPanelTheme(trackId) {
   const panel = document.getElementById("levels-panel");
