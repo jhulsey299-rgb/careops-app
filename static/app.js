@@ -5500,12 +5500,116 @@ function renderCurriculumNav() {
     list.appendChild(wrap);
   });
 }
+function getTrackOverviewContent(trackId) {
+  const content = {
+    track_foundations: {
+      title: "Foundations",
+      description: "Build the base skills needed to understand hospital data, table grain, basic SQL syntax, and the difference between patients, encounters, claims, and charges.",
+      learnings: [
+        "How hospital data is organized across patients, encounters, claims, charges, and departments",
+        "How to identify table grain before counting or filtering anything",
+        "How to write simple SELECT, WHERE, ORDER BY, and LIMIT queries",
+        "How to explain basic SQL output in plain operational language"
+      ],
+      impact: [
+        "Prevents common analyst mistakes like confusing patient counts with encounter counts",
+        "Builds confidence before moving into grouped metrics and KPIs",
+        "Creates the foundation for trustworthy hospital reporting"
+      ]
+    },
+
+    track_core: {
+      title: "Core",
+      description: "Turn row-level hospital data into reliable metrics using aggregation, grouping, KPI logic, financial summaries, utilization patterns, and operational performance measures.",
+      learnings: [
+        "How to summarize volume, unique patients, charges, claims, no-shows, and throughput",
+        "How to use COUNT, DISTINCT, SUM, AVG, GROUP BY, HAVING, and ORDER BY",
+        "How to compare departments, payers, encounter types, and utilization patterns",
+        "How to connect SQL outputs to leadership-ready metric interpretation"
+      ],
+      impact: [
+        "Helps leaders understand workload, access, financial exposure, and operational pressure",
+        "Builds the core skill set needed for dashboards and recurring reports",
+        "Moves the learner from simple querying into actual hospital KPI analysis"
+      ]
+    },
+
+    track_intermediate: {
+      title: "Intermediate SQL",
+      description: "Develop stronger analyst logic through advanced filtering, cohort design, CASE logic, joins, multi-table analysis, and aggregated executive breakdowns.",
+      learnings: [
+        "How to build precise cohorts using AND, OR, BETWEEN, and parentheses",
+        "How to create calculated fields, flags, categories, and CASE-based measures",
+        "How to join tables while protecting grain and avoiding overcounting",
+        "How to create percent-of-total and multi-step executive breakdowns"
+      ],
+      impact: [
+        "Improves the accuracy of operational, financial, and quality populations",
+        "Prevents misleading results caused by bad joins or unclear cohort logic",
+        "Prepares analysts to investigate drivers instead of only reporting totals"
+      ]
+    },
+
+    track_advanced_sql: {
+      title: "Advanced SQL",
+      description: "Use advanced SQL patterns to investigate trends, rank performance, validate data, analyze root causes, and prepare decision-ready findings.",
+      learnings: [
+        "How to use CTEs, window functions, ranking, trend logic, and validation checks",
+        "How to investigate outliers, movement over time, and performance variation",
+        "How to separate true operational drivers from reporting artifacts",
+        "How to build advanced analyses that withstand leadership scrutiny"
+      ],
+      impact: [
+        "Supports deeper investigation into safety, quality, throughput, and financial performance",
+        "Helps analysts validate numbers before presenting them",
+        "Turns SQL into a diagnostic tool for hospital improvement"
+      ]
+    },
+
+    track_executive_analyst: {
+      title: "Executive Analyst",
+      description: "Translate analysis into executive-ready insight, action plans, prioritization, governance, and communication that can drive measurable hospital improvement.",
+      learnings: [
+        "How to define metrics with numerator, denominator, source, owner, and governance",
+        "How to explain drivers, limitations, risks, and recommended next steps",
+        "How to prioritize issues by financial, operational, quality, and patient safety impact",
+        "How to write analyst briefs leaders can actually act on"
+      ],
+      impact: [
+        "Turns technical analysis into leadership action",
+        "Improves communication around preventable denials, quality gaps, readmissions, and throughput",
+        "Prepares the user to function like a strategic hospital analyst, not just a SQL user"
+      ]
+    }
+  };
+
+  return content[trackId] || {
+    title: "Current Level",
+    description: "Continue building SQL and hospital analytics skills through structured lessons.",
+    learnings: [
+      "How to analyze healthcare data with SQL",
+      "How to connect metrics to business questions",
+      "How to communicate findings clearly"
+    ],
+    impact: [
+      "Improves reporting accuracy",
+      "Supports operational and financial decision-making",
+      "Builds confidence with real healthcare data"
+    ]
+  };
+}
+
 function renderOverview() {
   const track = getTrack();
   const cats = Array.isArray(track.categories) ? track.categories : [];
   const lessons = cats.flatMap(c => Array.isArray(c.lessons) ? c.lessons : []);
   const total = lessons.length;
   const completed = lessons.filter(l => isLessonCompleted(l.id)).length;
+
+  const badge = getLearningBadgeForTrack(track.id);
+  const levelNumber = getLearningBadgeIndex(track.id);
+  const overview = getTrackOverviewContent(track.id);
+
   const title = document.getElementById("track-overview-title");
   const desc = document.getElementById("track-overview-description");
   const trackTitleDisplay = document.getElementById("track-title-display-overview");
@@ -5513,36 +5617,57 @@ function renderOverview() {
   const progressBar = document.getElementById("track-overview-progress-bar");
   const learnings = document.getElementById("track-overview-learnings");
   const impact = document.getElementById("track-overview-impact");
-  if (title) title.innerText = track.title;
-  if (desc) desc.innerText = track.description;
-  if (trackTitleDisplay) trackTitleDisplay.innerText = levelForTrack(track.id)?.label || "Track";
-  if (progressText) progressText.innerText = `${completed} of ${total} lessons completed`;
-  if (progressBar) progressBar.style.width = `${total ? (completed / total) * 100 : 0}%`;
-  if (learnings) learnings.innerHTML = "<li>How to query healthcare data with SQL</li><li>How to interpret operational and financial metrics</li><li>How to communicate findings to leaders</li>";
-  if (impact) impact.innerHTML = "<li>Improve quality and operational visibility</li><li>Support financial performance and denial reduction</li><li>Communicate what leaders should act on</li>";
+
+  if (title) title.innerText = overview.title;
+  if (desc) desc.innerText = overview.description;
+  if (trackTitleDisplay) trackTitleDisplay.innerText = `Level ${levelNumber} · ${badge?.label || track.title}`;
+
+  if (progressText) {
+    progressText.innerText = `${completed} of ${total} lessons completed`;
+  }
+
+  if (progressBar) {
+    progressBar.style.width = `${total ? (completed / total) * 100 : 0}%`;
+  }
+
+  if (learnings) {
+    learnings.innerHTML = overview.learnings.map(item => `<li>${item}</li>`).join("");
+  }
+
+  if (impact) {
+    impact.innerHTML = overview.impact.map(item => `<li>${item}</li>`).join("");
+  }
+
   const startBtn = document.getElementById("start-track-btn");
   const resumeBtn = document.getElementById("resume-track-btn");
-  if (startBtn) startBtn.onclick = function () {
-    appState.currentCategoryId = track.categories[0]?.id || null;
-    appState.currentLessonId = cats[0]?.lessons?.[0]?.id || null;
-    appState.currentView = "lesson";
-    attempts = 0;
-    appState.currentView = "lesson";
-    saveProgress();
-    renderAll();
-  };
-  if (resumeBtn) resumeBtn.onclick = function () {
-    const firstIncomplete = lessons.find(l => !isLessonCompleted(l.id));
-    const lesson = firstIncomplete || cats[0]?.lessons?.[0];
-    if (!lesson) return;
-    appState.currentLessonId = lesson.id;
-    appState.currentCategoryId = track.categories.find(c => c.lessons.some(l => l.id === lesson.id))?.id || null;
-    appState.currentView = "lesson";
-    attempts = 0;
-    appState.currentView = "lesson";
-    saveProgress();
-    renderAll();
-  };
+
+  if (startBtn) {
+    startBtn.onclick = function () {
+      appState.currentCategoryId = track.categories?.[0]?.id || null;
+      appState.currentLessonId = cats[0]?.lessons?.[0]?.id || null;
+      appState.currentView = "lesson";
+      attempts = 0;
+      saveProgress();
+      renderAll();
+    };
+  }
+
+  if (resumeBtn) {
+    resumeBtn.onclick = function () {
+      const firstIncomplete = lessons.find(l => !isLessonCompleted(l.id));
+      const lesson = firstIncomplete || cats[0]?.lessons?.[0];
+      if (!lesson) return;
+
+      appState.currentLessonId = lesson.id;
+      appState.currentCategoryId =
+        track.categories.find(c => (c.lessons || []).some(l => l.id === lesson.id))?.id || null;
+
+      appState.currentView = "lesson";
+      attempts = 0;
+      saveProgress();
+      renderAll();
+    };
+  }
 }
 /* duplicate removed during stabilization pass */
 /* duplicate removed during stabilization pass */
