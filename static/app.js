@@ -8411,7 +8411,8 @@ function renderAll() {
   renderAchievements();
   updateDashboard();
   renderCurriculumNav();
-  renderTrackCategoryCards();
+updateLessonsPanelHeader();
+renderTrackCategoryCards();
   renderOverview();
   if (appState.currentView === "lesson" && appState.currentLessonId) {
     renderLesson();
