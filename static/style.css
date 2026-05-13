@@ -593,22 +593,23 @@ body.resizing-schema #schema-resizer::before {
     margin-top: 18px;
 }
 .track-category-cards {
-    display: grid;
-    grid-template-columns: repeat(6, minmax(0, 1fr));
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
     gap: 18px;
     margin-top: 16px;
 }
 
 .track-category-cards > .track-badge-card {
-    grid-column: span 2;
+    flex: 0 1 calc((100% - 36px) / 3);
+    max-width: calc((100% - 36px) / 3);
+    min-width: 260px;
 }
 
-.track-category-cards > .track-badge-card:nth-child(4) {
-    grid-column: 2 / span 2;
-}
-
+/* Bottom row centered */
+.track-category-cards > .track-badge-card:nth-child(4),
 .track-category-cards > .track-badge-card:nth-child(5) {
-    grid-column: 4 / span 2;
+    flex: 0 1 calc((100% - 36px) / 3);
 }
 /* ================= Track Badge Cards ================= */
 .track-badge-card {
