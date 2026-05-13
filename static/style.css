@@ -1630,11 +1630,22 @@ body.resizing-schema #schema-resizer::before {
     }
 }
 @media (max-width: 900px) {
-    .track-overview-grid,
-    .track-category-cards,
-    .table-modal-meta {
-        grid-template-columns: 1fr;
-    }
+   .track-overview-grid,
+.table-modal-meta {
+    grid-template-columns: 1fr;
+}
+
+.track-category-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.track-category-cards > .track-badge-card {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+}
     .hero-banner {
         padding: 22px 20px 20px;
     }
