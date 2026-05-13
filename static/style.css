@@ -601,15 +601,14 @@ body.resizing-schema #schema-resizer::before {
 }
 
 .track-category-cards > .track-badge-card {
-    flex: 0 1 calc((100% - 36px) / 3);
-    max-width: calc((100% - 36px) / 3);
+    flex: 0 1 31%;
+    max-width: 31%;
     min-width: 260px;
 }
 
-/* Bottom row centered */
-.track-category-cards > .track-badge-card:nth-child(4),
-.track-category-cards > .track-badge-card:nth-child(5) {
-    flex: 0 1 calc((100% - 36px) / 3);
+/* Center bottom row */
+.track-category-cards > .track-badge-card:nth-child(4) {
+    margin-left: 16%;
 }
 /* ================= Track Badge Cards ================= */
 .track-badge-card {
