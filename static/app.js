@@ -1883,56 +1883,57 @@ Explain how you would validate the data before presenting it and what checks you
             executiveTakeaway: { show: false }
           },
           {
-            kind: "concept",
-            id: "co7",
-            title: "Provider and Department Context",
-            objective: "Understand when provider or department joins add useful operational context.",
-            sql_focus: ["JOIN", "providers", "departments"],
-            relevantTables: ["encounters", "providers", "departments"],
-            joinHint: "Join encounters to providers on provider_id and departments on department_id.",
-            summary: "Provider and department context can make operational metrics more actionable, but it must be used carefully to avoid unfair interpretation.",
-            bullets: [
-              "Provider joins add specialty and provider assignment context.",
-              "Department joins add facility and service line context.",
-              "Context can explain variation that raw metrics cannot.",
-              "Provider-level reporting should consider patient mix and workflow factors.",
-              "Operational metrics should guide improvement, not blame."
-            ],
-            example: "Hospital example: high volume for one provider may reflect clinic assignment or specialty, not individual performance alone.",
-            executiveTakeaway: { show: false }
-          },
           {
-            kind: "challenge",
-            id: "co8",
-            title: "Encounters by Provider Specialty",
-            objective: "Join providers to encounters and summarize volume by specialty.",
-            sql_focus: ["JOIN", "COUNT", "GROUP BY"],
-            relevantTables: ["encounters", "providers"],
-            joinHint: "Join encounters e to providers p on provider_id.",
-            challengeCriteria: "Return provider specialty and encounter count by specialty. Label the count encounter_count.",
-            starterQuery: "",
-            solutionQuery: "SELECT p.specialty, COUNT(*) AS encounter_count FROM encounters e JOIN providers p ON e.provider_id = p.provider_id GROUP BY p.specialty;",
-            hint: "Join providers so you can group by specialty.",
-            smartHint: "Use p.specialty in SELECT and GROUP BY.",
-            thirdHint: "SELECT p.specialty, COUNT(*) AS encounter_count FROM encounters e JOIN providers p ON e.provider_id = p.provider_id GROUP BY p.specialty;",
-            explanation: "This summarizes encounter volume by provider specialty.",
-            executiveTakeaway: { show: false }
-          },
-          {
-            kind: "scenario",
-            id: "co9",
-            title: "Scenario: Operational Bottleneck Review",
-            objective: "Explain how to investigate operational flow using observation, discharge, department, and provider context.",
-            relevantTables: ["observations", "discharges", "encounters", "departments", "providers"],
-            joinHint: "Choose metrics that match the workflow problem before joining extra context.",
-            summary: "Leadership reports bed capacity pressure even though total hospital volume is stable.",
-            prompt: "Explain what metrics you would review to investigate this issue. Mention discharge delays, observation hours or conversions, department context, and why stable volume does not rule out a throughput problem.",
-            expectedKeywords: ["discharge", "observation", "department", "throughput", "volume"],
-            minLength: 120,
-            minimumKeywordMatches: 3,
-            feedbackGuide: "A strong answer explains that stable volume can still hide throughput problems such as delayed discharges or long observation stays.",
-            executiveTakeaway: { show: false }
-          }
+  kind: "concept",
+  id: "co7",
+  title: "ED Boarding as a Capacity Signal",
+  objective: "Understand why ED boarding reflects downstream hospital capacity pressure.",
+  sql_focus: ["ED boarding", "Throughput", "Capacity"],
+  relevantTables: ["encounters", "discharges", "observations"],
+  joinHint: "Start with encounters for ED volume, then use discharges or observations to investigate downstream flow.",
+  summary: "ED boarding is often a symptom of hospital-wide flow problems. The emergency department may feel like the problem, but the driver is often inpatient bed availability, discharge timing, observation flow, or placement delays.",
+  bullets: [
+    "ED boarding means patients remain in the ED while waiting for an inpatient or observation bed.",
+    "Boarding can indicate inpatient capacity pressure, delayed discharges, or inefficient bed turnover.",
+    "Stable ED volume can still produce boarding if beds are blocked downstream.",
+    "Useful drilldowns include facility, department, encounter type, discharge delay, observation hours, and conversion status.",
+    "Boarding is a patient safety and operational risk, not just an ED inconvenience."
+  ],
+  example: "Hospital example: if ED volume is stable but boarding worsens, leaders should review discharge delays, observation stays, and inpatient bed availability before blaming ED intake alone.",
+  executiveTakeaway: { show: false }
+},
+{
+  kind: "challenge",
+  id: "co8",
+  title: "ED Capacity Review Cohort",
+  objective: "Build a focused ED cohort for capacity review.",
+  sql_focus: ["WHERE", "AND", "Encounter type", "Capacity review"],
+  relevantTables: ["encounters"],
+  joinHint: "Use encounters because department and encounter_type are available there.",
+  challengeCriteria: "Return all rows from encounters where department equals 'Emergency Department' and encounter_type equals 'Inpatient'.",
+  starterQuery: "",
+  solutionQuery: "SELECT * FROM encounters WHERE department = 'Emergency Department' AND encounter_type = 'Inpatient';",
+  hint: "Use two filters joined with AND.",
+  smartHint: "Filter department to Emergency Department and encounter_type to Inpatient.",
+  thirdHint: "SELECT * FROM encounters WHERE department = 'Emergency Department' AND encounter_type = 'Inpatient';",
+  explanation: "This creates a review cohort for ED patients who required inpatient-level care, which can support capacity and boarding investigation.",
+  executiveTakeaway: { show: false }
+},
+{
+  kind: "scenario",
+  id: "co9",
+  title: "Scenario: ED Boarding Capacity Review",
+  objective: "Explain how to investigate ED boarding using volume, discharge, and observation context.",
+  relevantTables: ["encounters", "discharges", "observations"],
+  joinHint: "Start with ED encounters, then investigate downstream discharge and observation flow.",
+  summary: "Leadership says the ED is overcrowded, but total ED volume has not changed much.",
+  prompt: "Explain how you would investigate whether ED boarding is being driven by downstream capacity problems. Mention ED volume, inpatient bed availability or inpatient demand, discharge delays, observation hours over 48, facility or department segmentation, and why stable volume does not rule out a throughput problem.",
+  expectedKeywords: ["ed", "boarding", "volume", "discharge", "observation", "capacity"],
+  minLength: 140,
+  minimumKeywordMatches: 5,
+  feedbackGuide: "A strong answer explains that ED boarding can be caused by downstream hospital flow problems even when ED volume is stable.",
+  executiveTakeaway: { show: false }
+}
         ]
       },
       {
