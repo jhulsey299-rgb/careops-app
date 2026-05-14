@@ -1793,7 +1793,6 @@ Explain how you would validate the data before presenting it and what checks you
             executiveTakeaway: { show: false }
           },
           {
-           {
   kind: "challenge",
   id: "co2",
   title: "Observation Stays Over 48 Hours",
