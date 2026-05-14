@@ -1882,7 +1882,6 @@ Explain how you would validate the data before presenting it and what checks you
             executiveTakeaway: { show: false }
           },
           {
-          {
   kind: "concept",
   id: "co7",
   title: "ED Boarding as a Capacity Signal",
