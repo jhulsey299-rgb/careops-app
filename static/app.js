@@ -1056,25 +1056,26 @@ Explain what this result means and why it matters.`,
       executiveTakeaway: { show: false }
     },
     {
-      kind: "scenario",
-      id: "s24",
-      title: "Scenario: Executive Request",
-      objective: "Deliver sorted and interpretable data.",
-      relevantTables: ["encounters"],
-      joinHint: "Use sorting to make the output useful, then explain the meaning.",
-      summary: "A leader wants insight, not raw data.",
-      prompt: `A hospital executive asks: "Show me the most recent high-cost encounters."
+  kind: "scenario",
+  id: "s24",
+  title: "Scenario: Executive Request",
+  objective: "Deliver sorted and interpretable encounter data.",
+  relevantTables: ["encounters"],
+  joinHint: "Use sorting to make the output useful, then explain the meaning.",
+  summary: "A leader wants insight, not raw data.",
+  prompt: `A hospital executive asks: "Show me the most recent encounters that may need operational review."
+
 Write a query AND explain what the result means.
 Your answer must:
 - filter relevant encounters
-- sort results
+- sort results by most recent activity
 - explain what leadership should take away`,
-      expectedKeywords: ["select", "where", "order", "desc"],
-      minLength: 80,
-      minimumKeywordMatches: 2,
-      feedbackGuide: "A strong answer includes sorting, filtering, and a clear explanation of what leadership should learn from the data.",
-      executiveTakeaway: { show: false }
-    }
+  expectedKeywords: ["select", "where", "order", "desc"],
+  minLength: 80,
+  minimumKeywordMatches: 2,
+  feedbackGuide: "A strong answer includes filtering, sorting, and a clear explanation of what leadership should learn from the data.",
+  executiveTakeaway: { show: false }
+}
   ]
       },
       {
