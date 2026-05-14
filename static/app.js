@@ -4921,10 +4921,15 @@ function getLessonStats(lessonId) {
 function tierRank(tier) {
   return {
     "Not Started": 0,
-    "Developing": 1,
-    "Passing": 2,
-    "Strong": 3,
-    "Perfect": 4
+    "Needs Work": 1,
+    "Developing": 2,
+    "Close": 3,
+    "Passing": 3,
+    "Competent": 4,
+    "Strong": 5,
+    "Excellent": 6,
+    "Perfect": 6,
+    "Mastered": 6
   }[tier] || 0;
 }
 function updateLessonStatsOnGrade(lessonId, gradeResult, passed) {
