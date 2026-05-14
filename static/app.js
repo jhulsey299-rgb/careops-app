@@ -4961,10 +4961,12 @@ function achievements() {
   const completed = completedLessonCount();
   const firstTry = appState.firstTryLessonIds.length;
   const mastered = masteryCount();
+
   const catComplete = categoryId => {
-  const category = getCategoryById(categoryId);
-  return categoryComplete(category);
-};
+    const category = getCategoryById(categoryId);
+    return categoryComplete(category);
+  };
+
   return [
     { label: "First Step", earned: completed >= 1, emoji: "🚀", description: "Unlock by completing your first lesson." },
     { label: "Getting the Hang of It", earned: completed >= 5, emoji: "📘", description: "Unlock by completing 5 lessons." },
@@ -4972,15 +4974,18 @@ function achievements() {
     { label: "Quarter Century", earned: completed >= 25, emoji: "🏅", description: "Unlock by completing 25 lessons." },
     { label: "Halfway Hero", earned: completed >= 50, emoji: "🥈", description: "Unlock by completing 50 lessons." },
     { label: "Century Club", earned: completed >= 100, emoji: "💯", description: "Unlock by completing 100 lessons." },
+
     { label: "First-Try Flash", earned: firstTry >= 3, emoji: "⚡", description: "Unlock by solving 3 challenge lessons correctly on the first try." },
     { label: "Precision Pro", earned: firstTry >= 10, emoji: "🎯", description: "Unlock by solving 10 challenge lessons correctly on the first try." },
+
     { label: "Mastermind", earned: mastered >= 5, emoji: "🧠", description: "Unlock by mastering 5 lessons." },
     { label: "Master of Masters", earned: mastered >= 25, emoji: "👑", description: "Unlock by mastering 25 lessons." },
-    { label: "Foundations Builder", earned: catComplete("foundations_core"), emoji: "🔗", description: "Unlock by completing every lesson in SQL Foundations for Hospital Data." },
-    { label: "Core Analyst", earned: catComplete("core_hospital_analytics"), emoji: "👑", description: "Unlock by completing every lesson in Core Hospital Analytics." },
-    { label: "Applied Investigator", earned: catComplete("applied_trends_investigation"), emoji: "🏥", description: "Unlock by completing every lesson in Applied Analytics: Trends & Investigation." },
-    { label: "Root Cause Hunter", earned: catComplete("advanced_root_cause_analysis"), emoji: "📊", description: "Unlock by completing every lesson in Diagnosis: Root Cause Analysis." },
-    { label: "Executive Whisperer", earned: catComplete("expert_decision_making"), emoji: "🧩", description: "Unlock by completing every lesson in Executive Analytics & Decision Making." }
+
+    { label: "Foundations Builder", earned: catComplete("foundations_core"), emoji: "🔗", description: "Unlock by completing Understanding Hospital Data." },
+    { label: "Core Analyst", earned: catComplete("core_volume_activity"), emoji: "👑", description: "Unlock by completing Volume & Activity Metrics." },
+    { label: "Intermediate Investigator", earned: catComplete("intermediate_derived_fields_case"), emoji: "🏥", description: "Unlock by completing Derived Fields & CASE Logic." },
+    { label: "Advanced SQL Builder", earned: catComplete("advanced_ctes_modular_sql"), emoji: "📊", description: "Unlock by completing CTEs & Modular SQL." },
+    { label: "Executive Whisperer", earned: catComplete("exec_metric_governance"), emoji: "🧩", description: "Unlock by completing Metric Definition & Governance." }
   ];
 }
 let achievementTooltipEl = null;
