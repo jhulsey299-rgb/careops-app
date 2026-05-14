@@ -4600,21 +4600,21 @@ executiveTakeaway: { show: false }
           feedbackGuide: "A strong answer connects payer mix to financial exposure, denial risk, and trend context.",
           executiveTakeaway: { show: false }
         },
-        {
-          kind: "scenario",
-          id: "e45",
-          title: "Final Capstone: Executive Analyst Brief",
-          objective: "Produce a complete executive-ready analytical response.",
-          relevantTables: ["encounters", "claims", "appointments", "discharges", "observations", "readmissions", "patients"],
-          joinHint: "Use the correct starting table, validate the data, segment drivers, and explain the result.",
-          summary: "This is the final Executive Analyst scenario.",
-          prompt: "Choose one hospital problem from this level and write a complete executive analyst brief. Include the metric definition, source tables, validation checks, SQL strategy, segmentation plan, likely drivers, limitations, and recommended next steps for leadership.",
-          expectedKeywords: ["definition", "source", "validate", "sql", "segment", "driver", "limitation", "next"],
-          minLength: 220,
-          minimumKeywordMatches: 6,
-                    feedbackGuide: "A strong final answer demonstrates end-to-end analyst thinking: definition, validation, SQL design, root cause, and executive communication.",
-          executiveTakeaway: { show: false }
-        }
+       {
+  kind: "scenario",
+  id: "e45",
+  title: "Final Capstone: Safety, Quality, and Financial Risk Brief",
+  objective: "Produce a complete executive-ready analytical response that balances patient safety, quality, throughput, and financial risk.",
+  relevantTables: ["encounters", "claims", "appointments", "discharges", "observations", "readmissions", "patients"],
+  joinHint: "Use the correct starting table, validate the data, segment drivers, and explain the operational, safety, quality, and financial implications.",
+  summary: "This is the final Executive Analyst scenario.",
+  prompt: "Choose one hospital problem such as preventable denials, readmissions, observation stays over 48 hours, ED boarding, discharge delays, or no-shows. Write a complete executive analyst brief. Include the metric definition, numerator and denominator, source tables, validation checks, SQL strategy, segmentation plan, likely drivers, patient safety or quality implications, financial implications, limitations, and recommended next steps for leadership.",
+  expectedKeywords: ["definition", "denominator", "source", "validate", "sql", "segment", "driver", "safety", "financial", "next"],
+  minLength: 260,
+  minimumKeywordMatches: 7,
+  feedbackGuide: "A strong final answer demonstrates end-to-end analyst thinking: metric definition, validation, SQL design, root cause, patient safety or quality impact, financial impact, and executive next steps.",
+  executiveTakeaway: { show: false }
+}
       ]
     }
   ]
