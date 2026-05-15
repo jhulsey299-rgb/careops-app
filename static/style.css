@@ -1980,7 +1980,6 @@ body.glossary-mode .main-content {
     margin-left: 0 !important;
 }
 
-/* Top row: 3 cards */
 .track-category-cards > .track-badge-card:nth-child(1) {
     grid-column: 1 / span 4 !important;
 }
@@ -1993,7 +1992,6 @@ body.glossary-mode .main-content {
     grid-column: 9 / span 4 !important;
 }
 
-/* Bottom row: 2 centered cards */
 .track-category-cards > .track-badge-card:nth-child(4) {
     grid-column: 3 / span 4 !important;
 }
@@ -2001,7 +1999,6 @@ body.glossary-mode .main-content {
 .track-category-cards > .track-badge-card:nth-child(5) {
     grid-column: 7 / span 4 !important;
 }
-
 @media (max-width: 900px) {
     .track-category-cards {
         grid-template-columns: 1fr !important;
