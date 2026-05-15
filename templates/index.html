@@ -6,394 +6,436 @@
     <title>CAREOPS - Clinical Analytics for Revenue, Efficiency, and Operational Performance Solutions</title>
     <link rel="stylesheet" href="/static/style.css">
 </head>
+
 <body>
- 
-<noscript>
-    <div style="padding:20px;background:#fee2e2;color:#991b1b;font-weight:600;text-align:center;">
-        This application requires JavaScript to run. Please enable JavaScript in your browser.
-    </div>
-</noscript>
- 
-<div class="app-shell">
-    <aside class="schema-panel" id="schema-panel">
-        <div class="schema-header">
-            <h2>Schema Explorer</h2>
-            <p>Reference tables, relationships, and hints while you work through lessons.</p>
+    <noscript>
+        <div style="padding:20px;background:#fee2e2;color:#991b1b;font-weight:600;text-align:center;">
+            This application requires JavaScript to run. Please enable JavaScript in your browser.
         </div>
- 
-        <section class="schema-section">
-            <div class="section-title-row">
-                <h3>Tables</h3>
-                <span class="section-helper-text">Lesson-relevant tables open automatically</span>
+    </noscript>
+
+    <div class="app-shell">
+        <aside class="schema-panel" id="schema-panel">
+            <div class="schema-header">
+                <h2>Schema Explorer</h2>
+                <p>Reference tables, relationships, and hints while you work through lessons.</p>
             </div>
-            <div id="schema-tables"></div>
-        </section>
- 
-        <section class="schema-section">
-            <h3>Relationships</h3>
-            <div id="schema-relationships"></div>
-        </section>
-    </aside>
- 
-    <div id="schema-resizer" aria-hidden="true"></div>
- 
-    <main class="main-content">
-        <section class="hero-banner">
-            <div class="hero-copy">
-                <div class="hero-kicker">Healthcare SQL Training Simulator</div>
-                <h1 class="hero-title">CAREOPS</h1>
-                <p class="hero-tagline">Clinical Analytics for Revenue, Efficiency, and Operational Performance Solutions</p>
-                <p class="hero-description">Learn SQL through hospital analytics scenarios focused on operations, quality, finance, and executive communication.</p>
+
+            <section class="schema-section">
+                <div class="section-title-row">
+                    <h3>Tables</h3>
+                    <span class="section-helper-text">Lesson-relevant tables open automatically</span>
+                </div>
+                <div id="schema-tables"></div>
+            </section>
+
+            <section class="schema-section">
+                <h3>Relationships</h3>
+                <div id="schema-relationships"></div>
+            </section>
+        </aside>
+
+        <div id="schema-resizer" aria-hidden="true"></div>
+
+        <main class="main-content">
+            <section class="hero-banner">
+                <div class="hero-copy">
+                    <div class="hero-kicker">Healthcare SQL Training Simulator</div>
+                    <h1 class="hero-title">CAREOPS</h1>
+                    <p class="hero-tagline">Clinical Analytics for Revenue, Efficiency, and Operational Performance Solutions</p>
+                    <p class="hero-description">Learn SQL through hospital analytics scenarios focused on operations, quality, finance, and executive communication.</p>
+                </div>
+            </section>
+
+            <section class="top-dashboard">
+                <div class="top-dashboard-row">
+                    <div class="dashboard-card xp-status-card" id="xp-status">
+                        <div class="xp-status-top">
+                            <span class="xp-label">Analyst Level 1</span>
+                            <span class="xp-points">0 XP</span>
+                        </div>
+
+                        <div class="xp-bar">
+                            <div class="xp-bar-fill" style="width:0%"></div>
+                        </div>
+
+                        <div class="xp-status-sub">
+                            100 XP to Level 2
+                        </div>
+                    </div>
+
+                    <div class="dashboard-card">
+                        <h3>Progress</h3>
+                        <p id="progress-text">0 / 0 lessons completed</p>
+                        <div class="progress-bar-wrap" aria-hidden="true">
+                            <div id="progress-bar"></div>
+                        </div>
+                    </div>
+
+                    <div class="dashboard-card">
+                        <h3>Current Lesson</h3>
+                        <p id="current-level-display">No lesson selected</p>
+                    </div>
+                </div>
+            </section>
+
+            <div class="dashboard-actions main-nav-actions">
+                <button type="button" id="nav-overview-btn">Track Overview</button>
+                <button type="button" id="nav-sandbox-btn">Sandbox</button>
+                <button type="button" onclick="resetAllProgress()">Reset Progress</button>
             </div>
-        </section>
- 
-        <section class="top-dashboard">
-    <div class="dashboard-card">
-        <h3>Progress</h3>
-        <p id="progress-text">0 / 0 lessons completed</p>
-        <div class="progress-bar-wrap" aria-hidden="true">
-            <div id="progress-bar"></div>
+
+            <section class="badges-section">
+                <h3>Achievements</h3>
+                <div id="badges-container" class="badges-container"></div>
+            </section>
+
+            <div class="workspace-layout">
+                <section class="play-area">
+                    <section id="track-overview" class="track-overview-panel">
+                        <div class="track-overview-header">
+                            <div>
+                                <p class="track-label" id="track-title-display-overview">Track</p>
+                                <h2 id="track-overview-title">SQL Foundations for Hospital Data</h2>
+                                <p id="track-overview-description">Learn SQL through real hospital analytics scenarios.</p>
+                            </div>
+                        </div>
+
+                        <div class="track-overview-grid">
+                            <div class="track-overview-card">
+                                <h3>What You’ll Learn</h3>
+                                <ul id="track-overview-learnings">
+                                    <li>How to query hospital data with SQL</li>
+                                    <li>How to think like an analyst, not just a coder</li>
+                                    <li>How to translate data into executive-ready insight</li>
+                                </ul>
+                            </div>
+
+                            <div class="track-overview-card">
+                                <h3>Why It Matters</h3>
+                                <ul id="track-overview-impact">
+                                    <li>Improve quality and operational visibility</li>
+                                    <li>Support financial performance and denial reduction</li>
+                                    <li>Communicate what leaders should act on</li>
+                                </ul>
+                            </div>
+
+                            <div class="track-overview-card">
+                                <h3>Your Progress</h3>
+                                <p id="track-overview-progress-text">0 of 0 lessons completed</p>
+                                <div class="progress-bar-wrap" aria-hidden="true">
+                                    <div id="track-overview-progress-bar"></div>
+                                </div>
+                                <div class="button-row track-overview-actions">
+                                    <button id="resume-track-btn" type="button">Resume Track</button>
+                                    <button id="start-track-btn" type="button">Start from Beginning</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="track-category-section">
+                            <div class="section-header">
+                                <h3>Learning Badges</h3>
+                                <p>Track progress by learning badge. Click a badge to filter the curriculum.</p>
+                            </div>
+                            <div id="track-category-cards" class="track-category-cards"></div>
+                        </div>
+                    </section>
+
+                    <section id="lesson-workspace" class="hidden">
+                        <div id="lesson-header-card" class="mission-box">
+                            <div class="mission-meta-row">
+                                <span id="current-lesson-type-badge" class="lesson-type-badge lesson-type-concept">Concept</span>
+                                <span id="current-category-badge" class="difficulty-badge difficulty-intermediate">Category</span>
+                            </div>
+
+                            <p id="track-title-display" class="track-label">Track</p>
+                            <h2 id="lesson-title">Lesson Title</h2>
+                            <p id="lesson-objective">Lesson objective goes here.</p>
+
+                            <div id="lesson-meta" class="lesson-meta">
+                                <p id="lesson-tables"><strong>Relevant Tables:</strong> —</p>
+                                <p id="lesson-join-hint"><strong>Join Hint:</strong> —</p>
+                                <p id="lesson-sql-focus"><strong>SQL Focus:</strong> —</p>
+                            </div>
+                        </div>
+
+                        <div id="concept-content" class="query-section hidden">
+                            <div class="section-header">
+                                <h3>Concept Lesson</h3>
+                                <p>Review the concept, example, and analyst takeaway before moving on.</p>
+                            </div>
+
+                            <div class="concept-card">
+                                <h4>Summary</h4>
+                                <p id="concept-summary"></p>
+                            </div>
+
+                            <div class="concept-card">
+                                <h4>Key Points</h4>
+                                <ul id="concept-bullets"></ul>
+                            </div>
+
+                            <div class="concept-card">
+                                <h4>Hospital Example</h4>
+                                <p id="concept-example"></p>
+                            </div>
+
+                            <div class="button-row">
+                                <button type="button" onclick="markConceptComplete()">Mark Complete</button>
+                            </div>
+                        </div>
+
+                        <div id="challenge-content" class="query-section hidden">
+                            <div class="section-header">
+                                <h3>Challenge Lesson</h3>
+                                <p>Write your SQL query and validate it against the lesson objective.</p>
+                            </div>
+
+                            <label for="query" class="query-label">Write your SQL query:</label>
+                            <textarea id="query" rows="8" cols="80" spellcheck="false" autocomplete="off" autocapitalize="off"></textarea>
+
+                            <div class="button-row">
+                                <button type="button" onclick="runQuery()">Run Query</button>
+                                <button type="button" onclick="resetQuery()">Reset Query</button>
+                            </div>
+
+                            <div id="feedback" aria-live="polite"></div>
+                            <div id="output" aria-live="polite"></div>
+                        </div>
+
+                        <div id="scenario-content" class="query-section hidden">
+                            <div class="section-header">
+                                <h3>Scenario Lesson</h3>
+                                <p>Respond to the scenario using the data context provided.</p>
+                            </div>
+
+                            <div class="concept-card">
+                                <h4>Scenario Summary</h4>
+                                <p id="scenario-summary"></p>
+                            </div>
+
+                            <div class="concept-card">
+                                <h4>Prompt</h4>
+                                <p id="scenario-prompt"></p>
+                            </div>
+
+                            <label for="scenario-response" class="query-label">Your response:</label>
+                            <textarea id="scenario-response" rows="6" cols="80"></textarea>
+
+                            <div class="button-row">
+                                <button type="button" onclick="submitScenario()">Submit Scenario</button>
+                                <button type="button" onclick="resetScenario()">Reset Response</button>
+                            </div>
+
+                            <div id="scenario-feedback" aria-live="polite"></div>
+                        </div>
+
+                        <div id="executive-takeaway" class="badges-section hidden">
+                            <h3>Executive Takeaway</h3>
+                            <div class="concept-card">
+                                <p id="exec-metric"><strong>Metric:</strong> —</p>
+                                <p id="exec-why"><strong>Why it matters:</strong> —</p>
+                                <p id="exec-share"><strong>What to share:</strong> —</p>
+                                <p id="exec-action"><strong>Recommended action:</strong> —</p>
+                            </div>
+                        </div>
+
+                        <div id="lesson-navigation" class="button-row lesson-nav-row">
+                            <button type="button" onclick="prevLesson()">Previous Lesson</button>
+                            <button type="button" onclick="nextLesson()">Next Lesson</button>
+                        </div>
+                    </section>
+
+                    <section id="sandbox-workspace" class="hidden sandbox-workspace">
+                        <div class="mission-box sandbox-hero-card">
+                            <div class="mission-meta-row">
+                                <span class="lesson-type-badge lesson-type-challenge">Sandbox</span>
+                                <span class="difficulty-badge difficulty-advanced">Free + Guided</span>
+                            </div>
+                            <p class="track-label">Practice Lab</p>
+                            <h2>Sandbox SQL Lab</h2>
+                            <p>Use the in-browser hospital dataset for free play or load guided prompts tied to real analyst tasks.</p>
+                        </div>
+
+                        <div class="sandbox-shell">
+                            <div class="sandbox-main">
+                                <div class="sandbox-toolbar">
+                                    <div class="sandbox-mode-group">
+                                        <button type="button" id="sandbox-free-btn" class="active">Free Play</button>
+                                        <button type="button" id="sandbox-guided-btn">Guided Prompts</button>
+                                    </div>
+                                    <div class="sandbox-actions-inline">
+                                        <button type="button" id="run-sandbox-btn">Run Sandbox Query</button>
+                                        <button type="button" id="reset-sandbox-btn">Reset</button>
+                                    </div>
+                                </div>
+
+                                <div class="concept-card sandbox-lesson-context hidden" id="sandbox-lesson-context">
+                                    <div class="sandbox-context-header">
+                                        <div>
+                                            <div class="table-modal-kicker">Guided Prompt Context</div>
+                                            <h4 id="sandbox-lesson-title">Choose a guided prompt.</h4>
+                                        </div>
+                                    </div>
+                                    <p id="sandbox-lesson-objective">Select a guided prompt to load its objective, SQL starter pattern, and related tables.</p>
+                                    <div id="sandbox-lesson-tables" class="sandbox-schema-list"></div>
+                                </div>
+
+                                <div id="sandbox-guided-panel" class="concept-card hidden">
+                                    <h4>Guided Prompt Library</h4>
+                                    <p>Select a prompt card to load a realistic analyst question and starter query into the sandbox.</p>
+                                    <div id="sandbox-prompt-list" class="sandbox-prompt-list"></div>
+                                </div>
+
+                                <div class="query-section">
+                                    <label for="sandbox-query" class="query-label">Sandbox SQL</label>
+                                    <textarea id="sandbox-query" rows="10" cols="80" spellcheck="false" autocomplete="off" autocapitalize="off"></textarea>
+
+                                    <div class="button-row">
+                                        <button type="button" id="sandbox-send-ai-btn">Ask AI About This Query</button>
+                                    </div>
+
+                                    <div id="sandbox-feedback" aria-live="polite"></div>
+                                    <div id="sandbox-output" aria-live="polite"></div>
+                                </div>
+                            </div>
+
+                            <aside class="sandbox-ai-panel concept-card" id="ai-companion-section">
+                                <div class="section-header">
+                                    <h3>AI Companion</h3>
+                                    <p>Ask for SQL help, working code, or analytics guidance just like a chat. You can also ask broader questions like why readmissions matter and where to investigate if they are high.</p>
+                                </div>
+
+                                <label for="ai-input" class="query-label">Message</label>
+                                <textarea
+                                    id="ai-input"
+                                    data-role="ai-chat-input"
+                                    rows="8"
+                                    cols="40"
+                                    placeholder="Ask for SQL code, query debugging, or analytics guidance. Press Enter to send, or use Send. Shift+Enter adds a new line."
+                                ></textarea>
+
+                                <div class="ai-actions-wrap">
+                                    <button type="button" id="send-ai-btn">Send</button>
+                                </div>
+
+                                <div id="ai-messages" class="ai-messages"></div>
+                            </aside>
+                        </div>
+                    </section>
+                </section>
+
+                <aside class="levels-panel" id="levels-panel">
+                    <div class="levels-panel-header">
+                        <div class="levels-panel-title-row">
+                            <div>
+                                <h3 id="track-title">SQL Foundations for Hospital Data</h3>
+                                <p id="track-description">Curriculum, difficulty, completion tracking.</p>
+                            </div>
+                            <button
+                                type="button"
+                                id="toggle-levels-panel-btn"
+                                class="panel-toggle-btn"
+                                aria-controls="levels-panel"
+                                aria-expanded="true"
+                            >
+                                Collapse
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="button-row side-panel-actions">
+                        <button type="button" id="open-overview-btn">Track Overview</button>
+                    </div>
+
+                    <div class="level-panel-heading">
+                        <h4 class="level-panel-heading-title" id="level-panel-title">
+                            Level 1
+                        </h4>
+                        <p class="level-panel-heading-subtitle" id="level-panel-subtitle">
+                            Foundations
+                        </p>
+                    </div>
+
+                    <div id="category-list" class="levels-list"></div>
+                </aside>
+            </div>
+
+            <div id="js-error-banner" class="js-error-banner hidden" aria-live="assertive"></div>
+        </main>
+    </div>
+
+    <div
+        id="table-modal-overlay"
+        class="table-modal-overlay hidden"
+        onclick="closeTableModal(event)"
+    >
+        <div
+            class="table-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="table-modal-title"
+            onclick="event.stopPropagation()"
+        >
+            <div class="table-modal-header">
+                <div>
+                    <div class="table-modal-kicker">Table Viewer</div>
+                    <h2 id="table-modal-title">Table</h2>
+                    <p id="table-modal-description"></p>
+                </div>
+                <button class="modal-close-btn" type="button" onclick="closeTableModal()">✕</button>
+            </div>
+
+            <div class="table-modal-meta">
+                <div class="table-modal-meta-card">
+                    <h4>Keys</h4>
+                    <p id="table-modal-keys"></p>
+                </div>
+                <div class="table-modal-meta-card">
+                    <h4>Columns</h4>
+                    <p id="table-modal-columns"></p>
+                </div>
+                <div class="table-modal-meta-card">
+                    <h4>Related Joins</h4>
+                    <div id="table-modal-relationships"></div>
+                </div>
+            </div>
+
+            <div class="table-modal-preview">
+                <h4>Sample Rows</h4>
+                <div id="table-modal-preview-content"></div>
+            </div>
         </div>
     </div>
 
-    <div class="dashboard-card">
-        <h3>Current Lesson</h3>
-        <p id="current-level-display">No lesson selected</p>
+    <div id="app-version" hidden>
+        curriculum-v1
     </div>
-</section>
- 
-        
-        <div class="dashboard-actions main-nav-actions">
-            <button type="button" id="nav-overview-btn">Track Overview</button>
-            <button type="button" id="nav-sandbox-btn">Sandbox</button>
-            <button type="button" onclick="resetAllProgress()">Reset Progress</button>
-        </div>
- 
- 
-        <section class="badges-section">
-            <h3>Achievements</h3>
-            <div id="badges-container" class="badges-container"></div>
-        </section>
- 
-        <div class="workspace-layout">
-            <section class="play-area">
-                <section id="track-overview" class="track-overview-panel">
-                    <div class="track-overview-header">
-                        <div>
-                            <p class="track-label" id="track-title-display-overview">Track</p>
-                            <h2 id="track-overview-title">SQL Foundations for Hospital Data</h2>
-                            <p id="track-overview-description">Learn SQL through real hospital analytics scenarios.</p>
-                        </div>
-                    </div>
- 
-                    <div class="track-overview-grid">
-                        <div class="track-overview-card">
-                            <h3>What You’ll Learn</h3>
-                            <ul id="track-overview-learnings">
-                                <li>How to query hospital data with SQL</li>
-                                <li>How to think like an analyst, not just a coder</li>
-                                <li>How to translate data into executive-ready insight</li>
-                            </ul>
-                        </div>
- 
-                        <div class="track-overview-card">
-                            <h3>Why It Matters</h3>
-                            <ul id="track-overview-impact">
-                                <li>Improve quality and operational visibility</li>
-                                <li>Support financial performance and denial reduction</li>
-                                <li>Communicate what leaders should act on</li>
-                            </ul>
-                        </div>
- 
-                        <div class="track-overview-card">
-                            <h3>Your Progress</h3>
-                            <p id="track-overview-progress-text">0 of 0 lessons completed</p>
-                            <div class="progress-bar-wrap" aria-hidden="true">
-                                <div id="track-overview-progress-bar"></div>
-                            </div>
-                            <div class="button-row track-overview-actions">
-                                <button id="resume-track-btn" type="button">Resume Track</button>
-                                <button id="start-track-btn" type="button">Start from Beginning</button>
-                            </div>
-                        </div>
-                    </div>
- 
-                    <div class="track-category-section">
-                        <div class="section-header">
-                            <h3>Learning Badges</h3>
-                            <p>Track progress by learning badge. Click a badge to filter the curriculum.</p>
-                        </div>
-                        <div id="track-category-cards" class="track-category-cards"></div>
-                    </div>
-                </section>
- 
-                <section id="lesson-workspace" class="hidden">
-                    <div id="lesson-header-card" class="mission-box">
-                        <div class="mission-meta-row">
-                            <span id="current-lesson-type-badge" class="lesson-type-badge lesson-type-concept">Concept</span>
-                            <span id="current-category-badge" class="difficulty-badge difficulty-intermediate">Category</span>
-                        </div>
- 
-                        <p id="track-title-display" class="track-label">Track</p>
-                        <h2 id="lesson-title">Lesson Title</h2>
-                        <p id="lesson-objective">Lesson objective goes here.</p>
- 
-                        <div id="lesson-meta" class="lesson-meta">
-                            <p id="lesson-tables"><strong>Relevant Tables:</strong> —</p>
-                            <p id="lesson-join-hint"><strong>Join Hint:</strong> —</p>
-                            <p id="lesson-sql-focus"><strong>SQL Focus:</strong> —</p>
-                        </div>
-                    </div>
- 
-                    <div id="concept-content" class="query-section hidden">
-                        <div class="section-header">
-                            <h3>Concept Lesson</h3>
-                            <p>Review the concept, example, and analyst takeaway before moving on.</p>
-                        </div>
- 
-                        <div class="concept-card">
-                            <h4>Summary</h4>
-                            <p id="concept-summary"></p>
-                        </div>
- 
-                        <div class="concept-card">
-                            <h4>Key Points</h4>
-                            <ul id="concept-bullets"></ul>
-                        </div>
- 
-                        <div class="concept-card">
-                            <h4>Hospital Example</h4>
-                            <p id="concept-example"></p>
-                        </div>
- 
-                        <div class="button-row">
-                            <button type="button" onclick="markConceptComplete()">Mark Complete</button>
-                        </div>
-                    </div>
- 
-                    <div id="challenge-content" class="query-section hidden">
-                        <div class="section-header">
-                            <h3>Challenge Lesson</h3>
-                            <p>Write your SQL query and validate it against the lesson objective.</p>
-                        </div>
- 
-                        <label for="query" class="query-label">Write your SQL query:</label>
-                        <textarea id="query" rows="8" cols="80" spellcheck="false" autocomplete="off" autocapitalize="off"></textarea>
- 
-                        <div class="button-row">
-                            <button type="button" onclick="runQuery()">Run Query</button>
-                            <button type="button" onclick="resetQuery()">Reset Query</button>
-                        </div>
- 
-                        <div id="feedback" aria-live="polite"></div>
-                        <div id="output" aria-live="polite"></div>
-                    </div>
- 
-                    <div id="scenario-content" class="query-section hidden">
-                        <div class="section-header">
-                            <h3>Scenario Lesson</h3>
-                            <p>Respond to the scenario using the data context provided.</p>
-                        </div>
- 
-                        <div class="concept-card">
-                            <h4>Scenario Summary</h4>
-                            <p id="scenario-summary"></p>
-                        </div>
- 
-                        <div class="concept-card">
-                            <h4>Prompt</h4>
-                            <p id="scenario-prompt"></p>
-                        </div>
- 
-                        <label for="scenario-response" class="query-label">Your response:</label>
-                        <textarea id="scenario-response" rows="6" cols="80"></textarea>
- 
-                        <div class="button-row">
-                            <button type="button" onclick="submitScenario()">Submit Scenario</button>
-                            <button type="button" onclick="resetScenario()">Reset Response</button>
-                        </div>
- 
-                        <div id="scenario-feedback" aria-live="polite"></div>
-                    </div>
- 
-                    <div id="executive-takeaway" class="badges-section hidden">
-                        <h3>Executive Takeaway</h3>
-                        <div class="concept-card">
-                            <p id="exec-metric"><strong>Metric:</strong> —</p>
-                            <p id="exec-why"><strong>Why it matters:</strong> —</p>
-                            <p id="exec-share"><strong>What to share:</strong> —</p>
-                            <p id="exec-action"><strong>Recommended action:</strong> —</p>
-                        </div>
-                    </div>
- 
-                    <div id="lesson-navigation" class="button-row lesson-nav-row">
-                        <button type="button" onclick="prevLesson()">Previous Lesson</button>
-                        <button type="button" onclick="nextLesson()">Next Lesson</button>
-                    </div>
-                </section>
- 
-                <section id="sandbox-workspace" class="hidden sandbox-workspace">
-                    <div class="mission-box sandbox-hero-card">
-                        <div class="mission-meta-row">
-                            <span class="lesson-type-badge lesson-type-challenge">Sandbox</span>
-                            <span class="difficulty-badge difficulty-advanced">Free + Guided</span>
-                        </div>
-                        <p class="track-label">Practice Lab</p>
-                        <h2>Sandbox SQL Lab</h2>
-                        <p>Use the in-browser hospital dataset for free play or load guided prompts tied to real analyst tasks.</p>
-                    </div>
-                    <div class="sandbox-shell">
-                        <div class="sandbox-main">
-                            <div class="sandbox-toolbar">
-                                <div class="sandbox-mode-group">
-                                    <button type="button" id="sandbox-free-btn" class="active">Free Play</button>
-                                    <button type="button" id="sandbox-guided-btn">Guided Prompts</button>
-                                </div>
-                                <div class="sandbox-actions-inline">
-                                    <button type="button" id="run-sandbox-btn">Run Sandbox Query</button>
-                                    <button type="button" id="reset-sandbox-btn">Reset</button>
-                                </div>
-                            </div>
-                            <div class="concept-card sandbox-lesson-context hidden" id="sandbox-lesson-context">
-                                <div class="sandbox-context-header">
-                                    <div>
-                                        <div class="table-modal-kicker">Guided Prompt Context</div>
-                                        <h4 id="sandbox-lesson-title">Choose a guided prompt.</h4>
-                                    </div>
-                                </div>
-                                <p id="sandbox-lesson-objective">Select a guided prompt to load its objective, SQL starter pattern, and related tables.</p>
-                                <div id="sandbox-lesson-tables" class="sandbox-schema-list"></div>
-                            </div>
-                            <div id="sandbox-guided-panel" class="concept-card hidden">
-                                <h4>Guided Prompt Library</h4>
-                                <p>Select a prompt card to load a realistic analyst question and starter query into the sandbox.</p>
-                                <div id="sandbox-prompt-list" class="sandbox-prompt-list"></div>
-                            </div>
-                            <div class="query-section">
-                                <label for="sandbox-query" class="query-label">Sandbox SQL</label>
-                                <textarea id="sandbox-query" rows="10" cols="80" spellcheck="false" autocomplete="off" autocapitalize="off"></textarea>
-                                <div class="button-row">
-                                    <button type="button" id="sandbox-send-ai-btn">Ask AI About This Query</button>
-                                </div>
-                                <div id="sandbox-feedback" aria-live="polite"></div>
-                                <div id="sandbox-output" aria-live="polite"></div>
-                            </div>
-                        </div>
-                        <aside class="sandbox-ai-panel concept-card" id="ai-companion-section">
-                            <div class="section-header">
-                                <h3>AI Companion</h3>
-                                <p>Ask for SQL help, working code, or analytics guidance just like a chat. You can also ask broader questions like why readmissions matter and where to investigate if they are high.</p>
-                            </div>
-                            <label for="ai-input" class="query-label">Message</label>
-                            <textarea id="ai-input" rows="8" cols="40" placeholder="Ask for SQL code, query debugging, or analytics guidance. Press Enter to send, or use Send. Shift+Enter adds a new line."></textarea>
-                            <div class="ai-actions-wrap">
-                                <button type="button" id="send-ai-btn">Send</button>
-                            </div>
-                            <div id="ai-messages" class="ai-messages"></div>
-                        </aside>
-                    </div>
-                </section>
- 
-            </section>
- 
-            
-            <aside class="levels-panel" id="levels-panel">
-                <div class="levels-panel-header">
-                    <div class="levels-panel-title-row">
-                        <div>
-                            <h3 id="track-title">SQL Foundations for Hospital Data</h3>
-                            <p id="track-description">Curriculum, difficulty, completion tracking.</p>
-                        </div>
-                        <button
-                            type="button"
-                            id="toggle-levels-panel-btn"
-                            class="panel-toggle-btn"
-                            aria-controls="levels-panel"
-                            aria-expanded="true"
-                        >
-                            Collapse
-                        </button>
-                    </div>
-                </div>
- 
-                <div class="button-row side-panel-actions">
-                    <button type="button" id="open-overview-btn">Track Overview</button>
-                </div>
- 
-                <div id="category-list" class="levels-list"></div>
-            </aside>
-        </div>
- 
-        <div id="js-error-banner" class="js-error-banner hidden" aria-live="assertive"></div>
-    </main>
-</div>
- 
-<div
-    id="table-modal-overlay"
-    class="table-modal-overlay hidden"
-    onclick="closeTableModal(event)"
->
-    <div
-        class="table-modal"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="table-modal-title"
-        onclick="event.stopPropagation()"
-    >
-        <div class="table-modal-header">
-            <div>
-                <div class="table-modal-kicker">Table Viewer</div>
-                <h2 id="table-modal-title">Table</h2>
-                <p id="table-modal-description"></p>
-            </div>
-            <button class="modal-close-btn" type="button" onclick="closeTableModal()">✕</button>
-        </div>
- 
-        <div class="table-modal-meta">
-            <div class="table-modal-meta-card">
-                <h4>Keys</h4>
-                <p id="table-modal-keys"></p>
-            </div>
-            <div class="table-modal-meta-card">
-                <h4>Columns</h4>
-                <p id="table-modal-columns"></p>
-            </div>
-            <div class="table-modal-meta-card">
-                <h4>Related Joins</h4>
-                <div id="table-modal-relationships"></div>
-            </div>
-        </div>
- 
-        <div class="table-modal-preview">
-            <h4>Sample Rows</h4>
-            <div id="table-modal-preview-content"></div>
-        </div>
-    </div>
-</div>
- 
-<script>
-window.addEventListener('error', function (event) {
-    var banner = document.getElementById('js-error-banner');
-    if (!banner) return;
-    banner.classList.remove('hidden');
-    banner.textContent =
-        'JavaScript Error:\n' +
-        'Message: ' + event.message + '\n' +
-        'File: ' + event.filename + '\n' +
-        'Line: ' + event.lineno + '\n' +
-        'Column: ' + event.colno;
-});
- 
-window.addEventListener('unhandledrejection', function (event) {
-    var banner = document.getElementById('js-error-banner');
-    if (!banner) return;
-    banner.classList.remove('hidden');
-    banner.textContent =
-        'Unhandled Promise Error:\n' + String(event.reason);
-});
-</script>
- 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/sql-wasm.min.js"></script>
-<script src="static/app.js?v=fix-run-reset-2"></script>
+
+    <script>
+        window.addEventListener('error', function (event) {
+            var banner = document.getElementById('js-error-banner');
+            if (!banner) return;
+            banner.classList.remove('hidden');
+            banner.textContent =
+                'JavaScript Error:\n' +
+                'Message: ' + event.message + '\n' +
+                'File: ' + event.filename + '\n' +
+                'Line: ' + event.lineno + '\n' +
+                'Column: ' + event.colno;
+        });
+
+        window.addEventListener('unhandledrejection', function (event) {
+            var banner = document.getElementById('js-error-banner');
+            if (!banner) return;
+            banner.classList.remove('hidden');
+            banner.textContent =
+                'Unhandled Promise Error:\n' + String(event.reason);
+        });
+    </script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/sql-wasm.min.js"></script>
+    <script src="static/app.js?v=curriculum-v1"></script>
 </body>
 </html>
