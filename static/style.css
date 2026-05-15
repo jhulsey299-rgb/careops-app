@@ -385,11 +385,16 @@ body.resizing-schema #schema-resizer::before {
 }
 /* ================= Dashboard ================= */
 .top-dashboard {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(240px, 1fr));
-    gap: 16px;
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 18px !important;
     margin-bottom: 18px;
-    align-items: stretch;
+    align-items: stretch !important;
+}
+
+.top-dashboard .dashboard-card {
+    width: 100% !important;
+    min-width: 0 !important;
 }
 .dashboard-card {
     padding: 18px;
