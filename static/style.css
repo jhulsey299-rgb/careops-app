@@ -2040,3 +2040,108 @@ body.glossary-mode .main-content {
         grid-template-columns: 1fr !important;
     }
 }
+/* ================= FINAL RESPONSIVE OVERRIDES ================= */
+
+@media (max-width: 900px) {
+    body {
+        padding: 10px;
+    }
+
+    .app-shell {
+        grid-template-columns: 1fr !important;
+        gap: 12px;
+    }
+
+    #schema-resizer {
+        display: none !important;
+    }
+
+    .schema-panel {
+        position: static !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        max-height: none !important;
+        order: 3;
+        overflow-x: visible;
+    }
+
+    .main-content {
+        padding-left: 0 !important;
+        width: 100%;
+    }
+
+    .top-dashboard {
+        grid-template-columns: 1fr !important;
+    }
+
+    .track-overview-grid,
+    .table-modal-meta {
+        grid-template-columns: 1fr !important;
+    }
+
+    .track-category-cards {
+        grid-template-columns: 1fr !important;
+    }
+
+    .track-category-cards > .track-badge-card,
+    .track-category-cards > .track-badge-card:nth-child(1),
+    .track-category-cards > .track-badge-card:nth-child(2),
+    .track-category-cards > .track-badge-card:nth-child(3),
+    .track-category-cards > .track-badge-card:nth-child(4),
+    .track-category-cards > .track-badge-card:nth-child(5) {
+        grid-column: auto !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        margin-left: 0 !important;
+    }
+
+    .workspace-layout {
+        display: flex !important;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .levels-panel,
+    .levels-panel.collapsed {
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: none !important;
+        position: static !important;
+    }
+
+    .sandbox-workspace .sandbox-shell {
+        grid-template-columns: 1fr !important;
+    }
+
+    .sandbox-ai-panel {
+        position: static !important;
+    }
+
+    .dashboard-actions,
+    .main-nav-actions,
+    .button-row,
+    .sandbox-actions-inline,
+    .ai-actions-wrap {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .dashboard-actions button,
+    .main-nav-actions button,
+    .button-row button,
+    .sandbox-actions-inline button,
+    .ai-actions-wrap button {
+        flex: 1 1 calc(50% - 8px);
+        min-width: 0;
+    }
+
+    textarea {
+        min-height: 170px;
+        font-size: 14px;
+    }
+
+    .ai-messages {
+        max-height: 360px;
+    }
+}
