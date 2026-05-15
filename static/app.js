@@ -1,3 +1,4 @@
+const CURRICULUM_VERSION = "v1";
 function isTextChallenge(lesson) {
   if (!lesson) return false;
 
