@@ -2597,3 +2597,22 @@ body.glossary-mode .main-content {
         margin-left: 0 !important;
     }
 }
+/* ================= DASHBOARD ROW FIX ================= */
+
+.top-dashboard {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 18px !important;
+    align-items: stretch !important;
+}
+
+.top-dashboard .dashboard-card {
+    width: 100% !important;
+    min-width: 0 !important;
+}
+
+@media (max-width: 900px) {
+    .top-dashboard {
+        grid-template-columns: 1fr !important;
+    }
+}
