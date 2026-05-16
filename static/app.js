@@ -7888,9 +7888,22 @@ function showSection(sectionId) {
     if (el) el.classList.toggle("hidden", id !== sectionId);
   });
 }
-function showLessonWorkspace() {
+function showLessonsWorkspace() {
+  ensureCurrentLesson();
   appState.currentView = "lesson";
+
+  setSandboxModeUi(false);
+  if (typeof setGlossaryModeUi === "function") setGlossaryModeUi(false);
+
+  document.body.classList.remove("sandbox-mode", "overview-mode", "glossary-mode");
+  document.body.classList.add("lesson-mode");
+
   showSection("lesson-workspace");
+
+  document.getElementById("lesson-workspace")?.scrollIntoView({
+    behavior: "smooth",
+    block: "start"
+  });
 }
 function ensureCurrentLesson() {
   if (appState.currentLessonId) return;
