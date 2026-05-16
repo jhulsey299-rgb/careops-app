@@ -8703,10 +8703,19 @@ function showGlossaryWorkspace() {
 }
 function showOverview() {
   appState.currentView = "overview";
+
   setSandboxModeUi(false);
-  setGlossaryModeUi(false);
+  if (typeof setGlossaryModeUi === "function") setGlossaryModeUi(false);
+
+  document.body.classList.remove("sandbox-mode", "lesson-mode", "glossary-mode");
+  document.body.classList.add("overview-mode");
+
   showSection("track-overview");
-  document.getElementById("track-overview")?.scrollIntoView({ behavior: "smooth", block: "start" });
+
+  document.getElementById("track-overview")?.scrollIntoView({
+    behavior: "smooth",
+    block: "start"
+  });
 }
 function showLessonsWorkspace() {
   ensureCurrentLesson();
