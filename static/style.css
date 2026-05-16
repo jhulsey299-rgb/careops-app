@@ -2145,3 +2145,254 @@ body.glossary-mode .main-content {
         max-height: 360px;
     }
 }
+/* ================= SANDBOX CLEAN ROOM MODE ================= */
+
+body.sandbox-mode .top-dashboard,
+body.sandbox-mode .badges-section,
+body.sandbox-mode #levels-panel {
+    display: none !important;
+}
+
+body.sandbox-mode .workspace-layout {
+    display: block !important;
+}
+
+body.sandbox-mode .play-area {
+    width: 100% !important;
+    max-width: none !important;
+}
+
+body.sandbox-mode #sandbox-workspace {
+    display: block !important;
+    width: 100% !important;
+}
+
+body.sandbox-mode #lesson-workspace,
+body.sandbox-mode #track-overview {
+    display: none !important;
+}
+
+body.sandbox-mode .sandbox-shell {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1.35fr) minmax(360px, 0.65fr) !important;
+    gap: 18px !important;
+    align-items: start !important;
+}
+
+body.sandbox-mode .sandbox-hero-card {
+    margin-bottom: 18px !important;
+}
+
+body.sandbox-mode .sandbox-toolbar {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    gap: 12px !important;
+    margin-bottom: 16px !important;
+}
+
+body.sandbox-mode .sandbox-mode-group,
+body.sandbox-mode .sandbox-actions-inline {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+}
+
+body.sandbox-mode #sandbox-guided-panel {
+    padding: 18px !important;
+}
+
+.sandbox-prompt-list {
+    display: grid !important;
+    gap: 22px !important;
+}
+
+.sandbox-prompt-section {
+    display: grid !important;
+    gap: 12px !important;
+}
+
+.sandbox-prompt-section-header h4 {
+    margin: 0 0 4px !important;
+    font-size: 1.05rem !important;
+    color: #0f172a !important;
+}
+
+.sandbox-prompt-section-header p {
+    margin: 0 !important;
+    color: #64748b !important;
+    line-height: 1.45 !important;
+}
+
+.sandbox-prompt-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 12px !important;
+}
+
+.sandbox-prompt-card {
+    appearance: none !important;
+    border: 1px solid #dbeafe !important;
+    background: #ffffff !important;
+    border-radius: 18px !important;
+    padding: 16px !important;
+    text-align: left !important;
+    cursor: pointer !important;
+    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.05) !important;
+    transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease, background-color 0.16s ease !important;
+}
+
+.sandbox-prompt-card:hover {
+    transform: translateY(-2px) !important;
+    border-color: #2563eb !important;
+    box-shadow: 0 14px 28px rgba(37, 99, 235, 0.14) !important;
+    background: #f8fbff !important;
+}
+
+.sandbox-prompt-card.active {
+    border-color: #2563eb !important;
+    background: linear-gradient(180deg, #eff6ff 0%, #ffffff 100%) !important;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14), 0 14px 28px rgba(37, 99, 235, 0.12) !important;
+}
+
+.sandbox-card-topline {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    gap: 8px !important;
+    margin-bottom: 10px !important;
+}
+
+.sandbox-card-type,
+.sandbox-card-difficulty {
+    display: inline-flex !important;
+    align-items: center !important;
+    border-radius: 999px !important;
+    padding: 5px 9px !important;
+    font-size: 0.72rem !important;
+    font-weight: 800 !important;
+    letter-spacing: 0.02em !important;
+}
+
+.sandbox-card-type {
+    background: #dbeafe !important;
+    color: #1d4ed8 !important;
+}
+
+.sandbox-card-difficulty {
+    background: #f1f5f9 !important;
+    color: #475569 !important;
+}
+
+.sandbox-prompt-card h5 {
+    margin: 0 0 8px !important;
+    font-size: 1rem !important;
+    color: #0f172a !important;
+    line-height: 1.2 !important;
+}
+
+.sandbox-card-objective {
+    margin: 0 0 12px !important;
+    color: #475569 !important;
+    line-height: 1.45 !important;
+    font-size: 0.92rem !important;
+}
+
+.sandbox-card-meta {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+    margin-bottom: 12px !important;
+}
+
+.sandbox-card-meta span {
+    border: 1px solid #bfdbfe !important;
+    background: #eff6ff !important;
+    color: #1d4ed8 !important;
+    border-radius: 999px !important;
+    padding: 4px 8px !important;
+    font-size: 0.72rem !important;
+    font-weight: 700 !important;
+}
+
+.sandbox-card-action {
+    color: #2563eb !important;
+    font-weight: 800 !important;
+    font-size: 0.88rem !important;
+}
+
+.sandbox-context-grid {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 12px !important;
+    margin-top: 12px !important;
+}
+
+.sandbox-context-block {
+    border: 1px solid #dbeafe !important;
+    background: #f8fbff !important;
+    border-radius: 14px !important;
+    padding: 12px !important;
+}
+
+.sandbox-context-block h5 {
+    margin: 0 0 8px !important;
+    color: #0f172a !important;
+    font-size: 0.9rem !important;
+}
+
+.sandbox-context-block p {
+    margin: 0 !important;
+    color: #475569 !important;
+    line-height: 1.45 !important;
+}
+
+.sandbox-context-pills {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+}
+
+.sandbox-context-pills span {
+    border-radius: 999px !important;
+    background: #dbeafe !important;
+    color: #1d4ed8 !important;
+    padding: 5px 9px !important;
+    font-weight: 800 !important;
+    font-size: 0.75rem !important;
+}
+
+body.sandbox-mode .sandbox-ai-panel {
+    position: sticky !important;
+    top: 14px !important;
+}
+
+@media (max-width: 1200px) {
+    body.sandbox-mode .sandbox-shell {
+        grid-template-columns: 1fr !important;
+    }
+
+    body.sandbox-mode .sandbox-ai-panel {
+        position: static !important;
+    }
+}
+
+@media (max-width: 900px) {
+    body.sandbox-mode .sandbox-prompt-grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    body.sandbox-mode .sandbox-context-grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    body.sandbox-mode .sandbox-toolbar {
+        flex-direction: column !important;
+        align-items: stretch !important;
+    }
+
+    body.sandbox-mode .sandbox-mode-group button,
+    body.sandbox-mode .sandbox-actions-inline button {
+        flex: 1 1 calc(50% - 8px) !important;
+    }
+}
