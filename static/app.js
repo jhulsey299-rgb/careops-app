@@ -8514,6 +8514,7 @@ function applySandboxPrompt(prompt, silent = false) {
 
 function renderSandboxPromptList() {
   const holder = document.getElementById("sandbox-prompt-list");
+
   if (!holder) return;
 
   const prompts = getSandboxPromptOptions();
@@ -8525,118 +8526,147 @@ function renderSandboxPromptList() {
         <p>Guided investigations will appear here once prompt packs are loaded.</p>
       </div>
     `;
+
     renderSandboxLessonContext(null);
     return;
   }
 
-  const investigations = prompts.filter(prompt => prompt.type !== "executive");
-  const executivePrompts = prompts.filter(prompt => prompt.type === "executive");
+  const investigations = prompts.filter(
+    prompt => prompt.type !== "executive"
+  );
+
+  const executivePrompts = prompts.filter(
+    prompt => prompt.type === "executive"
+  );
 
   const renderCard = (prompt) => {
-    const tables = Array.isArray(prompt.tables) ? prompt.tables : [];
-    const tags = Array.isArray(prompt.tags) ? prompt.tags : [];
+    const tables = Array.isArray(prompt.tables)
+      ? prompt.tables
+      : [];
+
+    const tags = Array.isArray(prompt.tags)
+      ? prompt.tags
+      : [];
 
     return `
       <button
         type="button"
-        class="sandbox-prompt-card ${prompt.id === selectedSandboxPromptId ? "active" : ""}"
+        class="sandbox-prompt-card ${
+          prompt.id === selectedSandboxPromptId ? "active" : ""
+        }"
         data-prompt-id="${escapeHtml(prompt.id)}"
       >
+
         <div class="sandbox-card-topline">
-          <span class="sandbox-card-type">${escapeHtml(prompt.type === "executive" ? "Executive Brief" : "KPI Investigation")}</span>
-          <span class="sandbox-card-difficulty">${escapeHtml(prompt.difficulty || "Intermediate")}</span>
+          <span class="sandbox-card-type">
+            ${escapeHtml(
+              prompt.type === "executive"
+                ? "Executive Brief"
+                : "KPI Investigation"
+            )}
+          </span>
+
+          <span class="sandbox-card-difficulty">
+            ${escapeHtml(prompt.difficulty || "Intermediate")}
+          </span>
         </div>
 
         <h5>${escapeHtml(prompt.title || "Guided Prompt")}</h5>
 
         <p class="sandbox-card-objective">
-          ${escapeHtml(prompt.objective || prompt.prompt || "Investigate this hospital performance issue.")}
+          ${escapeHtml(
+            prompt.objective ||
+            prompt.prompt ||
+            "Investigate this hospital performance issue."
+          )}
         </p>
 
         <div class="sandbox-card-meta">
-          ${tables.slice(0, 4).map(table => `<span>${escapeHtml(table)}</span>`).join("")}
-          ${tags.slice(0, 3).map(tag => `<span>${escapeHtml(tag)}</span>`).join("")}
+          ${tables
+            .slice(0, 4)
+            .map(table => `<span>${escapeHtml(table)}</span>`)
+            .join("")}
+
+          ${tags
+            .slice(0, 3)
+            .map(tag => `<span>${escapeHtml(tag)}</span>`)
+            .join("")}
         </div>
 
         <div class="sandbox-card-action">
           Load prompt →
         </div>
+
       </button>
     `;
   };
 
   holder.innerHTML = `
     <div class="sandbox-prompt-section">
+
       <div class="sandbox-prompt-section-header">
         <h4>KPI Investigations</h4>
-        <p>Use these to practice diagnosing real hospital performance problems with SQL.</p>
+
+        <p>
+          Use these to practice diagnosing real hospital
+          performance problems with SQL.
+        </p>
       </div>
+
       <div class="sandbox-prompt-grid">
         ${investigations.map(renderCard).join("")}
       </div>
+
     </div>
 
     <div class="sandbox-prompt-section">
+
       <div class="sandbox-prompt-section-header">
         <h4>Executive Prompt Packs</h4>
-        <p>Use these to practice turning analysis into leadership-ready recommendations.</p>
+
+        <p>
+          Use these to practice turning analysis into
+          leadership-ready recommendations.
+        </p>
       </div>
+
       <div class="sandbox-prompt-grid">
         ${executivePrompts.map(renderCard).join("")}
       </div>
+
     </div>
   `;
 
-  holder.querySelectorAll(".sandbox-prompt-card").forEach((card) => {
-    card.addEventListener("click", () => {
-      const prompt = prompts.find((item) => item.id === card.getAttribute("data-prompt-id"));
-      if (!prompt) return;
+  holder
+    .querySelectorAll(".sandbox-prompt-card")
+    .forEach((card) => {
+      card.addEventListener("click", () => {
 
-      applySandboxPrompt(prompt);
-      document.getElementById("sandbox-query")?.focus();
+        const prompt = prompts.find(
+          (item) =>
+            item.id === card.getAttribute("data-prompt-id")
+        );
+
+        if (!prompt) return;
+
+        applySandboxPrompt(prompt);
+
+        document
+          .getElementById("sandbox-query")
+          ?.focus();
+      });
     });
-  });
 
   if (selectedSandboxPromptId) {
-    const selected = prompts.find((prompt) => prompt.id === selectedSandboxPromptId);
+    const selected = prompts.find(
+      (prompt) => prompt.id === selectedSandboxPromptId
+    );
+
     renderSandboxLessonContext(selected || null);
   } else {
     renderSandboxLessonContext(null);
   }
 }
-
-  holder.innerHTML = prompts.map((prompt) => `
-    <div class="sandbox-prompt-card ${prompt.id === selectedSandboxPromptId ? "active" : ""}" data-prompt-id="${escapeHtml(prompt.id)}">
-      <div class="sandbox-prompt-card-top">
-        <span class="helper-chip">${escapeHtml(prompt.type === "executive" ? "Executive Prompt" : "Investigation")}</span>
-        <span class="helper-chip">${escapeHtml(prompt.difficulty || "Intermediate")}</span>
-      </div>
-
-      <h5>${escapeHtml(prompt.title)}</h5>
-      <p>${escapeHtml(prompt.objective || prompt.prompt || "")}</p>
-
-      <div class="sandbox-prompt-meta">
-        ${(prompt.tables || []).map((table) => `<span class="helper-chip">${escapeHtml(table)}</span>`).join("")}
-      </div>
-    </div>
-  `).join("");
-
-  holder.querySelectorAll(".sandbox-prompt-card").forEach((card) => {
-    card.onclick = () => {
-      const prompt = prompts.find((item) => item.id === card.getAttribute("data-prompt-id"));
-      if (!prompt) return;
-
-      applySandboxPrompt(prompt);
-      document.getElementById("sandbox-query")?.focus();
-    };
-  });
-
-  if (selectedSandboxPromptId) {
-    const selected = prompts.find((prompt) => prompt.id === selectedSandboxPromptId);
-    renderSandboxLessonContext(selected || null);
-  } else {
-    renderSandboxLessonContext(null);
-  }
 function setSandboxMode(mode = "free") {
   sandboxModeState = mode === "guided" ? "guided" : "free";
   const guidedPanel = document.getElementById("sandbox-guided-panel");
