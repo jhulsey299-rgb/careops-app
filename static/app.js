@@ -8383,22 +8383,63 @@ For executive prompts:
 - recommend visualizations,
 - provide operational interventions.
 `;
+function normalizeSandboxPrompt(prompt) {
+  const tables = Array.isArray(prompt.tables)
+    ? prompt.tables
+    : Array.isArray(prompt.relevantTables)
+      ? prompt.relevantTables
+      : [];
+
+  const isExecutive = prompt.type === "executive";
+
+  const executiveComment = isExecutive
+    ? `-- EXECUTIVE PROMPT: ${prompt.title || "Executive Prompt"}
+-- ${prompt.prompt || prompt.objective || ""}
+--
+-- Focus Areas:
+${(prompt.focusAreas || []).map(item => `-- - ${item}`).join("\n")}
+--
+-- Use the AI Companion to turn this into:
+-- 1. KPI definition
+-- 2. Why it matters
+-- 3. Diagnostic framework
+-- 4. SQL investigation plan
+-- 5. Executive recommendations`
+    : "";
+
+  return {
+    ...prompt,
+    type: prompt.type || "investigation",
+    category: prompt.category || (isExecutive ? "Executive" : "General"),
+    difficulty: prompt.difficulty || "Intermediate",
+    objective: prompt.objective || prompt.prompt || "Use this guided prompt to investigate a hospital performance issue.",
+    tables,
+    relevantTables: tables,
+    query: prompt.query || prompt.starterQuery || executiveComment || defaultSandboxQuery(),
+    starterQuery: prompt.starterQuery || prompt.query || executiveComment || defaultSandboxQuery()
+  };
+}
+
 function getSandboxPromptOptions() {
   return [
     ...SANDBOX_INVESTIGATIONS,
     ...EXECUTIVE_PROMPT_PACKS
-  ];
+  ].map(normalizeSandboxPrompt);
 }
+
 function getSelectedSandboxPrompt() {
   const prompts = getSandboxPromptOptions();
   return prompts.find((prompt) => prompt.id === selectedSandboxPromptId) || null;
 }
+
 function renderSandboxLessonContext(prompt = null) {
   const panel = document.getElementById("sandbox-lesson-context");
   const titleEl = document.getElementById("sandbox-lesson-title");
   const objectiveEl = document.getElementById("sandbox-lesson-objective");
   const tablesEl = document.getElementById("sandbox-lesson-tables");
+
   if (!panel || !titleEl || !objectiveEl || !tablesEl) return;
+
   if (sandboxModeState !== "guided" || !prompt) {
     panel.classList.add("hidden");
     titleEl.textContent = "Choose a guided prompt.";
@@ -8406,55 +8447,79 @@ function renderSandboxLessonContext(prompt = null) {
     tablesEl.innerHTML = "";
     return;
   }
+
   panel.classList.remove("hidden");
   titleEl.textContent = prompt.title || "Guided prompt";
-  objectiveEl.textContent = prompt.objective || "Use this guided prompt in the sandbox.";
+  objectiveEl.textContent = prompt.objective || prompt.prompt || "Use this guided prompt in the sandbox.";
+
   const tables = Array.isArray(prompt.tables) ? prompt.tables : [];
+
   tablesEl.innerHTML = tables.length
     ? tables.map((table) => `<div class="sandbox-schema-pill"><span>${escapeHtml(table)}</span><code>${escapeHtml(table)}</code></div>`).join("")
     : '<p class="sandbox-note">No related tables were supplied for this prompt.</p>';
 }
+
 function applySandboxPrompt(prompt, silent = false) {
   if (!prompt) return;
-  selectedSandboxPromptId = prompt.id || null;
+
+  const normalizedPrompt = normalizeSandboxPrompt(prompt);
+
+  selectedSandboxPromptId = normalizedPrompt.id || null;
   sandboxModeState = "guided";
+
   const box = document.getElementById("sandbox-query");
-  if (box) box.value = prompt.query || "";
-  renderSandboxLessonContext(prompt);
+  if (box) box.value = normalizedPrompt.query || normalizedPrompt.starterQuery || defaultSandboxQuery();
+
+  renderSandboxLessonContext(normalizedPrompt);
+
   const holder = document.getElementById("sandbox-prompt-list");
   holder?.querySelectorAll(".sandbox-prompt-card").forEach((card) => {
-    card.classList.toggle("active", card.getAttribute("data-prompt-id") === String(prompt.id));
+    card.classList.toggle("active", card.getAttribute("data-prompt-id") === String(normalizedPrompt.id));
   });
+
   if (!silent) {
-    setMessageState("sandbox-feedback", "success", `Loaded guided prompt: ${prompt.title}`);
+    setMessageState("sandbox-feedback", "success", `Loaded guided prompt: ${normalizedPrompt.title}`);
   }
 }
+
 function renderSandboxPromptList() {
   const holder = document.getElementById("sandbox-prompt-list");
   if (!holder) return;
+
   const prompts = getSandboxPromptOptions();
+
   if (!prompts.length) {
-    holder.innerHTML = '<p class="sandbox-note">No guided prompts are available yet. Open a lesson first, then return to the sandbox.</p>';
+    holder.innerHTML = '<p class="sandbox-note">No guided prompts are available yet.</p>';
     renderSandboxLessonContext(null);
     return;
   }
+
   holder.innerHTML = prompts.map((prompt) => `
     <div class="sandbox-prompt-card ${prompt.id === selectedSandboxPromptId ? "active" : ""}" data-prompt-id="${escapeHtml(prompt.id)}">
+      <div class="sandbox-prompt-card-top">
+        <span class="helper-chip">${escapeHtml(prompt.type === "executive" ? "Executive Prompt" : "Investigation")}</span>
+        <span class="helper-chip">${escapeHtml(prompt.difficulty || "Intermediate")}</span>
+      </div>
+
       <h5>${escapeHtml(prompt.title)}</h5>
-      <p>${escapeHtml(prompt.objective)}</p>
+      <p>${escapeHtml(prompt.objective || prompt.prompt || "")}</p>
+
       <div class="sandbox-prompt-meta">
         ${(prompt.tables || []).map((table) => `<span class="helper-chip">${escapeHtml(table)}</span>`).join("")}
       </div>
     </div>
   `).join("");
+
   holder.querySelectorAll(".sandbox-prompt-card").forEach((card) => {
     card.onclick = () => {
       const prompt = prompts.find((item) => item.id === card.getAttribute("data-prompt-id"));
       if (!prompt) return;
+
       applySandboxPrompt(prompt);
       document.getElementById("sandbox-query")?.focus();
     };
   });
+
   if (selectedSandboxPromptId) {
     const selected = prompts.find((prompt) => prompt.id === selectedSandboxPromptId);
     renderSandboxLessonContext(selected || null);
