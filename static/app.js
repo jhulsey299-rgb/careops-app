@@ -8637,7 +8637,6 @@ function renderSandboxPromptList() {
   } else {
     renderSandboxLessonContext(null);
   }
-}
 function setSandboxMode(mode = "free") {
   sandboxModeState = mode === "guided" ? "guided" : "free";
   const guidedPanel = document.getElementById("sandbox-guided-panel");
