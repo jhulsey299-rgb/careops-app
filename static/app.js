@@ -8718,10 +8718,23 @@ function showLessonsWorkspace() {
 }
 function showSandboxWorkspace() {
   appState.currentView = "sandbox";
+
   setSandboxModeUi(true);
+  if (typeof setGlossaryModeUi === "function") setGlossaryModeUi(false);
+
   showSection("sandbox-workspace");
-  setSandboxMode(sandboxModeState);
-  document.getElementById("sandbox-query")?.focus();
+
+  document.body.classList.add("sandbox-mode");
+  document.body.classList.remove("lesson-mode", "overview-mode", "glossary-mode");
+
+  setSandboxMode(sandboxModeState || "free");
+
+  setTimeout(() => {
+    document.getElementById("sandbox-workspace")?.scrollIntoView({
+      behavior: "smooth",
+      block: "start"
+    });
+  }, 0);
 }
 function formatSandboxResultTable(result) {
   const columns = Array.isArray(result?.columns) ? result.columns : [];
