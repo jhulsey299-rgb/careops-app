@@ -8456,20 +8456,37 @@ function renderSandboxLessonContext(prompt = null) {
   if (sandboxModeState !== "guided" || !prompt) {
     panel.classList.add("hidden");
     titleEl.textContent = "Choose a guided prompt.";
-    objectiveEl.textContent = "Select a guided prompt to load its objective, SQL starter pattern, and related tables.";
+    objectiveEl.textContent = "Select a KPI investigation or executive prompt to load its SQL starter and analysis context.";
     tablesEl.innerHTML = "";
     return;
   }
 
-  panel.classList.remove("hidden");
-  titleEl.textContent = prompt.title || "Guided prompt";
-  objectiveEl.textContent = prompt.objective || prompt.prompt || "Use this guided prompt in the sandbox.";
-
   const tables = Array.isArray(prompt.tables) ? prompt.tables : [];
+  const isExecutive = prompt.type === "executive";
 
-  tablesEl.innerHTML = tables.length
-    ? tables.map((table) => `<div class="sandbox-schema-pill"><span>${escapeHtml(table)}</span><code>${escapeHtml(table)}</code></div>`).join("")
-    : '<p class="sandbox-note">No related tables were supplied for this prompt.</p>';
+  panel.classList.remove("hidden");
+  titleEl.textContent = prompt.title || "Guided Prompt";
+
+  objectiveEl.innerHTML = `
+    <strong>${escapeHtml(isExecutive ? "Executive task:" : "Investigation task:")}</strong>
+    ${escapeHtml(prompt.objective || prompt.prompt || "Use this prompt to investigate a hospital performance issue.")}
+  `;
+
+  tablesEl.innerHTML = `
+    <div class="sandbox-context-grid">
+      <div class="sandbox-context-block">
+        <h5>Tables Used</h5>
+        <div class="sandbox-context-pills">
+          ${tables.length ? tables.map(table => `<span>${escapeHtml(table)}</span>`).join("") : "<span>None listed</span>"}
+        </div>
+      </div>
+
+      <div class="sandbox-context-block">
+        <h5>What You’re Practicing</h5>
+        <p>${escapeHtml(isExecutive ? "Executive communication, KPI framing, diagnostic reasoning, and action planning." : "SQL investigation, segmentation, prioritization, and root-cause thinking.")}</p>
+      </div>
+    </div>
+  `;
 }
 
 function applySandboxPrompt(prompt, silent = false) {
