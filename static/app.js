@@ -8071,32 +8071,323 @@ function setSandboxModeUi(isSandbox) {
 function defaultSandboxQuery() {
   return "SELECT * FROM patients;";
 }
-function getSandboxPromptOptions() {
-  const current = getCurrentLesson();
-  const lessons = (typeof getAllLessons === "function" ? getAllLessons() : []).filter(
-    (lesson) => lesson && (lesson.starterQuery || lesson.solutionQuery)
-  );
-  const prompts = [];
-  if (current && (current.starterQuery || current.solutionQuery)) {
-    prompts.push({
-      id: current.id,
-      title: current.title || "Current lesson",
-      objective: current.challengeCriteria || current.objective || "Use this lesson's SQL pattern.",
-      query: current.starterQuery || current.solutionQuery || "",
-      tables: Array.isArray(current.relevantTables) ? current.relevantTables : []
-    });
+/* ===============================
+   SANDBOX INVESTIGATIONS
+================================= */
+
+const SANDBOX_INVESTIGATIONS = [
+  {
+    id: "inv_denial_exposure",
+    type: "investigation",
+    title: "Denial Exposure by Payer",
+    difficulty: "Intermediate",
+    category: "Finance",
+    objective:
+      "Identify which payers and facilities are driving the largest denial exposure.",
+
+    relevantTables: ["claims", "encounters"],
+
+    starterQuery: `SELECT
+  payer,
+  claim_status,
+  COUNT(*) AS total_claims,
+  ROUND(SUM(billed_amount), 2) AS total_billed
+FROM claims
+GROUP BY payer, claim_status
+ORDER BY total_billed DESC;`,
+
+    executiveQuestion:
+      "Which payers are creating the most preventable revenue leakage and where should leadership intervene first?",
+
+    expectedInsights: [
+      "High denial exposure concentrated in a small payer group",
+      "Facilities may have payer-specific denial trends",
+      "Denied dollars may matter more than denial count"
+    ],
+
+    recommendedActions: [
+      "Review authorization workflows",
+      "Improve front-end insurance verification",
+      "Audit medical necessity denials",
+      "Target payer-specific appeals"
+    ]
+  },
+
+  {
+    id: "inv_readmission_risk",
+    type: "investigation",
+    title: "Readmission Risk Analysis",
+    difficulty: "Intermediate",
+    category: "Quality",
+
+    objective:
+      "Identify where readmissions are concentrated and what populations are highest risk.",
+
+    relevantTables: ["readmissions", "patients"],
+
+    starterQuery: `SELECT
+  facility,
+  COUNT(*) AS index_cases,
+  SUM(readmit_within_30_days) AS readmits,
+  ROUND(
+    SUM(readmit_within_30_days) * 1.0 / COUNT(*),
+    4
+  ) AS readmit_rate
+FROM readmissions
+GROUP BY facility
+ORDER BY readmit_rate DESC;`,
+
+    executiveQuestion:
+      "Which facilities or patient populations are driving readmission penalties?",
+
+    expectedInsights: [
+      "Readmission burden varies significantly by facility",
+      "Higher risk patients may cluster into specific regions",
+      "Discharge planning quality may vary"
+    ],
+
+    recommendedActions: [
+      "Improve transitional care outreach",
+      "Strengthen discharge follow-up",
+      "Target high-risk patients earlier",
+      "Expand medication reconciliation"
+    ]
+  },
+
+  {
+    id: "inv_los_pressure",
+    type: "investigation",
+    title: "Length of Stay Pressure",
+    difficulty: "Intermediate",
+    category: "Operations",
+
+    objective:
+      "Find departments creating throughput and capacity pressure through elevated LOS.",
+
+    relevantTables: ["encounters"],
+
+    starterQuery: `SELECT
+  facility,
+  department,
+  ROUND(AVG(length_of_stay), 2) AS avg_los,
+  COUNT(*) AS encounters
+FROM encounters
+GROUP BY facility, department
+ORDER BY avg_los DESC;`,
+
+    executiveQuestion:
+      "Which operational areas are driving avoidable bed utilization?",
+
+    expectedInsights: [
+      "A few departments often drive system LOS pressure",
+      "Volume plus LOS together create operational strain",
+      "High LOS areas may overlap with discharge delays"
+    ],
+
+    recommendedActions: [
+      "Daily long-stay huddles",
+      "Case management escalation",
+      "Earlier discharge planning",
+      "Post-acute coordination"
+    ]
+  },
+
+  {
+    id: "inv_obs_48",
+    type: "investigation",
+    title: "Observation >48 Hours",
+    difficulty: "Intermediate",
+    category: "Utilization Review",
+
+    objective:
+      "Find where prolonged observation stays are occurring.",
+
+    relevantTables: ["observations"],
+
+    starterQuery: `SELECT
+  facility,
+  department,
+  COUNT(*) AS observation_cases,
+  SUM(CASE WHEN obs_hours > 48 THEN 1 ELSE 0 END) AS obs_over_48
+FROM observations
+GROUP BY facility, department
+ORDER BY obs_over_48 DESC;`,
+
+    executiveQuestion:
+      "Are observation units functioning appropriately or becoming inpatient holding zones?",
+
+    expectedInsights: [
+      "Observation overages usually cluster operationally",
+      "Some departments convert status far more frequently",
+      "Long observation stays hurt throughput"
+    ],
+
+    recommendedActions: [
+      "Daily UR escalation",
+      "Provider education",
+      "Observation review rounds",
+      "Code 44 review"
+    ]
+  },
+
+  {
+    id: "inv_no_show",
+    type: "investigation",
+    title: "Appointment No-Show Analysis",
+    difficulty: "Beginner",
+    category: "Access",
+
+    objective:
+      "Measure outpatient access leakage and unused clinic capacity.",
+
+    relevantTables: ["appointments"],
+
+    starterQuery: `SELECT
+  department,
+  status,
+  COUNT(*) AS appointments
+FROM appointments
+GROUP BY department, status
+ORDER BY appointments DESC;`,
+
+    executiveQuestion:
+      "Where are we losing ambulatory access and downstream revenue opportunity?",
+
+    expectedInsights: [
+      "No-shows may cluster heavily by specialty",
+      "Scheduling patterns influence attendance",
+      "Access issues can affect patient retention"
+    ],
+
+    recommendedActions: [
+      "Reminder optimization",
+      "Targeted overbooking",
+      "Transportation outreach",
+      "Scheduling redesign"
+    ]
   }
-  lessons.slice(0, 12).forEach((lesson) => {
-    if (current && lesson.id === current.id) return;
-    prompts.push({
-      id: lesson.id,
-      title: lesson.title || "Guided prompt",
-      objective: lesson.challengeCriteria || lesson.objective || "Use this lesson's SQL pattern.",
-      query: lesson.starterQuery || lesson.solutionQuery || "",
-      tables: Array.isArray(lesson.relevantTables) ? lesson.relevantTables : []
-    });
-  });
-  return prompts;
+];
+
+/* ===============================
+   EXECUTIVE PROMPT PACKS
+================================= */
+
+const EXECUTIVE_PROMPT_PACKS = [
+  {
+    id: "exec_denials",
+    type: "executive",
+
+    title: "Denied Revenue Executive Brief",
+
+    prompt:
+      "Explain why denied dollars are increasing, what operational failures may exist, how leadership should investigate the issue, and what proven strategies reduce denials.",
+
+    focusAreas: [
+      "Authorization",
+      "Eligibility",
+      "Medical Necessity",
+      "Coding",
+      "Appeals"
+    ]
+  },
+
+  {
+    id: "exec_readmissions",
+    type: "executive",
+
+    title: "Readmissions Executive Brief",
+
+    prompt:
+      "Explain why readmissions matter financially and clinically, how to diagnose elevated readmissions, and what strategies reduce preventable readmissions.",
+
+    focusAreas: [
+      "Discharge Planning",
+      "Transitions of Care",
+      "Follow-Up",
+      "Medication Reconciliation"
+    ]
+  },
+
+  {
+    id: "exec_los",
+    type: "executive",
+
+    title: "LOS and Throughput Executive Brief",
+
+    prompt:
+      "Explain how LOS affects capacity, staffing strain, and financial performance. Include how hospitals diagnose LOS pressure and reduce avoidable days.",
+
+    focusAreas: [
+      "Case Management",
+      "Discharge Delays",
+      "Post-Acute Placement",
+      "Capacity"
+    ]
+  },
+
+  {
+    id: "exec_safety",
+    type: "executive",
+
+    title: "Patient Safety Executive Brief",
+
+    prompt:
+      "Explain how patient safety metrics are monitored, why preventable harm matters financially and clinically, and what operational patterns commonly drive safety deterioration.",
+
+    focusAreas: [
+      "HAC",
+      "HAI",
+      "Falls",
+      "Medication Safety",
+      "Staffing"
+    ]
+  }
+];
+
+/* ===============================
+   AI COPILOT SYSTEM PROMPT
+================================= */
+
+const AI_COPILOT_SYSTEM_PROMPT = `
+You are CAREOPS Copilot.
+
+You are:
+- a SQL mentor,
+- a hospital analytics advisor,
+- an executive KPI strategist.
+
+You help users:
+- learn SQL,
+- understand healthcare metrics,
+- diagnose operational failures,
+- explain executive implications,
+- recommend proven interventions.
+
+Rules:
+- Never invent schema fields.
+- Explain numerator and denominator logic for KPIs.
+- Separate validation checks from assumptions.
+- Never confuse correlation with causation.
+- Always explain WHY a KPI matters operationally and financially.
+
+For SQL questions:
+- explain the function,
+- show syntax,
+- provide a hospital example,
+- explain common mistakes.
+
+For executive prompts:
+- explain why the KPI matters,
+- identify likely drivers,
+- suggest segmentation approaches,
+- recommend visualizations,
+- provide operational interventions.
+`;
+function getSandboxPromptOptions() {
+  return [
+    ...SANDBOX_INVESTIGATIONS,
+    ...EXECUTIVE_PROMPT_PACKS
+  ];
 }
 function getSelectedSandboxPrompt() {
   const prompts = getSandboxPromptOptions();
