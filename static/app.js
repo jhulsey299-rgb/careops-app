@@ -9400,23 +9400,31 @@ function renderAll() {
   renderAchievements();
   updateDashboard();
   renderCurriculumNav();
-updateLessonsPanelHeader();
-renderTrackCategoryCards();
+  renderTrackCategoryCards();
   renderOverview();
+
+  ensureExecutiveStudioWorkspace();
+  ensureAiCompanionWorkspace();
+
   if (appState.currentView === "lesson" && appState.currentLessonId) {
     renderLesson();
-  } else if (appState.currentView === "sandbox") {
-    showSandboxWorkspace();
+    showLessonsWorkspace();
+  } else if (appState.currentView === "sandbox" || appState.currentView === "sql-lab") {
+    showSqlLabWorkspace();
+    renderSandboxLessonContext();
+  } else if (appState.currentView === "executive-studio") {
+    showExecutiveStudioWorkspace();
+  } else if (appState.currentView === "ai-companion") {
+    showAiCompanionWorkspace();
   } else if (appState.currentView === "glossary") {
     showGlossaryWorkspace();
   } else {
     showOverview();
   }
+
   updateAiContextBanner();
   initUiActions();
-  removeLevelsPanelOverviewButton();
   attachPersistentNavigationDelegates();
-  renderXPStatus();
 }
 function initUiActions() {
   const openOverviewBtn = document.getElementById("open-overview-btn");
