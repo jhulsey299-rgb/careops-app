@@ -8668,6 +8668,186 @@ function renderSandboxPromptList() {
     renderSandboxLessonContext(null);
   }
 }
+/* ================= EXECUTIVE STUDIO PROMPTS ================= */
+
+function getExecutivePromptOptions() {
+  return (typeof EXECUTIVE_PROMPT_PACKS !== "undefined" ? EXECUTIVE_PROMPT_PACKS : [])
+    .map(normalizeSandboxPrompt);
+}
+
+function buildExecutiveTemplate(prompt) {
+  const p = normalizeSandboxPrompt(prompt);
+
+  return `Help me answer this executive prompt:
+
+${p.title}
+
+${p.prompt || p.objective || ""}
+
+Focus areas:
+${(p.focusAreas || []).map(item => `- ${item}`).join("\n")}
+
+Structure the answer with:
+1. KPI definition
+2. Why this KPI matters
+3. What data needs validation
+4. Likely operational drivers
+5. Where to diagnose the issue
+6. Recommended actions
+7. Executive-ready summary`;
+}
+
+function loadExecutivePromptIntoAi(prompt, switchToAi = false) {
+  const aiInput = document.getElementById("ai-input");
+  if (aiInput) aiInput.value = buildExecutiveTemplate(prompt);
+
+  if (switchToAi) {
+    showAiCompanionWorkspace();
+  }
+}
+
+function renderExecutivePromptDetail(prompt = null) {
+  const detail = document.getElementById("executive-studio-detail");
+  if (!detail) return;
+
+  if (!prompt) {
+    detail.innerHTML = `
+      <h3>No executive prompt selected</h3>
+      <p>Select a prompt to review focus areas, recommended visuals, and AI Companion framing.</p>
+    `;
+    return;
+  }
+
+  detail.innerHTML = `
+    <div class="workspace-title-row">
+      <div>
+        <p class="track-label">Selected Brief</p>
+        <h3>${escapeHtml(prompt.title || "Executive Prompt")}</h3>
+      </div>
+      <span class="tag-pill">${escapeHtml(prompt.category || "Executive")}</span>
+    </div>
+
+    <p>${escapeHtml(prompt.prompt || prompt.objective || "")}</p>
+
+    <div class="studio-detail-block">
+      <h4>Focus Areas</h4>
+      <div class="prompt-chip-row">
+        ${(prompt.focusAreas || []).map(item => `<span class="tag-pill">${escapeHtml(item)}</span>`).join("") || "<span class='tag-pill'>General KPI Review</span>"}
+      </div>
+    </div>
+
+    <div class="studio-detail-block">
+      <h4>Recommended Output</h4>
+      <ol>
+        <li>KPI definition</li>
+        <li>Why it matters</li>
+        <li>Validation checks</li>
+        <li>Likely drivers</li>
+        <li>Recommended actions</li>
+      </ol>
+    </div>
+
+    <div class="button-row">
+      <button type="button" id="send-exec-prompt-to-ai-btn">Open in AI Companion</button>
+    </div>
+  `;
+
+  document.getElementById("send-exec-prompt-to-ai-btn")?.addEventListener("click", () => {
+    loadExecutivePromptIntoAi(prompt, true);
+  });
+}
+
+function renderExecutivePromptBrowser() {
+  const holder = document.getElementById("executive-prompt-list");
+  const controls = document.getElementById("executive-prompt-controls");
+  const pagination = document.getElementById("executive-prompt-pagination");
+
+  if (!holder) return;
+
+  const prompts = getExecutivePromptOptions();
+
+  if (controls) {
+    controls.innerHTML = `
+      <div class="prompt-toolbar">
+        <div>
+          <label class="query-label" for="executive-search-input">Search Executive Prompts</label>
+          <input id="executive-search-input" class="text-input" type="text" placeholder="Search denials, LOS, safety, readmissions..." />
+        </div>
+        <div>
+          <label class="query-label" for="executive-category-filter">Category</label>
+          <select id="executive-category-filter" class="select-input">
+            <option value="">All Categories</option>
+            ${[...new Set(prompts.map(p => p.category || "Executive"))].map(category => `<option value="${escapeHtml(category)}">${escapeHtml(category)}</option>`).join("")}
+          </select>
+        </div>
+      </div>
+    `;
+  }
+
+  function drawPromptCards() {
+    const search = String(document.getElementById("executive-search-input")?.value || "").toLowerCase();
+    const category = String(document.getElementById("executive-category-filter")?.value || "");
+
+    const filtered = prompts.filter(prompt => {
+      const haystack = [
+        prompt.title,
+        prompt.prompt,
+        prompt.objective,
+        prompt.category,
+        ...(prompt.focusAreas || [])
+      ].join(" ").toLowerCase();
+
+      return (!search || haystack.includes(search)) &&
+        (!category || prompt.category === category);
+    });
+
+    holder.innerHTML = filtered.length
+      ? filtered.map(prompt => `
+          <button type="button" class="prompt-card ${prompt.id === selectedExecutivePromptId ? "active" : ""}" data-executive-prompt-id="${escapeHtml(prompt.id)}">
+            <div class="prompt-card-topline">
+              <span class="tag-pill">${escapeHtml(prompt.category || "Executive")}</span>
+              <span class="tag-pill muted">${escapeHtml(prompt.difficulty || "Executive")}</span>
+            </div>
+            <h4>${escapeHtml(prompt.title || "Executive Prompt")}</h4>
+            <p>${escapeHtml(prompt.prompt || prompt.objective || "")}</p>
+            <div class="prompt-chip-row">
+              ${(prompt.focusAreas || []).slice(0, 4).map(item => `<span class="tag-pill muted">${escapeHtml(item)}</span>`).join("")}
+            </div>
+            <div class="prompt-card-action">Load into AI Companion →</div>
+          </button>
+        `).join("")
+      : `<div class="concept-card"><p>No executive prompts matched your search.</p></div>`;
+
+    holder.querySelectorAll("[data-executive-prompt-id]").forEach(card => {
+      card.addEventListener("click", () => {
+        const prompt = prompts.find(item => item.id === card.getAttribute("data-executive-prompt-id"));
+        if (!prompt) return;
+
+        selectedExecutivePromptId = prompt.id;
+        renderExecutivePromptDetail(prompt);
+        loadExecutivePromptIntoAi(prompt, false);
+        drawPromptCards();
+
+        const feedback = document.getElementById("executive-feedback");
+        if (feedback) {
+          setMessageState("executive-feedback", "success", `Loaded executive prompt into AI Companion: ${prompt.title}`);
+        }
+      });
+    });
+
+    if (pagination) {
+      pagination.innerHTML = `<span class="section-helper-text">${filtered.length} executive prompts shown</span>`;
+    }
+  }
+
+  document.getElementById("executive-search-input")?.addEventListener("input", drawPromptCards);
+  document.getElementById("executive-category-filter")?.addEventListener("change", drawPromptCards);
+
+  drawPromptCards();
+
+  const selected = prompts.find(prompt => prompt.id === selectedExecutivePromptId);
+  renderExecutivePromptDetail(selected || null);
+}
 function setSandboxMode(mode = "free") {
   sandboxModeState = mode === "guided" ? "guided" : "free";
   const guidedPanel = document.getElementById("sandbox-guided-panel");
