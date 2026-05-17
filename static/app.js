@@ -9011,14 +9011,38 @@ function ensureExecutiveStudioWorkspace() {
   return workspace;
 }
 
+let aiCompanionOriginalParent = null;
+let aiCompanionOriginalNextSibling = null;
+
+function moveAiCompanionPanelTo(host) {
+  const panel = document.getElementById("ai-companion-section");
+  if (!panel || !host) return;
+
+  if (!aiCompanionOriginalParent) {
+    aiCompanionOriginalParent = panel.parentNode;
+    aiCompanionOriginalNextSibling = panel.nextSibling;
+  }
+
+  host.appendChild(panel);
+}
+
+function restoreAiCompanionPanelToSqlLab() {
+  const panel = document.getElementById("ai-companion-section");
+  if (!panel || !aiCompanionOriginalParent) return;
+
+  if (aiCompanionOriginalNextSibling && aiCompanionOriginalNextSibling.parentNode === aiCompanionOriginalParent) {
+    aiCompanionOriginalParent.insertBefore(panel, aiCompanionOriginalNextSibling);
+  } else {
+    aiCompanionOriginalParent.appendChild(panel);
+  }
+}
+
 function ensureAiCompanionWorkspace() {
   let workspace = document.getElementById("ai-companion-workspace");
   if (workspace) return workspace;
 
   const playArea = document.querySelector(".play-area");
-  const originalAi = document.getElementById("ai-companion-section");
-
-  if (!playArea || !originalAi) return null;
+  if (!playArea) return null;
 
   workspace = document.createElement("section");
   workspace.id = "ai-companion-workspace";
@@ -9034,14 +9058,11 @@ function ensureAiCompanionWorkspace() {
       <h2>AI Companion</h2>
       <p>Ask for SQL code, KPI definitions, diagnostic frameworks, or executive-ready summaries.</p>
     </div>
+
+    <div id="ai-companion-workspace-host"></div>
   `;
 
-  const clonedAi = originalAi.cloneNode(true);
-  clonedAi.id = "ai-companion-section-standalone";
-
-  workspace.appendChild(clonedAi);
   playArea.appendChild(workspace);
-
   return workspace;
 }
 
