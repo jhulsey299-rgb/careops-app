@@ -9427,6 +9427,65 @@ function renderAll() {
   attachPersistentNavigationDelegates();
 }
 function initUiActions() {
+    const navOverviewBtn = document.getElementById("nav-overview-btn");
+  if (navOverviewBtn) {
+    navOverviewBtn.onclick = () => {
+      appState.currentView = "overview";
+      attempts = 0;
+      showOverview();
+      saveProgress();
+      renderAll();
+    };
+  }
+
+  const navSandboxBtn = document.getElementById("nav-sandbox-btn");
+  if (navSandboxBtn) {
+    navSandboxBtn.onclick = () => {
+      appState.currentView = "sql-lab";
+      attempts = 0;
+      showSqlLabWorkspace();
+      saveProgress();
+      renderAll();
+    };
+  }
+
+  const navExecutiveBtn = document.getElementById("nav-executive-btn");
+  if (navExecutiveBtn) {
+    navExecutiveBtn.onclick = () => {
+      appState.currentView = "executive-studio";
+      attempts = 0;
+      showExecutiveStudioWorkspace();
+      saveProgress();
+      renderAll();
+    };
+  }
+
+  const navAiBtn = document.getElementById("nav-ai-btn");
+  if (navAiBtn) {
+    navAiBtn.onclick = () => {
+      appState.currentView = "ai-companion";
+      attempts = 0;
+      showAiCompanionWorkspace();
+      saveProgress();
+      renderAll();
+    };
+  }
+
+  const navGlossaryBtn = document.getElementById("nav-glossary-btn");
+  if (navGlossaryBtn) {
+    navGlossaryBtn.onclick = () => {
+      appState.currentView = "glossary";
+      attempts = 0;
+      showGlossaryWorkspace();
+      saveProgress();
+      renderAll();
+    };
+  }
+
+  const navResetBtn = document.getElementById("nav-reset-btn");
+  if (navResetBtn) {
+    navResetBtn.onclick = resetAllProgress;
+  }
   const openOverviewBtn = document.getElementById("open-overview-btn");
   if (openOverviewBtn) {
     openOverviewBtn.onclick = () => {
