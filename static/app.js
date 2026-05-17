@@ -8712,6 +8712,175 @@ function syncSandboxStarterQuery() {
   }
   renderSandboxLessonContext(null);
 }
+/* ================= OPTION 1 WORKSPACE ROUTING ================= */
+
+function clearCareOpsWorkspaceModes() {
+  document.body.classList.remove(
+    "sandbox-mode",
+    "sql-lab-mode",
+    "executive-mode",
+    "ai-mode",
+    "overview-mode",
+    "lesson-mode",
+    "glossary-mode"
+  );
+}
+
+function setProfessionalWorkspaceMode(mode) {
+  clearCareOpsWorkspaceModes();
+
+  if (mode === "sql-lab") {
+    document.body.classList.add("sql-lab-mode", "sandbox-mode");
+  }
+
+  if (mode === "executive") {
+    document.body.classList.add("executive-mode");
+  }
+
+  if (mode === "ai") {
+    document.body.classList.add("ai-mode");
+  }
+
+  if (mode === "overview") {
+    document.body.classList.add("overview-mode");
+  }
+
+  if (mode === "lesson") {
+    document.body.classList.add("lesson-mode");
+  }
+
+  if (mode === "glossary") {
+    document.body.classList.add("glossary-mode");
+  }
+}
+
+function ensureExecutiveStudioWorkspace() {
+  let workspace = document.getElementById("executive-studio-workspace");
+  if (workspace) return workspace;
+
+  const playArea = document.querySelector(".play-area");
+  if (!playArea) return null;
+
+  workspace = document.createElement("section");
+  workspace.id = "executive-studio-workspace";
+  workspace.className = "workspace-panel hidden";
+
+  workspace.innerHTML = `
+    <div class="mission-box workspace-hero-card">
+      <div class="mission-meta-row">
+        <span class="lesson-type-badge lesson-type-scenario">Executive Studio</span>
+        <span class="difficulty-badge difficulty-advanced">Leadership Briefs</span>
+      </div>
+      <p class="track-label">Executive Communication</p>
+      <h2>Executive Studio</h2>
+      <p>Practice turning hospital KPI problems into leadership-ready diagnosis, recommendations, and action plans.</p>
+    </div>
+
+    <div class="workspace-shell two-column">
+      <div class="workspace-main">
+        <div class="concept-card">
+          <div class="section-header">
+            <h3>Executive Prompt Packs</h3>
+            <p>Select a leadership scenario. It will load into AI Companion instead of the SQL editor.</p>
+          </div>
+
+          <div id="executive-prompt-controls"></div>
+          <div id="executive-prompt-list" class="prompt-card-grid"></div>
+          <div id="executive-prompt-pagination" class="pagination-row"></div>
+          <div id="executive-feedback" aria-live="polite"></div>
+        </div>
+      </div>
+
+      <aside class="workspace-side">
+        <div id="executive-studio-detail" class="concept-card">
+          <h3>No executive prompt selected</h3>
+          <p>Select a prompt to review focus areas, recommended visuals, and AI Companion framing.</p>
+        </div>
+      </aside>
+    </div>
+  `;
+
+  playArea.appendChild(workspace);
+  return workspace;
+}
+
+function ensureAiCompanionWorkspace() {
+  let workspace = document.getElementById("ai-companion-workspace");
+  if (workspace) return workspace;
+
+  const playArea = document.querySelector(".play-area");
+  const originalAi = document.getElementById("ai-companion-section");
+
+  if (!playArea || !originalAi) return null;
+
+  workspace = document.createElement("section");
+  workspace.id = "ai-companion-workspace";
+  workspace.className = "workspace-panel hidden";
+
+  workspace.innerHTML = `
+    <div class="mission-box workspace-hero-card">
+      <div class="mission-meta-row">
+        <span class="lesson-type-badge lesson-type-challenge">AI Companion</span>
+        <span class="difficulty-badge difficulty-advanced">SQL + KPI Coach</span>
+      </div>
+      <p class="track-label">CareOps Copilot</p>
+      <h2>AI Companion</h2>
+      <p>Ask for SQL code, KPI definitions, diagnostic frameworks, or executive-ready summaries.</p>
+    </div>
+  `;
+
+  const clonedAi = originalAi.cloneNode(true);
+  clonedAi.id = "ai-companion-section-standalone";
+
+  workspace.appendChild(clonedAi);
+  playArea.appendChild(workspace);
+
+  return workspace;
+}
+
+function showSqlLabWorkspace() {
+  appState.currentView = "sql-lab";
+
+  setSandboxModeUi(true);
+  if (typeof setGlossaryModeUi === "function") setGlossaryModeUi(false);
+  setProfessionalWorkspaceMode("sql-lab");
+
+  showSection("sandbox-workspace");
+  setSandboxMode(sandboxModeState || "free");
+
+  saveProgress();
+  document.getElementById("sandbox-workspace")?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function showExecutiveStudioWorkspace() {
+  appState.currentView = "executive-studio";
+
+  setSandboxModeUi(false);
+  if (typeof setGlossaryModeUi === "function") setGlossaryModeUi(false);
+  setProfessionalWorkspaceMode("executive");
+
+  ensureExecutiveStudioWorkspace();
+  showSection("executive-studio-workspace");
+  renderExecutivePromptBrowser();
+
+  saveProgress();
+  document.getElementById("executive-studio-workspace")?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function showAiCompanionWorkspace() {
+  appState.currentView = "ai-companion";
+
+  setSandboxModeUi(false);
+  if (typeof setGlossaryModeUi === "function") setGlossaryModeUi(false);
+  setProfessionalWorkspaceMode("ai");
+
+  ensureAiCompanionWorkspace();
+  showSection("ai-companion-workspace");
+  renderAiMessages();
+
+  saveProgress();
+  document.getElementById("ai-companion-workspace")?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
 function ensureGlossaryWorkspace() {
   let workspace = document.getElementById("glossary-workspace");
   if (workspace) return workspace;
