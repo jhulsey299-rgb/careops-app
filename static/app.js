@@ -9069,6 +9069,8 @@ function ensureAiCompanionWorkspace() {
 function showSqlLabWorkspace() {
   appState.currentView = "sql-lab";
 
+  restoreAiCompanionPanelToSqlLab();
+
   setSandboxModeUi(true);
   if (typeof setGlossaryModeUi === "function") setGlossaryModeUi(false);
   setProfessionalWorkspaceMode("sql-lab");
@@ -9079,7 +9081,6 @@ function showSqlLabWorkspace() {
   saveProgress();
   document.getElementById("sandbox-workspace")?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
-
 function showExecutiveStudioWorkspace() {
   appState.currentView = "executive-studio";
 
@@ -9103,6 +9104,10 @@ function showAiCompanionWorkspace() {
   setProfessionalWorkspaceMode("ai");
 
   ensureAiCompanionWorkspace();
+
+  const host = document.getElementById("ai-companion-workspace-host");
+  moveAiCompanionPanelTo(host);
+
   showSection("ai-companion-workspace");
   renderAiMessages();
 
