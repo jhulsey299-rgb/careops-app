@@ -9016,44 +9016,28 @@ function showOverview() {
 
   setSandboxModeUi(false);
   if (typeof setGlossaryModeUi === "function") setGlossaryModeUi(false);
-
-  document.body.classList.remove("sandbox-mode", "lesson-mode", "glossary-mode");
-  document.body.classList.add("overview-mode");
+  setProfessionalWorkspaceMode("overview");
 
   showSection("track-overview");
 
-  document.getElementById("track-overview")?.scrollIntoView({
-    behavior: "smooth",
-    block: "start"
-  });
+  document.getElementById("track-overview")?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
+
 function showLessonsWorkspace() {
   ensureCurrentLesson();
   appState.currentView = "lesson";
+
   setSandboxModeUi(false);
-  setGlossaryModeUi(false);
+  if (typeof setGlossaryModeUi === "function") setGlossaryModeUi(false);
+  setProfessionalWorkspaceMode("lesson");
+
   showSection("lesson-workspace");
+
   document.getElementById("lesson-workspace")?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
+
 function showSandboxWorkspace() {
-  appState.currentView = "sandbox";
-
-  setSandboxModeUi(true);
-  if (typeof setGlossaryModeUi === "function") setGlossaryModeUi(false);
-
-  showSection("sandbox-workspace");
-
-  document.body.classList.add("sandbox-mode");
-  document.body.classList.remove("lesson-mode", "overview-mode", "glossary-mode");
-
-  setSandboxMode(sandboxModeState || "free");
-
-  setTimeout(() => {
-    document.getElementById("sandbox-workspace")?.scrollIntoView({
-      behavior: "smooth",
-      block: "start"
-    });
-  }, 0);
+  showSqlLabWorkspace();
 }
 function formatSandboxResultTable(result) {
   const columns = Array.isArray(result?.columns) ? result.columns : [];
