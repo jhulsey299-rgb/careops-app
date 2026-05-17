@@ -8078,6 +8078,7 @@ document.addEventListener("DOMContentLoaded", async function () {
 /* ================= PATCHED SANDBOX / AI / MOBILE BEHAVIOR ================= */
 let sandboxModeState = "free";
 let selectedSandboxPromptId = null;
+let selectedExecutivePromptId = null;
 function setSandboxModeUi(isSandbox) {
   document.body.classList.toggle("sandbox-mode", !!isSandbox);
 }
