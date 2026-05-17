@@ -8047,6 +8047,26 @@ window.showCareopsSandbox = function () {
   saveProgress();
   renderAll();
 };
+window.showCareopsSqlLab = function () {
+  appState.currentView = "sql-lab";
+  attempts = 0;
+  saveProgress();
+  renderAll();
+};
+
+window.showCareopsExecutiveStudio = function () {
+  appState.currentView = "executive-studio";
+  attempts = 0;
+  saveProgress();
+  renderAll();
+};
+
+window.showCareopsAiCompanion = function () {
+  appState.currentView = "ai-companion";
+  attempts = 0;
+  saveProgress();
+  renderAll();
+};
 window.showCareopsGlossary = function () {
   appState.currentView = "glossary";
   attempts = 0;
