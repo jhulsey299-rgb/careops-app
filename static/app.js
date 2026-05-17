@@ -7883,7 +7883,14 @@ const AI_API_CONFIG = {
 let sandboxDb = null;
 let aiThread = [];
 function showSection(sectionId) {
-  ["track-overview", "lesson-workspace", "sandbox-workspace", "glossary-workspace"].forEach((id) => {
+  [
+    "track-overview",
+    "lesson-workspace",
+    "sandbox-workspace",
+    "executive-studio-workspace",
+    "ai-companion-workspace",
+    "glossary-workspace"
+  ].forEach((id) => {
     const el = document.getElementById(id);
     if (el) el.classList.toggle("hidden", id !== sectionId);
   });
