@@ -9160,27 +9160,6 @@ function setGlossaryModeUi(isGlossary) {
   document.body.classList.toggle("glossary-mode", !!isGlossary);
   if (isGlossary) document.body.classList.remove("sandbox-mode");
 }
-function ensureGlossaryNavButton() {
-  let button = document.getElementById("open-glossary-btn");
-  if (button) return button;
-  const sandboxBtn = document.getElementById("open-sandbox-btn") || document.getElementById("nav-sandbox-btn") || Array.from(document.querySelectorAll("button")).find((btn) => String(btn.textContent || "").trim().toLowerCase() === "sandbox");
-  const resetBtn = Array.from(document.querySelectorAll("button")).find((btn) => /reset progress/i.test(String(btn.textContent || "")));
-  const parent = sandboxBtn?.parentElement || resetBtn?.parentElement || document.querySelector(".main-nav-actions") || document.querySelector(".dashboard-actions.main-nav-actions") || document.querySelector(".dashboard-actions");
-  if (!parent) return null;
-  button = document.createElement("button");
-  button.type = "button";
-  button.id = "open-glossary-btn";
-  button.className = "glossary-nav-btn";
-  button.textContent = "Glossary";
-  if (resetBtn && resetBtn.parentElement === parent) {
-    parent.insertBefore(button, resetBtn);
-  } else if (sandboxBtn && sandboxBtn.parentElement === parent) {
-    sandboxBtn.insertAdjacentElement("afterend", button);
-  } else {
-    parent.appendChild(button);
-  }
-  return button;
-}
 function getFilteredGlossaryTerms() {
   const query = String(appState.glossarySearch || "").trim().toLowerCase();
   const activeCategory = String(appState.glossaryCategory || "").trim().toLowerCase();
