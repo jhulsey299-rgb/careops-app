@@ -8123,7 +8123,6 @@ document.addEventListener("DOMContentLoaded", async function () {
   if (!appState.currentLessonId) appState.currentLessonId = getTrack().categories[0]?.lessons[0]?.id || null;
   if (!appState.currentView) appState.currentView = "overview";
   ensureGlossaryWorkspace();
-  ensureGlossaryNavButton();
   initUiActions();
   attachPersistentNavigationDelegates();
   initSchemaResizer();
@@ -9511,16 +9510,6 @@ function initUiActions() {
       saveProgress();
       renderAll();
       document.getElementById("sandbox-workspace")?.scrollIntoView({ behavior: "smooth", block: "start" });
-    };
-  }
-  const openGlossaryBtn = ensureGlossaryNavButton();
-  if (openGlossaryBtn) {
-    openGlossaryBtn.onclick = () => {
-      appState.currentView = "glossary";
-      attempts = 0;
-      showGlossaryWorkspace();
-      saveProgress();
-      renderAll();
     };
   }
   const toggleBtn = document.getElementById("toggle-levels-panel-btn");
