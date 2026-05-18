@@ -305,6 +305,66 @@
                 
                         </div>
                     </section>
+                                        <section id="executive-workspace" class="hidden">
+                        <div class="mission-box workspace-hero-card">
+                            <div class="mission-meta-row">
+                                <span class="lesson-type-badge lesson-type-scenario">Executive</span>
+                                <span class="difficulty-badge difficulty-advanced">Leadership Communication</span>
+                            </div>
+
+                            <p class="track-label">Executive Studio</p>
+                            <h2>Executive KPI Strategy & Communication</h2>
+                            <p>Generate executive-ready operational summaries, KPI investigations, leadership recommendations, and financial performance narratives.</p>
+                        </div>
+
+                        <div class="query-section">
+                            <h3>Executive Prompt</h3>
+
+                            <textarea
+                                id="executive-prompt-input"
+                                rows="10"
+                                placeholder="Example:
+Explain why ED boarding is increasing and what operational leaders should investigate."
+                            ></textarea>
+
+                            <div class="button-row">
+                                <button type="button" id="run-executive-btn">Generate Executive Response</button>
+                            </div>
+
+                            <div id="executive-output"></div>
+                        </div>
+                    </section>
+
+                    <section id="ai-workspace" class="hidden">
+                        <div class="mission-box workspace-hero-card">
+                            <div class="mission-meta-row">
+                                <span class="lesson-type-badge lesson-type-concept">AI Companion</span>
+                                <span class="difficulty-badge difficulty-intermediate">SQL + KPI Coach</span>
+                            </div>
+
+                            <p class="track-label">CareOps Copilot</p>
+                            <h2>AI Companion</h2>
+                            <p>Ask SQL questions, KPI questions, debugging questions, operational questions, or executive communication questions.</p>
+                        </div>
+
+                        <div class="query-section">
+                            <textarea
+                                id="ai-companion-input"
+                                rows="10"
+                                placeholder="Examples:
+Why is LOS increasing?
+How do I calculate denial rate?
+Why are readmissions important?
+How do I fix a GROUP BY error?"
+                            ></textarea>
+
+                            <div class="button-row">
+                                <button type="button" id="run-ai-companion-btn">Ask AI Companion</button>
+                            </div>
+
+                            <div id="ai-companion-output"></div>
+                        </div>
+                    </section>
                 </section>
 
                 <aside class="levels-panel" id="levels-panel">
