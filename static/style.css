@@ -2607,3 +2607,108 @@ body.ai-mode .play-area {
         grid-template-columns: 1fr !important;
     }
 }
+/* ================= FINAL OPTION 1 WORKSPACE OVERRIDES ================= */
+
+.main-nav-actions {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 12px !important;
+    align-items: center !important;
+}
+
+.main-nav-actions button {
+    margin: 0 !important;
+    flex: 0 0 auto !important;
+}
+
+/* SQL Lab should be single-column now that sandbox AI side panel is gone */
+.sandbox-shell,
+body.sandbox-mode .sandbox-shell,
+.sandbox-workspace .sandbox-shell {
+    display: block !important;
+    grid-template-columns: 1fr !important;
+}
+
+.sandbox-main {
+    width: 100% !important;
+    max-width: none !important;
+}
+
+.sandbox-ai-panel,
+.ai-companion-panel {
+    display: none !important;
+}
+
+/* Keep SQL Lab clean and wide */
+#sandbox-workspace .query-section {
+    padding: 24px !important;
+}
+
+#sandbox-query {
+    min-height: 260px !important;
+}
+
+/* Guided prompt card cleanup */
+#sandbox-prompt-list,
+.sandbox-prompt-grid {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)) !important;
+    gap: 14px !important;
+}
+
+.sandbox-prompt-card {
+    width: 100% !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 16px !important;
+    background: #ffffff !important;
+    padding: 16px !important;
+    cursor: pointer !important;
+    text-align: left !important;
+    box-shadow: var(--shadow-sm) !important;
+}
+
+.sandbox-prompt-card:hover {
+    border-color: var(--primary) !important;
+    background: #f8fbff !important;
+    transform: translateY(-2px) !important;
+    box-shadow: var(--shadow-md) !important;
+}
+
+/* Executive Studio + AI Companion page surfaces */
+#executive-workspace,
+#ai-workspace {
+    width: 100% !important;
+}
+
+#executive-output,
+#ai-companion-output {
+    margin-top: 18px !important;
+    background: #ffffff !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 16px !important;
+    padding: 18px !important;
+    min-height: 80px !important;
+}
+
+#executive-output:empty,
+#ai-companion-output:empty {
+    display: none !important;
+}
+
+/* Hide lesson chrome on standalone workspaces */
+body.sandbox-mode .top-dashboard,
+body.sandbox-mode .badges-section,
+body.sandbox-mode #levels-panel {
+    display: none !important;
+}
+
+@media (max-width: 900px) {
+    .main-nav-actions button {
+        flex: 1 1 calc(50% - 8px) !important;
+    }
+
+    #sandbox-prompt-list,
+    .sandbox-prompt-grid {
+        grid-template-columns: 1fr !important;
+    }
+}
