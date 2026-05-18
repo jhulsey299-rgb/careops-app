@@ -9601,23 +9601,23 @@ function initUiActions() {
   }
 }
 document.getElementById("nav-overview-btn")?.addEventListener("click", () => {
-  showWorkspace("track-overview");
+  showSection("track-overview");
 });
 
 document.getElementById("nav-sandbox-btn")?.addEventListener("click", () => {
-  showWorkspace("sandbox-workspace");
+  showSection("track-overview");
 });
 
 document.getElementById("nav-executive-btn")?.addEventListener("click", () => {
-  showWorkspace("executive-workspace");
+  showSection("track-overview");
 });
 
 document.getElementById("nav-ai-btn")?.addEventListener("click", () => {
-  showWorkspace("ai-workspace");
+  showSection("track-overview");
 });
 
 document.getElementById("nav-glossary-btn")?.addEventListener("click", () => {
-  showWorkspace("glossary-workspace");
+  showSection("track-overview");
 });
 
 document.getElementById("nav-reset-btn")?.addEventListener("click", () => {
