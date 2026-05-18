@@ -7883,17 +7883,49 @@ const AI_API_CONFIG = {
 let sandboxDb = null;
 let aiThread = [];
 function showSection(sectionId) {
-  [
+  const sections = [
     "track-overview",
     "lesson-workspace",
     "sandbox-workspace",
-    "executive-studio-workspace",
-    "ai-companion-workspace",
+    "executive-workspace",
+    "ai-workspace",
     "glossary-workspace"
-  ].forEach((id) => {
+  ];
+
+  sections.forEach(id => {
     const el = document.getElementById(id);
-    if (el) el.classList.toggle("hidden", id !== sectionId);
+
+    if (el) {
+      el.classList.add("hidden");
+    }
   });
+
+  const active = document.getElementById(sectionId);
+
+  if (active) {
+    active.classList.remove("hidden");
+  }
+
+  const hideChrome =
+    sectionId === "sandbox-workspace" ||
+    sectionId === "executive-workspace" ||
+    sectionId === "ai-workspace";
+
+  const dashboard = document.querySelector(".top-dashboard");
+  const achievements = document.querySelector(".badges-section");
+  const levelsPanel = document.getElementById("levels-panel");
+
+  if (dashboard) {
+    dashboard.style.display = hideChrome ? "none" : "";
+  }
+
+  if (achievements) {
+    achievements.style.display = hideChrome ? "none" : "";
+  }
+
+  if (levelsPanel) {
+    levelsPanel.style.display = hideChrome ? "none" : "";
+  }
 }
 function showLessonsWorkspace() {
   ensureCurrentLesson();
