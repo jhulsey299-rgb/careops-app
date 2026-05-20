@@ -9534,23 +9534,38 @@ function initUiActions() {
   }
 }
 document.getElementById("nav-overview-btn")?.addEventListener("click", () => {
-  showSection("track-overview");
+  appState.currentView = "overview";
+  attempts = 0;
+  showOverview();
+  saveProgress();
 });
 
 document.getElementById("nav-sandbox-btn")?.addEventListener("click", () => {
-  showSection("track-overview");
+  appState.currentView = "sql-lab";
+  attempts = 0;
+  showSqlLabWorkspace();
+  saveProgress();
 });
 
 document.getElementById("nav-executive-btn")?.addEventListener("click", () => {
-  showSection("track-overview");
+  appState.currentView = "executive-studio";
+  attempts = 0;
+  showExecutiveStudioWorkspace();
+  saveProgress();
 });
 
 document.getElementById("nav-ai-btn")?.addEventListener("click", () => {
-  showSection("track-overview");
+  appState.currentView = "ai-companion";
+  attempts = 0;
+  showAiCompanionWorkspace();
+  saveProgress();
 });
 
 document.getElementById("nav-glossary-btn")?.addEventListener("click", () => {
-  showSection("track-overview");
+  appState.currentView = "glossary";
+  attempts = 0;
+  showGlossaryWorkspace();
+  saveProgress();
 });
 
 document.getElementById("nav-reset-btn")?.addEventListener("click", () => {
