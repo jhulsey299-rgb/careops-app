@@ -48,43 +48,43 @@
             </section>
 
             <section class="top-dashboard">
-    <div class="dashboard-card xp-status-card" id="xp-status">
-        <div class="xp-status-top">
-            <span class="xp-label">Analyst Level 1</span>
-            <span class="xp-points">0 XP</span>
-        </div>
+                <div class="dashboard-card xp-status-card" id="xp-status">
+                    <div class="xp-status-top">
+                        <span class="xp-label">Analyst Level 1</span>
+                        <span class="xp-points">0 XP</span>
+                    </div>
 
-        <div class="xp-bar">
-            <div class="xp-bar-fill" style="width:0%"></div>
-        </div>
+                    <div class="xp-bar">
+                        <div class="xp-bar-fill" style="width:0%"></div>
+                    </div>
 
-        <div class="xp-status-sub">
-            100 XP to Level 2
-        </div>
-    </div>
+                    <div class="xp-status-sub">
+                        100 XP to Level 2
+                    </div>
+                </div>
 
-    <div class="dashboard-card">
-        <h3>Progress</h3>
-        <p id="progress-text">0 / 0 lessons completed</p>
-        <div class="progress-bar-wrap" aria-hidden="true">
-            <div id="progress-bar"></div>
-        </div>
-    </div>
+                <div class="dashboard-card">
+                    <h3>Progress</h3>
+                    <p id="progress-text">0 / 0 lessons completed</p>
+                    <div class="progress-bar-wrap" aria-hidden="true">
+                        <div id="progress-bar"></div>
+                    </div>
+                </div>
 
-    <div class="dashboard-card">
-        <h3>Current Lesson</h3>
-        <p id="current-level-display">No lesson selected</p>
-    </div>
-</section>
+                <div class="dashboard-card">
+                    <h3>Current Lesson</h3>
+                    <p id="current-level-display">No lesson selected</p>
+                </div>
+            </section>
 
-           <div class="dashboard-actions main-nav-actions">
-    <button type="button" id="nav-overview-btn">Track Overview</button>
-    <button type="button" id="nav-sandbox-btn">SQL Lab</button>
-    <button type="button" id="nav-executive-btn">Executive Studio</button>
-    <button type="button" id="nav-ai-btn">AI Companion</button>
-    <button type="button" id="nav-glossary-btn">Glossary</button>
-    <button type="button" id="nav-reset-btn">Reset Progress</button>
-</div>
+            <div class="dashboard-actions main-nav-actions">
+                <button type="button" id="nav-overview-btn">Track Overview</button>
+                <button type="button" id="nav-sandbox-btn">SQL Lab</button>
+                <button type="button" id="nav-executive-btn">Executive Studio</button>
+                <button type="button" id="nav-ai-btn">AI Companion</button>
+                <button type="button" id="nav-glossary-btn">Glossary</button>
+                <button type="button" id="nav-reset-btn">Reset Progress</button>
+            </div>
 
             <section class="badges-section">
                 <h3>Achievements</h3>
@@ -251,7 +251,7 @@
                     <section id="sandbox-workspace" class="hidden sandbox-workspace">
                         <div class="mission-box sandbox-hero-card">
                             <div class="mission-meta-row">
-                                <span class="lesson-type-badge lesson-type-challenge">Sandbox</span>
+                                <span class="lesson-type-badge lesson-type-challenge">SQL Lab</span>
                                 <span class="difficulty-badge difficulty-advanced">Free + Guided</span>
                             </div>
                             <p class="track-label">Practice Lab</p>
@@ -266,6 +266,7 @@
                                         <button type="button" id="sandbox-free-btn" class="active">Free Play</button>
                                         <button type="button" id="sandbox-guided-btn">Guided Prompts</button>
                                     </div>
+
                                     <div class="sandbox-actions-inline">
                                         <button type="button" id="run-sandbox-btn">Run Sandbox Query</button>
                                         <button type="button" id="reset-sandbox-btn">Reset</button>
@@ -279,6 +280,7 @@
                                             <h4 id="sandbox-lesson-title">Choose a guided prompt.</h4>
                                         </div>
                                     </div>
+
                                     <p id="sandbox-lesson-objective">Select a guided prompt to load its objective, SQL starter pattern, and related tables.</p>
                                     <div id="sandbox-lesson-tables" class="sandbox-schema-list"></div>
                                 </div>
@@ -291,7 +293,18 @@
 
                                 <div class="query-section">
                                     <label for="sandbox-query" class="query-label">Sandbox SQL</label>
-                                    <textarea id="sandbox-query" rows="10" cols="80" spellcheck="false" autocomplete="off" autocapitalize="off"></textarea>
+                                    <textarea
+                                        id="sandbox-query"
+                                        rows="10"
+                                        cols="80"
+                                        spellcheck="false"
+                                        autocomplete="off"
+                                        autocapitalize="off"
+                                        placeholder="Try:
+SELECT * FROM encounters LIMIT 10;
+
+Or use Guided Prompts to load KPI investigations like denial exposure, LOS pressure, observation stays, readmissions, or no-show analysis."
+                                    ></textarea>
 
                                     <div class="button-row">
                                         <button type="button" id="sandbox-send-ai-btn">Ask AI About This Query</button>
@@ -301,11 +314,10 @@
                                     <div id="sandbox-output" aria-live="polite"></div>
                                 </div>
                             </div>
-
-                
                         </div>
                     </section>
-                                        <section id="executive-workspace" class="hidden">
+
+                    <section id="executive-workspace" class="hidden">
                         <div class="mission-box workspace-hero-card">
                             <div class="mission-meta-row">
                                 <span class="lesson-type-badge lesson-type-scenario">Executive</span>
@@ -374,6 +386,7 @@ How do I fix a GROUP BY error?"
                                 <h3 id="track-title">SQL Foundations for Hospital Data</h3>
                                 <p id="track-description">Curriculum, difficulty, completion tracking.</p>
                             </div>
+
                             <button
                                 type="button"
                                 id="toggle-levels-panel-btn"
@@ -391,12 +404,8 @@ How do I fix a GROUP BY error?"
                     </div>
 
                     <div class="level-panel-heading">
-                        <h4 class="level-panel-heading-title" id="level-panel-title">
-                            Level 1
-                        </h4>
-                        <p class="level-panel-heading-subtitle" id="level-panel-subtitle">
-                            Foundations
-                        </p>
+                        <h4 class="level-panel-heading-title" id="level-panel-title">Level 1</h4>
+                        <p class="level-panel-heading-subtitle" id="level-panel-subtitle">Foundations</p>
                     </div>
 
                     <div id="category-list" class="levels-list"></div>
@@ -433,10 +442,12 @@ How do I fix a GROUP BY error?"
                     <h4>Keys</h4>
                     <p id="table-modal-keys"></p>
                 </div>
+
                 <div class="table-modal-meta-card">
                     <h4>Columns</h4>
                     <p id="table-modal-columns"></p>
                 </div>
+
                 <div class="table-modal-meta-card">
                     <h4>Related Joins</h4>
                     <div id="table-modal-relationships"></div>
@@ -450,9 +461,7 @@ How do I fix a GROUP BY error?"
         </div>
     </div>
 
-    <div id="app-version" hidden>
-        curriculum-v1
-    </div>
+    <div id="app-version" hidden>curriculum-v1</div>
 
     <script>
         window.addEventListener('error', function (event) {
@@ -477,6 +486,6 @@ How do I fix a GROUP BY error?"
     </script>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/sql-wasm.min.js"></script>
-    <script src="static/app.js?v=curriculum-v1"></script>
+    <script src="/static/app.js?v=curriculum-v1"></script>
 </body>
 </html>
