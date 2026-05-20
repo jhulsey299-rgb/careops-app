@@ -9387,15 +9387,39 @@ function fallbackAiResponse(userMessage) {
   ].join("\n");
 }
 async function sendAiMessage(prefill = null) {
-  const input = document.getElementById("ai-input");
+  const input = document.getElementById("ai-companion-input");
   const message = (prefill || input?.value || "").trim();
+
   if (!message) return;
+
   aiThread.push({ role: "user", content: message });
   renderAiMessages();
+
   if (input) input.value = "";
+
   const reply = await requestAiCompanion(message);
+
   aiThread.push({ role: "assistant", content: reply });
   renderAiMessages();
+}
+
+function renderAiMessages() {
+  const holder = document.getElementById("ai-companion-output");
+  if (!holder) return;
+
+  if (!aiThread.length) {
+    holder.innerHTML = "";
+    return;
+  }
+
+  holder.innerHTML = aiThread.map((msg) => `
+    <div class="ai-message ${msg.role}">
+      <div class="ai-message-role">${msg.role === "user" ? "You" : "AI Companion"}</div>
+      <div class="ai-message-body">${formatAiResponseBody(msg.content)}</div>
+    </div>
+  `).join("");
+
+  holder.scrollTop = holder.scrollHeight;
 }
 function clearAiChat() {
   aiThread = [];
