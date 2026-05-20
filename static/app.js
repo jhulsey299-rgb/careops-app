@@ -9572,37 +9572,28 @@ document.getElementById("nav-reset-btn")?.addEventListener("click", () => {
   resetAllProgress();
 });
 function attachPersistentNavigationDelegates() {
-  if (window.__careopsNavDelegatePatchedV2) return;
-  window.__careopsNavDelegatePatchedV2 = true;
+  if (window.__careopsNavDelegatePatchedV3) return;
+  window.__careopsNavDelegatePatchedV3 = true;
+
   document.addEventListener("click", function (event) {
     const button = event.target.closest("button");
     if (!button) return;
-    const label = String(button.textContent || "").trim().toLowerCase();
-    const isOverview = button.id === "open-overview-btn" || button.id === "nav-overview-btn" || label === "track overview";
-    const isSandbox = button.id === "open-sandbox-btn" || button.id === "nav-sandbox-btn" || label === "sandbox" || label === "sql sandbox";
-    const isGlossary = button.id === "open-glossary-btn" || label === "glossary";
-    if (isOverview) {
+
+    if (button.id === "open-overview-btn") {
       event.preventDefault();
+      appState.currentView = "overview";
       attempts = 0;
       showOverview();
       saveProgress();
-      renderAll();
       return;
     }
-    if (isSandbox) {
+
+    if (button.id === "open-sandbox-btn") {
       event.preventDefault();
+      appState.currentView = "sql-lab";
       attempts = 0;
-      showSandboxWorkspace();
+      showSqlLabWorkspace();
       saveProgress();
-      renderAll();
-      return;
-    }
-    if (isGlossary) {
-      event.preventDefault();
-      attempts = 0;
-      showGlossaryWorkspace();
-      saveProgress();
-      renderAll();
       return;
     }
   });
