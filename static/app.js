@@ -9082,12 +9082,8 @@ function ensureAiCompanionWorkspace() {
 
 function showSqlLabWorkspace() {
   appState.currentView = "sql-lab";
-
-  restoreAiCompanionPanelToSqlLab();
-
   setSandboxModeUi(true);
   if (typeof setGlossaryModeUi === "function") setGlossaryModeUi(false);
-  setProfessionalWorkspaceMode("sql-lab");
 
   showSection("sandbox-workspace");
   setSandboxMode(sandboxModeState || "free");
@@ -9097,37 +9093,26 @@ function showSqlLabWorkspace() {
 }
 function showExecutiveStudioWorkspace() {
   appState.currentView = "executive-studio";
-
   setSandboxModeUi(false);
   if (typeof setGlossaryModeUi === "function") setGlossaryModeUi(false);
-  setProfessionalWorkspaceMode("executive");
 
-  ensureExecutiveStudioWorkspace();
-  showSection("executive-studio-workspace");
-  renderExecutivePromptBrowser();
+  showSection("executive-workspace");
 
   saveProgress();
-  document.getElementById("executive-studio-workspace")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  document.getElementById("executive-workspace")?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
-
 function showAiCompanionWorkspace() {
   appState.currentView = "ai-companion";
-
   setSandboxModeUi(false);
   if (typeof setGlossaryModeUi === "function") setGlossaryModeUi(false);
-  setProfessionalWorkspaceMode("ai");
 
-  ensureAiCompanionWorkspace();
-
-  const host = document.getElementById("ai-companion-workspace-host");
-  moveAiCompanionPanelTo(host);
-
-  showSection("ai-companion-workspace");
+  showSection("ai-workspace");
   renderAiMessages();
 
   saveProgress();
-  document.getElementById("ai-companion-workspace")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  document.getElementById("ai-workspace")?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
+
 function ensureGlossaryWorkspace() {
   let workspace = document.getElementById("glossary-workspace");
   if (workspace) return workspace;
