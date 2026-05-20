@@ -9455,28 +9455,26 @@ function renderAll() {
   attachPersistentNavigationDelegates();
 }
 function initUiActions() {
-   const openOverviewBtn = document.getElementById("open-overview-btn");
+  const openOverviewBtn = document.getElementById("open-overview-btn");
   if (openOverviewBtn) {
     openOverviewBtn.onclick = () => {
       appState.currentView = "overview";
       attempts = 0;
       showOverview();
       saveProgress();
-      renderAll();
-      document.getElementById("track-overview")?.scrollIntoView({ behavior: "smooth", block: "start" });
     };
   }
+
   const openSandboxBtn = document.getElementById("open-sandbox-btn");
   if (openSandboxBtn) {
     openSandboxBtn.onclick = () => {
-      appState.currentView = "sandbox";
+      appState.currentView = "sql-lab";
       attempts = 0;
-      showSandboxWorkspace();
+      showSqlLabWorkspace();
       saveProgress();
-      renderAll();
-      document.getElementById("sandbox-workspace")?.scrollIntoView({ behavior: "smooth", block: "start" });
     };
   }
+
   const toggleBtn = document.getElementById("toggle-levels-panel-btn");
   const panel = document.getElementById("levels-panel");
   if (toggleBtn && panel) {
@@ -9486,8 +9484,10 @@ function initUiActions() {
       toggleBtn.setAttribute("aria-expanded", panel.classList.contains("collapsed") ? "false" : "true");
     };
   }
+
   const runSandboxBtn = document.getElementById("run-sandbox-btn");
   if (runSandboxBtn) runSandboxBtn.onclick = runSandboxQuery;
+
   const resetSandboxBtn = document.getElementById("reset-sandbox-btn");
   if (resetSandboxBtn) {
     resetSandboxBtn.onclick = () => {
@@ -9497,32 +9497,62 @@ function initUiActions() {
       setSandboxMode("free");
     };
   }
+
   const guidedBtn = document.getElementById("sandbox-guided-btn");
   const freeBtn = document.getElementById("sandbox-free-btn");
-  if (guidedBtn) guidedBtn.onclick = () => {
-    setSandboxMode("guided");
-    renderSandboxPromptList();
-  };
-  if (freeBtn) freeBtn.onclick = () => {
-    setSandboxMode("free");
-  };
+
+  if (guidedBtn) {
+    guidedBtn.onclick = () => {
+      setSandboxMode("guided");
+      renderSandboxPromptList();
+    };
+  }
+
+  if (freeBtn) {
+    freeBtn.onclick = () => {
+      setSandboxMode("free");
+    };
+  }
+
   const askAiAboutQueryBtn = document.getElementById("sandbox-send-ai-btn");
   if (askAiAboutQueryBtn) {
     askAiAboutQueryBtn.onclick = () => {
-      const input = document.getElementById("ai-input");
       const sandboxQuery = (document.getElementById("sandbox-query")?.value || "").trim();
-      if (input && !input.value.trim()) {
-        input.value = sandboxQuery
+      const aiInput = document.getElementById("ai-companion-input");
+
+      appState.currentView = "ai-companion";
+      showAiCompanionWorkspace();
+
+      if (aiInput) {
+        aiInput.value = sandboxQuery
           ? `Help me understand and improve this SQL:\n\n${sandboxQuery}`
           : "Help me understand and improve this sandbox query.";
+        aiInput.focus();
       }
-      sendAiMessage();
-      scrollToAiCompanion();
     };
   }
-  const sendAiBtn = document.getElementById("send-ai-btn");
-  if (sendAiBtn) sendAiBtn.onclick = () => sendAiMessage();
-  const aiInput = document.getElementById("ai-input");
+
+  const runExecutiveBtn = document.getElementById("run-executive-btn");
+  if (runExecutiveBtn) {
+    runExecutiveBtn.onclick = () => {
+      const prompt = (document.getElementById("executive-prompt-input")?.value || "").trim();
+      if (!prompt) return;
+
+      const aiInput = document.getElementById("ai-companion-input");
+      appState.currentView = "ai-companion";
+      showAiCompanionWorkspace();
+
+      if (aiInput) {
+        aiInput.value = `Build an executive-ready response for this hospital leadership prompt:\n\n${prompt}\n\nStructure the response with:\n1. KPI definition\n2. Why it matters\n3. Likely drivers\n4. How to diagnose it\n5. Recommended actions\n6. Executive summary`;
+        aiInput.focus();
+      }
+    };
+  }
+
+  const runAiBtn = document.getElementById("run-ai-companion-btn");
+  if (runAiBtn) runAiBtn.onclick = () => sendAiMessage();
+
+  const aiInput = document.getElementById("ai-companion-input");
   if (aiInput && !aiInput.dataset.enterBound) {
     aiInput.dataset.enterBound = "true";
     aiInput.addEventListener("keydown", (event) => {
@@ -9533,44 +9563,6 @@ function initUiActions() {
     });
   }
 }
-document.getElementById("nav-overview-btn")?.addEventListener("click", () => {
-  appState.currentView = "overview";
-  attempts = 0;
-  showOverview();
-  saveProgress();
-});
-
-document.getElementById("nav-sandbox-btn")?.addEventListener("click", () => {
-  appState.currentView = "sql-lab";
-  attempts = 0;
-  showSqlLabWorkspace();
-  saveProgress();
-});
-
-document.getElementById("nav-executive-btn")?.addEventListener("click", () => {
-  appState.currentView = "executive-studio";
-  attempts = 0;
-  showExecutiveStudioWorkspace();
-  saveProgress();
-});
-
-document.getElementById("nav-ai-btn")?.addEventListener("click", () => {
-  appState.currentView = "ai-companion";
-  attempts = 0;
-  showAiCompanionWorkspace();
-  saveProgress();
-});
-
-document.getElementById("nav-glossary-btn")?.addEventListener("click", () => {
-  appState.currentView = "glossary";
-  attempts = 0;
-  showGlossaryWorkspace();
-  saveProgress();
-});
-
-document.getElementById("nav-reset-btn")?.addEventListener("click", () => {
-  resetAllProgress();
-});
 function attachPersistentNavigationDelegates() {
   if (window.__careopsNavDelegatePatchedV3) return;
   window.__careopsNavDelegatePatchedV3 = true;
