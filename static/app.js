@@ -7892,40 +7892,23 @@ function showSection(sectionId) {
     "glossary-workspace"
   ];
 
-  sections.forEach(id => {
+  sections.forEach((id) => {
     const el = document.getElementById(id);
-
-    if (el) {
-      el.classList.add("hidden");
-    }
+    if (el) el.classList.toggle("hidden", id !== sectionId);
   });
 
-  const active = document.getElementById(sectionId);
+  const hideChrome = ["sandbox-workspace", "executive-workspace", "ai-workspace", "glossary-workspace"].includes(sectionId);
 
-  if (active) {
-    active.classList.remove("hidden");
-  }
+  document.querySelector(".top-dashboard")?.classList.toggle("hidden", hideChrome);
+  document.querySelector(".badges-section")?.classList.toggle("hidden", hideChrome);
+  document.getElementById("levels-panel")?.classList.toggle("hidden", hideChrome);
 
-  const hideChrome =
-    sectionId === "sandbox-workspace" ||
-    sectionId === "executive-workspace" ||
-    sectionId === "ai-workspace";
-
-  const dashboard = document.querySelector(".top-dashboard");
-  const achievements = document.querySelector(".badges-section");
-  const levelsPanel = document.getElementById("levels-panel");
-
-  if (dashboard) {
-    dashboard.style.display = hideChrome ? "none" : "";
-  }
-
-  if (achievements) {
-    achievements.style.display = hideChrome ? "none" : "";
-  }
-
-  if (levelsPanel) {
-    levelsPanel.style.display = hideChrome ? "none" : "";
-  }
+  document.body.classList.toggle("sandbox-mode", sectionId === "sandbox-workspace");
+  document.body.classList.toggle("executive-mode", sectionId === "executive-workspace");
+  document.body.classList.toggle("ai-mode", sectionId === "ai-workspace");
+  document.body.classList.toggle("glossary-mode", sectionId === "glossary-workspace");
+  document.body.classList.toggle("overview-mode", sectionId === "track-overview");
+  document.body.classList.toggle("lesson-mode", sectionId === "lesson-workspace");
 }
 function showLessonsWorkspace() {
   ensureCurrentLesson();
