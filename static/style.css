@@ -2712,3 +2712,201 @@ body.sandbox-mode #levels-panel {
         grid-template-columns: 1fr !important;
     }
 }
+
+
+/* ================= CAREOPS OPTION 1 FINAL CLEAN OVERRIDES ================= */
+
+/* Navigation: one clean row with proper spacing. 
+   Also hides the old dynamically injected Glossary button if app.js still creates it. */
+.main-nav-actions {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 12px !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+}
+
+.main-nav-actions button {
+    margin: 0 !important;
+    flex: 0 0 auto !important;
+}
+
+.main-nav-actions #open-glossary-btn,
+.main-nav-actions .glossary-nav-btn {
+    display: none !important;
+}
+
+/* Standalone workspaces: SQL Lab, Executive Studio, and AI Companion should not show lesson chrome. */
+body.sandbox-mode .top-dashboard,
+body.sandbox-mode .badges-section,
+body.sandbox-mode #levels-panel,
+body.executive-mode .top-dashboard,
+body.executive-mode .badges-section,
+body.executive-mode #levels-panel,
+body.ai-mode .top-dashboard,
+body.ai-mode .badges-section,
+body.ai-mode #levels-panel {
+    display: none !important;
+}
+
+body.sandbox-mode .workspace-layout,
+body.executive-mode .workspace-layout,
+body.ai-mode .workspace-layout {
+    display: block !important;
+}
+
+body.sandbox-mode .play-area,
+body.executive-mode .play-area,
+body.ai-mode .play-area {
+    width: 100% !important;
+    max-width: none !important;
+}
+
+/* SQL Lab: single column now that the old AI side panel is gone. */
+.sandbox-shell,
+body.sandbox-mode .sandbox-shell,
+.sandbox-workspace .sandbox-shell {
+    display: block !important;
+    grid-template-columns: 1fr !important;
+}
+
+.sandbox-main {
+    width: 100% !important;
+    max-width: none !important;
+}
+
+.sandbox-ai-panel,
+.ai-companion-panel {
+    display: none !important;
+}
+
+.sandbox-toolbar {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    gap: 14px !important;
+    flex-wrap: wrap !important;
+    margin-bottom: 18px !important;
+}
+
+.sandbox-mode-group,
+.sandbox-actions-inline {
+    display: flex !important;
+    gap: 12px !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+}
+
+#sandbox-workspace .query-section {
+    padding: 24px !important;
+    max-width: 980px !important;
+}
+
+#sandbox-query {
+    min-height: 260px !important;
+}
+
+#sandbox-send-ai-btn {
+    background: #ffffff !important;
+    color: var(--primary-dark) !important;
+    border: 1px solid #bfdbfe !important;
+}
+
+#sandbox-send-ai-btn:hover {
+    background: var(--primary-soft) !important;
+    color: var(--primary-dark) !important;
+}
+
+/* Guided prompt cards. */
+#sandbox-guided-panel {
+    margin-bottom: 18px !important;
+}
+
+#sandbox-prompt-list,
+.sandbox-prompt-grid {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)) !important;
+    gap: 14px !important;
+}
+
+.sandbox-prompt-card {
+    width: 100% !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 16px !important;
+    background: #ffffff !important;
+    padding: 16px !important;
+    cursor: pointer !important;
+    text-align: left !important;
+    box-shadow: var(--shadow-sm) !important;
+}
+
+.sandbox-prompt-card:hover {
+    border-color: var(--primary) !important;
+    background: #f8fbff !important;
+    transform: translateY(-2px) !important;
+    box-shadow: var(--shadow-md) !important;
+}
+
+/* Executive Studio + AI Companion page surfaces. */
+.workspace-panel,
+#executive-workspace,
+#ai-workspace {
+    width: 100% !important;
+    max-width: none !important;
+}
+
+#executive-workspace .query-section,
+#ai-workspace .query-section {
+    max-width: 980px !important;
+    padding: 24px !important;
+}
+
+#executive-output,
+#ai-companion-output {
+    margin-top: 18px !important;
+    background: #ffffff !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 16px !important;
+    padding: 18px !important;
+    min-height: 80px !important;
+}
+
+#executive-output:empty,
+#ai-companion-output:empty {
+    display: none !important;
+}
+
+/* Glossary mode should also hide new standalone workspaces. */
+body.glossary-mode #executive-workspace,
+body.glossary-mode #ai-workspace {
+    display: none !important;
+}
+
+/* Mobile polish. */
+@media (max-width: 900px) {
+    .main-nav-actions button {
+        flex: 1 1 calc(50% - 8px) !important;
+    }
+
+    .sandbox-toolbar {
+        align-items: stretch !important;
+        flex-direction: column !important;
+    }
+
+    .sandbox-mode-group button,
+    .sandbox-actions-inline button {
+        flex: 1 1 calc(50% - 8px) !important;
+    }
+
+    #sandbox-prompt-list,
+    .sandbox-prompt-grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    #sandbox-workspace .query-section,
+    #executive-workspace .query-section,
+    #ai-workspace .query-section {
+        max-width: none !important;
+        padding: 18px !important;
+    }
+}
