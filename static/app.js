@@ -9434,9 +9434,6 @@ function renderAll() {
   renderTrackCategoryCards();
   renderOverview();
 
-  ensureExecutiveStudioWorkspace();
-  ensureAiCompanionWorkspace();
-
   if (appState.currentView === "lesson" && appState.currentLessonId) {
     renderLesson();
     showLessonsWorkspace();
