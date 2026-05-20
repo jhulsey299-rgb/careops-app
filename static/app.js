@@ -9402,9 +9402,8 @@ function clearAiChat() {
   renderAiMessages();
 }
 function scrollToAiCompanion() {
-  const target = document.getElementById("ai-companion-section") || document.getElementById("ai-input");
-  target?.scrollIntoView({ behavior: "smooth", block: "start" });
-  document.getElementById("ai-input")?.focus();
+  showAiCompanionWorkspace();
+  document.getElementById("ai-companion-input")?.focus();
 }
 function updateAiContextBanner() {
   if (!aiThread.length) renderAiMessages();
