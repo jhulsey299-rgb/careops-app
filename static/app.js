@@ -9716,19 +9716,17 @@ function initUiActions() {
     };
   }
 
-   const runExecutiveBtn = document.getElementById("run-executive-btn");
-  if (runExecutiveBtn) {
-    runExecutiveBtn.onclick = () => {
-      const prompt = (document.getElementById("executive-prompt-input")?.value || "").trim();
-      if (!prompt) return;
+const runExecutiveBtn = document.getElementById("run-executive-btn");
+  if (runExecutiveBtn) runExecutiveBtn.onclick = runExecutiveStudioPrompt;
 
-      const aiInput = document.getElementById("ai-companion-input");
-      appState.currentView = "ai-companion";
-      showAiCompanionWorkspace();
+  const copyExecutiveBtn = document.getElementById("copy-executive-btn");
+  if (copyExecutiveBtn) copyExecutiveBtn.onclick = copyExecutiveResponse;
 
-      if (aiInput) {
-        aiInput.value = `Build an executive-ready response for this hospital leadership prompt:\n\n${prompt}\n\nStructure the response with:\n1. KPI definition\n2. Why it matters\n3. Likely drivers\n4. How to diagnose it\n5. Recommended actions\n6. Executive summary`;
-        aiInput.focus();
+  const saveExecutiveBtn = document.getElementById("save-executive-btn");
+  if (saveExecutiveBtn) saveExecutiveBtn.onclick = saveExecutiveInvestigation;
+
+  const clearExecutiveBtn = document.getElementById("clear-executive-btn");
+  if (clearExecutiveBtn) clearExecutiveBtn.onclick = clearExecutiveStudio;
       }
     };
   }
