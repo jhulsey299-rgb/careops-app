@@ -9731,9 +9731,9 @@ const runExecutiveBtn = document.getElementById("run-executive-btn");
     };
   }
 
- function attachPersistentNavigationDelegates() {
-  if (window.__careopsNavDelegatePatchedV4) return;
-  window.__careopsNavDelegatePatchedV4 = true;
+function attachPersistentNavigationDelegates() {
+  if (window.__careopsNavDelegatePatchedV5) return;
+  window.__careopsNavDelegatePatchedV5 = true;
 
   document.addEventListener("click", function (event) {
     const button = event.target.closest("button");
@@ -9764,16 +9764,6 @@ const runExecutiveBtn = document.getElementById("run-executive-btn");
       appState.currentView = "executive-studio";
       attempts = 0;
       showExecutiveStudioWorkspace();
-      saveProgress();
-      renderAll();
-      return;
-    }
-
-    if (button.id === "nav-ai-btn") {
-      event.preventDefault();
-      appState.currentView = "ai-companion";
-      attempts = 0;
-      showAiCompanionWorkspace();
       saveProgress();
       renderAll();
       return;
