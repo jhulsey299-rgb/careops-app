@@ -8990,6 +8990,8 @@ function showExecutiveStudioWorkspace() {
   if (typeof setGlossaryModeUi === "function") setGlossaryModeUi(false);
 
   showSection("executive-workspace");
+  renderExecutivePromptLibrary();
+  renderExecutiveHistory();
 
   saveProgress();
   document.getElementById("executive-workspace")?.scrollIntoView({ behavior: "smooth", block: "start" });
