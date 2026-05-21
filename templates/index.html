@@ -312,33 +312,50 @@ Or use Guided Prompts to load KPI investigations like denial exposure, LOS press
                         </div>
                     </section>
 
-                    <section id="executive-workspace" class="hidden">
+                    <section id="executive-workspace" class="hidden executive-workspace">
                         <div class="mission-box workspace-hero-card">
                             <div class="mission-meta-row">
-                                <span class="lesson-type-badge lesson-type-scenario">Executive</span>
-                                <span class="difficulty-badge difficulty-advanced">Leadership Communication</span>
+                                <span class="lesson-type-badge lesson-type-scenario">Executive Studio</span>
+                                <span class="difficulty-badge difficulty-advanced">KPI + SQL + Strategy</span>
                             </div>
 
-                            <p class="track-label">Executive Studio</p>
-                            <h2>Executive KPI Strategy & Communication</h2>
-                            <p>Generate executive-ready operational summaries, KPI investigations, leadership recommendations, and financial performance narratives.</p>
+                            <p class="track-label">CareOps Intelligence</p>
+                            <h2>Executive KPI Strategy Studio</h2>
+                            <p>Investigate hospital KPIs, diagnose performance issues, strengthen SQL logic, and generate executive-ready recommendations.</p>
                         </div>
 
-                        <div class="query-section">
-                            <h3>Executive Prompt</h3>
+                        <div class="executive-studio-grid">
+                            <aside class="executive-prompt-panel concept-card">
+                                <h3>KPI Prompt Library</h3>
+                                <p>Select a KPI or investigation type to load a strong executive prompt.</p>
 
-                            <textarea
-                                id="executive-prompt-input"
-                                rows="10"
-                                placeholder="Example:
-Explain why ED boarding is increasing and what operational leaders should investigate."
-                            ></textarea>
+                                <div id="executive-category-tabs" class="executive-category-tabs"></div>
+                                <div id="executive-prompt-library" class="executive-prompt-library"></div>
+                            </aside>
 
-                            <div class="button-row">
-                                <button type="button" id="run-executive-btn">Generate Executive Response</button>
-                            </div>
+                            <section class="query-section executive-main-panel">
+                                <h3>Executive Prompt</h3>
 
-                            <div id="executive-output"></div>
+                                <textarea
+                                    id="executive-prompt-input"
+                                    rows="10"
+                                    placeholder="Ask about a KPI, SQL logic, operational diagnosis, denial prevention, throughput, patient safety, quality performance, or executive communication."
+                                ></textarea>
+
+                                <div class="button-row executive-action-row">
+                                    <button type="button" id="run-executive-btn">Generate Executive Response</button>
+                                    <button type="button" id="copy-executive-btn">Copy Response</button>
+                                    <button type="button" id="save-executive-btn">Save Investigation</button>
+                                    <button type="button" id="clear-executive-btn">Clear</button>
+                                </div>
+
+                                <div id="executive-output"></div>
+
+                                <div class="executive-history-wrap">
+                                    <h3>Saved Investigations</h3>
+                                    <div id="executive-history"></div>
+                                </div>
+                            </section>
                         </div>
                     </section>
 
