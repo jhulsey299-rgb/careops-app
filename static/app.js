@@ -6227,7 +6227,7 @@ function escapeHtml(str) {
 function renderLesson() {
   const lesson = getCurrentLesson();
   if (!lesson) return;
-  showLessonWorkspace();
+  showLessonsWorkspace();
   document.getElementById("track-title-display").innerText = getCurrentCategory()?.title || "Category";
   document.getElementById("lesson-title").innerText = lesson.title;
   document.getElementById("lesson-objective").innerText = lesson.objective;
