@@ -9184,6 +9184,102 @@ function runSandboxQuery() {
   setMessageState("sandbox-feedback", "error", getExecutionErrorMessage(error, query));
   }
 }
+const EXECUTIVE_PROMPT_LIBRARY = [
+  {
+    id: "los-pressure",
+    category: "Throughput",
+    title: "Length of Stay Pressure",
+    prompt: "Investigate rising length of stay. Explain why LOS matters, what data to validate, likely operational drivers, where leaders should investigate, and recommended actions."
+  },
+  {
+    id: "readmission-risk",
+    category: "Quality",
+    title: "Readmission Risk",
+    prompt: "Investigate elevated 30-day readmissions. Explain why readmissions matter, likely causes, needed data cuts, and practical interventions for care coordination and discharge planning."
+  },
+  {
+    id: "denial-exposure",
+    category: "Finance",
+    title: "Preventable Denials",
+    prompt: "Investigate preventable denial exposure. Explain denial rate, why it matters financially, likely root causes, where to look by payer/department/reason, and how to prevent denials."
+  },
+  {
+    id: "ed-boarding",
+    category: "Operations",
+    title: "ED Boarding",
+    prompt: "Investigate rising ED boarding. Explain why it signals hospital throughput failure, what operational bottlenecks to validate, and what leaders should do next."
+  },
+  {
+    id: "observation-48",
+    category: "Utilization",
+    title: "Observation >48 Hours",
+    prompt: "Investigate observation stays over 48 hours. Explain why this matters for utilization, compliance, reimbursement, and throughput. Include likely causes and recommendations."
+  },
+  {
+    id: "sepsis-mortality",
+    category: "Quality",
+    title: "Sepsis Mortality",
+    prompt: "Investigate elevated sepsis mortality. Explain clinical and operational importance, data to validate, likely drivers, and recommended quality improvement actions."
+  },
+  {
+    id: "mortality-oe",
+    category: "Quality",
+    title: "Mortality O/E",
+    prompt: "Explain mortality observed-to-expected performance for executives. Include why it matters, how to diagnose variation, documentation concerns, and improvement actions."
+  },
+  {
+    id: "hcahps",
+    category: "Experience",
+    title: "HCAHPS / Patient Experience",
+    prompt: "Investigate declining HCAHPS or patient experience scores. Explain why it matters, where to analyze variation, likely operational drivers, and recommended actions."
+  },
+  {
+    id: "or-utilization",
+    category: "Operations",
+    title: "OR Utilization",
+    prompt: "Investigate low OR utilization. Explain why it matters as a revenue engine, what data to validate, causes of underuse, and actions to improve block time and case throughput."
+  },
+  {
+    id: "case-mix-index",
+    category: "Finance",
+    title: "Case Mix Index",
+    prompt: "Explain case mix index changes. Include why CMI affects reimbursement and acuity interpretation, what to validate, likely drivers, and executive talking points."
+  },
+  {
+    id: "discharge-before-noon",
+    category: "Throughput",
+    title: "Discharge Before Noon",
+    prompt: "Investigate low discharge-before-noon performance. Explain why it matters for throughput, ED boarding, bed availability, and what operational changes to recommend."
+  },
+  {
+    id: "rn-turnover",
+    category: "Workforce",
+    title: "RN Turnover",
+    prompt: "Investigate RN turnover as an early warning indicator for safety, quality, and patient experience decline. Include data cuts, likely causes, and leadership actions."
+  },
+  {
+    id: "harm-events",
+    category: "Safety",
+    title: "Preventable Harm Events",
+    prompt: "Investigate preventable harm events. Explain why they matter, how to analyze trends and units, likely root causes, and recommended safety culture interventions."
+  },
+  {
+    id: "no-show-access",
+    category: "Access",
+    title: "No-Show / Access Issues",
+    prompt: "Investigate appointment no-shows and access barriers. Explain why they matter, what data to review, likely causes, and recommended access improvement actions."
+  },
+  {
+    id: "sql-help",
+    category: "SQL Help",
+    title: "SQL Debugging / Query Help",
+    prompt: "Help me write or debug SQL for a hospital analytics question. Explain the query logic, table grain, joins, filters, and how the output should be interpreted."
+  }
+];
+
+let executivePromptCategory = "All";
+let executiveLastResponse = "";
+let executiveHistory = [];
 function formatAiResponseBody(text) {
   const safe = escapeHtml(String(text || ""));
   const sections = safe.split(/\n{2,}/).filter(Boolean);
