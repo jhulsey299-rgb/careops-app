@@ -40,7 +40,7 @@
         <main class="main-content">
             <section class="hero-banner">
                 <div class="hero-copy">
-                    <div class="hero-kicker">Healthcare SQL Training Simulator</div>
+                    <div class="hero-kicker">Healthcare Analytics Intelligence Platform</div>
                     <h1 class="hero-title">CAREOPS</h1>
                     <p class="hero-tagline">Clinical Analytics for Revenue, Efficiency, and Operational Performance Solutions</p>
                     <p class="hero-description">Learn SQL through hospital analytics scenarios focused on operations, quality, finance, and executive communication.</p>
@@ -313,7 +313,7 @@ Or use Guided Prompts to load KPI investigations like denial exposure, LOS press
                     </section>
 
                     <section id="executive-workspace" class="hidden executive-workspace">
-                        <div class="mission-box workspace-hero-card">
+                        <div class="mission-box workspace-hero-card executive-hero-card">
                             <div class="mission-meta-row">
                                 <span class="lesson-type-badge lesson-type-scenario">Executive Studio</span>
                                 <span class="difficulty-badge difficulty-advanced">KPI + SQL + Strategy</span>
@@ -321,13 +321,55 @@ Or use Guided Prompts to load KPI investigations like denial exposure, LOS press
 
                             <p class="track-label">CareOps Intelligence</p>
                             <h2>Executive KPI Strategy Studio</h2>
-                            <p>Investigate hospital KPIs, diagnose performance issues, strengthen SQL logic, and generate executive-ready recommendations.</p>
+                            <p>Move from KPI question to diagnosis, operational drivers, SQL starter logic, recommendations, and executive-ready communication.</p>
+                        </div>
+
+                        <div class="executive-control-strip">
+                            <div>
+                                <label for="executive-kpi-select" class="query-label">KPI / Investigation Type</label>
+                                <select id="executive-kpi-select" class="executive-select">
+                                    <option value="">Choose a KPI investigation...</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="executive-context-facility" class="query-label">Facility</label>
+                                <input id="executive-context-facility" class="executive-input" type="text" placeholder="All facilities" />
+                            </div>
+                            <div>
+                                <label for="executive-context-department" class="query-label">Department / Service Line</label>
+                                <input id="executive-context-department" class="executive-input" type="text" placeholder="All departments" />
+                            </div>
+                            <div>
+                                <label for="executive-context-payer" class="query-label">Payer / Segment</label>
+                                <input id="executive-context-payer" class="executive-input" type="text" placeholder="All payers" />
+                            </div>
+                            <div>
+                                <label for="executive-context-timeframe" class="query-label">Timeframe</label>
+                                <input id="executive-context-timeframe" class="executive-input" type="text" placeholder="Last 30/90 days" />
+                            </div>
+                        </div>
+
+                        <div class="executive-intelligence-grid">
+                            <section class="executive-intel-card" id="executive-benchmark-panel">
+                                <h3>Benchmark Intelligence</h3>
+                                <p>Select a KPI to see target direction, benchmark framing, and leadership risk.</p>
+                            </section>
+
+                            <section class="executive-intel-card" id="executive-driver-panel">
+                                <h3>Operational Drivers</h3>
+                                <p>Select a KPI to see likely drivers and where to investigate first.</p>
+                            </section>
+
+                            <section class="executive-intel-card" id="executive-sql-panel">
+                                <h3>SQL / Data Logic</h3>
+                                <p>Select a KPI to see source tables, segmentation cuts, and starter query logic.</p>
+                            </section>
                         </div>
 
                         <div class="executive-studio-grid">
                             <aside class="executive-prompt-panel concept-card">
-                                <h3>KPI Prompt Library</h3>
-                                <p>Select a KPI or investigation type to load a strong executive prompt.</p>
+                                <h3>Executive Prompt Packs</h3>
+                                <p>Select a KPI or investigation pack to load a strong executive prompt.</p>
 
                                 <div id="executive-category-tabs" class="executive-category-tabs"></div>
                                 <div id="executive-prompt-library" class="executive-prompt-library"></div>
@@ -356,37 +398,6 @@ Or use Guided Prompts to load KPI investigations like denial exposure, LOS press
                                     <div id="executive-history"></div>
                                 </div>
                             </section>
-                        </div>
-                    </section>
-
-                    <section id="ai-workspace" class="hidden">
-                        <div class="mission-box workspace-hero-card">
-                            <div class="mission-meta-row">
-                                <span class="lesson-type-badge lesson-type-concept">AI Companion</span>
-                                <span class="difficulty-badge difficulty-intermediate">SQL + KPI Coach</span>
-                            </div>
-
-                            <p class="track-label">CareOps Copilot</p>
-                            <h2>AI Companion</h2>
-                            <p>Ask SQL questions, KPI questions, debugging questions, operational questions, or executive communication questions.</p>
-                        </div>
-
-                        <div class="query-section">
-                            <textarea
-                                id="ai-companion-input"
-                                rows="10"
-                                placeholder="Examples:
-Why is LOS increasing?
-How do I calculate denial rate?
-Why are readmissions important?
-How do I fix a GROUP BY error?"
-                            ></textarea>
-
-                            <div class="button-row">
-                                <button type="button" id="run-ai-companion-btn">Ask AI Companion</button>
-                            </div>
-
-                            <div id="ai-companion-output"></div>
                         </div>
                     </section>
                 </section>
