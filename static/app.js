@@ -7875,6 +7875,42 @@ function closeTableModal(event) {
   if (overlay) overlay.classList.add("hidden");
 }
 /* duplicate removed during stabilization pass */
+
+/* ======================================================
+   CAREOPS v1.1 ENTERPRISE UTILITIES
+   Safe DOM helpers + reusable formatting helpers
+====================================================== */
+function safeElement(id) {
+  return document.getElementById(id);
+}
+
+function safeValue(id, fallback = "") {
+  const el = safeElement(id);
+  return el && typeof el.value === "string" ? el.value.trim() : fallback;
+}
+
+function setSafeHtml(id, html) {
+  const el = safeElement(id);
+  if (el) el.innerHTML = html;
+}
+
+function setSafeText(id, text) {
+  const el = safeElement(id);
+  if (el) el.textContent = text;
+}
+
+function toTitleCase(value) {
+  return String(value || "")
+    .replace(/[-_]/g, " ")
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function listToHtml(items, className = "") {
+  const safeItems = Array.isArray(items) ? items.filter(Boolean) : [];
+  if (!safeItems.length) return "<p>Not specified.</p>";
+  return `<ul class="${className}">${safeItems.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`;
+}
+
 const AI_API_CONFIG = {
   endpoint: "/api/ai-companion",
   method: "POST",
@@ -7892,7 +7928,7 @@ function showSection(sectionId) {
   ];
 
   sections.forEach((id) => {
-    const el = document.getElementById(id);
+    const el = safeElement(id);
     if (el) el.classList.toggle("hidden", id !== sectionId);
   });
 
@@ -7900,7 +7936,7 @@ function showSection(sectionId) {
 
   document.querySelector(".top-dashboard")?.classList.toggle("hidden", hideChrome);
   document.querySelector(".badges-section")?.classList.toggle("hidden", hideChrome);
-  document.getElementById("levels-panel")?.classList.toggle("hidden", hideChrome);
+  safeElement("levels-panel")?.classList.toggle("hidden", hideChrome);
 
   document.body.classList.toggle("sandbox-mode", sectionId === "sandbox-workspace");
   document.body.classList.toggle("executive-mode", sectionId === "executive-workspace");
@@ -8994,7 +9030,7 @@ function showExecutiveStudioWorkspace() {
   renderExecutiveHistory();
 
   saveProgress();
-  document.getElementById("executive-workspace")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  safeElement("executive-workspace")?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 function showAiCompanionWorkspace() {
   showExecutiveStudioWorkspace();
@@ -9186,102 +9222,320 @@ function runSandboxQuery() {
   setMessageState("sandbox-feedback", "error", getExecutionErrorMessage(error, query));
   }
 }
-const EXECUTIVE_PROMPT_LIBRARY = [
+/* ======================================================
+   EXECUTIVE STUDIO ENTERPRISE INTELLIGENCE ENGINE
+   KPI registry + operational drivers + benchmark framing
+====================================================== */
+const EXECUTIVE_HISTORY_KEY = "careops_executive_investigations_v1";
+
+const CAREOPS_KPI_REGISTRY = [
   {
-    id: "los-pressure",
+    id: "length-of-stay",
     category: "Throughput",
-    title: "Length of Stay Pressure",
-    prompt: "Investigate rising length of stay. Explain why LOS matters, what data to validate, likely operational drivers, where leaders should investigate, and recommended actions."
+    title: "Length of Stay",
+    shortName: "LOS",
+    benchmark: "Lower is generally better; compare against service-line baseline, expected LOS, and case mix.",
+    targetDirection: "Lower / appropriate to acuity",
+    definition: "Average time between admission and discharge for a defined inpatient or observation cohort.",
+    why: "LOS affects bed capacity, cost, staffing pressure, patient flow, and ED boarding.",
+    tables: ["encounters", "discharges", "departments", "providers"],
+    dimensions: ["facility", "department", "service line", "provider", "payer", "diagnosis", "discharge disposition", "month"],
+    drivers: ["placement delays", "discharge order delays", "consult turnaround", "diagnostic bottlenecks", "payer authorization delays", "case management capacity", "high-acuity case mix"],
+    actions: ["review long-stay outliers daily", "track avoidable days by reason", "escalate placement barriers", "improve discharge-before-noon workflows", "align case management to high-risk units"],
+    sqlFocus: ["AVG(length_of_stay)", "GROUP BY department/facility", "outlier flags", "date trend"],
+    starterSql: "SELECT facility, department, ROUND(AVG(length_of_stay), 2) AS avg_los, COUNT(*) AS encounter_count FROM encounters GROUP BY facility, department ORDER BY avg_los DESC;"
   },
   {
-    id: "readmission-risk",
+    id: "readmissions",
     category: "Quality",
-    title: "Readmission Risk",
-    prompt: "Investigate elevated 30-day readmissions. Explain why readmissions matter, likely causes, needed data cuts, and practical interventions for care coordination and discharge planning."
+    title: "30-Day Readmissions",
+    shortName: "Readmissions",
+    benchmark: "Lower is better; compare by diagnosis, payer, discharge disposition, and historical baseline.",
+    targetDirection: "Lower",
+    definition: "Share of discharged patients returning for an inpatient or qualifying encounter within 30 days.",
+    why: "Readmissions can signal discharge planning gaps, care coordination failures, medication issues, or access barriers.",
+    tables: ["readmissions", "encounters", "patients", "discharges"],
+    dimensions: ["facility", "diagnosis", "discharge disposition", "payer", "days to readmit", "provider", "risk score"],
+    drivers: ["lack of follow-up", "medication reconciliation issues", "SNF/home health transition gaps", "high-risk chronic disease", "social needs", "premature discharge", "limited primary care access"],
+    actions: ["target high-risk discharge cohorts", "schedule follow-up before discharge", "strengthen med reconciliation", "review repeat readmit patients", "expand case management outreach"],
+    sqlFocus: ["readmit_within_30_days", "days_to_readmit", "COUNT numerator/denominator", "cohort exclusions"],
+    starterSql: "SELECT facility, COUNT(*) AS index_cases, SUM(CASE WHEN readmit_within_30_days = 1 THEN 1 ELSE 0 END) AS readmissions, ROUND(100.0 * SUM(CASE WHEN readmit_within_30_days = 1 THEN 1 ELSE 0 END) / COUNT(*), 2) AS readmission_rate FROM readmissions GROUP BY facility ORDER BY readmission_rate DESC;"
   },
   {
-    id: "denial-exposure",
+    id: "preventable-denials",
     category: "Finance",
     title: "Preventable Denials",
-    prompt: "Investigate preventable denial exposure. Explain denial rate, why it matters financially, likely root causes, where to look by payer/department/reason, and how to prevent denials."
+    shortName: "Denials",
+    benchmark: "Lower is better; many organizations target total denial rates below roughly 8–10%, with preventable denials driven as low as possible.",
+    targetDirection: "Lower",
+    definition: "Claims denied by payers that could likely have been prevented through front-end, authorization, documentation, coding, or timely filing controls.",
+    why: "Denials create avoidable cash leakage, rework, delayed reimbursement, and operational cost.",
+    tables: ["claims", "charges", "encounters", "departments"],
+    dimensions: ["payer", "denial reason", "department", "service line", "facility", "claim status", "billed amount", "month"],
+    drivers: ["authorization missed", "eligibility error", "medical necessity gap", "coding/documentation issue", "late filing", "payer-specific policy", "registration defect"],
+    actions: ["build payer-specific denial workqueues", "monitor high-dollar preventable denials weekly", "strengthen authorization checks", "feed denial reasons back to registration/coding/CDI", "prioritize top payer-department combinations"],
+    sqlFocus: ["claim_status", "payer", "billed_amount", "denial reason", "preventable flag"],
+    starterSql: "SELECT payer, claim_status, COUNT(*) AS claim_count, SUM(billed_amount) AS billed_amount FROM claims GROUP BY payer, claim_status ORDER BY billed_amount DESC;"
   },
   {
     id: "ed-boarding",
     category: "Operations",
     title: "ED Boarding",
-    prompt: "Investigate rising ED boarding. Explain why it signals hospital throughput failure, what operational bottlenecks to validate, and what leaders should do next."
+    shortName: "Boarding",
+    benchmark: "Lower is better; track hours from admit decision/order to inpatient bed placement against internal targets.",
+    targetDirection: "Lower",
+    definition: "Time patients remain in the ED after they need inpatient or observation placement.",
+    why: "ED boarding is a hospital-wide throughput warning sign tied to safety, experience, ambulance diversion risk, and staff workload.",
+    tables: ["encounters", "observations", "discharges", "departments"],
+    dimensions: ["facility", "admit hour", "bed type", "department", "inpatient unit", "day of week", "discharge timing"],
+    drivers: ["inpatient bed availability", "late discharges", "EVS turnaround", "staffing constraints", "observation bottlenecks", "admission order lag", "placement delays"],
+    actions: ["connect ED boarding to inpatient discharge KPIs", "create bed huddles", "escalate boarders by duration", "improve bed turnaround", "target early discharge workflows"],
+    sqlFocus: ["encounter_type", "department", "length_of_stay", "admit/discharge times", "observation conversion"],
+    starterSql: "SELECT facility, department, COUNT(*) AS ed_cases, ROUND(AVG(length_of_stay), 2) AS avg_los FROM encounters WHERE department = 'Emergency Department' GROUP BY facility, department ORDER BY avg_los DESC;"
   },
   {
-    id: "observation-48",
+    id: "observation-over-48",
     category: "Utilization",
     title: "Observation >48 Hours",
-    prompt: "Investigate observation stays over 48 hours. Explain why this matters for utilization, compliance, reimbursement, and throughput. Include likely causes and recommendations."
-  },
-  {
-    id: "sepsis-mortality",
-    category: "Quality",
-    title: "Sepsis Mortality",
-    prompt: "Investigate elevated sepsis mortality. Explain clinical and operational importance, data to validate, likely drivers, and recommended quality improvement actions."
-  },
-  {
-    id: "mortality-oe",
-    category: "Quality",
-    title: "Mortality O/E",
-    prompt: "Explain mortality observed-to-expected performance for executives. Include why it matters, how to diagnose variation, documentation concerns, and improvement actions."
-  },
-  {
-    id: "hcahps",
-    category: "Experience",
-    title: "HCAHPS / Patient Experience",
-    prompt: "Investigate declining HCAHPS or patient experience scores. Explain why it matters, where to analyze variation, likely operational drivers, and recommended actions."
-  },
-  {
-    id: "or-utilization",
-    category: "Operations",
-    title: "OR Utilization",
-    prompt: "Investigate low OR utilization. Explain why it matters as a revenue engine, what data to validate, causes of underuse, and actions to improve block time and case throughput."
-  },
-  {
-    id: "case-mix-index",
-    category: "Finance",
-    title: "Case Mix Index",
-    prompt: "Explain case mix index changes. Include why CMI affects reimbursement and acuity interpretation, what to validate, likely drivers, and executive talking points."
+    shortName: "Obs >48",
+    benchmark: "Lower is better; persistent >48 hour observation suggests utilization, placement, or conversion review opportunities.",
+    targetDirection: "Lower",
+    definition: "Observation encounters with total observation duration greater than 48 hours.",
+    why: "Long observation stays create utilization risk, reimbursement complexity, compliance concerns, and throughput friction.",
+    tables: ["observations", "encounters", "departments"],
+    dimensions: ["facility", "department", "obs hours", "conversion flag", "Code 44", "payer", "diagnosis"],
+    drivers: ["delayed inpatient conversion", "placement barriers", "unclear admission criteria", "payer authorization", "delayed testing/consults", "case management gaps"],
+    actions: ["daily review of obs >24 and >48 hours", "standardize conversion criteria", "improve UR escalation", "monitor Code 44 patterns", "review payer-specific delays"],
+    sqlFocus: ["obs_hours", "converted_to_inpatient", "code_44_flag", "GROUP BY facility/department"],
+    starterSql: "SELECT facility, department, COUNT(*) AS obs_cases, SUM(CASE WHEN obs_hours > 48 THEN 1 ELSE 0 END) AS obs_over_48, ROUND(100.0 * SUM(CASE WHEN obs_hours > 48 THEN 1 ELSE 0 END) / COUNT(*), 2) AS pct_obs_over_48 FROM observations GROUP BY facility, department ORDER BY pct_obs_over_48 DESC;"
   },
   {
     id: "discharge-before-noon",
     category: "Throughput",
     title: "Discharge Before Noon",
-    prompt: "Investigate low discharge-before-noon performance. Explain why it matters for throughput, ED boarding, bed availability, and what operational changes to recommend."
+    shortName: "DBN",
+    benchmark: "Higher is generally better when clinically appropriate; compare against internal throughput goals.",
+    targetDirection: "Higher",
+    definition: "Share of discharges completed before noon or another operationally defined cutoff.",
+    why: "Earlier discharges improve bed availability, reduce ED boarding pressure, and support patient flow.",
+    tables: ["discharges", "encounters", "departments"],
+    dimensions: ["facility", "department", "provider", "disposition", "day of week", "departure minutes"],
+    drivers: ["late rounding", "transport delays", "medication reconciliation", "post-acute placement", "pending consults", "discharge order timing"],
+    actions: ["prioritize next-day discharge list", "round on likely discharges first", "track order-to-departure time", "escalate transport barriers", "align pharmacy/case management earlier"],
+    sqlFocus: ["departure_minutes", "discharge_order_minutes", "delayed_for_transport", "CASE threshold"],
+    starterSql: "SELECT facility, department, COUNT(*) AS discharges, ROUND(AVG(discharge_order_minutes), 1) AS avg_order_minutes, ROUND(AVG(departure_minutes), 1) AS avg_departure_minutes FROM discharges GROUP BY facility, department ORDER BY avg_departure_minutes DESC;"
+  },
+  {
+    id: "sepsis-mortality",
+    category: "Quality",
+    title: "Sepsis Mortality",
+    shortName: "Sepsis",
+    benchmark: "Lower mortality and higher bundle compliance are better; compare by cohort acuity and expected mortality.",
+    targetDirection: "Lower mortality / higher compliance",
+    definition: "Mortality among sepsis patients, often reviewed with bundle compliance, time-to-antibiotics, and ICU transfer patterns.",
+    why: "Sepsis is a flagship quality and safety condition with major mortality, reputation, and regulatory significance.",
+    tables: ["encounters", "patients", "departments"],
+    dimensions: ["facility", "unit", "provider", "age", "risk score", "arrival time", "ICU transfer", "month"],
+    drivers: ["delayed recognition", "antibiotic timing", "lactate workflow", "ICU transfer delay", "documentation/coding gaps", "high acuity"],
+    actions: ["audit bundle compliance", "review time-to-antibiotics", "strengthen alerts/escalation", "analyze mortality outliers", "align ED/inpatient sepsis workflows"],
+    sqlFocus: ["cohort flag", "mortality flag", "risk adjustment", "time intervals"],
+    starterSql: "-- Starter logic: define sepsis cohort, count deaths, calculate mortality rate by facility/unit, then validate exclusions and risk adjustment."
+  },
+  {
+    id: "mortality-oe",
+    category: "Quality",
+    title: "Mortality Observed / Expected",
+    shortName: "Mortality O/E",
+    benchmark: "Lower than 1.0 is generally favorable; above 1.0 suggests observed mortality exceeds expected mortality.",
+    targetDirection: "Lower / below 1.0",
+    definition: "Observed deaths divided by expected deaths after accounting for acuity/risk model expectations.",
+    why: "Mortality O/E affects quality reputation, executive attention, clinical documentation, and care variation review.",
+    tables: ["encounters", "patients", "providers", "departments"],
+    dimensions: ["facility", "service line", "provider", "diagnosis", "risk score", "ICU", "month"],
+    drivers: ["clinical variation", "documentation gaps", "case mix shift", "delayed escalation", "sepsis/stroke/AMI performance", "risk model mismatch"],
+    actions: ["validate expected mortality model", "review high O/E service lines", "partner with CDI", "audit mortality cases", "focus on condition-specific pathways"],
+    sqlFocus: ["observed deaths", "expected deaths", "risk model", "service line segmentation"],
+    starterSql: "-- Starter logic: aggregate observed deaths and expected deaths by service line, then calculate observed_to_expected = observed / expected."
+  },
+  {
+    id: "hcahps",
+    category: "Experience",
+    title: "HCAHPS / Patient Experience",
+    shortName: "HCAHPS",
+    benchmark: "Higher is better; compare against percentile targets, internal baseline, and unit-level variation.",
+    targetDirection: "Higher",
+    definition: "Standardized patient experience scores across domains like communication, responsiveness, discharge information, and overall rating.",
+    why: "Patient experience affects public image, reputation, reimbursement programs, and trust in care delivery.",
+    tables: ["encounters", "departments", "providers"],
+    dimensions: ["unit", "facility", "provider", "domain", "discharge disposition", "month", "service line"],
+    drivers: ["communication gaps", "wait times", "noise/cleanliness", "discharge education", "pain communication", "staff responsiveness", "care coordination"],
+    actions: ["identify lowest domains", "round on low-scoring units", "standardize discharge education", "monitor comments/themes", "connect experience scores to operational delays"],
+    sqlFocus: ["survey domain", "top-box score", "unit/provider grouping", "trend"],
+    starterSql: "-- Starter logic: trend top-box score by domain and unit, then identify units below target for focused intervention."
+  },
+  {
+    id: "or-utilization",
+    category: "Operations",
+    title: "OR Utilization",
+    shortName: "OR Utilization",
+    benchmark: "Higher appropriate utilization is better; compare block utilization, prime-time use, cancellations, and turnover time.",
+    targetDirection: "Higher appropriate use",
+    definition: "Share of available OR time used for surgical cases, often separated by block owner and prime-time utilization.",
+    why: "The OR is a major revenue engine and capacity asset; underuse or poor turnover reduces financial and access performance.",
+    tables: ["encounters", "charges", "providers", "departments"],
+    dimensions: ["surgeon", "service line", "block owner", "facility", "day of week", "case type", "cancellation reason"],
+    drivers: ["unused block time", "late starts", "turnover delays", "cancellations", "staffing constraints", "case scheduling mix", "equipment availability"],
+    actions: ["review block release policy", "measure first-case on-time starts", "standardize turnover work", "identify low-utilization block owners", "rebalance block allocation"],
+    sqlFocus: ["case minutes", "available minutes", "block owner", "turnover time", "charge/revenue link"],
+    starterSql: "-- Starter logic: calculate used OR minutes / available block minutes by service line, surgeon, and day."
   },
   {
     id: "rn-turnover",
     category: "Workforce",
     title: "RN Turnover",
-    prompt: "Investigate RN turnover as an early warning indicator for safety, quality, and patient experience decline. Include data cuts, likely causes, and leadership actions."
+    shortName: "RN Turnover",
+    benchmark: "Lower is better; compare by unit, tenure group, vacancy rate, overtime, and safety outcomes.",
+    targetDirection: "Lower",
+    definition: "Share of RN workforce leaving over a defined period, often reviewed with vacancy and retention measures.",
+    why: "RN turnover is an early warning indicator for safety, quality, patient experience, agency spend, and operational stability.",
+    tables: ["departments", "encounters"],
+    dimensions: ["unit", "manager", "shift", "tenure", "vacancy", "overtime", "agency use", "safety events"],
+    drivers: ["burnout", "staffing ratios", "leadership issues", "overtime burden", "compensation", "workplace violence", "career development gaps"],
+    actions: ["monitor turnover with overtime and harm events", "target high-risk units", "perform stay interviews", "reduce avoidable overtime", "strengthen unit leadership support"],
+    sqlFocus: ["workforce table needed", "unit-level trend", "join to safety/experience outcomes"],
+    starterSql: "-- Starter logic: trend RN exits divided by average RN headcount by unit, then compare with overtime, agency use, falls, and HCAHPS."
   },
   {
-    id: "harm-events",
+    id: "preventable-harm",
     category: "Safety",
     title: "Preventable Harm Events",
-    prompt: "Investigate preventable harm events. Explain why they matter, how to analyze trends and units, likely root causes, and recommended safety culture interventions."
+    shortName: "Harm Events",
+    benchmark: "Lower is better; use event-specific targets and unit-level safety culture review.",
+    targetDirection: "Lower",
+    definition: "Patient safety events that may be avoidable, such as falls, pressure injuries, medication events, or hospital-acquired infections.",
+    why: "Preventable harm reflects safety culture, process reliability, staffing stress, and quality performance.",
+    tables: ["encounters", "departments", "patients"],
+    dimensions: ["unit", "event type", "severity", "shift", "day of week", "staffing", "LOS", "risk score"],
+    drivers: ["staffing pressure", "handoff gaps", "protocol non-adherence", "patient risk", "environmental issues", "equipment gaps", "culture/reporting barriers"],
+    actions: ["review event clusters", "perform apparent cause analysis", "connect harm events to staffing/turnover", "standardize prevention bundles", "round on high-risk units"],
+    sqlFocus: ["event flag", "rate per patient days", "unit trend", "risk adjustment"],
+    starterSql: "-- Starter logic: calculate harm events per 1,000 patient days by unit and trend over time."
+  },
+  {
+    id: "case-mix-index",
+    category: "Finance",
+    title: "Case Mix Index",
+    shortName: "CMI",
+    benchmark: "Context dependent; compare to historical baseline, service line mix, documentation quality, and peer group.",
+    targetDirection: "Appropriate to acuity",
+    definition: "Average DRG relative weight for inpatient cases, reflecting acuity and reimbursement complexity.",
+    why: "CMI affects reimbursement, acuity interpretation, staffing context, and executive understanding of volume changes.",
+    tables: ["encounters", "claims", "charges"],
+    dimensions: ["facility", "service line", "DRG", "provider", "payer", "month", "documentation opportunity"],
+    drivers: ["service line mix", "documentation specificity", "coding changes", "transfer patterns", "surgical volume shift", "payer mix"],
+    actions: ["review CMI by service line", "partner with CDI/coding", "validate DRG shifts", "separate volume change from acuity change", "monitor documentation opportunity"],
+    sqlFocus: ["DRG weight", "average weight", "service line trend", "payer/volume context"],
+    starterSql: "-- Starter logic: average DRG weight by service line and month, then compare to volume and net revenue trends."
   },
   {
     id: "no-show-access",
     category: "Access",
-    title: "No-Show / Access Issues",
-    prompt: "Investigate appointment no-shows and access barriers. Explain why they matter, what data to review, likely causes, and recommended access improvement actions."
-  },
-  {
-    id: "sql-help",
-    category: "SQL Help",
-    title: "SQL Debugging / Query Help",
-    prompt: "Help me write or debug SQL for a hospital analytics question. Explain the query logic, table grain, joins, filters, and how the output should be interpreted."
+    title: "No-Show / Access Barriers",
+    shortName: "No-Shows",
+    benchmark: "Lower no-show rate is better; targets vary by specialty, clinic, payer, and appointment type.",
+    targetDirection: "Lower",
+    definition: "Scheduled appointments where the patient did not arrive and did not cancel in advance.",
+    why: "No-shows reduce access, waste capacity, delay care, and create revenue leakage.",
+    tables: ["appointments", "patients", "providers", "departments"],
+    dimensions: ["clinic", "provider", "appointment type", "payer", "ZIP/city", "lead time", "day/time", "risk score"],
+    drivers: ["transportation barriers", "long scheduling lead time", "reminder gaps", "financial barriers", "poor access", "patient confusion", "weather/seasonality"],
+    actions: ["target reminder workflows", "optimize appointment lead time", "use waitlist/backfill", "identify high-risk patient groups", "connect patients to transportation/support services"],
+    sqlFocus: ["appointment status", "scheduled date", "provider/department", "COUNT + rate"],
+    starterSql: "SELECT facility, department, COUNT(*) AS appointments, SUM(CASE WHEN status = 'No Show' THEN 1 ELSE 0 END) AS no_shows, ROUND(100.0 * SUM(CASE WHEN status = 'No Show' THEN 1 ELSE 0 END) / COUNT(*), 2) AS no_show_rate FROM appointments GROUP BY facility, department ORDER BY no_show_rate DESC;"
   }
 ];
 
+const CAREOPS_EXECUTIVE_STUDIO_PACKS = [
+  {
+    id: "board-summary",
+    category: "Executive Communication",
+    title: "Board-Level KPI Summary",
+    prompt: "Create a board-level KPI summary. Include current performance, why it matters, risk to safety/quality/finance, what changed, likely drivers, and recommended executive actions."
+  },
+  {
+    id: "root-cause-plan",
+    category: "Root Cause",
+    title: "Root Cause Investigation Plan",
+    prompt: "Build a root cause investigation plan for a worsening hospital KPI. Include first data validations, segmentation cuts, likely operational owners, and escalation criteria."
+  },
+  {
+    id: "sql-debug",
+    category: "SQL Help",
+    title: "SQL Debugging + Metric Logic",
+    prompt: "Help me write or debug SQL for a hospital KPI. Explain table grain, joins, numerator, denominator, filters, grouping, and how leadership should interpret the result."
+  },
+  {
+    id: "financial-impact",
+    category: "Finance",
+    title: "Financial Impact Narrative",
+    prompt: "Create an executive financial impact narrative for a hospital performance issue. Connect the KPI to cost, revenue leakage, reimbursement, capacity, and operational action."
+  },
+  {
+    id: "quality-safety-brief",
+    category: "Safety",
+    title: "Quality & Safety Brief",
+    prompt: "Create a quality and safety leadership brief. Explain the metric, patient risk, operational drivers, how to validate the data, and recommended interventions."
+  }
+];
+
+const EXECUTIVE_PROMPT_LIBRARY = [
+  ...CAREOPS_KPI_REGISTRY.map((kpi) => ({
+    id: `kpi-${kpi.id}`,
+    category: kpi.category,
+    title: kpi.title,
+    kpiId: kpi.id,
+    prompt: `Investigate ${kpi.title}. Explain the KPI definition, why it matters, benchmark framing, operational drivers, SQL/data validation logic, recommended segmentation, and executive actions.`
+  })),
+  ...CAREOPS_EXECUTIVE_STUDIO_PACKS
+];
+
 let executivePromptCategory = "All";
+let executiveSelectedKpiId = "";
 let executiveLastResponse = "";
-let executiveHistory = [];
+let executiveHistory = loadExecutiveHistory();
+
+function loadExecutiveHistory() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(EXECUTIVE_HISTORY_KEY) || "[]");
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (error) {
+    return [];
+  }
+}
+
+function persistExecutiveHistory() {
+  try {
+    localStorage.setItem(EXECUTIVE_HISTORY_KEY, JSON.stringify(executiveHistory.slice(0, 20)));
+  } catch (error) {
+    console.warn("Unable to persist executive history", error);
+  }
+}
+
+function getSelectedKpi() {
+  const selectedId = safeValue("executive-kpi-select") || executiveSelectedKpiId;
+  return CAREOPS_KPI_REGISTRY.find((kpi) => kpi.id === selectedId) || null;
+}
+
+function inferKpiFromPrompt(prompt) {
+  const text = String(prompt || "").toLowerCase();
+  return CAREOPS_KPI_REGISTRY.find((kpi) => {
+    const tokens = [kpi.title, kpi.shortName, kpi.id, kpi.category, ...(kpi.drivers || [])]
+      .join(" ")
+      .toLowerCase();
+    return tokens.split(/\s+/).some((token) => token.length > 4 && text.includes(token));
+  }) || null;
+}
+
 function formatAiResponseBody(text) {
   const safe = escapeHtml(String(text || ""));
   const sections = safe.split(/\n{2,}/).filter(Boolean);
@@ -9294,164 +9548,189 @@ function formatAiResponseBody(text) {
     return `<p>${lines.join("<br>")}</p>`;
   }).join("");
 }
-function formatAiResponseBody(text) {
-  const safe = escapeHtml(String(text || ""));
-  const sections = safe.split(/\n{2,}/).filter(Boolean);
-  return sections.map((section) => {
-    const lines = section.split("\n").filter(Boolean);
-    if (!lines.length) return "";
-    if (lines.every((line) => /^[-•]/.test(line.trim()))) {
-      return `<ul>${lines.map((line) => `<li>${line.replace(/^[-•]\s*/, "")}</li>`).join("")}</ul>`;
-    }
-    return `<p>${lines.join("<br>")}</p>`;
-  }).join("");
+
+function buildKpiFallbackResponse(kpi, userPrompt = "") {
+  const context = getExecutiveContext();
+  const contextLine = [
+    context.facility ? `Facility: ${context.facility}` : "Facility: all",
+    context.department ? `Department/service line: ${context.department}` : "Department/service line: all",
+    context.payer ? `Payer/segment: ${context.payer}` : "Payer/segment: all",
+    context.timeframe ? `Timeframe: ${context.timeframe}` : "Timeframe: current review period"
+  ].join(" | ");
+
+  return [
+    `KPI definition: ${kpi.definition}`,
+    "",
+    `Why it matters: ${kpi.why}`,
+    "",
+    `Benchmark framing: ${kpi.benchmark}`,
+    `Target direction: ${kpi.targetDirection}`,
+    "",
+    `Context: ${contextLine}`,
+    "",
+    "Data to validate:",
+    ...kpi.tables.map((table) => `- source table: ${table}`),
+    ...kpi.sqlFocus.map((item) => `- SQL logic: ${item}`),
+    "- confirm numerator, denominator, exclusions, date logic, and row grain",
+    "",
+    "Likely operational drivers:",
+    ...kpi.drivers.map((driver) => `- ${driver}`),
+    "",
+    "Where to investigate first:",
+    ...kpi.dimensions.map((dimension) => `- ${dimension}`),
+    "",
+    "Recommended actions:",
+    ...kpi.actions.map((action) => `- ${action}`),
+    "",
+    "SQL starter logic:",
+    kpi.starterSql,
+    "",
+    `Executive summary: ${kpi.title} should be reviewed as a cross-functional performance signal, not just a report number. Leadership should validate the definition, identify the highest-impact segments, assign operational ownership, and track whether interventions move the metric in the desired direction.`
+  ].join("\n");
 }
 
 function fallbackAiResponse(userMessage) {
-  const prompt = String(userMessage || "").toLowerCase();
-
-  if (prompt.includes("denial")) {
-    return [
-      "KPI definition: Denial rate measures the share of claims or dollars denied by payers.",
-      "",
-      "Why it matters: Denials create cash leakage, rework, delayed reimbursement, and avoidable operational cost.",
-      "",
-      "What to validate:",
-      "- payer and plan",
-      "- denial reason",
-      "- department or service line",
-      "- preventable flag",
-      "- authorization and eligibility workflow",
-      "- billed amount and denied amount",
-      "",
-      "Likely drivers:",
-      "- missing authorization",
-      "- eligibility issues",
-      "- medical necessity gaps",
-      "- coding/documentation problems",
-      "- late filing or front-end registration issues",
-      "",
-      "Recommended actions:",
-      "- build payer-specific denial workqueues",
-      "- monitor preventable denial rate by department",
-      "- improve authorization checks before service",
-      "- review high-dollar denial patterns weekly",
-      "- create feedback loops with coding, registration, and clinical documentation teams",
-      "",
-      "Executive summary: Rising preventable denials should be treated as a controllable revenue leakage problem. Leadership should focus on payer-specific root causes, front-end process reliability, and high-dollar denial prevention."
-    ].join("\n");
-  }
-
-  if (prompt.includes("readmission")) {
-    return [
-      "KPI definition: Readmission rate measures patients returning to the hospital after a recent discharge, commonly within 30 days.",
-      "",
-      "Why it matters: Readmissions may indicate discharge planning gaps, access barriers, medication issues, or poor care coordination.",
-      "",
-      "Where to investigate:",
-      "- diagnosis groups",
-      "- discharge disposition",
-      "- follow-up completion",
-      "- payer and access barriers",
-      "- facility, provider, and department variation",
-      "- days to readmit",
-      "",
-      "Recommended actions:",
-      "- strengthen discharge planning for high-risk cohorts",
-      "- ensure follow-up appointments are scheduled before discharge",
-      "- improve medication reconciliation",
-      "- target disease-specific readmission drivers",
-      "- review repeat readmit patients with case management",
-      "",
-      "Executive summary: Elevated readmissions require a cross-functional response across inpatient care, discharge planning, outpatient access, and care management."
-    ].join("\n");
-  }
-
-  if (prompt.includes("los") || prompt.includes("length of stay")) {
-    return [
-      "KPI definition: Length of stay measures how long patients remain in care between admission and discharge.",
-      "",
-      "Why it matters: LOS affects capacity, cost, patient flow, ED boarding, and staffing pressure.",
-      "",
-      "Where to investigate:",
-      "- discharge delays",
-      "- placement barriers",
-      "- consult turnaround",
-      "- diagnostic bottlenecks",
-      "- department/unit variation",
-      "- payer authorization delays",
-      "",
-      "Recommended actions:",
-      "- review long-stay outliers daily",
-      "- track avoidable days by reason",
-      "- improve discharge-before-noon workflows",
-      "- escalate placement delays",
-      "- align case management with high-risk units",
-      "",
-      "Executive summary: Rising LOS is usually a hospital flow and capacity issue, not just a clinical issue. Leaders should identify avoidable delays and remove bottlenecks."
-    ].join("\n");
-  }
-
-  if (prompt.includes("boarding") || prompt.includes("ed board")) {
-    return [
-      "KPI definition: ED boarding measures patients waiting in the emergency department after the decision to admit or place.",
-      "",
-      "Why it matters: Boarding is a hospital-wide throughput warning sign. It affects safety, experience, ambulance diversion risk, and staff workload.",
-      "",
-      "Where to investigate:",
-      "- bed availability",
-      "- discharge timing",
-      "- EVS turnaround",
-      "- admission order lag",
-      "- observation conversion",
-      "- staffing constraints",
-      "",
-      "Recommended actions:",
-      "- create daily bed huddles",
-      "- accelerate discharge order completion",
-      "- monitor bed turnaround by unit",
-      "- escalate boarders by duration",
-      "- connect ED boarding metrics to inpatient discharge performance",
-      "",
-      "Executive summary: ED boarding is rarely only an ED problem. It usually reflects inpatient capacity and discharge throughput constraints."
-    ].join("\n");
-  }
+  const prompt = String(userMessage || "");
+  const kpi = getSelectedKpi() || inferKpiFromPrompt(prompt);
+  if (kpi) return buildKpiFallbackResponse(kpi, prompt);
 
   return [
     "Executive-ready response framework:",
     "",
-    "1. KPI definition: Clearly define the metric and numerator/denominator.",
-    "2. Why it matters: Connect the metric to safety, quality, access, throughput, revenue, or experience.",
-    "3. Data to validate: Confirm source tables, row grain, date logic, exclusions, and segmentation.",
-    "4. Likely drivers: Identify operational, clinical, financial, or documentation causes.",
+    "1. KPI definition: Clearly define the metric, numerator, denominator, exclusions, and time window.",
+    "2. Why it matters: Connect the metric to safety, quality, access, throughput, revenue, workforce, or experience.",
+    "3. Data to validate: Confirm source tables, row grain, date logic, joins, null handling, and segmentation.",
+    "4. Likely drivers: Identify operational, clinical, financial, workforce, or documentation causes.",
     "5. Where to investigate: Break results down by facility, department, provider, payer, diagnosis, time period, and patient cohort.",
-    "6. Recommended actions: Propose specific operational interventions.",
-    "7. Executive summary: Translate findings into a concise leadership message."
+    "6. Recommended actions: Propose specific interventions with accountable operational owners.",
+    "7. Executive summary: Translate the result into a concise leadership message with risk, action, and expected impact."
   ].join("\n");
 }
 
+function getExecutiveContext() {
+  return {
+    facility: safeValue("executive-context-facility"),
+    department: safeValue("executive-context-department"),
+    payer: safeValue("executive-context-payer"),
+    timeframe: safeValue("executive-context-timeframe")
+  };
+}
+
 function buildExecutivePrompt(userPrompt) {
+  const selectedKpi = getSelectedKpi() || inferKpiFromPrompt(userPrompt);
+  const context = getExecutiveContext();
+  const kpiDetails = selectedKpi ? [
+    `Selected KPI: ${selectedKpi.title}`,
+    `Definition: ${selectedKpi.definition}`,
+    `Why it matters: ${selectedKpi.why}`,
+    `Benchmark: ${selectedKpi.benchmark}`,
+    `Target direction: ${selectedKpi.targetDirection}`,
+    `Likely drivers: ${selectedKpi.drivers.join(", ")}`,
+    `Recommended segmentation: ${selectedKpi.dimensions.join(", ")}`,
+    `SQL focus: ${selectedKpi.sqlFocus.join(", ")}`,
+    `Starter SQL: ${selectedKpi.starterSql}`
+  ].join("\n") : "Selected KPI: not specified";
+
   return [
-    "Create an executive-ready hospital analytics response.",
+    "Create an executive-ready hospital analytics response using the CareOps structure.",
     "",
     userPrompt,
+    "",
+    kpiDetails,
+    "",
+    "Context filters:",
+    `Facility: ${context.facility || "All / not specified"}`,
+    `Department or service line: ${context.department || "All / not specified"}`,
+    `Payer or segment: ${context.payer || "All / not specified"}`,
+    `Timeframe: ${context.timeframe || "Not specified"}`,
     "",
     "Structure the response with:",
     "1. KPI definition",
     "2. Why it matters",
-    "3. What data to validate",
-    "4. Likely operational/clinical/financial drivers",
-    "5. Where to investigate",
-    "6. Recommended actions",
-    "7. Executive-ready summary",
+    "3. Benchmark/status framing",
+    "4. What data to validate",
+    "5. Likely operational/clinical/financial/workforce drivers",
+    "6. Where to investigate first",
+    "7. SQL starter logic or data logic",
+    "8. Recommended actions",
+    "9. Executive-ready summary",
     "",
-    "Make the response practical for hospital leaders and include SQL/data logic considerations when relevant."
+    "Make the response practical for hospital leaders and avoid generic advice."
   ].join("\n");
 }
 
+function renderExecutiveKpiSelect() {
+  const select = safeElement("executive-kpi-select");
+  if (!select) return;
+
+  const current = select.value || executiveSelectedKpiId;
+  const categories = Array.from(new Set(CAREOPS_KPI_REGISTRY.map((kpi) => kpi.category)));
+  select.innerHTML = `<option value="">Choose a KPI investigation...</option>` + categories.map((category) => {
+    const options = CAREOPS_KPI_REGISTRY
+      .filter((kpi) => kpi.category === category)
+      .map((kpi) => `<option value="${escapeHtml(kpi.id)}">${escapeHtml(kpi.title)}</option>`)
+      .join("");
+    return `<optgroup label="${escapeHtml(category)}">${options}</optgroup>`;
+  }).join("");
+  select.value = current;
+
+  if (!select.dataset.bound) {
+    select.dataset.bound = "true";
+    select.addEventListener("change", () => {
+      executiveSelectedKpiId = select.value || "";
+      const kpi = getSelectedKpi();
+      const input = safeElement("executive-prompt-input");
+      if (kpi && input && !input.value.trim()) {
+        input.value = `Investigate ${kpi.title}. Explain current performance, why it matters, likely drivers, data validation, SQL logic, recommendations, and executive summary.`;
+      }
+      renderExecutiveIntelligencePanels();
+    });
+  }
+}
+
+function renderExecutiveIntelligencePanels() {
+  const kpi = getSelectedKpi();
+
+  if (!kpi) {
+    setSafeHtml("executive-benchmark-panel", `<h3>Benchmark Intelligence</h3><p>Select a KPI to see target direction, benchmark framing, and leadership risk.</p>`);
+    setSafeHtml("executive-driver-panel", `<h3>Operational Drivers</h3><p>Select a KPI to see likely drivers and where to investigate first.</p>`);
+    setSafeHtml("executive-sql-panel", `<h3>SQL / Data Logic</h3><p>Select a KPI to see source tables, segmentation cuts, and starter query logic.</p>`);
+    return;
+  }
+
+  setSafeHtml("executive-benchmark-panel", `
+    <h3>${escapeHtml(kpi.title)}</h3>
+    <div class="executive-kpi-meta-row">
+      <span>${escapeHtml(kpi.category)}</span>
+      <span>${escapeHtml(kpi.targetDirection)}</span>
+    </div>
+    <p><strong>Definition:</strong> ${escapeHtml(kpi.definition)}</p>
+    <p><strong>Benchmark framing:</strong> ${escapeHtml(kpi.benchmark)}</p>
+    <p><strong>Why it matters:</strong> ${escapeHtml(kpi.why)}</p>
+  `);
+
+  setSafeHtml("executive-driver-panel", `
+    <h3>Operational Drivers</h3>
+    ${listToHtml(kpi.drivers, "executive-driver-list")}
+    <h4>Recommended Actions</h4>
+    ${listToHtml(kpi.actions, "executive-action-list")}
+  `);
+
+  setSafeHtml("executive-sql-panel", `
+    <h3>SQL / Data Logic</h3>
+    <p><strong>Source tables:</strong> ${escapeHtml(kpi.tables.join(", "))}</p>
+    <p><strong>Segmentation:</strong> ${escapeHtml(kpi.dimensions.join(", "))}</p>
+    <p><strong>SQL focus:</strong> ${escapeHtml(kpi.sqlFocus.join(", "))}</p>
+    <pre class="executive-sql-sample"><code>${escapeHtml(kpi.starterSql)}</code></pre>
+  `);
+}
+
 function renderExecutivePromptLibrary() {
-  const categoryHost = document.getElementById("executive-category-tabs");
-  const libraryHost = document.getElementById("executive-prompt-library");
+  renderExecutiveKpiSelect();
+  renderExecutiveIntelligencePanels();
+
+  const categoryHost = safeElement("executive-category-tabs");
+  const libraryHost = safeElement("executive-prompt-library");
   if (!categoryHost || !libraryHost) return;
 
   const categories = ["All", ...Array.from(new Set(EXECUTIVE_PROMPT_LIBRARY.map((item) => item.category)))];
@@ -9485,9 +9764,15 @@ function renderExecutivePromptLibrary() {
     button.onclick = () => {
       const promptId = button.getAttribute("data-exec-prompt-id");
       const selected = EXECUTIVE_PROMPT_LIBRARY.find((item) => item.id === promptId);
-      const input = document.getElementById("executive-prompt-input");
+      const input = safeElement("executive-prompt-input");
       if (selected && input) {
         input.value = selected.prompt;
+        if (selected.kpiId) {
+          executiveSelectedKpiId = selected.kpiId;
+          const select = safeElement("executive-kpi-select");
+          if (select) select.value = selected.kpiId;
+          renderExecutiveIntelligencePanels();
+        }
         input.focus();
       }
     };
@@ -9495,7 +9780,7 @@ function renderExecutivePromptLibrary() {
 }
 
 function renderExecutiveHistory() {
-  const holder = document.getElementById("executive-history");
+  const holder = safeElement("executive-history");
   if (!holder) return;
 
   if (!executiveHistory.length) {
@@ -9508,6 +9793,7 @@ function renderExecutiveHistory() {
       <div>
         <strong>${escapeHtml(item.title || `Investigation ${index + 1}`)}</strong>
         <p>${escapeHtml(item.prompt).slice(0, 180)}${item.prompt.length > 180 ? "..." : ""}</p>
+        <small>${escapeHtml(item.savedAtLabel || "Saved investigation")}</small>
       </div>
       <button type="button" data-load-executive-history="${index}">Load</button>
     </article>
@@ -9519,24 +9805,38 @@ function renderExecutiveHistory() {
       const item = executiveHistory[index];
       if (!item) return;
 
-      const input = document.getElementById("executive-prompt-input");
-      const output = document.getElementById("executive-output");
+      const input = safeElement("executive-prompt-input");
+      const output = safeElement("executive-output");
+      const select = safeElement("executive-kpi-select");
 
       if (input) input.value = item.prompt;
       if (output) output.innerHTML = item.response;
+      if (select && item.kpiId) {
+        executiveSelectedKpiId = item.kpiId;
+        select.value = item.kpiId;
+      }
       executiveLastResponse = item.responseText || "";
+      renderExecutiveIntelligencePanels();
     };
   });
 }
 
 async function runExecutiveStudioPrompt() {
-  const input = document.getElementById("executive-prompt-input");
-  const output = document.getElementById("executive-output");
+  const input = safeElement("executive-prompt-input");
+  const output = safeElement("executive-output");
   const prompt = (input?.value || "").trim();
 
   if (!prompt) {
     if (output) output.innerHTML = `<p>Enter a KPI, SQL, or leadership question first.</p>`;
     return;
+  }
+
+  const selectedKpi = getSelectedKpi() || inferKpiFromPrompt(prompt);
+  if (selectedKpi) {
+    executiveSelectedKpiId = selectedKpi.id;
+    const select = safeElement("executive-kpi-select");
+    if (select) select.value = selectedKpi.id;
+    renderExecutiveIntelligencePanels();
   }
 
   if (output) output.innerHTML = `<p>Generating executive response...</p>`;
@@ -9555,34 +9855,38 @@ async function runExecutiveStudioPrompt() {
 }
 
 function copyExecutiveResponse() {
-  const text = executiveLastResponse || document.getElementById("executive-output")?.innerText || "";
+  const text = executiveLastResponse || safeElement("executive-output")?.innerText || "";
   if (!text.trim()) return;
-
   navigator.clipboard?.writeText(text);
 }
 
 function saveExecutiveInvestigation() {
-  const prompt = (document.getElementById("executive-prompt-input")?.value || "").trim();
-  const responseHtml = document.getElementById("executive-output")?.innerHTML || "";
-  const responseText = executiveLastResponse || document.getElementById("executive-output")?.innerText || "";
+  const prompt = (safeElement("executive-prompt-input")?.value || "").trim();
+  const responseHtml = safeElement("executive-output")?.innerHTML || "";
+  const responseText = executiveLastResponse || safeElement("executive-output")?.innerText || "";
+  const kpi = getSelectedKpi() || inferKpiFromPrompt(prompt);
 
   if (!prompt || !responseText.trim()) return;
 
+  const savedAt = new Date();
   executiveHistory.unshift({
-    title: prompt.slice(0, 70),
+    title: kpi ? `${kpi.title}: ${prompt.slice(0, 48)}` : prompt.slice(0, 70),
     prompt,
+    kpiId: kpi?.id || "",
     response: responseHtml,
     responseText,
-    savedAt: new Date().toISOString()
+    savedAt: savedAt.toISOString(),
+    savedAtLabel: savedAt.toLocaleString()
   });
 
-  executiveHistory = executiveHistory.slice(0, 10);
+  executiveHistory = executiveHistory.slice(0, 20);
+  persistExecutiveHistory();
   renderExecutiveHistory();
 }
 
 function clearExecutiveStudio() {
-  const input = document.getElementById("executive-prompt-input");
-  const output = document.getElementById("executive-output");
+  const input = safeElement("executive-prompt-input");
+  const output = safeElement("executive-output");
 
   if (input) input.value = "";
   if (output) output.innerHTML = "";
@@ -9591,7 +9895,7 @@ function clearExecutiveStudio() {
 }
 
 function sendAiMessage(prefill = null) {
-  const input = document.getElementById("executive-prompt-input");
+  const input = safeElement("executive-prompt-input");
   if (prefill && input) input.value = prefill;
   return runExecutiveStudioPrompt();
 }
@@ -9606,7 +9910,7 @@ function clearAiChat() {
 
 function scrollToAiCompanion() {
   showExecutiveStudioWorkspace();
-  document.getElementById("executive-prompt-input")?.focus();
+  safeElement("executive-prompt-input")?.focus();
 }
 
 function updateAiContextBanner() {
