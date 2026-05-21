@@ -9482,31 +9482,66 @@ function initUiActions() {
   }
 }
 function attachPersistentNavigationDelegates() {
-  if (window.__careopsNavDelegatePatchedV3) return;
-  window.__careopsNavDelegatePatchedV3 = true;
+  if (window.__careopsNavDelegatePatchedV4) return;
+  window.__careopsNavDelegatePatchedV4 = true;
 
   document.addEventListener("click", function (event) {
     const button = event.target.closest("button");
     if (!button) return;
 
-    if (button.id === "open-overview-btn") {
+    if (button.id === "nav-overview-btn" || button.id === "open-overview-btn") {
       event.preventDefault();
       appState.currentView = "overview";
       attempts = 0;
       showOverview();
       saveProgress();
+      renderAll();
       return;
     }
 
-    if (button.id === "open-sandbox-btn") {
+    if (button.id === "nav-sandbox-btn" || button.id === "open-sandbox-btn") {
       event.preventDefault();
       appState.currentView = "sql-lab";
       attempts = 0;
       showSqlLabWorkspace();
       saveProgress();
+      renderAll();
       return;
+    }
+
+    if (button.id === "nav-executive-btn") {
+      event.preventDefault();
+      appState.currentView = "executive-studio";
+      attempts = 0;
+      showExecutiveStudioWorkspace();
+      saveProgress();
+      renderAll();
+      return;
+    }
+
+    if (button.id === "nav-ai-btn") {
+      event.preventDefault();
+      appState.currentView = "ai-companion";
+      attempts = 0;
+      showAiCompanionWorkspace();
+      saveProgress();
+      renderAll();
+      return;
+    }
+
+    if (button.id === "nav-glossary-btn") {
+      event.preventDefault();
+      appState.currentView = "glossary";
+      attempts = 0;
+      showGlossaryWorkspace();
+      saveProgress();
+      renderAll();
+      return;
+    }
+
+    if (button.id === "nav-reset-btn") {
+      event.preventDefault();
+      resetAllProgress();
     }
   });
 }
-
-
