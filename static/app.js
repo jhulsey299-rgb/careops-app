@@ -9644,10 +9644,8 @@ function renderAll() {
   } else if (appState.currentView === "sandbox" || appState.currentView === "sql-lab") {
     showSqlLabWorkspace();
     renderSandboxLessonContext();
-  } else if (appState.currentView === "executive-studio") {
+  } else if (appState.currentView === "executive-studio" || appState.currentView === "ai-companion") {
     showExecutiveStudioWorkspace();
-  } else if (appState.currentView === "ai-companion") {
-    showAiCompanionWorkspace();
   } else if (appState.currentView === "glossary") {
     showGlossaryWorkspace();
   } else {
@@ -9718,25 +9716,7 @@ function initUiActions() {
     };
   }
 
-  const askAiAboutQueryBtn = document.getElementById("sandbox-send-ai-btn");
-  if (askAiAboutQueryBtn) {
-    askAiAboutQueryBtn.onclick = () => {
-      const sandboxQuery = (document.getElementById("sandbox-query")?.value || "").trim();
-      const aiInput = document.getElementById("ai-companion-input");
-
-      appState.currentView = "ai-companion";
-      showAiCompanionWorkspace();
-
-      if (aiInput) {
-        aiInput.value = sandboxQuery
-          ? `Help me understand and improve this SQL:\n\n${sandboxQuery}`
-          : "Help me understand and improve this sandbox query.";
-        aiInput.focus();
-      }
-    };
-  }
-
-  const runExecutiveBtn = document.getElementById("run-executive-btn");
+   const runExecutiveBtn = document.getElementById("run-executive-btn");
   if (runExecutiveBtn) {
     runExecutiveBtn.onclick = () => {
       const prompt = (document.getElementById("executive-prompt-input")?.value || "").trim();
@@ -9753,21 +9733,7 @@ function initUiActions() {
     };
   }
 
-  const runAiBtn = document.getElementById("run-ai-companion-btn");
-  if (runAiBtn) runAiBtn.onclick = () => sendAiMessage();
-
-  const aiInput = document.getElementById("ai-companion-input");
-  if (aiInput && !aiInput.dataset.enterBound) {
-    aiInput.dataset.enterBound = "true";
-    aiInput.addEventListener("keydown", (event) => {
-      if (event.key === "Enter" && !event.shiftKey) {
-        event.preventDefault();
-        sendAiMessage();
-      }
-    });
-  }
-}
-function attachPersistentNavigationDelegates() {
+ function attachPersistentNavigationDelegates() {
   if (window.__careopsNavDelegatePatchedV4) return;
   window.__careopsNavDelegatePatchedV4 = true;
 
