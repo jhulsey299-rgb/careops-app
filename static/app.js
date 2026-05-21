@@ -9716,7 +9716,7 @@ function initUiActions() {
     };
   }
 
-const runExecutiveBtn = document.getElementById("run-executive-btn");
+  const runExecutiveBtn = document.getElementById("run-executive-btn");
   if (runExecutiveBtn) runExecutiveBtn.onclick = runExecutiveStudioPrompt;
 
   const copyExecutiveBtn = document.getElementById("copy-executive-btn");
@@ -9727,10 +9727,7 @@ const runExecutiveBtn = document.getElementById("run-executive-btn");
 
   const clearExecutiveBtn = document.getElementById("clear-executive-btn");
   if (clearExecutiveBtn) clearExecutiveBtn.onclick = clearExecutiveStudio;
-      }
-    };
-  }
-
+}
 function attachPersistentNavigationDelegates() {
   if (window.__careopsNavDelegatePatchedV5) return;
   window.__careopsNavDelegatePatchedV5 = true;
