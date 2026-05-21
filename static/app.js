@@ -7888,7 +7888,6 @@ function showSection(sectionId) {
     "lesson-workspace",
     "sandbox-workspace",
     "executive-workspace",
-    "ai-workspace",
     "glossary-workspace"
   ];
 
@@ -7897,7 +7896,7 @@ function showSection(sectionId) {
     if (el) el.classList.toggle("hidden", id !== sectionId);
   });
 
-  const hideChrome = ["sandbox-workspace", "executive-workspace", "ai-workspace", "glossary-workspace"].includes(sectionId);
+  const hideChrome = ["sandbox-workspace", "executive-workspace", "glossary-workspace"].includes(sectionId);
 
   document.querySelector(".top-dashboard")?.classList.toggle("hidden", hideChrome);
   document.querySelector(".badges-section")?.classList.toggle("hidden", hideChrome);
@@ -7905,7 +7904,6 @@ function showSection(sectionId) {
 
   document.body.classList.toggle("sandbox-mode", sectionId === "sandbox-workspace");
   document.body.classList.toggle("executive-mode", sectionId === "executive-workspace");
-  document.body.classList.toggle("ai-mode", sectionId === "ai-workspace");
   document.body.classList.toggle("glossary-mode", sectionId === "glossary-workspace");
   document.body.classList.toggle("overview-mode", sectionId === "track-overview");
   document.body.classList.toggle("lesson-mode", sectionId === "lesson-workspace");
