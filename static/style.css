@@ -2910,3 +2910,24 @@ body.glossary-mode #ai-workspace {
         padding: 18px !important;
     }
 }
+/* Make SQL Lab query card span the full available width */
+#sandbox-workspace .query-section {
+    width: 100% !important;
+    max-width: none !important;
+}
+
+#sandbox-workspace .sandbox-main {
+    width: 100% !important;
+    max-width: none !important;
+}
+
+#sandbox-workspace .sandbox-shell {
+    width: 100% !important;
+    max-width: none !important;
+}
+
+#sandbox-query {
+    width: 100% !important;
+    max-width: none !important;
+    box-sizing: border-box !important;
+}
