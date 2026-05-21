@@ -8995,17 +8995,8 @@ function showExecutiveStudioWorkspace() {
   document.getElementById("executive-workspace")?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 function showAiCompanionWorkspace() {
-  appState.currentView = "ai-companion";
-  setSandboxModeUi(false);
-  if (typeof setGlossaryModeUi === "function") setGlossaryModeUi(false);
-
-  showSection("ai-workspace");
-  renderAiMessages();
-
-  saveProgress();
-  document.getElementById("ai-workspace")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  showExecutiveStudioWorkspace();
 }
-
 function ensureGlossaryWorkspace() {
   let workspace = document.getElementById("glossary-workspace");
   if (workspace) return workspace;
