@@ -3086,3 +3086,41 @@ body.glossary-mode #ai-workspace {
         max-height: none;
     }
 }
+/* ================= SANDBOX GUIDED PROMPT ALIGNMENT ================= */
+
+#sandbox-prompt-list {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 14px !important;
+    align-items: start !important;
+}
+
+.sandbox-prompt-group,
+.sandbox-prompt-column {
+    display: grid !important;
+    align-content: start !important;
+    gap: 14px !important;
+}
+
+.sandbox-prompt-card {
+    min-height: 205px !important;
+    height: 205px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+}
+
+.sandbox-prompt-card p {
+    margin-bottom: 12px !important;
+}
+
+@media (max-width: 900px) {
+    #sandbox-prompt-list {
+        grid-template-columns: 1fr !important;
+    }
+
+    .sandbox-prompt-card {
+        height: auto !important;
+        min-height: 0 !important;
+    }
+}
