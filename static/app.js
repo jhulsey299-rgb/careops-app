@@ -9292,125 +9292,324 @@ function formatAiResponseBody(text) {
     return `<p>${lines.join("<br>")}</p>`;
   }).join("");
 }
-function renderAiMessages() {
-  const holder = document.getElementById("ai-messages");
-  if (!holder) return;
-  if (!aiThread.length) {
-    holder.innerHTML = `
-      <div class="ai-message assistant">
-        <div class="ai-message-role">AI companion</div>
-        <div class="ai-message-body">
-          <p><strong>Ask me anything</strong></p>
-          <p>I can help with SQL code, explain why metrics like readmissions or LOS matter, and suggest where to investigate when a measure is high.</p>
-        </div>
-      </div>`;
-    return;
-  }
-  holder.innerHTML = aiThread.map((msg) => `
-    <div class="ai-message ${msg.role}">
-      <div class="ai-message-role">${msg.role === "user" ? "You" : "AI companion"}</div>
-      <div class="ai-message-body">${formatAiResponseBody(msg.content)}</div>
-    </div>
-  `).join("");
-  holder.scrollTop = holder.scrollHeight;
+function formatAiResponseBody(text) {
+  const safe = escapeHtml(String(text || ""));
+  const sections = safe.split(/\n{2,}/).filter(Boolean);
+  return sections.map((section) => {
+    const lines = section.split("\n").filter(Boolean);
+    if (!lines.length) return "";
+    if (lines.every((line) => /^[-•]/.test(line.trim()))) {
+      return `<ul>${lines.map((line) => `<li>${line.replace(/^[-•]\s*/, "")}</li>`).join("")}</ul>`;
+    }
+    return `<p>${lines.join("<br>")}</p>`;
+  }).join("");
 }
+
 function fallbackAiResponse(userMessage) {
-  const lesson = getCurrentLesson();
   const prompt = String(userMessage || "").toLowerCase();
-  const lessonTitle = lesson?.title || "the current topic";
-  const objective = lesson?.objective || "the question you are exploring";
-  const relevantTables = lesson?.relevantTables?.length ? lesson.relevantTables.join(", ") : "the relevant tables";
+
+  if (prompt.includes("denial")) {
+    return [
+      "KPI definition: Denial rate measures the share of claims or dollars denied by payers.",
+      "",
+      "Why it matters: Denials create cash leakage, rework, delayed reimbursement, and avoidable operational cost.",
+      "",
+      "What to validate:",
+      "- payer and plan",
+      "- denial reason",
+      "- department or service line",
+      "- preventable flag",
+      "- authorization and eligibility workflow",
+      "- billed amount and denied amount",
+      "",
+      "Likely drivers:",
+      "- missing authorization",
+      "- eligibility issues",
+      "- medical necessity gaps",
+      "- coding/documentation problems",
+      "- late filing or front-end registration issues",
+      "",
+      "Recommended actions:",
+      "- build payer-specific denial workqueues",
+      "- monitor preventable denial rate by department",
+      "- improve authorization checks before service",
+      "- review high-dollar denial patterns weekly",
+      "- create feedback loops with coding, registration, and clinical documentation teams",
+      "",
+      "Executive summary: Rising preventable denials should be treated as a controllable revenue leakage problem. Leadership should focus on payer-specific root causes, front-end process reliability, and high-dollar denial prevention."
+    ].join("\n");
+  }
+
   if (prompt.includes("readmission")) {
     return [
-      "Readmissions matter because they can signal breakdowns in discharge planning, follow-up access, medication reconciliation, or care coordination.",
+      "KPI definition: Readmission rate measures patients returning to the hospital after a recent discharge, commonly within 30 days.",
       "",
-      "Where to investigate",
-      "- discharge disposition and follow-up timing",
-      "- diagnosis groups driving repeat returns",
-      "- provider or facility variation",
-      "- payer mix and barriers to outpatient follow-up",
-      "- length of stay, case management involvement, and ED bounce-backs"
+      "Why it matters: Readmissions may indicate discharge planning gaps, access barriers, medication issues, or poor care coordination.",
+      "",
+      "Where to investigate:",
+      "- diagnosis groups",
+      "- discharge disposition",
+      "- follow-up completion",
+      "- payer and access barriers",
+      "- facility, provider, and department variation",
+      "- days to readmit",
+      "",
+      "Recommended actions:",
+      "- strengthen discharge planning for high-risk cohorts",
+      "- ensure follow-up appointments are scheduled before discharge",
+      "- improve medication reconciliation",
+      "- target disease-specific readmission drivers",
+      "- review repeat readmit patients with case management",
+      "",
+      "Executive summary: Elevated readmissions require a cross-functional response across inpatient care, discharge planning, outpatient access, and care management."
     ].join("\n");
   }
+
   if (prompt.includes("los") || prompt.includes("length of stay")) {
     return [
-      "Length of stay matters because it affects capacity, throughput, staffing pressure, and cost of care.",
+      "KPI definition: Length of stay measures how long patients remain in care between admission and discharge.",
       "",
-      "If LOS is high, look at",
-      "- discharge delays by department",
-      "- case management and consult turnaround",
+      "Why it matters: LOS affects capacity, cost, patient flow, ED boarding, and staffing pressure.",
+      "",
+      "Where to investigate:",
+      "- discharge delays",
       "- placement barriers",
+      "- consult turnaround",
       "- diagnostic bottlenecks",
-      "- provider or unit variation"
-    ].join("\n");
-  }
-  if (prompt.includes("code") || prompt.includes("sql") || prompt.includes("query")) {
-    return [
-      `You are working on ${lessonTitle}.`,
-      `Objective: ${objective}`,
-      `Relevant tables: ${relevantTables}`,
+      "- department/unit variation",
+      "- payer authorization delays",
       "",
-      "Best next step",
-      "Tell me exactly what output you want and I will write or improve the SQL for you."
+      "Recommended actions:",
+      "- review long-stay outliers daily",
+      "- track avoidable days by reason",
+      "- improve discharge-before-noon workflows",
+      "- escalate placement delays",
+      "- align case management with high-risk units",
+      "",
+      "Executive summary: Rising LOS is usually a hospital flow and capacity issue, not just a clinical issue. Leaders should identify avoidable delays and remove bottlenecks."
     ].join("\n");
   }
+
+  if (prompt.includes("boarding") || prompt.includes("ed board")) {
+    return [
+      "KPI definition: ED boarding measures patients waiting in the emergency department after the decision to admit or place.",
+      "",
+      "Why it matters: Boarding is a hospital-wide throughput warning sign. It affects safety, experience, ambulance diversion risk, and staff workload.",
+      "",
+      "Where to investigate:",
+      "- bed availability",
+      "- discharge timing",
+      "- EVS turnaround",
+      "- admission order lag",
+      "- observation conversion",
+      "- staffing constraints",
+      "",
+      "Recommended actions:",
+      "- create daily bed huddles",
+      "- accelerate discharge order completion",
+      "- monitor bed turnaround by unit",
+      "- escalate boarders by duration",
+      "- connect ED boarding metrics to inpatient discharge performance",
+      "",
+      "Executive summary: ED boarding is rarely only an ED problem. It usually reflects inpatient capacity and discharge throughput constraints."
+    ].join("\n");
+  }
+
   return [
-    `You are currently in ${lessonTitle}.`,
-    `Objective: ${objective}`,
-    `Relevant tables: ${relevantTables}`,
+    "Executive-ready response framework:",
     "",
-    "You can ask me to",
-    "- write SQL",
-    "- explain what a metric means",
-    "- suggest where to investigate when a metric is high",
-    "- help translate the result for leaders"
+    "1. KPI definition: Clearly define the metric and numerator/denominator.",
+    "2. Why it matters: Connect the metric to safety, quality, access, throughput, revenue, or experience.",
+    "3. Data to validate: Confirm source tables, row grain, date logic, exclusions, and segmentation.",
+    "4. Likely drivers: Identify operational, clinical, financial, or documentation causes.",
+    "5. Where to investigate: Break results down by facility, department, provider, payer, diagnosis, time period, and patient cohort.",
+    "6. Recommended actions: Propose specific operational interventions.",
+    "7. Executive summary: Translate findings into a concise leadership message."
   ].join("\n");
 }
-async function sendAiMessage(prefill = null) {
-  const input = document.getElementById("ai-companion-input");
-  const message = (prefill || input?.value || "").trim();
 
-  if (!message) return;
-
-  aiThread.push({ role: "user", content: message });
-  renderAiMessages();
-
-  if (input) input.value = "";
-
-  const reply = await requestAiCompanion(message);
-
-  aiThread.push({ role: "assistant", content: reply });
-  renderAiMessages();
+function buildExecutivePrompt(userPrompt) {
+  return [
+    "Create an executive-ready hospital analytics response.",
+    "",
+    userPrompt,
+    "",
+    "Structure the response with:",
+    "1. KPI definition",
+    "2. Why it matters",
+    "3. What data to validate",
+    "4. Likely operational/clinical/financial drivers",
+    "5. Where to investigate",
+    "6. Recommended actions",
+    "7. Executive-ready summary",
+    "",
+    "Make the response practical for hospital leaders and include SQL/data logic considerations when relevant."
+  ].join("\n");
 }
 
-function renderAiMessages() {
-  const holder = document.getElementById("ai-companion-output");
+function renderExecutivePromptLibrary() {
+  const categoryHost = document.getElementById("executive-category-tabs");
+  const libraryHost = document.getElementById("executive-prompt-library");
+  if (!categoryHost || !libraryHost) return;
+
+  const categories = ["All", ...Array.from(new Set(EXECUTIVE_PROMPT_LIBRARY.map((item) => item.category)))];
+
+  categoryHost.innerHTML = categories.map((category) => `
+    <button type="button" class="executive-category-tab ${executivePromptCategory === category ? "active" : ""}" data-exec-category="${escapeHtml(category)}">
+      ${escapeHtml(category)}
+    </button>
+  `).join("");
+
+  const visiblePrompts = executivePromptCategory === "All"
+    ? EXECUTIVE_PROMPT_LIBRARY
+    : EXECUTIVE_PROMPT_LIBRARY.filter((item) => item.category === executivePromptCategory);
+
+  libraryHost.innerHTML = visiblePrompts.map((item) => `
+    <button type="button" class="executive-prompt-card" data-exec-prompt-id="${escapeHtml(item.id)}">
+      <span class="executive-prompt-category">${escapeHtml(item.category)}</span>
+      <strong>${escapeHtml(item.title)}</strong>
+      <span>${escapeHtml(item.prompt)}</span>
+    </button>
+  `).join("");
+
+  categoryHost.querySelectorAll("[data-exec-category]").forEach((button) => {
+    button.onclick = () => {
+      executivePromptCategory = button.getAttribute("data-exec-category") || "All";
+      renderExecutivePromptLibrary();
+    };
+  });
+
+  libraryHost.querySelectorAll("[data-exec-prompt-id]").forEach((button) => {
+    button.onclick = () => {
+      const promptId = button.getAttribute("data-exec-prompt-id");
+      const selected = EXECUTIVE_PROMPT_LIBRARY.find((item) => item.id === promptId);
+      const input = document.getElementById("executive-prompt-input");
+      if (selected && input) {
+        input.value = selected.prompt;
+        input.focus();
+      }
+    };
+  });
+}
+
+function renderExecutiveHistory() {
+  const holder = document.getElementById("executive-history");
   if (!holder) return;
 
-  if (!aiThread.length) {
-    holder.innerHTML = "";
+  if (!executiveHistory.length) {
+    holder.innerHTML = `<p class="executive-empty-history">No saved investigations yet.</p>`;
     return;
   }
 
-  holder.innerHTML = aiThread.map((msg) => `
-    <div class="ai-message ${msg.role}">
-      <div class="ai-message-role">${msg.role === "user" ? "You" : "AI Companion"}</div>
-      <div class="ai-message-body">${formatAiResponseBody(msg.content)}</div>
-    </div>
+  holder.innerHTML = executiveHistory.map((item, index) => `
+    <article class="executive-history-card">
+      <div>
+        <strong>${escapeHtml(item.title || `Investigation ${index + 1}`)}</strong>
+        <p>${escapeHtml(item.prompt).slice(0, 180)}${item.prompt.length > 180 ? "..." : ""}</p>
+      </div>
+      <button type="button" data-load-executive-history="${index}">Load</button>
+    </article>
   `).join("");
 
-  holder.scrollTop = holder.scrollHeight;
+  holder.querySelectorAll("[data-load-executive-history]").forEach((button) => {
+    button.onclick = () => {
+      const index = Number(button.getAttribute("data-load-executive-history"));
+      const item = executiveHistory[index];
+      if (!item) return;
+
+      const input = document.getElementById("executive-prompt-input");
+      const output = document.getElementById("executive-output");
+
+      if (input) input.value = item.prompt;
+      if (output) output.innerHTML = item.response;
+      executiveLastResponse = item.responseText || "";
+    };
+  });
 }
+
+async function runExecutiveStudioPrompt() {
+  const input = document.getElementById("executive-prompt-input");
+  const output = document.getElementById("executive-output");
+  const prompt = (input?.value || "").trim();
+
+  if (!prompt) {
+    if (output) output.innerHTML = `<p>Enter a KPI, SQL, or leadership question first.</p>`;
+    return;
+  }
+
+  if (output) output.innerHTML = `<p>Generating executive response...</p>`;
+
+  const reply = await requestAiCompanion(buildExecutivePrompt(prompt));
+  executiveLastResponse = reply;
+
+  if (output) {
+    output.innerHTML = `
+      <div class="executive-response-card">
+        <div class="executive-response-kicker">Executive Response</div>
+        ${formatAiResponseBody(reply)}
+      </div>
+    `;
+  }
+}
+
+function copyExecutiveResponse() {
+  const text = executiveLastResponse || document.getElementById("executive-output")?.innerText || "";
+  if (!text.trim()) return;
+
+  navigator.clipboard?.writeText(text);
+}
+
+function saveExecutiveInvestigation() {
+  const prompt = (document.getElementById("executive-prompt-input")?.value || "").trim();
+  const responseHtml = document.getElementById("executive-output")?.innerHTML || "";
+  const responseText = executiveLastResponse || document.getElementById("executive-output")?.innerText || "";
+
+  if (!prompt || !responseText.trim()) return;
+
+  executiveHistory.unshift({
+    title: prompt.slice(0, 70),
+    prompt,
+    response: responseHtml,
+    responseText,
+    savedAt: new Date().toISOString()
+  });
+
+  executiveHistory = executiveHistory.slice(0, 10);
+  renderExecutiveHistory();
+}
+
+function clearExecutiveStudio() {
+  const input = document.getElementById("executive-prompt-input");
+  const output = document.getElementById("executive-output");
+
+  if (input) input.value = "";
+  if (output) output.innerHTML = "";
+
+  executiveLastResponse = "";
+}
+
+function sendAiMessage(prefill = null) {
+  const input = document.getElementById("executive-prompt-input");
+  if (prefill && input) input.value = prefill;
+  return runExecutiveStudioPrompt();
+}
+
+function renderAiMessages() {
+  renderExecutiveHistory();
+}
+
 function clearAiChat() {
-  aiThread = [];
-  renderAiMessages();
+  clearExecutiveStudio();
 }
+
 function scrollToAiCompanion() {
-  showAiCompanionWorkspace();
-  document.getElementById("ai-companion-input")?.focus();
+  showExecutiveStudioWorkspace();
+  document.getElementById("executive-prompt-input")?.focus();
 }
+
 function updateAiContextBanner() {
-  if (!aiThread.length) renderAiMessages();
+  renderExecutivePromptLibrary();
+  renderExecutiveHistory();
 }
 function removeLevelsPanelOverviewButton() {
   const panel = document.getElementById("levels-panel");
