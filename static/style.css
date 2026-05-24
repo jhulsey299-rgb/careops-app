@@ -2754,24 +2754,35 @@ body:not(.sandbox-mode):not(.executive-mode):not(.glossary-mode) #levels-panel {
     top: 16px !important;
 }
 
-/* ================= FINAL MOBILE LAYOUT FIX ================= */
+/* ================= FINAL MOBILE REPAIR ================= */
 
-@media (max-width: 980px) {
+@media screen and (max-width: 980px) {
+    html,
     body {
-        padding: 10px !important;
+        width: 100% !important;
+        max-width: 100% !important;
         overflow-x: hidden !important;
     }
 
+    body {
+        padding: 10px !important;
+    }
+
     .app-shell {
-        display: flex !important;
-        flex-direction: column !important;
+        display: grid !important;
+        grid-template-columns: minmax(0, 1fr) !important;
         width: 100% !important;
         max-width: 100% !important;
+        min-width: 0 !important;
         gap: 14px !important;
+        margin: 0 !important;
+    }
+
+    #schema-resizer {
+        display: none !important;
     }
 
     .schema-panel {
-        order: 1 !important;
         width: 100% !important;
         min-width: 0 !important;
         max-width: 100% !important;
@@ -2779,64 +2790,161 @@ body:not(.sandbox-mode):not(.executive-mode):not(.glossary-mode) #levels-panel {
         top: auto !important;
         max-height: none !important;
         overflow-x: hidden !important;
-    }
-
-    #schema-resizer {
-        display: none !important;
+        padding: 16px !important;
     }
 
     .main-content {
-        order: 2 !important;
         width: 100% !important;
         min-width: 0 !important;
         max-width: 100% !important;
         padding-left: 0 !important;
+        margin: 0 !important;
+    }
+
+    .hero-banner,
+    .top-dashboard,
+    .dashboard-actions,
+    .badges-section,
+    .workspace-layout,
+    .play-area,
+    .track-overview-panel,
+    #lesson-workspace,
+    #sandbox-workspace,
+    #executive-workspace,
+    #glossary-workspace {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
     }
 
     .hero-banner {
-        width: 100% !important;
-        max-width: 100% !important;
-        margin-left: 0 !important;
-        margin-right: 0 !important;
-        padding: 22px 20px !important;
+        padding: 22px 18px !important;
+        border-radius: 18px !important;
+    }
+
+    .hero-title {
+        font-size: 1.75rem !important;
     }
 
     .workspace-layout {
         display: flex !important;
         flex-direction: column !important;
-        width: 100% !important;
-        max-width: 100% !important;
         gap: 16px !important;
     }
 
-    .play-area {
-        width: 100% !important;
-        max-width: 100% !important;
-        min-width: 0 !important;
+    .top-dashboard,
+    .track-overview-grid,
+    .executive-intelligence-grid,
+    .executive-studio-grid,
+    .executive-control-strip,
+    .executive-v2-controls,
+    .executive-v2-metrics,
+    .table-modal-meta {
+        display: grid !important;
+        grid-template-columns: minmax(0, 1fr) !important;
     }
 
-    #levels-panel,
-    .levels-panel,
-    .levels-panel.collapsed {
-        width: 100% !important;
-        min-width: 0 !important;
-        max-width: 100% !important;
-        position: static !important;
+    .track-overview-panel {
+        padding: 18px !important;
     }
 
-    .top-dashboard {
-        grid-template-columns: 1fr !important;
+    .track-overview-header {
+        display: block !important;
+    }
+
+    .track-overview-card {
+        width: 100% !important;
+        min-width: 0 !important;
     }
 
     .track-category-cards {
         display: grid !important;
-        grid-template-columns: 1fr !important;
+        grid-template-columns: minmax(0, 1fr) !important;
+        gap: 14px !important;
+        width: 100% !important;
     }
 
-    .track-category-cards > .track-badge-card {
+    .track-category-cards > .track-badge-card,
+    .track-category-cards > .track-badge-card:nth-child(1),
+    .track-category-cards > .track-badge-card:nth-child(2),
+    .track-category-cards > .track-badge-card:nth-child(3),
+    .track-category-cards > .track-badge-card:nth-child(4),
+    .track-category-cards > .track-badge-card:nth-child(5) {
         grid-column: auto !important;
         width: 100% !important;
         max-width: 100% !important;
+        min-width: 0 !important;
         margin-left: 0 !important;
+    }
+
+    .levels-panel,
+    .levels-panel.collapsed,
+    #levels-panel {
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+        position: static !important;
+        padding: 16px !important;
+    }
+
+    .levels-panel.collapsed #track-title {
+        writing-mode: initial !important;
+        transform: none !important;
+        text-align: left !important;
+        white-space: normal !important;
+    }
+
+    .levels-panel.collapsed .levels-list,
+    .levels-panel.collapsed #track-description,
+    .levels-panel.collapsed .side-panel-actions {
+        display: block !important;
+    }
+
+    .levels-list {
+        max-height: none !important;
+        overflow: visible !important;
+    }
+
+    .main-nav-actions,
+    .button-row,
+    .sandbox-toolbar,
+    .sandbox-mode-group,
+    .sandbox-actions-inline,
+    .executive-action-row,
+    .executive-v2-builder-row {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 10px !important;
+    }
+
+    .main-nav-actions button,
+    .button-row button,
+    .sandbox-mode-group button,
+    .sandbox-actions-inline button,
+    .executive-action-row button,
+    .executive-v2-builder-row button {
+        width: 100% !important;
+        flex: 1 1 auto !important;
+    }
+
+    textarea,
+    input,
+    select {
+        max-width: 100% !important;
+    }
+
+    .schema-card summary,
+    .schema-card p,
+    .track-overview-card,
+    .track-badge-card,
+    .levels-panel,
+    .mission-box,
+    .query-section,
+    .concept-card {
+        overflow-wrap: anywhere !important;
+        word-break: normal !important;
     }
 }
