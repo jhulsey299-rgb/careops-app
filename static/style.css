@@ -2190,26 +2190,26 @@ body.sandbox-mode .sandbox-shell,
     }
 
     .workspace-layout {
-        grid-template-columns: 1fr;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 270px;
+        gap: 18px;
+        align-items: start;
     }
 
-    .levels-panel,
+    .levels-panel {
+        width: 270px;
+        min-width: 270px;
+        max-width: 270px;
+        position: sticky;
+        top: 16px;
+    }
+
     .levels-panel.collapsed {
-        width: 100%;
-        min-width: 0;
-        max-width: none;
-        position: static;
-    }
-
-    .levels-panel.collapsed #track-title {
-        writing-mode: initial;
-        transform: none;
-    }
-
-    .levels-panel.collapsed .levels-list,
-    .levels-panel.collapsed #track-description,
-    .levels-panel.collapsed .side-panel-actions {
-        display: block;
+        width: 64px;
+        min-width: 64px;
+        max-width: 64px;
+        position: sticky;
+        top: 16px;
     }
 
     .table-modal-meta,
@@ -2299,6 +2299,17 @@ body.sandbox-mode .sandbox-shell,
         position: static !important;
     }
 
+    .levels-panel.collapsed #track-title {
+        writing-mode: initial;
+        transform: none;
+    }
+
+    .levels-panel.collapsed .levels-list,
+    .levels-panel.collapsed #track-description,
+    .levels-panel.collapsed .side-panel-actions {
+        display: block;
+    }
+
     .main-nav-actions,
     .button-row,
     .sandbox-toolbar,
@@ -2351,7 +2362,6 @@ body.sandbox-mode .sandbox-shell,
         flex: 1 1 calc(50% - 8px);
     }
 }
-
 /* ======================================================
    CAREOPS v1.1 ENTERPRISE EXECUTIVE STUDIO
 ====================================================== */
