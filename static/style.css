@@ -2753,3 +2753,90 @@ body:not(.sandbox-mode):not(.executive-mode):not(.glossary-mode) #levels-panel {
     position: sticky !important;
     top: 16px !important;
 }
+
+/* ================= FINAL MOBILE LAYOUT FIX ================= */
+
+@media (max-width: 980px) {
+    body {
+        padding: 10px !important;
+        overflow-x: hidden !important;
+    }
+
+    .app-shell {
+        display: flex !important;
+        flex-direction: column !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        gap: 14px !important;
+    }
+
+    .schema-panel {
+        order: 1 !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+        position: static !important;
+        top: auto !important;
+        max-height: none !important;
+        overflow-x: hidden !important;
+    }
+
+    #schema-resizer {
+        display: none !important;
+    }
+
+    .main-content {
+        order: 2 !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+        padding-left: 0 !important;
+    }
+
+    .hero-banner {
+        width: 100% !important;
+        max-width: 100% !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        padding: 22px 20px !important;
+    }
+
+    .workspace-layout {
+        display: flex !important;
+        flex-direction: column !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        gap: 16px !important;
+    }
+
+    .play-area {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+    }
+
+    #levels-panel,
+    .levels-panel,
+    .levels-panel.collapsed {
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+        position: static !important;
+    }
+
+    .top-dashboard {
+        grid-template-columns: 1fr !important;
+    }
+
+    .track-category-cards {
+        display: grid !important;
+        grid-template-columns: 1fr !important;
+    }
+
+    .track-category-cards > .track-badge-card {
+        grid-column: auto !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        margin-left: 0 !important;
+    }
+}
