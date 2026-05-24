@@ -9612,19 +9612,200 @@ function getExecutiveContext() {
     facility: safeValue("executive-context-facility"),
     department: safeValue("executive-context-department"),
     payer: safeValue("executive-context-payer"),
-    timeframe: safeValue("executive-context-timeframe")
+    timeframe: safeValue("executive-context-timeframe"),
+    currentValue: safeValue("executive-current-value"),
+    targetValue: safeValue("executive-target-value"),
+    volumeValue: safeValue("executive-volume-value"),
+    dollarValue: safeValue("executive-dollar-value")
   };
+}
+
+function parseExecutiveMetricNumber(value) {
+  const cleaned = String(value || "").replace(/[$,%\s,]/g, "");
+  const number = Number(cleaned);
+  return Number.isFinite(number) ? number : null;
+}
+
+function getExecutiveBenchmarkStatus(kpi, context) {
+  const current = parseExecutiveMetricNumber(context.currentValue);
+  const target = parseExecutiveMetricNumber(context.targetValue);
+
+  if (!kpi || current === null || target === null) {
+    return {
+      label: "Needs Values",
+      className: "neutral",
+      message: "Enter current and target values to calculate benchmark status."
+    };
+  }
+
+  const direction = String(kpi.targetDirection || "").toLowerCase();
+  const lowerIsBetter = direction.includes("lower");
+  const higherIsBetter = direction.includes("higher");
+
+  let favorable = false;
+  let unfavorable = false;
+
+  if (lowerIsBetter) {
+    favorable = current <= target;
+    unfavorable = current > target;
+  } else if (higherIsBetter) {
+    favorable = current >= target;
+    unfavorable = current < target;
+  } else {
+    const variance = Math.abs(current - target);
+    favorable = variance <= Math.abs(target) * 0.05;
+    unfavorable = !favorable;
+  }
+
+  const variance = current - target;
+  const varianceText = `${variance > 0 ? "+" : ""}${variance.toFixed(2)}`;
+
+  if (favorable) {
+    return {
+      label: "On Target",
+      className: "good",
+      message: `Current value ${current} is favorable against target ${target}. Variance: ${varianceText}.`
+    };
+  }
+
+  if (unfavorable) {
+    return {
+      label: "Needs Review",
+      className: "risk",
+      message: `Current value ${current} is unfavorable against target ${target}. Variance: ${varianceText}.`
+    };
+  }
+
+  return {
+    label: "Review",
+    className: "watch",
+    message: `Current value ${current} compared with target ${target}. Variance: ${varianceText}.`
+  };
+}
+
+function buildExecutiveBriefPrompt() {
+  const kpi = getSelectedKpi();
+  const context = getExecutiveContext();
+  const input = safeElement("executive-prompt-input");
+
+  if (!kpi) {
+    if (input) {
+      input.value = "Select a KPI first, then build an executive brief prompt.";
+      input.focus();
+    }
+    return;
+  }
+
+  const status = getExecutiveBenchmarkStatus(kpi, context);
+
+  const prompt = [
+    `Investigate ${kpi.title}.`,
+    "",
+    "Use the following context:",
+    `Facility: ${context.facility || "All facilities"}`,
+    `Department / service line: ${context.department || "All departments"}`,
+    `Payer / segment: ${context.payer || "All payers"}`,
+    `Timeframe: ${context.timeframe || "Not specified"}`,
+    `Current value: ${context.currentValue || "Not entered"}`,
+    `Target / benchmark: ${context.targetValue || "Not entered"}`,
+    `Volume / cases: ${context.volumeValue || "Not entered"}`,
+    `Dollars at risk: ${context.dollarValue || "Not entered"}`,
+    `Calculated status: ${status.label}`,
+    "",
+    "Create an executive-ready brief with:",
+    "1. KPI definition",
+    "2. Current status and benchmark framing",
+    "3. Why this matters for safety, quality, operations, access, finance, or experience",
+    "4. Most likely operational drivers",
+    "5. Data validation checks",
+    "6. SQL/data logic needed",
+    "7. Recommended segmentation",
+    "8. Immediate actions",
+    "9. Executive summary with leadership next steps"
+  ].join("\n");
+
+  if (input) {
+    input.value = prompt;
+    input.focus();
+  }
+}
+
+function copyExecutiveStarterSql() {
+  const kpi = getSelectedKpi();
+  const sql = kpi?.starterSql || "";
+  if (!sql.trim()) return;
+  navigator.clipboard?.writeText(sql);
+}
+
+function loadExecutiveSqlToSandbox() {
+  const kpi = getSelectedKpi();
+  if (!kpi?.starterSql) return;
+
+  appState.currentView = "sql-lab";
+  showSqlLabWorkspace();
+
+  const sandboxQuery = safeElement("sandbox-query");
+  if (sandboxQuery) {
+    sandboxQuery.value = kpi.starterSql;
+    sandboxQuery.focus();
+  }
+
+  saveProgress();
+}
+
+function exportExecutiveBrief() {
+  const kpi = getSelectedKpi();
+  const context = getExecutiveContext();
+  const outputText = safeElement("executive-output")?.innerText || "";
+  const prompt = safeElement("executive-prompt-input")?.value || "";
+
+  const content = [
+    "CAREOPS Executive Studio Brief",
+    "================================",
+    "",
+    `KPI: ${kpi?.title || "Not selected"}`,
+    `Facility: ${context.facility || "All facilities"}`,
+    `Department / Service Line: ${context.department || "All departments"}`,
+    `Payer / Segment: ${context.payer || "All payers"}`,
+    `Timeframe: ${context.timeframe || "Not specified"}`,
+    `Current Value: ${context.currentValue || "Not entered"}`,
+    `Target / Benchmark: ${context.targetValue || "Not entered"}`,
+    `Volume / Cases: ${context.volumeValue || "Not entered"}`,
+    `Dollars at Risk: ${context.dollarValue || "Not entered"}`,
+    "",
+    "Prompt",
+    "------",
+    prompt || "No prompt entered.",
+    "",
+    "Executive Response",
+    "------------------",
+    outputText || "No response generated yet."
+  ].join("\n");
+
+  const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `careops-executive-brief-${new Date().toISOString().slice(0, 10)}.txt`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
 }
 
 function buildExecutivePrompt(userPrompt) {
   const selectedKpi = getSelectedKpi() || inferKpiFromPrompt(userPrompt);
   const context = getExecutiveContext();
+  const status = getExecutiveBenchmarkStatus(selectedKpi, context);
+
   const kpiDetails = selectedKpi ? [
     `Selected KPI: ${selectedKpi.title}`,
     `Definition: ${selectedKpi.definition}`,
     `Why it matters: ${selectedKpi.why}`,
     `Benchmark: ${selectedKpi.benchmark}`,
     `Target direction: ${selectedKpi.targetDirection}`,
+    `Calculated status: ${status.label}`,
+    `Status message: ${status.message}`,
     `Likely drivers: ${selectedKpi.drivers.join(", ")}`,
     `Recommended segmentation: ${selectedKpi.dimensions.join(", ")}`,
     `SQL focus: ${selectedKpi.sqlFocus.join(", ")}`,
@@ -9643,6 +9824,10 @@ function buildExecutivePrompt(userPrompt) {
     `Department or service line: ${context.department || "All / not specified"}`,
     `Payer or segment: ${context.payer || "All / not specified"}`,
     `Timeframe: ${context.timeframe || "Not specified"}`,
+    `Current value: ${context.currentValue || "Not entered"}`,
+    `Target / benchmark: ${context.targetValue || "Not entered"}`,
+    `Volume / cases: ${context.volumeValue || "Not entered"}`,
+    `Dollars at risk: ${context.dollarValue || "Not entered"}`,
     "",
     "Structure the response with:",
     "1. KPI definition",
@@ -9665,13 +9850,16 @@ function renderExecutiveKpiSelect() {
 
   const current = select.value || executiveSelectedKpiId;
   const categories = Array.from(new Set(CAREOPS_KPI_REGISTRY.map((kpi) => kpi.category)));
+
   select.innerHTML = `<option value="">Choose a KPI investigation...</option>` + categories.map((category) => {
     const options = CAREOPS_KPI_REGISTRY
       .filter((kpi) => kpi.category === category)
       .map((kpi) => `<option value="${escapeHtml(kpi.id)}">${escapeHtml(kpi.title)}</option>`)
       .join("");
+
     return `<optgroup label="${escapeHtml(category)}">${options}</optgroup>`;
   }).join("");
+
   select.value = current;
 
   if (!select.dataset.bound) {
@@ -9680,9 +9868,11 @@ function renderExecutiveKpiSelect() {
       executiveSelectedKpiId = select.value || "";
       const kpi = getSelectedKpi();
       const input = safeElement("executive-prompt-input");
+
       if (kpi && input && !input.value.trim()) {
-        input.value = `Investigate ${kpi.title}. Explain current performance, why it matters, likely drivers, data validation, SQL logic, recommendations, and executive summary.`;
+        input.value = `Investigate ${kpi.title}. Explain current performance, benchmark status, why it matters, likely drivers, data validation, SQL logic, recommendations, and executive summary.`;
       }
+
       renderExecutiveIntelligencePanels();
     });
   }
@@ -9690,11 +9880,25 @@ function renderExecutiveKpiSelect() {
 
 function renderExecutiveIntelligencePanels() {
   const kpi = getSelectedKpi();
+  const context = getExecutiveContext();
+  const status = getExecutiveBenchmarkStatus(kpi, context);
 
   if (!kpi) {
-    setSafeHtml("executive-benchmark-panel", `<h3>Benchmark Intelligence</h3><p>Select a KPI to see target direction, benchmark framing, and leadership risk.</p>`);
-    setSafeHtml("executive-driver-panel", `<h3>Operational Drivers</h3><p>Select a KPI to see likely drivers and where to investigate first.</p>`);
-    setSafeHtml("executive-sql-panel", `<h3>SQL / Data Logic</h3><p>Select a KPI to see source tables, segmentation cuts, and starter query logic.</p>`);
+    setSafeHtml("executive-benchmark-panel", `
+      <h3>Benchmark Intelligence</h3>
+      <p>Select a KPI and optionally enter current/target values to calculate status framing.</p>
+    `);
+
+    setSafeHtml("executive-driver-panel", `
+      <h3>Operational Drivers</h3>
+      <p>Select a KPI to see likely operational, clinical, financial, or workforce drivers.</p>
+    `);
+
+    setSafeHtml("executive-sql-panel", `
+      <h3>SQL / Data Logic</h3>
+      <p>Select a KPI to see source tables, segmentation cuts, and starter query logic.</p>
+    `);
+
     return;
   }
 
@@ -9704,6 +9908,12 @@ function renderExecutiveIntelligencePanels() {
       <span>${escapeHtml(kpi.category)}</span>
       <span>${escapeHtml(kpi.targetDirection)}</span>
     </div>
+
+    <div class="executive-status-card executive-status-${escapeHtml(status.className)}">
+      <strong>${escapeHtml(status.label)}</strong>
+      <p>${escapeHtml(status.message)}</p>
+    </div>
+
     <p><strong>Definition:</strong> ${escapeHtml(kpi.definition)}</p>
     <p><strong>Benchmark framing:</strong> ${escapeHtml(kpi.benchmark)}</p>
     <p><strong>Why it matters:</strong> ${escapeHtml(kpi.why)}</p>
@@ -9712,8 +9922,12 @@ function renderExecutiveIntelligencePanels() {
   setSafeHtml("executive-driver-panel", `
     <h3>Operational Drivers</h3>
     ${listToHtml(kpi.drivers, "executive-driver-list")}
+
     <h4>Recommended Actions</h4>
     ${listToHtml(kpi.actions, "executive-action-list")}
+
+    <h4>Best First Cuts</h4>
+    ${listToHtml(kpi.dimensions.slice(0, 6), "executive-driver-list")}
   `);
 
   setSafeHtml("executive-sql-panel", `
@@ -9765,14 +9979,17 @@ function renderExecutivePromptLibrary() {
       const promptId = button.getAttribute("data-exec-prompt-id");
       const selected = EXECUTIVE_PROMPT_LIBRARY.find((item) => item.id === promptId);
       const input = safeElement("executive-prompt-input");
+
       if (selected && input) {
         input.value = selected.prompt;
+
         if (selected.kpiId) {
           executiveSelectedKpiId = selected.kpiId;
           const select = safeElement("executive-kpi-select");
           if (select) select.value = selected.kpiId;
           renderExecutiveIntelligencePanels();
         }
+
         input.focus();
       }
     };
