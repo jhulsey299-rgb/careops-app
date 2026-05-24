@@ -10248,6 +10248,35 @@ function initUiActions() {
 
   const clearExecutiveBtn = document.getElementById("clear-executive-btn");
   if (clearExecutiveBtn) clearExecutiveBtn.onclick = clearExecutiveStudio;
+
+  const buildBriefBtn = document.getElementById("build-executive-brief-btn");
+  if (buildBriefBtn) buildBriefBtn.onclick = buildExecutiveBriefPrompt;
+
+  const copySqlBtn = document.getElementById("copy-executive-sql-btn");
+  if (copySqlBtn) copySqlBtn.onclick = copyExecutiveStarterSql;
+
+  const loadSqlBtn = document.getElementById("load-executive-sql-btn");
+  if (loadSqlBtn) loadSqlBtn.onclick = loadExecutiveSqlToSandbox;
+
+  const exportBriefBtn = document.getElementById("export-executive-brief-btn");
+  if (exportBriefBtn) exportBriefBtn.onclick = exportExecutiveBrief;
+
+  [
+    "executive-current-value",
+    "executive-target-value",
+    "executive-volume-value",
+    "executive-dollar-value",
+    "executive-context-facility",
+    "executive-context-department",
+    "executive-context-payer",
+    "executive-context-timeframe"
+  ].forEach((id) => {
+    const el = document.getElementById(id);
+    if (el && !el.dataset.executiveBound) {
+      el.dataset.executiveBound = "true";
+      el.addEventListener("input", renderExecutiveIntelligencePanels);
+    }
+  });
 }
 function attachPersistentNavigationDelegates() {
   if (window.__careopsNavDelegatePatchedV5) return;
