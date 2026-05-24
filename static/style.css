@@ -2611,3 +2611,112 @@ body.sandbox-mode .sandbox-shell,
         max-height: none;
     }
 }
+/* ================= EXECUTIVE STUDIO V2 ================= */
+
+.executive-v2-controls,
+.executive-v2-metrics {
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)) !important;
+}
+
+.executive-v2-builder-row {
+    margin: 0 0 18px !important;
+    padding: 16px !important;
+    background: #ffffff !important;
+    border: 1px solid var(--border) !important;
+    border-radius: var(--radius-lg) !important;
+    box-shadow: var(--shadow-sm) !important;
+}
+
+.executive-v2-builder-row button {
+    flex: 1 1 180px !important;
+}
+
+.executive-status-card {
+    border-radius: 14px;
+    padding: 14px;
+    margin: 12px 0;
+    border: 1px solid var(--border);
+}
+
+.executive-status-card strong {
+    display: block;
+    margin-bottom: 4px;
+    font-size: 0.98rem;
+}
+
+.executive-status-card p {
+    margin: 0;
+}
+
+.executive-status-good {
+    background: #f0fdf4;
+    border-color: #86efac;
+}
+
+.executive-status-good strong {
+    color: #166534;
+}
+
+.executive-status-risk {
+    background: #fef2f2;
+    border-color: #fca5a5;
+}
+
+.executive-status-risk strong {
+    color: #991b1b;
+}
+
+.executive-status-watch {
+    background: #fffbeb;
+    border-color: #fde68a;
+}
+
+.executive-status-watch strong {
+    color: #92400e;
+}
+
+.executive-status-neutral {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+}
+
+.executive-status-neutral strong {
+    color: #475569;
+}
+
+.executive-intel-card h4 {
+    margin-top: 16px;
+    margin-bottom: 8px;
+}
+
+.executive-driver-list,
+.executive-action-list {
+    padding-left: 20px;
+}
+
+.executive-driver-list li,
+.executive-action-list li {
+    margin: 7px 0;
+}
+
+.executive-sql-sample {
+    white-space: pre-wrap;
+    overflow-x: auto;
+    background: #0f172a;
+    color: #e2e8f0;
+    border-radius: 14px;
+    padding: 14px;
+    margin-top: 12px;
+}
+
+.executive-sql-sample code {
+    background: transparent;
+    color: inherit;
+    padding: 0;
+}
+
+@media (max-width: 900px) {
+    .executive-v2-builder-row button {
+        flex: 1 1 100% !important;
+    }
+}
