@@ -313,95 +313,126 @@ Or use Guided Prompts to load KPI investigations like denial exposure, LOS press
                     </section>
 
                     <section id="executive-workspace" class="hidden executive-workspace">
-                        <div class="mission-box workspace-hero-card executive-hero-card">
-                            <div class="mission-meta-row">
-                                <span class="lesson-type-badge lesson-type-scenario">Executive Studio</span>
-                                <span class="difficulty-badge difficulty-advanced">KPI + SQL + Strategy</span>
-                            </div>
+    <div class="mission-box workspace-hero-card executive-hero-card">
+        <div class="mission-meta-row">
+            <span class="lesson-type-badge lesson-type-scenario">Executive Studio v2</span>
+            <span class="difficulty-badge difficulty-advanced">KPI + Benchmark + Drivers + SQL</span>
+        </div>
 
-                            <p class="track-label">CareOps Intelligence</p>
-                            <h2>Executive KPI Strategy Studio</h2>
-                            <p>Move from KPI question to diagnosis, operational drivers, SQL starter logic, recommendations, and executive-ready communication.</p>
-                        </div>
+        <p class="track-label">CareOps Intelligence</p>
+        <h2>Executive KPI Investigation Studio</h2>
+        <p>Move from KPI selection to benchmark status, operational drivers, SQL/data logic, recommended actions, and executive-ready communication.</p>
+    </div>
 
-                        <div class="executive-control-strip">
-                            <div>
-                                <label for="executive-kpi-select" class="query-label">KPI / Investigation Type</label>
-                                <select id="executive-kpi-select" class="executive-select">
-                                    <option value="">Choose a KPI investigation...</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label for="executive-context-facility" class="query-label">Facility</label>
-                                <input id="executive-context-facility" class="executive-input" type="text" placeholder="All facilities" />
-                            </div>
-                            <div>
-                                <label for="executive-context-department" class="query-label">Department / Service Line</label>
-                                <input id="executive-context-department" class="executive-input" type="text" placeholder="All departments" />
-                            </div>
-                            <div>
-                                <label for="executive-context-payer" class="query-label">Payer / Segment</label>
-                                <input id="executive-context-payer" class="executive-input" type="text" placeholder="All payers" />
-                            </div>
-                            <div>
-                                <label for="executive-context-timeframe" class="query-label">Timeframe</label>
-                                <input id="executive-context-timeframe" class="executive-input" type="text" placeholder="Last 30/90 days" />
-                            </div>
-                        </div>
+    <div class="executive-control-strip executive-v2-controls">
+        <div>
+            <label for="executive-kpi-select" class="query-label">KPI / Investigation Type</label>
+            <select id="executive-kpi-select" class="executive-select">
+                <option value="">Choose a KPI investigation...</option>
+            </select>
+        </div>
 
-                        <div class="executive-intelligence-grid">
-                            <section class="executive-intel-card" id="executive-benchmark-panel">
-                                <h3>Benchmark Intelligence</h3>
-                                <p>Select a KPI to see target direction, benchmark framing, and leadership risk.</p>
-                            </section>
+        <div>
+            <label for="executive-context-facility" class="query-label">Facility</label>
+            <input id="executive-context-facility" class="executive-input" type="text" placeholder="All facilities" />
+        </div>
 
-                            <section class="executive-intel-card" id="executive-driver-panel">
-                                <h3>Operational Drivers</h3>
-                                <p>Select a KPI to see likely drivers and where to investigate first.</p>
-                            </section>
+        <div>
+            <label for="executive-context-department" class="query-label">Department / Service Line</label>
+            <input id="executive-context-department" class="executive-input" type="text" placeholder="All departments" />
+        </div>
 
-                            <section class="executive-intel-card" id="executive-sql-panel">
-                                <h3>SQL / Data Logic</h3>
-                                <p>Select a KPI to see source tables, segmentation cuts, and starter query logic.</p>
-                            </section>
-                        </div>
+        <div>
+            <label for="executive-context-payer" class="query-label">Payer / Segment</label>
+            <input id="executive-context-payer" class="executive-input" type="text" placeholder="All payers" />
+        </div>
 
-                        <div class="executive-studio-grid">
-                            <aside class="executive-prompt-panel concept-card">
-                                <h3>Executive Prompt Packs</h3>
-                                <p>Select a KPI or investigation pack to load a strong executive prompt.</p>
+        <div>
+            <label for="executive-context-timeframe" class="query-label">Timeframe</label>
+            <input id="executive-context-timeframe" class="executive-input" type="text" placeholder="Last 30/90 days" />
+        </div>
+    </div>
 
-                                <div id="executive-category-tabs" class="executive-category-tabs"></div>
-                                <div id="executive-prompt-library" class="executive-prompt-library"></div>
-                            </aside>
+    <div class="executive-control-strip executive-v2-metrics">
+        <div>
+            <label for="executive-current-value" class="query-label">Current Value</label>
+            <input id="executive-current-value" class="executive-input" type="text" placeholder="Example: 11.8 or 48" />
+        </div>
 
-                            <section class="query-section executive-main-panel">
-                                <h3>Executive Prompt</h3>
+        <div>
+            <label for="executive-target-value" class="query-label">Target / Benchmark</label>
+            <input id="executive-target-value" class="executive-input" type="text" placeholder="Example: 9.4 or 40" />
+        </div>
 
-                                <textarea
-                                    id="executive-prompt-input"
-                                    rows="10"
-                                    placeholder="Ask about a KPI, SQL logic, operational diagnosis, denial prevention, throughput, patient safety, quality performance, or executive communication."
-                                ></textarea>
+        <div>
+            <label for="executive-volume-value" class="query-label">Volume / Cases</label>
+            <input id="executive-volume-value" class="executive-input" type="text" placeholder="Optional case count" />
+        </div>
 
-                                <div class="button-row executive-action-row">
-                                    <button type="button" id="run-executive-btn">Generate Executive Response</button>
-                                    <button type="button" id="copy-executive-btn">Copy Response</button>
-                                    <button type="button" id="save-executive-btn">Save Investigation</button>
-                                    <button type="button" id="clear-executive-btn">Clear</button>
-                                </div>
+        <div>
+            <label for="executive-dollar-value" class="query-label">Dollars at Risk</label>
+            <input id="executive-dollar-value" class="executive-input" type="text" placeholder="Optional financial exposure" />
+        </div>
+    </div>
 
-                                <div id="executive-output"></div>
+    <div class="button-row executive-v2-builder-row">
+        <button type="button" id="build-executive-brief-btn">Build Brief Prompt</button>
+        <button type="button" id="copy-executive-sql-btn">Copy Starter SQL</button>
+        <button type="button" id="load-executive-sql-btn">Load SQL in Lab</button>
+        <button type="button" id="export-executive-brief-btn">Export Brief</button>
+    </div>
 
-                                <div class="executive-history-wrap">
-                                    <h3>Saved Investigations</h3>
-                                    <div id="executive-history"></div>
-                                </div>
-                            </section>
-                        </div>
-                    </section>
-                </section>
+    <div class="executive-intelligence-grid">
+        <section class="executive-intel-card" id="executive-benchmark-panel">
+            <h3>Benchmark Intelligence</h3>
+            <p>Select a KPI and optionally enter current/target values to calculate status framing.</p>
+        </section>
 
+        <section class="executive-intel-card" id="executive-driver-panel">
+            <h3>Operational Drivers</h3>
+            <p>Select a KPI to see likely operational, clinical, financial, or workforce drivers.</p>
+        </section>
+
+        <section class="executive-intel-card" id="executive-sql-panel">
+            <h3>SQL / Data Logic</h3>
+            <p>Select a KPI to see source tables, segmentation cuts, and starter query logic.</p>
+        </section>
+    </div>
+
+    <div class="executive-studio-grid">
+        <aside class="executive-prompt-panel concept-card">
+            <h3>Executive Prompt Packs</h3>
+            <p>Select a KPI or investigation pack to load a strong executive prompt.</p>
+
+            <div id="executive-category-tabs" class="executive-category-tabs"></div>
+            <div id="executive-prompt-library" class="executive-prompt-library"></div>
+        </aside>
+
+        <section class="query-section executive-main-panel">
+            <h3>Executive Prompt</h3>
+
+            <textarea
+                id="executive-prompt-input"
+                rows="10"
+                placeholder="Ask about a KPI, SQL logic, operational diagnosis, denial prevention, throughput, patient safety, quality performance, or executive communication."
+            ></textarea>
+
+            <div class="button-row executive-action-row">
+                <button type="button" id="run-executive-btn">Generate Executive Response</button>
+                <button type="button" id="copy-executive-btn">Copy Response</button>
+                <button type="button" id="save-executive-btn">Save Investigation</button>
+                <button type="button" id="clear-executive-btn">Clear</button>
+            </div>
+
+            <div id="executive-output"></div>
+
+            <div class="executive-history-wrap">
+                <h3>Saved Investigations</h3>
+                <div id="executive-history"></div>
+            </div>
+        </section>
+    </div>
+</section>
                 <aside class="levels-panel" id="levels-panel">
                     <div class="levels-panel-header">
                         <div class="levels-panel-title-row">
