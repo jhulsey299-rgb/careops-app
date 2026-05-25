@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CAREOPS - Clinical Analytics for Revenue, Efficiency, and Operational Performance Solutions</title>
-    <link rel="stylesheet" href="/static/style.css?v=mobile-fix-1">
+    <link rel="stylesheet" href="/static/style.css?v=mobile-fix-2">
 </head>
 
 <body>
@@ -53,14 +53,10 @@
                         <span class="xp-label">Analyst Level 1</span>
                         <span class="xp-points">0 XP</span>
                     </div>
-
                     <div class="xp-bar">
                         <div class="xp-bar-fill" style="width:0%"></div>
                     </div>
-
-                    <div class="xp-status-sub">
-                        100 XP to Level 2
-                    </div>
+                    <div class="xp-status-sub">100 XP to Level 2</div>
                 </div>
 
                 <div class="dashboard-card">
@@ -77,7 +73,7 @@
                 </div>
             </section>
 
-         <div class="dashboard-actions main-nav-actions">
+            <div class="dashboard-actions main-nav-actions">
                 <button type="button" id="nav-overview-btn">Track Overview</button>
                 <button type="button" id="nav-sandbox-btn">SQL Lab</button>
                 <button type="button" id="nav-executive-btn">Executive Studio</button>
@@ -165,25 +161,10 @@
                                 <h3>Concept Lesson</h3>
                                 <p>Review the concept, example, and analyst takeaway before moving on.</p>
                             </div>
-
-                            <div class="concept-card">
-                                <h4>Summary</h4>
-                                <p id="concept-summary"></p>
-                            </div>
-
-                            <div class="concept-card">
-                                <h4>Key Points</h4>
-                                <ul id="concept-bullets"></ul>
-                            </div>
-
-                            <div class="concept-card">
-                                <h4>Hospital Example</h4>
-                                <p id="concept-example"></p>
-                            </div>
-
-                            <div class="button-row">
-                                <button type="button" onclick="markConceptComplete()">Mark Complete</button>
-                            </div>
+                            <div class="concept-card"><h4>Summary</h4><p id="concept-summary"></p></div>
+                            <div class="concept-card"><h4>Key Points</h4><ul id="concept-bullets"></ul></div>
+                            <div class="concept-card"><h4>Hospital Example</h4><p id="concept-example"></p></div>
+                            <div class="button-row"><button type="button" onclick="markConceptComplete()">Mark Complete</button></div>
                         </div>
 
                         <div id="challenge-content" class="query-section hidden">
@@ -191,15 +172,12 @@
                                 <h3>Challenge Lesson</h3>
                                 <p>Write your SQL query and validate it against the lesson objective.</p>
                             </div>
-
                             <label for="query" class="query-label">Write your SQL query:</label>
                             <textarea id="query" rows="8" cols="80" spellcheck="false" autocomplete="off" autocapitalize="off"></textarea>
-
                             <div class="button-row">
                                 <button type="button" onclick="runQuery()">Run Query</button>
                                 <button type="button" onclick="resetQuery()">Reset Query</button>
                             </div>
-
                             <div id="feedback" aria-live="polite"></div>
                             <div id="output" aria-live="polite"></div>
                         </div>
@@ -209,25 +187,14 @@
                                 <h3>Scenario Lesson</h3>
                                 <p>Respond to the scenario using the data context provided.</p>
                             </div>
-
-                            <div class="concept-card">
-                                <h4>Scenario Summary</h4>
-                                <p id="scenario-summary"></p>
-                            </div>
-
-                            <div class="concept-card">
-                                <h4>Prompt</h4>
-                                <p id="scenario-prompt"></p>
-                            </div>
-
+                            <div class="concept-card"><h4>Scenario Summary</h4><p id="scenario-summary"></p></div>
+                            <div class="concept-card"><h4>Prompt</h4><p id="scenario-prompt"></p></div>
                             <label for="scenario-response" class="query-label">Your response:</label>
                             <textarea id="scenario-response" rows="6" cols="80"></textarea>
-
                             <div class="button-row">
                                 <button type="button" onclick="submitScenario()">Submit Scenario</button>
                                 <button type="button" onclick="resetScenario()">Reset Response</button>
                             </div>
-
                             <div id="scenario-feedback" aria-live="polite"></div>
                         </div>
 
@@ -265,7 +232,6 @@
                                         <button type="button" id="sandbox-free-btn" class="active">Free Play</button>
                                         <button type="button" id="sandbox-guided-btn">Guided Prompts</button>
                                     </div>
-
                                     <div class="sandbox-actions-inline">
                                         <button type="button" id="run-sandbox-btn">Run Sandbox Query</button>
                                         <button type="button" id="reset-sandbox-btn">Reset</button>
@@ -273,13 +239,7 @@
                                 </div>
 
                                 <div class="concept-card sandbox-lesson-context hidden" id="sandbox-lesson-context">
-                                    <div class="sandbox-context-header">
-                                        <div>
-                                            <div class="table-modal-kicker">Guided Prompt Context</div>
-                                            <h4 id="sandbox-lesson-title">Choose a guided prompt.</h4>
-                                        </div>
-                                    </div>
-
+                                    <div class="sandbox-context-header"><div><div class="table-modal-kicker">Guided Prompt Context</div><h4 id="sandbox-lesson-title">Choose a guided prompt.</h4></div></div>
                                     <p id="sandbox-lesson-objective">Select a guided prompt to load its objective, SQL starter pattern, and related tables.</p>
                                     <div id="sandbox-lesson-tables" class="sandbox-schema-list"></div>
                                 </div>
@@ -292,19 +252,10 @@
 
                                 <div class="query-section">
                                     <label for="sandbox-query" class="query-label">Sandbox SQL</label>
-                                    <textarea
-                                        id="sandbox-query"
-                                        rows="10"
-                                        cols="80"
-                                        spellcheck="false"
-                                        autocomplete="off"
-                                        autocapitalize="off"
-                                        placeholder="Try:
+                                    <textarea id="sandbox-query" rows="10" cols="80" spellcheck="false" autocomplete="off" autocapitalize="off" placeholder="Try:
 SELECT * FROM encounters LIMIT 10;
 
-Or use Guided Prompts to load KPI investigations like denial exposure, LOS pressure, observation stays, readmissions, or no-show analysis."
-                                    ></textarea>
-
+Or use Guided Prompts to load KPI investigations like denial exposure, LOS pressure, observation stays, readmissions, or no-show analysis."></textarea>
                                     <div id="sandbox-feedback" aria-live="polite"></div>
                                     <div id="sandbox-output" aria-live="polite"></div>
                                 </div>
@@ -313,126 +264,68 @@ Or use Guided Prompts to load KPI investigations like denial exposure, LOS press
                     </section>
 
                     <section id="executive-workspace" class="hidden executive-workspace">
-    <div class="mission-box workspace-hero-card executive-hero-card">
-        <div class="mission-meta-row">
-            <span class="lesson-type-badge lesson-type-scenario">Executive Studio v2</span>
-            <span class="difficulty-badge difficulty-advanced">KPI + Benchmark + Drivers + SQL</span>
-        </div>
+                        <div class="mission-box workspace-hero-card executive-hero-card">
+                            <div class="mission-meta-row">
+                                <span class="lesson-type-badge lesson-type-scenario">Executive Studio v2</span>
+                                <span class="difficulty-badge difficulty-advanced">KPI + Benchmark + Drivers + SQL</span>
+                            </div>
+                            <p class="track-label">CareOps Intelligence</p>
+                            <h2>Executive KPI Investigation Studio</h2>
+                            <p>Move from KPI selection to benchmark status, operational drivers, SQL/data logic, recommended actions, and executive-ready communication.</p>
+                        </div>
 
-        <p class="track-label">CareOps Intelligence</p>
-        <h2>Executive KPI Investigation Studio</h2>
-        <p>Move from KPI selection to benchmark status, operational drivers, SQL/data logic, recommended actions, and executive-ready communication.</p>
-    </div>
+                        <div class="executive-control-strip executive-v2-controls">
+                            <div><label for="executive-kpi-select" class="query-label">KPI / Investigation Type</label><select id="executive-kpi-select" class="executive-select"><option value="">Choose a KPI investigation...</option></select></div>
+                            <div><label for="executive-context-facility" class="query-label">Facility</label><input id="executive-context-facility" class="executive-input" type="text" placeholder="All facilities" /></div>
+                            <div><label for="executive-context-department" class="query-label">Department / Service Line</label><input id="executive-context-department" class="executive-input" type="text" placeholder="All departments" /></div>
+                            <div><label for="executive-context-payer" class="query-label">Payer / Segment</label><input id="executive-context-payer" class="executive-input" type="text" placeholder="All payers" /></div>
+                            <div><label for="executive-context-timeframe" class="query-label">Timeframe</label><input id="executive-context-timeframe" class="executive-input" type="text" placeholder="Last 30/90 days" /></div>
+                        </div>
 
-    <div class="executive-control-strip executive-v2-controls">
-        <div>
-            <label for="executive-kpi-select" class="query-label">KPI / Investigation Type</label>
-            <select id="executive-kpi-select" class="executive-select">
-                <option value="">Choose a KPI investigation...</option>
-            </select>
-        </div>
+                        <div class="executive-control-strip executive-v2-metrics">
+                            <div><label for="executive-current-value" class="query-label">Current Value</label><input id="executive-current-value" class="executive-input" type="text" placeholder="Example: 11.8 or 48" /></div>
+                            <div><label for="executive-target-value" class="query-label">Target / Benchmark</label><input id="executive-target-value" class="executive-input" type="text" placeholder="Example: 9.4 or 40" /></div>
+                            <div><label for="executive-volume-value" class="query-label">Volume / Cases</label><input id="executive-volume-value" class="executive-input" type="text" placeholder="Optional case count" /></div>
+                            <div><label for="executive-dollar-value" class="query-label">Dollars at Risk</label><input id="executive-dollar-value" class="executive-input" type="text" placeholder="Optional financial exposure" /></div>
+                        </div>
 
-        <div>
-            <label for="executive-context-facility" class="query-label">Facility</label>
-            <input id="executive-context-facility" class="executive-input" type="text" placeholder="All facilities" />
-        </div>
+                        <div class="button-row executive-v2-builder-row">
+                            <button type="button" id="build-executive-brief-btn">Build Brief Prompt</button>
+                            <button type="button" id="copy-executive-sql-btn">Copy Starter SQL</button>
+                            <button type="button" id="load-executive-sql-btn">Load SQL in Lab</button>
+                            <button type="button" id="export-executive-brief-btn">Export Brief</button>
+                        </div>
 
-        <div>
-            <label for="executive-context-department" class="query-label">Department / Service Line</label>
-            <input id="executive-context-department" class="executive-input" type="text" placeholder="All departments" />
-        </div>
+                        <div class="executive-intelligence-grid">
+                            <section class="executive-intel-card" id="executive-benchmark-panel"><h3>Benchmark Intelligence</h3><p>Select a KPI and optionally enter current/target values to calculate status framing.</p></section>
+                            <section class="executive-intel-card" id="executive-driver-panel"><h3>Operational Drivers</h3><p>Select a KPI to see likely operational, clinical, financial, or workforce drivers.</p></section>
+                            <section class="executive-intel-card" id="executive-sql-panel"><h3>SQL / Data Logic</h3><p>Select a KPI to see source tables, segmentation cuts, and starter query logic.</p></section>
+                        </div>
 
-        <div>
-            <label for="executive-context-payer" class="query-label">Payer / Segment</label>
-            <input id="executive-context-payer" class="executive-input" type="text" placeholder="All payers" />
-        </div>
+                        <div class="executive-studio-grid">
+                            <aside class="executive-prompt-panel concept-card">
+                                <h3>Executive Prompt Packs</h3>
+                                <p>Select a KPI or investigation pack to load a strong executive prompt.</p>
+                                <div id="executive-category-tabs" class="executive-category-tabs"></div>
+                                <div id="executive-prompt-library" class="executive-prompt-library"></div>
+                            </aside>
 
-        <div>
-            <label for="executive-context-timeframe" class="query-label">Timeframe</label>
-            <input id="executive-context-timeframe" class="executive-input" type="text" placeholder="Last 30/90 days" />
-        </div>
-    </div>
+                            <section class="query-section executive-main-panel">
+                                <h3>Executive Prompt</h3>
+                                <textarea id="executive-prompt-input" rows="10" placeholder="Ask about a KPI, SQL logic, operational diagnosis, denial prevention, throughput, patient safety, quality performance, or executive communication."></textarea>
+                                <div class="button-row executive-action-row">
+                                    <button type="button" id="run-executive-btn">Generate Executive Response</button>
+                                    <button type="button" id="copy-executive-btn">Copy Response</button>
+                                    <button type="button" id="save-executive-btn">Save Investigation</button>
+                                    <button type="button" id="clear-executive-btn">Clear</button>
+                                </div>
+                                <div id="executive-output"></div>
+                                <div class="executive-history-wrap"><h3>Saved Investigations</h3><div id="executive-history"></div></div>
+                            </section>
+                        </div>
+                    </section>
+                </section>
 
-    <div class="executive-control-strip executive-v2-metrics">
-        <div>
-            <label for="executive-current-value" class="query-label">Current Value</label>
-            <input id="executive-current-value" class="executive-input" type="text" placeholder="Example: 11.8 or 48" />
-        </div>
-
-        <div>
-            <label for="executive-target-value" class="query-label">Target / Benchmark</label>
-            <input id="executive-target-value" class="executive-input" type="text" placeholder="Example: 9.4 or 40" />
-        </div>
-
-        <div>
-            <label for="executive-volume-value" class="query-label">Volume / Cases</label>
-            <input id="executive-volume-value" class="executive-input" type="text" placeholder="Optional case count" />
-        </div>
-
-        <div>
-            <label for="executive-dollar-value" class="query-label">Dollars at Risk</label>
-            <input id="executive-dollar-value" class="executive-input" type="text" placeholder="Optional financial exposure" />
-        </div>
-    </div>
-
-    <div class="button-row executive-v2-builder-row">
-        <button type="button" id="build-executive-brief-btn">Build Brief Prompt</button>
-        <button type="button" id="copy-executive-sql-btn">Copy Starter SQL</button>
-        <button type="button" id="load-executive-sql-btn">Load SQL in Lab</button>
-        <button type="button" id="export-executive-brief-btn">Export Brief</button>
-    </div>
-
-    <div class="executive-intelligence-grid">
-        <section class="executive-intel-card" id="executive-benchmark-panel">
-            <h3>Benchmark Intelligence</h3>
-            <p>Select a KPI and optionally enter current/target values to calculate status framing.</p>
-        </section>
-
-        <section class="executive-intel-card" id="executive-driver-panel">
-            <h3>Operational Drivers</h3>
-            <p>Select a KPI to see likely operational, clinical, financial, or workforce drivers.</p>
-        </section>
-
-        <section class="executive-intel-card" id="executive-sql-panel">
-            <h3>SQL / Data Logic</h3>
-            <p>Select a KPI to see source tables, segmentation cuts, and starter query logic.</p>
-        </section>
-    </div>
-
-    <div class="executive-studio-grid">
-        <aside class="executive-prompt-panel concept-card">
-            <h3>Executive Prompt Packs</h3>
-            <p>Select a KPI or investigation pack to load a strong executive prompt.</p>
-
-            <div id="executive-category-tabs" class="executive-category-tabs"></div>
-            <div id="executive-prompt-library" class="executive-prompt-library"></div>
-        </aside>
-
-        <section class="query-section executive-main-panel">
-            <h3>Executive Prompt</h3>
-
-            <textarea
-                id="executive-prompt-input"
-                rows="10"
-                placeholder="Ask about a KPI, SQL logic, operational diagnosis, denial prevention, throughput, patient safety, quality performance, or executive communication."
-            ></textarea>
-
-            <div class="button-row executive-action-row">
-                <button type="button" id="run-executive-btn">Generate Executive Response</button>
-                <button type="button" id="copy-executive-btn">Copy Response</button>
-                <button type="button" id="save-executive-btn">Save Investigation</button>
-                <button type="button" id="clear-executive-btn">Clear</button>
-            </div>
-
-            <div id="executive-output"></div>
-
-            <div class="executive-history-wrap">
-                <h3>Saved Investigations</h3>
-                <div id="executive-history"></div>
-            </div>
-        </section>
-    </div>
-</section>
                 <aside class="levels-panel" id="levels-panel">
                     <div class="levels-panel-header">
                         <div class="levels-panel-title-row">
@@ -440,16 +333,7 @@ Or use Guided Prompts to load KPI investigations like denial exposure, LOS press
                                 <h3 id="track-title">SQL Foundations for Hospital Data</h3>
                                 <p id="track-description">Curriculum, difficulty, completion tracking.</p>
                             </div>
-
-                            <button
-                                type="button"
-                                id="toggle-levels-panel-btn"
-                                class="panel-toggle-btn"
-                                aria-controls="levels-panel"
-                                aria-expanded="true"
-                            >
-                                Collapse
-                            </button>
+                            <button type="button" id="toggle-levels-panel-btn" class="panel-toggle-btn" aria-controls="levels-panel" aria-expanded="true">Collapse</button>
                         </div>
                     </div>
 
@@ -470,18 +354,8 @@ Or use Guided Prompts to load KPI investigations like denial exposure, LOS press
         </main>
     </div>
 
-    <div
-        id="table-modal-overlay"
-        class="table-modal-overlay hidden"
-        onclick="closeTableModal(event)"
-    >
-        <div
-            class="table-modal"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="table-modal-title"
-            onclick="event.stopPropagation()"
-        >
+    <div id="table-modal-overlay" class="table-modal-overlay hidden" onclick="closeTableModal(event)">
+        <div class="table-modal" role="dialog" aria-modal="true" aria-labelledby="table-modal-title" onclick="event.stopPropagation()">
             <div class="table-modal-header">
                 <div>
                     <div class="table-modal-kicker">Table Viewer</div>
@@ -492,26 +366,12 @@ Or use Guided Prompts to load KPI investigations like denial exposure, LOS press
             </div>
 
             <div class="table-modal-meta">
-                <div class="table-modal-meta-card">
-                    <h4>Keys</h4>
-                    <p id="table-modal-keys"></p>
-                </div>
-
-                <div class="table-modal-meta-card">
-                    <h4>Columns</h4>
-                    <p id="table-modal-columns"></p>
-                </div>
-
-                <div class="table-modal-meta-card">
-                    <h4>Related Joins</h4>
-                    <div id="table-modal-relationships"></div>
-                </div>
+                <div class="table-modal-meta-card"><h4>Keys</h4><p id="table-modal-keys"></p></div>
+                <div class="table-modal-meta-card"><h4>Columns</h4><p id="table-modal-columns"></p></div>
+                <div class="table-modal-meta-card"><h4>Related Joins</h4><div id="table-modal-relationships"></div></div>
             </div>
 
-            <div class="table-modal-preview">
-                <h4>Sample Rows</h4>
-                <div id="table-modal-preview-content"></div>
-            </div>
+            <div class="table-modal-preview"><h4>Sample Rows</h4><div id="table-modal-preview-content"></div></div>
         </div>
     </div>
 
@@ -522,20 +382,14 @@ Or use Guided Prompts to load KPI investigations like denial exposure, LOS press
             var banner = document.getElementById('js-error-banner');
             if (!banner) return;
             banner.classList.remove('hidden');
-            banner.textContent =
-                'JavaScript Error:\n' +
-                'Message: ' + event.message + '\n' +
-                'File: ' + event.filename + '\n' +
-                'Line: ' + event.lineno + '\n' +
-                'Column: ' + event.colno;
+            banner.textContent = 'JavaScript Error:\n' + 'Message: ' + event.message + '\n' + 'File: ' + event.filename + '\n' + 'Line: ' + event.lineno + '\n' + 'Column: ' + event.colno;
         });
 
         window.addEventListener('unhandledrejection', function (event) {
             var banner = document.getElementById('js-error-banner');
             if (!banner) return;
             banner.classList.remove('hidden');
-            banner.textContent =
-                'Unhandled Promise Error:\n' + String(event.reason);
+            banner.textContent = 'Unhandled Promise Error:\n' + String(event.reason);
         });
     </script>
 
