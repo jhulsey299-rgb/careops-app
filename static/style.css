@@ -2731,28 +2731,7 @@ body.sandbox-mode .sandbox-shell,
     }
 }
 
-/* ================= RESTORE CURRICULUM RIGHT PANEL LAYOUT ================= */
 
-body:not(.sandbox-mode):not(.executive-mode):not(.glossary-mode) .workspace-layout {
-    display: grid !important;
-    grid-template-columns: minmax(0, 1fr) 290px !important;
-    gap: 22px !important;
-    align-items: start !important;
-}
-
-body:not(.sandbox-mode):not(.executive-mode):not(.glossary-mode) .play-area {
-    min-width: 0 !important;
-    max-width: 100% !important;
-}
-
-body:not(.sandbox-mode):not(.executive-mode):not(.glossary-mode) #levels-panel {
-    display: block !important;
-    width: 290px !important;
-    min-width: 290px !important;
-    max-width: 290px !important;
-    position: sticky !important;
-    top: 16px !important;
-}
 
 /* ================= FINAL MOBILE REPAIR ================= */
 
@@ -2946,5 +2925,134 @@ body:not(.sandbox-mode):not(.executive-mode):not(.glossary-mode) #levels-panel {
     .concept-card {
         overflow-wrap: anywhere !important;
         word-break: normal !important;
+    }
+}
+
+/* ================= MOBILE OVERRIDE - FINAL AUTHORITY ================= */
+
+@media screen and (max-width: 980px) {
+    body:not(.sandbox-mode):not(.executive-mode):not(.glossary-mode) .workspace-layout,
+    body.sandbox-mode .workspace-layout,
+    body.executive-mode .workspace-layout,
+    body.glossary-mode .workspace-layout,
+    .workspace-layout {
+        display: flex !important;
+        flex-direction: column !important;
+        grid-template-columns: none !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        gap: 16px !important;
+    }
+
+    body:not(.sandbox-mode):not(.executive-mode):not(.glossary-mode) #levels-panel,
+    #levels-panel,
+    .levels-panel,
+    .levels-panel.collapsed {
+        display: block !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+        position: static !important;
+        top: auto !important;
+    }
+
+    .app-shell {
+        display: flex !important;
+        flex-direction: column !important;
+        grid-template-columns: none !important;
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+
+    .schema-panel,
+    .main-content,
+    .play-area,
+    .hero-banner,
+    .top-dashboard,
+    .dashboard-actions,
+    .badges-section,
+    .track-overview-panel,
+    #lesson-workspace,
+    #sandbox-workspace,
+    #executive-workspace,
+    #glossary-workspace {
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        padding-left: 0 !important;
+    }
+
+    .schema-panel,
+    .track-overview-panel,
+    .query-section,
+    .mission-box,
+    .badges-section,
+    .dashboard-card,
+    .concept-card,
+    .levels-panel {
+        padding: 14px !important;
+    }
+
+    .main-content {
+        padding-left: 0 !important;
+    }
+
+    #schema-resizer {
+        display: none !important;
+    }
+
+    .top-dashboard,
+    .track-overview-grid,
+    .track-category-cards,
+    #sandbox-prompt-list,
+    .sandbox-prompt-list,
+    .sandbox-context-grid,
+    .executive-control-strip,
+    .executive-v2-controls,
+    .executive-v2-metrics,
+    .executive-intelligence-grid,
+    .executive-studio-grid,
+    .table-modal-meta,
+    .glossary-toolbar,
+    .glossary-header-card {
+        display: grid !important;
+        grid-template-columns: minmax(0, 1fr) !important;
+    }
+
+    .track-category-cards > .track-badge-card,
+    .track-category-cards > .track-badge-card:nth-child(1),
+    .track-category-cards > .track-badge-card:nth-child(2),
+    .track-category-cards > .track-badge-card:nth-child(3),
+    .track-category-cards > .track-badge-card:nth-child(4),
+    .track-category-cards > .track-badge-card:nth-child(5) {
+        grid-column: auto !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+        margin-left: 0 !important;
+    }
+
+    .main-nav-actions,
+    .button-row,
+    .sandbox-toolbar,
+    .sandbox-mode-group,
+    .sandbox-actions-inline,
+    .executive-action-row,
+    .executive-v2-builder-row {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+    }
+
+    .main-nav-actions button,
+    .button-row button,
+    .sandbox-mode-group button,
+    .sandbox-actions-inline button,
+    .executive-action-row button,
+    .executive-v2-builder-row button {
+        width: 100% !important;
+        flex: 1 1 auto !important;
     }
 }
