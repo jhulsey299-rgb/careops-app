@@ -86,7 +86,61 @@
                 <h3>Achievements</h3>
                 <div id="badges-container" class="badges-container"></div>
             </section>
+<section id="ai-workspace" class="hidden ai-workspace">
+    <div class="mission-box workspace-hero-card ai-hero-card">
+        <div class="mission-meta-row">
+            <span class="lesson-type-badge lesson-type-scenario">AI Companion</span>
+            <span class="difficulty-badge difficulty-advanced">Deidentified Data + Executive Diagnosis</span>
+        </div>
 
+        <p class="track-label">CareOps Intelligence</p>
+        <h2>AI Companion: Hospital Data Diagnosis Studio</h2>
+        <p>Paste deidentified hospital data, describe a KPI concern, or ask for executive-level analysis. Do not enter PHI, patient names, MRNs, SSNs, addresses, phone numbers, or dates of birth.</p>
+    </div>
+
+    <div class="ai-companion-shell-v2">
+        <section class="ai-companion-panel-v2">
+            <div class="ai-thread-header">
+                <div>
+                    <h3>Analysis Thread</h3>
+                    <p>Ask about operational performance, KPI drivers, SQL logic, dashboard interpretation, or executive recommendations.</p>
+                </div>
+                <button type="button" id="ai-clear-thread-btn">Clear Thread</button>
+            </div>
+
+            <div id="ai-thread" class="ai-thread"></div>
+
+            <div class="ai-composer">
+                <textarea
+                    id="ai-companion-input"
+                    rows="7"
+                    placeholder="Example: I have deidentified readmission data by facility, payer, discharge disposition, LOS, and follow-up status. Help me diagnose likely drivers, what cuts to run, and what leadership should do next."
+                ></textarea>
+
+                <div class="button-row ai-composer-actions">
+                    <button type="button" id="ai-send-btn">Send to AI Companion</button>
+                    <button type="button" id="ai-use-executive-template-btn">Use Executive Diagnosis Template</button>
+                </div>
+            </div>
+        </section>
+
+        <aside class="ai-companion-sidecar concept-card">
+            <h3>What This Is For</h3>
+            <ul>
+                <li>Paste deidentified KPI extracts or dashboard summaries.</li>
+                <li>Ask why performance may be worsening.</li>
+                <li>Request SQL cuts, validation checks, and leadership talking points.</li>
+                <li>Translate analysis into executive-ready language.</li>
+            </ul>
+
+            <h3>Suggested Questions</h3>
+            <button type="button" class="ai-suggested-prompt" data-ai-prompt="Analyze high readmissions using executive language. Include likely drivers, data validation checks, segmentation cuts, and recommended interventions.">Readmission diagnosis</button>
+            <button type="button" class="ai-suggested-prompt" data-ai-prompt="Analyze rising denial rate. Include root causes, payer and department cuts, preventability review, and revenue cycle interventions.">Denial rate diagnosis</button>
+            <button type="button" class="ai-suggested-prompt" data-ai-prompt="Analyze high observation stays over 48 hours. Include throughput, utilization review, case management, and discharge barrier drivers.">Observation >48 hours</button>
+            <button type="button" class="ai-suggested-prompt" data-ai-prompt="Analyze ED boarding. Include inpatient capacity, discharge timing, staffing, transfer delays, and operational actions.">ED boarding diagnosis</button>
+        </aside>
+    </div>
+</section>
             <div class="workspace-layout">
                 <section class="play-area">
                     <section id="track-overview" class="track-overview-panel">
