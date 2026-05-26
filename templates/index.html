@@ -408,7 +408,30 @@ Or use Guided Prompts to load KPI investigations like denial exposure, LOS press
             <div id="js-error-banner" class="js-error-banner hidden" aria-live="assertive"></div>
         </main>
     </div>
+<div id="careops-tutorial-overlay" class="tutorial-overlay hidden" aria-live="polite">
+    <div class="tutorial-backdrop"></div>
 
+    <div class="tutorial-card" role="dialog" aria-modal="true" aria-labelledby="tutorial-title">
+        <div class="tutorial-kicker">First-Time Tour</div>
+        <h2 id="tutorial-title">Welcome to CAREOPS</h2>
+        <p id="tutorial-body">This quick tour explains how to navigate the platform.</p>
+
+        <div class="tutorial-progress">
+            <span id="tutorial-step-count">Step 1 of 8</span>
+        </div>
+
+        <div class="tutorial-actions">
+            <button type="button" id="tutorial-back-btn">Back</button>
+            <button type="button" id="tutorial-next-btn">Next</button>
+            <button type="button" id="tutorial-skip-btn">Skip</button>
+        </div>
+
+        <label class="tutorial-dont-show">
+            <input type="checkbox" id="tutorial-dont-show-checkbox">
+            Don’t show this again
+        </label>
+    </div>
+</div>
     <div id="table-modal-overlay" class="table-modal-overlay hidden" onclick="closeTableModal(event)">
         <div class="table-modal" role="dialog" aria-modal="true" aria-labelledby="table-modal-title" onclick="event.stopPropagation()">
             <div class="table-modal-header">
