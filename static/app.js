@@ -10334,660 +10334,752 @@ function attachPersistentNavigationDelegates() {
 }
 
 /* ======================================================
-   CAREOPS V2 ADD-ONS
-   Modular-ready: tutorial.js, aiCompanion.js, glossaryExpansion.js, schemaExpansion.js
+   CAREOPS V2 PHASE 1
+   Tutorial + AI Companion + Glossary + Schema + Guided Prompts
+   Later split into: tutorial.js, aiCompanion.js, glossaryExpansion.js, schemaExpansion.js, sandboxPrompts.js
 ====================================================== */
 
-const CAREOPS_TUTORIAL_KEY = "careops_first_time_tutorial_seen_v1";
+(() => {
+  const CAREOPS_TOUR_KEY = "careops_spotlight_tour_seen_v1";
 
-const CAREOPS_TUTORIAL_STEPS = [
-  {
-    title: "Welcome to CAREOPS",
-    body: "CAREOPS is a healthcare analytics training and intelligence platform. You can learn SQL, investigate hospital KPIs, use guided prompts, and translate analysis into executive-ready recommendations."
-  },
-  {
-    title: "Schema Explorer",
-    body: "The Schema Explorer houses your mock hospital tables. Click a table to inspect columns, keys, relationships, and sample rows before writing SQL."
-  },
-  {
-    title: "Dashboard Cards",
-    body: "The top cards show analyst level, progress, and the current lesson. These help users track progress while moving through the curriculum."
-  },
-  {
-    title: "SQL Lab",
-    body: "The SQL Lab is where users run free-play SQL or load guided KPI investigations. Guided prompts help users practice realistic hospital analytics questions."
-  },
-  {
-    title: "Executive Studio",
-    body: "Executive Studio turns KPI questions into benchmark framing, operational drivers, SQL logic, actions, and leadership-ready summaries."
-  },
-  {
-    title: "AI Companion",
-    body: "AI Companion is for open-ended deidentified data analysis. Users can paste KPI extracts or describe dashboard problems and ask for diagnosis, data cuts, likely drivers, and improvement actions."
-  },
-  {
-    title: "Glossary",
-    body: "The Glossary explains SQL, clinical operations, finance, quality, Epic/reporting, and executive analytics terminology in plain language."
-  },
-  {
-    title: "Levels Panel",
-    body: "The right-side curriculum panel lets users navigate the learning path by badge, category, and lesson."
+  const TOUR_STEPS = [
+    {
+      selector: "#schema-panel",
+      title: "Schema Explorer",
+      body: "This panel houses your mock hospital database. Click tables to inspect columns, grain, relationships, and sample rows before writing SQL."
+    },
+    {
+      selector: ".hero-banner",
+      title: "CAREOPS Home",
+      body: "This is the main platform header. Users learn SQL through hospital analytics scenarios and then translate findings into executive communication."
+    },
+    {
+      selector: ".top-dashboard",
+      title: "Progress Dashboard",
+      body: "These cards show analyst level, XP, progress, and the current lesson. This supports the learning product side of CAREOPS."
+    },
+    {
+      selector: ".main-nav-actions",
+      title: "Main Navigation",
+      body: "Use these tabs to move between the curriculum, SQL Lab, Executive Studio, AI Companion, Glossary, and reset controls."
+    },
+    {
+      selector: "#sandbox-workspace, #nav-sandbox-btn",
+      title: "SQL Lab",
+      body: "SQL Lab is for free-play querying and guided KPI investigations. Users can run realistic hospital SQL against the mock database."
+    },
+    {
+      selector: "#nav-executive-btn",
+      title: "Executive Studio",
+      body: "Executive Studio turns KPI questions into benchmark framing, operational drivers, SQL logic, recommendations, and leadership-ready summaries."
+    },
+    {
+      selector: "#nav-ai-btn",
+      title: "AI Companion",
+      body: "AI Companion is for open-ended, deidentified hospital data diagnosis. Paste KPI extracts or describe problems and ask for drivers, validation checks, SQL cuts, and action plans."
+    },
+    {
+      selector: "#nav-glossary-btn",
+      title: "Glossary",
+      body: "The Glossary explains SQL, clinical operations, finance, quality, Epic/reporting, workforce, and executive analytics terms."
+    },
+    {
+      selector: "#levels-panel",
+      title: "Curriculum Panel",
+      body: "This panel lets users navigate the learning path by level, section, and lesson. It supports the structured training side of CAREOPS."
+    }
+  ];
+
+  let tourIndex = 0;
+
+  function esc(value) {
+    if (typeof escapeHtml === "function") return escapeHtml(value);
+    return String(value ?? "").replace(/[&<>"']/g, (m) => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#039;"
+    }[m]));
   }
-];
 
-let careopsTutorialStep = 0;
-
-function showCareOpsTutorial(force = false) {
-  const seen = localStorage.getItem(CAREOPS_TUTORIAL_KEY) === "true";
-  if (seen && !force) return;
-
-  careopsTutorialStep = 0;
-  renderCareOpsTutorialStep();
-
-  const overlay = document.getElementById("careops-tutorial-overlay");
-  if (overlay) overlay.classList.remove("hidden");
-}
-
-function hideCareOpsTutorial(markSeen = true) {
-  const dontShow = document.getElementById("tutorial-dont-show-checkbox")?.checked;
-  if (markSeen || dontShow) {
-    localStorage.setItem(CAREOPS_TUTORIAL_KEY, "true");
+  function getTourTarget(selector) {
+    if (!selector) return null;
+    const parts = selector.split(",").map((item) => item.trim()).filter(Boolean);
+    for (const part of parts) {
+      const el = document.querySelector(part);
+      if (el) return el;
+    }
+    return null;
   }
 
-  const overlay = document.getElementById("careops-tutorial-overlay");
-  if (overlay) overlay.classList.add("hidden");
-}
+  function ensureTourDom() {
+    if (document.getElementById("careops-spotlight-tour")) return;
 
-function renderCareOpsTutorialStep() {
-  const step = CAREOPS_TUTORIAL_STEPS[careopsTutorialStep] || CAREOPS_TUTORIAL_STEPS[0];
+    const tour = document.createElement("div");
+    tour.id = "careops-spotlight-tour";
+    tour.className = "careops-spotlight-tour hidden";
+    tour.innerHTML = `
+      <div class="careops-tour-dim"></div>
+      <div id="careops-tour-highlight" class="careops-tour-highlight"></div>
+      <div id="careops-tour-bubble" class="careops-tour-bubble" role="dialog" aria-modal="true">
+        <div class="careops-tour-kicker">First-Time Tour</div>
+        <h2 id="careops-tour-title">Welcome</h2>
+        <p id="careops-tour-body">Tour text.</p>
+        <div class="careops-tour-count" id="careops-tour-count">Step 1 of 1</div>
+        <div class="careops-tour-actions">
+          <button type="button" id="careops-tour-back">Back</button>
+          <button type="button" id="careops-tour-next">Next</button>
+          <button type="button" id="careops-tour-skip">Skip</button>
+        </div>
+        <label class="careops-tour-checkbox">
+          <input type="checkbox" id="careops-tour-dont-show">
+          Don’t show this again
+        </label>
+      </div>
+    `;
 
-  const title = document.getElementById("tutorial-title");
-  const body = document.getElementById("tutorial-body");
-  const count = document.getElementById("tutorial-step-count");
-  const back = document.getElementById("tutorial-back-btn");
-  const next = document.getElementById("tutorial-next-btn");
+    document.body.appendChild(tour);
 
-  if (title) title.textContent = step.title;
-  if (body) body.textContent = step.body;
-  if (count) count.textContent = `Step ${careopsTutorialStep + 1} of ${CAREOPS_TUTORIAL_STEPS.length}`;
-  if (back) back.disabled = careopsTutorialStep === 0;
-  if (next) next.textContent = careopsTutorialStep === CAREOPS_TUTORIAL_STEPS.length - 1 ? "Finish" : "Next";
-}
+    document.getElementById("careops-tour-back")?.addEventListener("click", () => {
+      tourIndex = Math.max(0, tourIndex - 1);
+      renderTourStep();
+    });
 
-function bindCareOpsTutorial() {
-  document.getElementById("tutorial-next-btn")?.addEventListener("click", () => {
-    if (careopsTutorialStep >= CAREOPS_TUTORIAL_STEPS.length - 1) {
-      hideCareOpsTutorial(true);
+    document.getElementById("careops-tour-next")?.addEventListener("click", () => {
+      if (tourIndex >= TOUR_STEPS.length - 1) {
+        closeSpotlightTour(true);
+        return;
+      }
+      tourIndex += 1;
+      renderTourStep();
+    });
+
+    document.getElementById("careops-tour-skip")?.addEventListener("click", () => closeSpotlightTour(true));
+
+    window.addEventListener("resize", () => {
+      if (!document.getElementById("careops-spotlight-tour")?.classList.contains("hidden")) {
+        renderTourStep(false);
+      }
+    });
+  }
+
+  function renderTourStep(scroll = true) {
+    ensureTourDom();
+
+    const step = TOUR_STEPS[tourIndex] || TOUR_STEPS[0];
+    const target = getTourTarget(step.selector);
+    const highlight = document.getElementById("careops-tour-highlight");
+    const bubble = document.getElementById("careops-tour-bubble");
+
+    document.getElementById("careops-tour-title").textContent = step.title;
+    document.getElementById("careops-tour-body").textContent = step.body;
+    document.getElementById("careops-tour-count").textContent = `Step ${tourIndex + 1} of ${TOUR_STEPS.length}`;
+    document.getElementById("careops-tour-back").disabled = tourIndex === 0;
+    document.getElementById("careops-tour-next").textContent = tourIndex === TOUR_STEPS.length - 1 ? "Finish" : "Next";
+
+    if (!target || !highlight || !bubble) {
+      if (highlight) highlight.style.display = "none";
+      if (bubble) {
+        bubble.style.left = "50%";
+        bubble.style.top = "50%";
+        bubble.style.transform = "translate(-50%, -50%)";
+      }
       return;
     }
 
-    careopsTutorialStep += 1;
-    renderCareOpsTutorialStep();
-  });
+    if (scroll) target.scrollIntoView({ behavior: "smooth", block: "center", inline: "center" });
 
-  document.getElementById("tutorial-back-btn")?.addEventListener("click", () => {
-    careopsTutorialStep = Math.max(0, careopsTutorialStep - 1);
-    renderCareOpsTutorialStep();
-  });
+    setTimeout(() => {
+      const rect = target.getBoundingClientRect();
+      const pad = 8;
 
-  document.getElementById("tutorial-skip-btn")?.addEventListener("click", () => {
-    hideCareOpsTutorial(true);
-  });
-}
+      highlight.style.display = "block";
+      highlight.style.left = `${Math.max(8, rect.left - pad)}px`;
+      highlight.style.top = `${Math.max(8, rect.top - pad)}px`;
+      highlight.style.width = `${Math.min(window.innerWidth - 16, rect.width + pad * 2)}px`;
+      highlight.style.height = `${Math.min(window.innerHeight - 16, rect.height + pad * 2)}px`;
 
-/* ================= AI COMPANION ================= */
+      const bubbleWidth = Math.min(420, window.innerWidth - 28);
+      let left = rect.right + 18;
+      let top = rect.top;
 
-let careopsAiThread = [];
+      if (left + bubbleWidth > window.innerWidth - 14) {
+        left = Math.max(14, rect.left);
+        top = rect.bottom + 18;
+      }
 
-function ensureAiCompanionThreadSeed() {
-  if (careopsAiThread.length) return;
+      if (top + 260 > window.innerHeight) {
+        top = Math.max(14, window.innerHeight - 280);
+      }
 
-  careopsAiThread.push({
-    role: "assistant",
-    content: "I’m your CAREOPS AI Companion. Paste deidentified hospital data or describe a KPI problem, and I’ll help frame the issue, likely drivers, validation checks, SQL cuts, and executive-ready recommendations."
-  });
-}
+      bubble.style.width = `${bubbleWidth}px`;
+      bubble.style.left = `${left}px`;
+      bubble.style.top = `${Math.max(14, top)}px`;
+      bubble.style.transform = "none";
+    }, scroll ? 260 : 0);
+  }
 
-function showAiCompanionWorkspace() {
-  appState.currentView = "ai-companion";
+  function showSpotlightTour(force = false) {
+    ensureTourDom();
+    const seen = localStorage.getItem(CAREOPS_TOUR_KEY) === "true";
+    if (seen && !force) return;
 
-  document.body.classList.remove("sandbox-mode", "executive-mode", "glossary-mode");
-  document.body.classList.add("ai-mode");
+    tourIndex = 0;
+    document.getElementById("careops-spotlight-tour")?.classList.remove("hidden");
+    renderTourStep();
+  }
 
-  showSection("ai-workspace");
-  renderAiCompanionThread();
-  saveProgress();
+  function closeSpotlightTour(markSeen = true) {
+    const dontShow = document.getElementById("careops-tour-dont-show")?.checked;
+    if (markSeen || dontShow) localStorage.setItem(CAREOPS_TOUR_KEY, "true");
+    document.getElementById("careops-spotlight-tour")?.classList.add("hidden");
+  }
 
-  document.getElementById("ai-workspace")?.scrollIntoView({ behavior: "smooth", block: "start" });
-}
+  window.showCareOpsTour = () => showSpotlightTour(true);
 
-function renderAiCompanionThread() {
-  ensureAiCompanionThreadSeed();
+  /* ================= AI COMPANION V1 ================= */
 
-  const thread = document.getElementById("ai-thread");
-  if (!thread) return;
+  const AI_SEED_MESSAGE = `I’m your CAREOPS AI Companion. Paste deidentified hospital data, SQL output, or a KPI concern. I’ll help frame the issue, likely drivers, validation checks, SQL cuts, and executive-ready recommendations.`;
 
-  thread.innerHTML = careopsAiThread.map((message) => `
-    <div class="ai-message ai-message-${message.role}">
-      <div class="ai-message-label">${message.role === "user" ? "You" : "CAREOPS AI Companion"}</div>
-      <div class="ai-message-body">${escapeHtml(message.content).replace(/\n/g, "<br>")}</div>
-    </div>
-  `).join("");
+  let aiThread = [{ role: "assistant", content: AI_SEED_MESSAGE }];
 
-  thread.scrollTop = thread.scrollHeight;
-}
+  function ensureAiNavButton() {
+    let btn = document.getElementById("nav-ai-btn");
+    if (btn) return btn;
 
-function buildExecutiveDiagnosisTemplate() {
-  return [
-    "Analyze the following deidentified hospital data or KPI concern using executive language.",
-    "",
-    "Focus the response on:",
-    "1. Executive summary",
-    "2. KPI definition and why it matters",
-    "3. Likely operational, clinical, financial, access, or workforce drivers",
-    "4. Data quality checks",
-    "5. Recommended segmentation cuts",
-    "6. SQL/data logic to investigate",
-    "7. Immediate actions",
-    "8. Longer-term improvement plan",
-    "9. Leadership talking points",
-    "",
-    "Data / concern:"
-  ].join("\n");
-}
+    const nav = document.querySelector(".main-nav-actions");
+    const glossaryBtn = document.getElementById("nav-glossary-btn");
+    if (!nav) return null;
 
-function generateCareOpsAiFallbackResponse(prompt) {
-  const text = String(prompt || "").toLowerCase();
+    btn = document.createElement("button");
+    btn.type = "button";
+    btn.id = "nav-ai-btn";
+    btn.textContent = "AI Companion";
 
-  let topic = "hospital performance issue";
-  if (text.includes("readmission")) topic = "readmissions";
-  else if (text.includes("denial")) topic = "denials";
-  else if (text.includes("observation") || text.includes("obs")) topic = "observation utilization";
-  else if (text.includes("boarding") || text.includes("ed")) topic = "ED throughput and boarding";
-  else if (text.includes("los") || text.includes("length of stay")) topic = "length of stay";
-  else if (text.includes("sepsis")) topic = "sepsis performance";
-  else if (text.includes("mortality")) topic = "mortality outcomes";
-  else if (text.includes("hcahps") || text.includes("patient experience")) topic = "patient experience";
-  else if (text.includes("turnover") || text.includes("rn")) topic = "workforce stability";
+    if (glossaryBtn) nav.insertBefore(btn, glossaryBtn);
+    else nav.appendChild(btn);
 
-  return [
-    `Executive Summary: The issue appears to center on ${topic}. The first step is to confirm whether this is a true performance change, a documentation/configuration issue, or a mix-shift problem.`,
-    "",
-    "Likely Drivers:",
-    "- Facility, department, provider, payer, or service-line mix shift",
-    "- Discharge timing, follow-up gaps, placement delays, or case management barriers",
-    "- Documentation, coding, authorization, or workflow reliability issues",
-    "- Staffing, access, capacity, or throughput constraints",
-    "- Outlier cases that are distorting averages or rates",
-    "",
-    "Data Validation Checks:",
-    "- Confirm numerator, denominator, timeframe, and inclusion/exclusion logic",
-    "- Compare encounter-level, patient-level, claim-level, and charge-level grain",
-    "- Trend monthly performance instead of relying on a single snapshot",
-    "- Review facility, department, payer, provider, diagnosis, disposition, and weekday/weekend cuts",
-    "",
-    "SQL / Data Cuts to Run:",
-    "- Trend by month and facility",
-    "- Break down by payer, department, service line, provider, diagnosis/DRG, and discharge disposition",
-    "- Compare high-risk cohorts against baseline cohorts",
-    "- Separate volume change from rate change",
-    "- Identify outlier encounters or departments driving the variance",
-    "",
-    "Recommended Actions:",
-    "- Build a focused driver table for leadership review",
-    "- Validate the metric definition with operational owners",
-    "- Prioritize the highest-volume and highest-financial-risk segments first",
-    "- Assign owners for the top 2–3 drivers and track weekly improvement",
-    "",
-    "Leadership Talking Point: The goal is not only to report that performance changed, but to identify where the change is concentrated, why it is happening, and which operational actions are most likely to improve the result."
-  ].join("\n");
-}
+    return btn;
+  }
 
-async function sendAiCompanionMessage() {
-  const input = document.getElementById("ai-companion-input");
-  const prompt = String(input?.value || "").trim();
-  if (!prompt) return;
+  function ensureAiWorkspace() {
+    let workspace = document.getElementById("ai-workspace");
+    if (workspace) return workspace;
 
-  careopsAiThread.push({ role: "user", content: prompt });
-  if (input) input.value = "";
-  renderAiCompanionThread();
+    const playArea = document.querySelector(".play-area") || document.querySelector(".main-content") || document.body;
+    workspace = document.createElement("section");
+    workspace.id = "ai-workspace";
+    workspace.className = "hidden ai-workspace";
+    workspace.innerHTML = `
+      <div class="mission-box workspace-hero-card ai-hero-card">
+        <div class="mission-meta-row">
+          <span class="lesson-type-badge lesson-type-scenario">AI Companion</span>
+          <span class="difficulty-badge difficulty-advanced">Deidentified Data + Executive Diagnosis</span>
+        </div>
+        <p class="track-label">CareOps Intelligence</p>
+        <h2>AI Companion: Hospital Data Diagnosis Studio</h2>
+        <p>Paste deidentified hospital data, SQL output, dashboard summaries, or KPI concerns. Do not enter PHI, patient names, MRNs, SSNs, addresses, phone numbers, dates of birth, or other identifiers.</p>
+      </div>
 
-  careopsAiThread.push({
-    role: "assistant",
-    content: generateCareOpsAiFallbackResponse(prompt)
-  });
+      <div class="ai-companion-shell-v2">
+        <section class="ai-companion-panel-v2">
+          <div class="ai-thread-header">
+            <div>
+              <h3>Analysis Thread</h3>
+              <p>Ask for diagnosis, drivers, SQL cuts, data validation, and executive-ready recommendations.</p>
+            </div>
+            <button type="button" id="ai-clear-thread-btn">Clear Thread</button>
+          </div>
 
-  renderAiCompanionThread();
-}
+          <div id="ai-thread" class="ai-thread"></div>
 
-function bindAiCompanion() {
-  document.getElementById("ai-send-btn")?.addEventListener("click", sendAiCompanionMessage);
+          <div class="ai-composer">
+            <textarea id="ai-companion-input" rows="8" placeholder="Paste deidentified KPI data or describe the issue. Example: Readmissions are up at Waccamaw for Medicare patients discharged to SNF. What should I investigate?"></textarea>
+            <div class="button-row ai-composer-actions">
+              <button type="button" id="ai-send-btn">Send</button>
+              <button type="button" id="ai-use-executive-template-btn">Use Executive Diagnosis Template</button>
+            </div>
+          </div>
+        </section>
 
-  document.getElementById("ai-clear-thread-btn")?.addEventListener("click", () => {
-    careopsAiThread = [];
-    renderAiCompanionThread();
-  });
+        <aside class="ai-companion-sidecar concept-card">
+          <h3>Suggested Executive Questions</h3>
+          <button type="button" class="ai-suggested-prompt" data-ai-prompt="Analyze high readmissions. Include likely drivers, validation checks, recommended cuts, interventions, and leadership talking points.">Readmissions</button>
+          <button type="button" class="ai-suggested-prompt" data-ai-prompt="Analyze rising denial rate. Include payer drivers, department drivers, preventability, financial impact, and action plan.">Denials</button>
+          <button type="button" class="ai-suggested-prompt" data-ai-prompt="Analyze observation stays over 48 hours. Include utilization review, case management, testing delays, placement delays, and throughput impact.">Observation >48 hours</button>
+          <button type="button" class="ai-suggested-prompt" data-ai-prompt="Analyze ED boarding. Include inpatient capacity, discharge timing, staffing, transfer delays, and operational actions.">ED boarding</button>
+          <button type="button" class="ai-suggested-prompt" data-ai-prompt="Analyze patient experience decline. Include HCAHPS domains, operational causes, staffing impact, communication gaps, and recommended interventions.">Patient experience</button>
+          <button type="button" class="ai-suggested-prompt" data-ai-prompt="Analyze staffing pressure. Include RN turnover, vacancy, premium labor, patient safety risk, throughput risk, and executive actions.">Staffing pressure</button>
+        </aside>
+      </div>
+    `;
 
-  document.getElementById("ai-use-executive-template-btn")?.addEventListener("click", () => {
+    playArea.appendChild(workspace);
+    return workspace;
+  }
+
+  function aiTemplate() {
+    return [
+      "Analyze this deidentified hospital data or KPI issue using executive language.",
+      "",
+      "Return:",
+      "1. Executive summary",
+      "2. KPI definition and why it matters",
+      "3. Most likely drivers",
+      "4. Data quality checks",
+      "5. Recommended segmentation cuts",
+      "6. SQL/data logic to investigate",
+      "7. Immediate actions",
+      "8. Longer-term improvement plan",
+      "9. Leadership talking points",
+      "",
+      "Data / concern:"
+    ].join("\n");
+  }
+
+  function generateAiResponse(prompt) {
+    const text = String(prompt || "").toLowerCase();
+
+    let topic = "hospital performance";
+    if (text.includes("readmission")) topic = "readmissions";
+    else if (text.includes("denial")) topic = "denials";
+    else if (text.includes("observation") || text.includes("obs")) topic = "observation utilization";
+    else if (text.includes("boarding") || text.includes("ed ")) topic = "ED throughput and boarding";
+    else if (text.includes("los") || text.includes("length of stay")) topic = "length of stay";
+    else if (text.includes("sepsis")) topic = "sepsis bundle performance";
+    else if (text.includes("mortality")) topic = "mortality performance";
+    else if (text.includes("hcahps") || text.includes("experience")) topic = "patient experience";
+    else if (text.includes("staff") || text.includes("turnover") || text.includes("rn")) topic = "workforce stability";
+    else if (text.includes("or ") || text.includes("surgery")) topic = "OR utilization";
+
+    return [
+      `Executive Summary: The concern appears to center on ${topic}. First determine whether this is a true operational change, a documentation/configuration issue, a denominator shift, or a concentration in a specific facility, payer, department, provider group, or cohort.`,
+      "",
+      "Likely Drivers:",
+      "• Case mix, payer mix, department mix, or facility mix shift",
+      "• Discharge barriers, follow-up gaps, placement delays, or case management constraints",
+      "• Documentation, coding, authorization, utilization review, or workflow reliability issues",
+      "• Staffing pressure, capacity constraints, access delays, or throughput bottlenecks",
+      "• Outlier cases distorting averages or rates",
+      "",
+      "Data Quality Checks:",
+      "• Confirm numerator, denominator, timeframe, and exclusions",
+      "• Validate table grain before counting patients, encounters, claims, or charge lines",
+      "• Compare volume change versus rate change",
+      "• Trend month over month and compare against baseline",
+      "• Check missing values, duplicate records, and late-arriving data",
+      "",
+      "Recommended Cuts:",
+      "• Facility, department, service line, provider, payer, diagnosis/DRG, discharge disposition",
+      "• Weekday/weekend, discharge hour, LOS band, risk score band, and high-utilizer status",
+      "• High-dollar, high-volume, and high-preventability cohorts",
+      "",
+      "Executive Actions:",
+      "• Identify the top two concentrated drivers and assign operational owners",
+      "• Build a weekly driver dashboard, not just a final KPI scorecard",
+      "• Separate quick-win workflow fixes from longer-term structural constraints",
+      "• Report expected impact in dollars, capacity, access, quality, or patient experience",
+      "",
+      "Leadership Talking Point: The value is not simply reporting that performance changed. The value is identifying where it changed, why it changed, what action will move it, and who owns the improvement."
+    ].join("\n");
+  }
+
+  function renderAiThread() {
+    ensureAiWorkspace();
+
+    const host = document.getElementById("ai-thread");
+    if (!host) return;
+
+    host.innerHTML = aiThread.map((msg) => `
+      <div class="ai-message ai-message-${esc(msg.role)}">
+        <div class="ai-message-label">${msg.role === "user" ? "You" : "CAREOPS AI Companion"}</div>
+        <div class="ai-message-body">${esc(msg.content).replace(/\n/g, "<br>")}</div>
+      </div>
+    `).join("");
+
+    host.scrollTop = host.scrollHeight;
+  }
+
+  function sendAiMessage() {
     const input = document.getElementById("ai-companion-input");
-    if (input) {
-      input.value = buildExecutiveDiagnosisTemplate();
-      input.focus();
-    }
-  });
+    const prompt = String(input?.value || "").trim();
+    if (!prompt) return;
 
-  document.getElementById("ai-companion-input")?.addEventListener("keydown", (event) => {
-    if (event.key === "Enter" && !event.shiftKey) {
-      event.preventDefault();
-      sendAiCompanionMessage();
-    }
-  });
+    aiThread.push({ role: "user", content: prompt });
+    aiThread.push({ role: "assistant", content: generateAiResponse(prompt) });
 
-  document.querySelectorAll(".ai-suggested-prompt").forEach((button) => {
-    button.addEventListener("click", () => {
+    if (input) input.value = "";
+    renderAiThread();
+  }
+
+  function setAiMode(isAi) {
+    document.body.classList.toggle("ai-mode", !!isAi);
+    if (isAi) document.body.classList.remove("sandbox-mode", "executive-mode", "glossary-mode");
+  }
+
+  function showAiWorkspace() {
+    ensureAiWorkspace();
+    setAiMode(true);
+
+    const ids = ["track-overview", "lesson-workspace", "sandbox-workspace", "executive-workspace", "glossary-workspace", "ai-workspace"];
+    ids.forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) el.classList.toggle("hidden", id !== "ai-workspace");
+    });
+
+    appState.currentView = "ai-companion";
+    if (typeof saveProgress === "function") saveProgress();
+
+    renderAiThread();
+    document.getElementById("ai-workspace")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  function bindAiCompanion() {
+    ensureAiWorkspace();
+
+    document.getElementById("ai-send-btn")?.addEventListener("click", sendAiMessage);
+    document.getElementById("ai-clear-thread-btn")?.addEventListener("click", () => {
+      aiThread = [{ role: "assistant", content: AI_SEED_MESSAGE }];
+      renderAiThread();
+    });
+    document.getElementById("ai-use-executive-template-btn")?.addEventListener("click", () => {
       const input = document.getElementById("ai-companion-input");
       if (input) {
-        input.value = button.getAttribute("data-ai-prompt") || "";
+        input.value = aiTemplate();
         input.focus();
       }
     });
-  });
-}
-
-/* ================= GLOSSARY EXPANSION ================= */
-
-const CAREOPS_EXTRA_GLOSSARY_TERMS = [
-  { term: "Case Mix Index (CMI)", category: "financial", definition: "A measure of the average clinical complexity and resource intensity of a hospital’s patient population.", why: "CMI affects reimbursement, expected LOS, mortality comparisons, and productivity interpretation.", example: "A rising CMI may mean patients are sicker, documentation improved, or both." },
-  { term: "Mortality O/E", category: "analytics", definition: "Observed-to-expected mortality compares actual deaths to statistically expected deaths.", why: "It is a major quality and reputation signal because it adjusts raw mortality for patient risk.", example: "An O/E above 1.0 means observed mortality exceeded expected mortality." },
-  { term: "HCAHPS", category: "clinical", definition: "A standardized patient experience survey used for public reporting and reimbursement programs.", why: "HCAHPS affects reputation, patient trust, and value-based purchasing.", example: "Low communication scores may point to rounding, discharge education, or responsiveness issues." },
-  { term: "OR Utilization", category: "analytics", definition: "The share of available operating room time used for surgical cases.", why: "ORs are major revenue engines, and poor utilization can signal scheduling, turnover, staffing, or block-time issues.", example: "Low prime-time utilization may indicate unused block time or cancellation patterns." },
-  { term: "Sepsis Bundle Compliance", category: "clinical", definition: "The percentage of eligible sepsis cases receiving required care elements within the defined timeframe.", why: "It is a flagship quality metric tied to mortality, compliance, and public reporting.", example: "Low compliance may reflect delays in lactate, blood cultures, antibiotics, or documentation." },
-  { term: "Discharge Before Noon", category: "analytics", definition: "The percentage of discharges completed before noon.", why: "Earlier discharges improve bed availability, ED throughput, and patient flow.", example: "Low discharge-before-noon performance can worsen ED boarding." },
-  { term: "Observation >48 Hours", category: "clinical", definition: "Observation stays lasting more than 48 hours.", why: "Long observation stays may indicate utilization review, placement, testing, or discharge process failures.", example: "High OBS >48 hours should be reviewed by diagnosis, payer, department, and discharge barrier." },
-  { term: "Preventable Harm Event", category: "clinical", definition: "An avoidable adverse event that causes patient harm.", why: "Preventable harm reflects safety culture, reliability, and process control.", example: "Falls with injury, pressure injuries, and medication events may be tracked as preventable harm." },
-  { term: "RN Turnover", category: "analytics", definition: "The percentage of nurses leaving the organization or unit over a period of time.", why: "RN turnover can predict safety decline, staffing instability, patient experience issues, and premium labor expense.", example: "High turnover in one unit may precede quality and throughput problems." },
-  { term: "LWBS", category: "clinical", definition: "Left Without Being Seen; ED patients who leave before medical screening or provider evaluation.", why: "LWBS signals access failure, patient dissatisfaction, and potential safety risk.", example: "LWBS often rises when door-to-provider times increase." },
-  { term: "Door-to-Provider Time", category: "clinical", definition: "The time from ED arrival to initial provider evaluation.", why: "It is a front-end access and flow metric that can affect LWBS and patient experience.", example: "High door-to-provider time may suggest triage, staffing, or arrival surge issues." },
-  { term: "Net Revenue Realization", category: "financial", definition: "The share of gross charges or expected reimbursement that is ultimately collected.", why: "It helps leaders separate activity from actual financial yield.", example: "A department may have high charges but weak net revenue realization." },
-  { term: "Authorization Denial", category: "financial", definition: "A denial caused by missing, late, or insufficient prior authorization.", why: "Authorization denials are often preventable and can create major cash leakage.", example: "High authorization denials may require front-end workflow redesign." },
-  { term: "Clean Claim Rate", category: "financial", definition: "The percentage of claims accepted without edits, rework, or payer rejection.", why: "Clean claims improve cash speed and reduce avoidable revenue cycle labor.", example: "Low clean claim rate may indicate registration, coding, or charge capture issues." },
-  { term: "DNFB", category: "financial", definition: "Discharged Not Final Billed; discharged accounts not yet billed.", why: "DNFB delays cash and may point to coding, documentation, or charge lag issues.", example: "A growing DNFB backlog can reduce short-term collections." },
-  { term: "CDI", category: "financial", definition: "Clinical Documentation Improvement, a process to improve accuracy and completeness of clinical documentation.", why: "CDI affects CMI, reimbursement, quality measurement, and risk adjustment.", example: "Better documentation can improve expected mortality and case mix accuracy." },
-  { term: "Risk Adjustment", category: "analytics", definition: "A method for accounting for patient severity when comparing outcomes.", why: "It prevents unfair comparisons between populations with different illness burden.", example: "Mortality and readmissions are often interpreted using risk adjustment." },
-  { term: "Service Line", category: "analytics", definition: "A grouping of clinical services such as cardiology, orthopedics, surgery, or women’s health.", why: "Service-line views help leaders manage strategy, volume, margin, and quality.", example: "LOS may be reviewed by medicine, surgery, and cardiology service lines." },
-  { term: "Throughput Constraint", category: "analytics", definition: "A process limitation that slows patient movement through the system.", why: "Constraints often create downstream effects in ED boarding, LOS, and patient experience.", example: "Delayed SNF placement can become a throughput constraint." },
-  { term: "Executive Summary", category: "analytics", definition: "A brief leadership-facing explanation of what changed, why it matters, and what should happen next.", why: "Executives need concise interpretation, not just raw numbers.", example: "Readmissions increased most among Medicare patients discharged to SNF; case management review is recommended." }
-];
-
-function installGlossaryExpansion() {
-  if (!Array.isArray(window.GLOSSARY_TERMS) && typeof GLOSSARY_TERMS === "undefined") return;
-
-  const target = typeof GLOSSARY_TERMS !== "undefined" ? GLOSSARY_TERMS : window.GLOSSARY_TERMS;
-  const existing = new Set(target.map((item) => String(item.term || "").toLowerCase()));
-
-  CAREOPS_EXTRA_GLOSSARY_TERMS.forEach((item) => {
-    if (!existing.has(String(item.term || "").toLowerCase())) {
-      target.push(item);
-    }
-  });
-}
-
-/* ================= SCHEMA + MOCK DATA EXPANSION ================= */
-
-function installEnterpriseSchemaExpansion() {
-  if (typeof schema === "undefined" || !schema || !Array.isArray(schema.tables)) return;
-
-  const existingTables = new Set(schema.tables.map((table) => table.name));
-
-  const newTables = [
-    { name: "quality_events", description: "Quality and patient safety events by encounter.", keyColumns: ["event_id"], notableColumns: ["event_id","encounter_id","patient_id","facility","department","event_type","harm_level","preventable_flag","event_date"], sampleRows: [] },
-    { name: "ed_flow", description: "Emergency department arrival, triage, provider, boarding, and departure timing.", keyColumns: ["ed_flow_id"], notableColumns: ["ed_flow_id","encounter_id","patient_id","facility","arrival_time","triage_minutes","door_to_provider_minutes","boarding_minutes","left_without_being_seen"], sampleRows: [] },
-    { name: "sepsis_cases", description: "Sepsis bundle and mortality tracking.", keyColumns: ["sepsis_case_id"], notableColumns: ["sepsis_case_id","encounter_id","patient_id","facility","department","bundle_compliant","antibiotic_minutes","lactate_completed","mortality_flag"], sampleRows: [] },
-    { name: "patient_experience", description: "Patient experience survey results.", keyColumns: ["survey_id"], notableColumns: ["survey_id","encounter_id","patient_id","facility","department","communication_score","responsiveness_score","discharge_info_score","overall_rating"], sampleRows: [] },
-    { name: "staffing", description: "Unit-level staffing and workforce indicators.", keyColumns: ["staffing_id"], notableColumns: ["staffing_id","facility","department","month","rn_turnover_rate","vacancy_rate","premium_labor_hours","hours_per_patient_day"], sampleRows: [] },
-    { name: "or_cases", description: "Operating room case volume, utilization, and turnover metrics.", keyColumns: ["or_case_id"], notableColumns: ["or_case_id","facility","service_line","surgeon_provider_id","case_date","block_minutes","case_minutes","turnover_minutes","cancelled_flag"], sampleRows: [] }
-  ];
-
-  newTables.forEach((table) => {
-    if (!existingTables.has(table.name)) {
-      schema.tables.push(table);
-    }
-  });
-
-  const newRelationships = [
-    "quality_events.encounter_id = encounters.encounter_id",
-    "ed_flow.encounter_id = encounters.encounter_id",
-    "sepsis_cases.encounter_id = encounters.encounter_id",
-    "patient_experience.encounter_id = encounters.encounter_id",
-    "or_cases.surgeon_provider_id = providers.provider_id"
-  ];
-
-  schema.relationships = Array.from(new Set([...(schema.relationships || []), ...newRelationships]));
-}
-
-function createEnterpriseTablesForDb(db) {
-  if (!db) return;
-
-  db.run(`
-    CREATE TABLE IF NOT EXISTS quality_events (
-      event_id INTEGER,
-      encounter_id INTEGER,
-      patient_id INTEGER,
-      facility TEXT,
-      department TEXT,
-      event_type TEXT,
-      harm_level TEXT,
-      preventable_flag INTEGER,
-      event_date TEXT
-    );
-
-    CREATE TABLE IF NOT EXISTS ed_flow (
-      ed_flow_id INTEGER,
-      encounter_id INTEGER,
-      patient_id INTEGER,
-      facility TEXT,
-      arrival_time TEXT,
-      triage_minutes INTEGER,
-      door_to_provider_minutes INTEGER,
-      boarding_minutes INTEGER,
-      left_without_being_seen INTEGER
-    );
-
-    CREATE TABLE IF NOT EXISTS sepsis_cases (
-      sepsis_case_id INTEGER,
-      encounter_id INTEGER,
-      patient_id INTEGER,
-      facility TEXT,
-      department TEXT,
-      bundle_compliant INTEGER,
-      antibiotic_minutes INTEGER,
-      lactate_completed INTEGER,
-      mortality_flag INTEGER
-    );
-
-    CREATE TABLE IF NOT EXISTS patient_experience (
-      survey_id INTEGER,
-      encounter_id INTEGER,
-      patient_id INTEGER,
-      facility TEXT,
-      department TEXT,
-      communication_score INTEGER,
-      responsiveness_score INTEGER,
-      discharge_info_score INTEGER,
-      overall_rating INTEGER
-    );
-
-    CREATE TABLE IF NOT EXISTS staffing (
-      staffing_id INTEGER,
-      facility TEXT,
-      department TEXT,
-      month TEXT,
-      rn_turnover_rate REAL,
-      vacancy_rate REAL,
-      premium_labor_hours INTEGER,
-      hours_per_patient_day REAL
-    );
-
-    CREATE TABLE IF NOT EXISTS or_cases (
-      or_case_id INTEGER,
-      facility TEXT,
-      service_line TEXT,
-      surgeon_provider_id INTEGER,
-      case_date TEXT,
-      block_minutes INTEGER,
-      case_minutes INTEGER,
-      turnover_minutes INTEGER,
-      cancelled_flag INTEGER
-    );
-  `);
-}
-
-function generateEnterpriseMockData() {
-  const facilities = ["Georgetown", "Waccamaw", "Market Common"];
-  const departments = ["Emergency", "Med Surg", "ICU", "Surgery", "Cardiology", "Women Services"];
-  const serviceLines = ["Medicine", "Surgery", "Cardiology", "Orthopedics", "Women Services"];
-
-  const rows = {
-    quality_events: [],
-    ed_flow: [],
-    sepsis_cases: [],
-    patient_experience: [],
-    staffing: [],
-    or_cases: []
-  };
-
-  for (let i = 1; i <= 180; i += 1) {
-    const facility = facilities[i % facilities.length];
-    const department = departments[i % departments.length];
-
-    rows.quality_events.push({
-      event_id: i,
-      encounter_id: i,
-      patient_id: i,
-      facility,
-      department,
-      event_type: ["Fall", "Pressure Injury", "Medication Event", "Hospital Acquired Infection"][i % 4],
-      harm_level: ["None", "Low", "Moderate", "Severe"][i % 4],
-      preventable_flag: i % 5 === 0 ? 1 : 0,
-      event_date: `2026-0${(i % 5) + 1}-${String((i % 27) + 1).padStart(2, "0")}`
+    document.getElementById("ai-companion-input")?.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" && !event.shiftKey) {
+        event.preventDefault();
+        sendAiMessage();
+      }
     });
-
-    rows.ed_flow.push({
-      ed_flow_id: i,
-      encounter_id: i,
-      patient_id: i,
-      facility,
-      arrival_time: `2026-0${(i % 5) + 1}-${String((i % 27) + 1).padStart(2, "0")} 08:00`,
-      triage_minutes: 5 + (i % 45),
-      door_to_provider_minutes: 10 + (i % 120),
-      boarding_minutes: i % 3 === 0 ? 180 + (i % 420) : i % 90,
-      left_without_being_seen: i % 17 === 0 ? 1 : 0
-    });
-
-    rows.sepsis_cases.push({
-      sepsis_case_id: i,
-      encounter_id: i,
-      patient_id: i,
-      facility,
-      department,
-      bundle_compliant: i % 4 === 0 ? 0 : 1,
-      antibiotic_minutes: 35 + (i % 160),
-      lactate_completed: i % 6 === 0 ? 0 : 1,
-      mortality_flag: i % 13 === 0 ? 1 : 0
-    });
-
-    rows.patient_experience.push({
-      survey_id: i,
-      encounter_id: i,
-      patient_id: i,
-      facility,
-      department,
-      communication_score: 60 + (i % 40),
-      responsiveness_score: 55 + (i % 42),
-      discharge_info_score: 58 + (i % 38),
-      overall_rating: 65 + (i % 35)
+    document.querySelectorAll(".ai-suggested-prompt").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const input = document.getElementById("ai-companion-input");
+        if (input) {
+          input.value = btn.getAttribute("data-ai-prompt") || "";
+          input.focus();
+        }
+      });
     });
   }
 
-  for (let i = 1; i <= 72; i += 1) {
-    const facility = facilities[i % facilities.length];
-    const department = departments[i % departments.length];
-
-    rows.staffing.push({
-      staffing_id: i,
-      facility,
-      department,
-      month: `2026-${String((i % 12) + 1).padStart(2, "0")}`,
-      rn_turnover_rate: Number((8 + (i % 18) + (department === "ICU" ? 4 : 0)).toFixed(1)),
-      vacancy_rate: Number((5 + (i % 12)).toFixed(1)),
-      premium_labor_hours: 80 + (i * 11) % 650,
-      hours_per_patient_day: Number((5.5 + (i % 30) / 10).toFixed(1))
-    });
-
-    rows.or_cases.push({
-      or_case_id: i,
-      facility,
-      service_line: serviceLines[i % serviceLines.length],
-      surgeon_provider_id: (i % 12) + 1,
-      case_date: `2026-${String((i % 12) + 1).padStart(2, "0")}-${String((i % 27) + 1).padStart(2, "0")}`,
-      block_minutes: 480,
-      case_minutes: 120 + (i % 260),
-      turnover_minutes: 18 + (i % 55),
-      cancelled_flag: i % 14 === 0 ? 1 : 0
-    });
+  function bindAiNavigation() {
+    const btn = ensureAiNavButton();
+    if (!btn) return;
+    btn.style.display = "";
+    btn.onclick = showAiWorkspace;
   }
 
-  return rows;
-}
+  /* ================= GLOSSARY EXPANSION ================= */
 
-function seedEnterpriseTablesForDb(db) {
-  if (!db) return;
-  const rowsByTable = generateEnterpriseMockData();
-  Object.entries(rowsByTable).forEach(([tableName, rows]) => {
-    seedTableIntoDb(db, tableName, rows);
-  });
+  const GLOSSARY_PLUS = [
+    ["Case Mix Index (CMI)", "financial", "A measure of average clinical complexity and resource intensity.", "CMI affects reimbursement, expected LOS, mortality comparisons, and productivity interpretation.", "A rising CMI may mean patients are sicker, documentation improved, or both."],
+    ["Mortality O/E", "analytics", "Observed-to-expected mortality compares actual deaths to expected deaths.", "It adjusts raw mortality for patient risk.", "O/E above 1.0 means observed mortality exceeded expected mortality."],
+    ["HCAHPS", "clinical", "A standardized patient experience survey.", "It affects reputation, trust, and value-based purchasing.", "Communication and responsiveness are common HCAHPS domains."],
+    ["OR Utilization", "analytics", "The share of available operating room time used for cases.", "ORs are major revenue engines and capacity assets.", "Low prime-time utilization may indicate unused block time."],
+    ["Sepsis Bundle Compliance", "clinical", "The percentage of eligible sepsis cases receiving required care elements on time.", "It is tied to mortality, compliance, and quality reporting.", "Low compliance may reflect antibiotic or lactate delays."],
+    ["Discharge Before Noon", "analytics", "The percentage of discharges completed before noon.", "Earlier discharges improve bed availability and ED throughput.", "Low performance can worsen boarding."],
+    ["Observation >48 Hours", "clinical", "Observation stays lasting more than 48 hours.", "Long observation stays may signal status-management or discharge barriers.", "Review by payer, diagnosis, and discharge disposition."],
+    ["Preventable Harm Event", "clinical", "An avoidable adverse event that causes harm.", "It reflects reliability and safety culture.", "Falls with injury may be tracked as preventable harm."],
+    ["RN Turnover", "analytics", "The share of nurses leaving over a time period.", "Turnover can affect safety, throughput, staffing cost, and experience.", "High turnover in ICU may precede premium labor growth."],
+    ["LWBS", "clinical", "Left Without Being Seen in the emergency department.", "LWBS signals access failure and potential safety risk.", "LWBS often rises when door-to-provider time increases."],
+    ["Door-to-Provider Time", "clinical", "Time from ED arrival to initial provider evaluation.", "It reflects front-end access and flow.", "Long delays can drive LWBS."],
+    ["Net Revenue Realization", "financial", "The share of gross or expected reimbursement ultimately collected.", "It separates activity from financial yield.", "High charges with low realization may indicate payer or denial issues."],
+    ["Authorization Denial", "financial", "A denial caused by missing or insufficient prior authorization.", "It is often preventable.", "High authorization denials may require front-end workflow redesign."],
+    ["Clean Claim Rate", "financial", "The percentage of claims accepted without rework.", "Clean claims improve cash speed and reduce labor.", "Low rate may point to registration, coding, or charge capture issues."],
+    ["DNFB", "financial", "Discharged Not Final Billed.", "DNFB delays cash and may indicate coding or documentation backlogs.", "A growing DNFB backlog can reduce collections."],
+    ["CDI", "financial", "Clinical Documentation Improvement.", "CDI affects CMI, reimbursement, quality measurement, and risk adjustment.", "Better documentation can improve expected mortality accuracy."],
+    ["Risk Adjustment", "analytics", "A method for accounting for patient severity.", "It allows fairer comparison across populations.", "Mortality and readmissions often use risk adjustment."],
+    ["Service Line", "analytics", "A grouping of clinical services.", "Service-line views support strategy, quality, and margin management.", "Cardiology and orthopedics are common service lines."],
+    ["Throughput Constraint", "analytics", "A process limitation that slows patient movement.", "Constraints create downstream effects in ED boarding and LOS.", "SNF placement delays can constrain throughput."],
+    ["Executive Summary", "analytics", "A concise leadership-facing explanation of what changed and what to do.", "Executives need interpretation, not raw data.", "Readmissions rose in Medicare SNF discharges; case management review is recommended."],
+    ["DRG", "financial", "Diagnosis Related Group used to classify inpatient stays.", "DRGs affect reimbursement, expected LOS, and case mix.", "A high-weight DRG generally indicates greater resource intensity."],
+    ["DRG Weight", "financial", "A relative weight assigned to a DRG.", "It helps compare expected resource intensity.", "Higher DRG weight can explain higher LOS or cost."],
+    ["Expected LOS", "analytics", "The length of stay expected for a patient or cohort.", "It gives context to actual LOS.", "Actual LOS above expected LOS may indicate avoidable delay."],
+    ["Index Admission", "clinical", "The original admission used as the anchor for readmission analysis.", "It defines the starting event for readmission windows.", "A 30-day readmission is tied back to an index admission."],
+    ["Potentially Preventable Readmission", "clinical", "A readmission that may have been avoided with better transition planning or follow-up.", "It helps focus improvement work.", "Discharge planning gaps can drive preventable readmissions."],
+    ["Utilization Review", "clinical", "Review of whether patient status and care level meet criteria.", "It affects observation, inpatient status, denials, and compliance.", "UR teams review inpatient versus observation appropriateness."],
+    ["Medical Necessity", "financial", "Whether services meet payer criteria for coverage.", "Medical necessity failures often produce denials.", "Insufficient documentation may cause medical necessity denial."],
+    ["Prior Authorization", "financial", "Payer approval required before certain services.", "Missing authorization can cause avoidable denials.", "Imaging and procedures often require authorization."],
+    ["Charge Capture", "financial", "The process of recording billable services.", "Missed charges create revenue leakage.", "Supply or procedure charges may be missed without workflow controls."],
+    ["Contractual Adjustment", "financial", "The difference between billed charges and allowed reimbursement.", "It explains why gross charges differ from net revenue.", "Commercial contracts often have negotiated adjustments."],
+    ["A/R Days", "financial", "Average time it takes to collect receivables.", "Higher A/R days can signal billing or payer delays.", "A/R days may rise when claims are delayed or denied."],
+    ["Bad Debt", "financial", "Patient responsibility amounts unlikely to be collected.", "It affects net revenue and financial performance.", "High self-pay balances may increase bad debt."],
+    ["Charity Care", "financial", "Care provided without expectation of full payment due to financial need.", "It is important for community benefit and finance reporting.", "Charity care may be tracked separately from bad debt."],
+    ["CLABSI", "clinical", "Central line-associated bloodstream infection.", "It is a major patient safety and quality metric.", "CLABSI rates are reviewed by ICU and line days."],
+    ["CAUTI", "clinical", "Catheter-associated urinary tract infection.", "It is a preventable harm and quality metric.", "CAUTI is tracked using catheter days."],
+    ["Hospital-Acquired Infection", "clinical", "An infection acquired during a healthcare stay.", "HAIs affect safety, quality scores, cost, and reputation.", "CLABSI and CAUTI are examples of HAIs."],
+    ["Fall With Injury", "clinical", "A patient fall that results in injury.", "It reflects safety processes, mobility support, and staffing risk.", "Falls are often reviewed by unit and shift."],
+    ["Pressure Injury", "clinical", "Skin or tissue injury due to prolonged pressure.", "It is a quality and safety indicator.", "Pressure injuries may be preventable with rounding and repositioning."],
+    ["Top Box Score", "analytics", "The share of survey responses in the highest rating category.", "It is commonly used in patient experience reporting.", "HCAHPS top box reflects the most favorable responses."],
+    ["Premium Labor", "financial", "Higher-cost labor such as overtime, agency, or incentive pay.", "It signals staffing strain and margin pressure.", "Premium labor may rise when vacancy rates are high."],
+    ["Vacancy Rate", "analytics", "The percentage of budgeted positions unfilled.", "Vacancy affects staffing, throughput, safety, and labor cost.", "High vacancy can increase overtime and agency use."],
+    ["Hours Per Patient Day", "analytics", "Staffing hours divided by patient days.", "It helps compare staffing intensity across units.", "HPPD is commonly reviewed in nursing productivity."],
+    ["Productivity", "financial", "Output or volume compared with labor or cost.", "Productivity connects staffing resources to demand.", "Worked hours per visit is a productivity metric."],
+    ["Transfer Delay", "clinical", "Delay in moving a patient to the next appropriate care setting.", "Transfers affect throughput, LOS, and access.", "Delayed tertiary transfer may hold beds longer."],
+    ["Placement Delay", "clinical", "Delay finding post-acute or next-level placement.", "Placement delays increase LOS and reduce capacity.", "SNF or rehab delays can drive discharge barriers."],
+    ["Discharge Barrier", "clinical", "Anything preventing a medically ready patient from leaving.", "Barriers drive LOS and capacity problems.", "Transportation, placement, consults, and DME can be barriers."],
+    ["Dashboard Governance", "analytics", "Rules for metric definitions, owners, validation, and change control.", "Governance prevents conflicting reports and loss of trust.", "A readmission dashboard should define numerator and denominator ownership."],
+    ["Metric Owner", "analytics", "The person accountable for a metric definition and interpretation.", "Ownership improves trust and actionability.", "Finance may own denial rate while operations owns throughput."],
+    ["Data Latency", "analytics", "Delay between event occurrence and data availability.", "Latency affects whether dashboards are current enough for action.", "Claims data often lags encounter data."],
+    ["Refresh Cadence", "analytics", "How often data updates.", "Cadence should match operational decision needs.", "Daily ED boarding data is more actionable than monthly."],
+    ["Single Source of Truth", "analytics", "An agreed authoritative source for a metric.", "It prevents competing numbers in leadership meetings.", "One certified denial dashboard should be the official source."],
+    ["Data Grain", "analytics", "What one row represents.", "Misunderstanding grain leads to wrong counts and conclusions.", "Charge-line grain differs from encounter grain."],
+    ["Late-Arriving Data", "analytics", "Records that appear after the reporting period initially closes.", "It can change historical results.", "Claims and payments often arrive late."],
+    ["At-Risk Dollars", "financial", "Financial exposure tied to denials, underpayment, leakage, or performance risk.", "It helps prioritize improvement work.", "Denied billed amount can be summarized as at-risk dollars."]
+  ];
 
-  if (typeof schema !== "undefined" && schema?.tables) {
-    schema.tables.forEach((table) => {
-      if (rowsByTable[table.name]) {
-        table.sampleRows = rowsByTable[table.name].slice(0, 5);
+  function installGlossaryPlus() {
+    if (typeof GLOSSARY_TERMS === "undefined" || !Array.isArray(GLOSSARY_TERMS)) return;
+    const existing = new Set(GLOSSARY_TERMS.map((item) => String(item.term || "").toLowerCase()));
+    GLOSSARY_PLUS.forEach(([term, category, definition, why, example]) => {
+      if (!existing.has(term.toLowerCase())) {
+        GLOSSARY_TERMS.push({ term, category, definition, why, example });
       }
     });
   }
-}
 
-function installEnterpriseDatabasePatch() {
-  if (typeof initializeSandboxDatabase !== "function" || window.__careopsEnterpriseDbPatched) return;
-  window.__careopsEnterpriseDbPatched = true;
+  /* ================= SCHEMA + DATA MODEL EXPANSION ================= */
 
-  const originalInitializeSandboxDatabase = initializeSandboxDatabase;
+  const ENTERPRISE_TABLES = [
+    { name: "ed_flow", description: "Emergency department flow, boarding, arrival, provider, and LWBS data.", keyColumns: ["ed_flow_id"], notableColumns: ["ed_flow_id","encounter_id","patient_id","facility","arrival_date","triage_minutes","door_to_provider_minutes","boarding_minutes","left_without_being_seen"], sampleRows: [] },
+    { name: "quality_events", description: "Patient safety and quality events by encounter.", keyColumns: ["event_id"], notableColumns: ["event_id","encounter_id","patient_id","facility","department","event_type","harm_level","preventable_flag","event_date"], sampleRows: [] },
+    { name: "sepsis_cases", description: "Sepsis bundle compliance, antibiotic timing, lactate completion, and mortality.", keyColumns: ["sepsis_case_id"], notableColumns: ["sepsis_case_id","encounter_id","patient_id","facility","department","bundle_compliant","antibiotic_minutes","lactate_completed","mortality_flag"], sampleRows: [] },
+    { name: "patient_experience", description: "Patient experience survey domain scores.", keyColumns: ["survey_id"], notableColumns: ["survey_id","encounter_id","patient_id","facility","department","communication_score","responsiveness_score","discharge_info_score","overall_rating"], sampleRows: [] },
+    { name: "staffing", description: "Unit-level workforce indicators.", keyColumns: ["staffing_id"], notableColumns: ["staffing_id","facility","department","month","rn_turnover_rate","vacancy_rate","premium_labor_hours","hours_per_patient_day"], sampleRows: [] },
+    { name: "or_cases", description: "Operating room cases, utilization, turnover, cancellations, and block time.", keyColumns: ["or_case_id"], notableColumns: ["or_case_id","facility","service_line","surgeon_provider_id","case_date","block_minutes","case_minutes","turnover_minutes","cancelled_flag"], sampleRows: [] },
+    { name: "authorizations", description: "Prior authorization and authorization denial tracking.", keyColumns: ["authorization_id"], notableColumns: ["authorization_id","encounter_id","patient_id","payer","service_line","authorization_status","denial_reason_group","request_date","decision_date"], sampleRows: [] },
+    { name: "drg_cases", description: "DRG, expected LOS, CMI, and mortality risk indicators.", keyColumns: ["drg_case_id"], notableColumns: ["drg_case_id","encounter_id","patient_id","drg","drg_weight","expected_los_days","actual_los_days","mortality_risk"], sampleRows: [] }
+  ];
 
-  initializeSandboxDatabase = async function patchedInitializeSandboxDatabase() {
-    await originalInitializeSandboxDatabase();
-    if (typeof sandboxDb !== "undefined" && sandboxDb) {
-      createEnterpriseTablesForDb(sandboxDb);
-      seedEnterpriseTablesForDb(sandboxDb);
-    }
-  };
-}
+  const ENTERPRISE_RELATIONSHIPS = [
+    "ed_flow.encounter_id = encounters.encounter_id",
+    "quality_events.encounter_id = encounters.encounter_id",
+    "sepsis_cases.encounter_id = encounters.encounter_id",
+    "patient_experience.encounter_id = encounters.encounter_id",
+    "or_cases.surgeon_provider_id = providers.provider_id",
+    "authorizations.encounter_id = encounters.encounter_id",
+    "drg_cases.encounter_id = encounters.encounter_id"
+  ];
 
-/* ================= GUIDED QUERY EXPANSION ================= */
+  function installSchemaPlus() {
+    if (typeof schema === "undefined" || !schema || !Array.isArray(schema.tables)) return;
 
-const CAREOPS_EXTRA_GUIDED_PROMPTS = [
-  {
-    id: "enterprise_ed_boarding_by_facility",
-    title: "ED Boarding by Facility",
-    objective: "Identify facilities with the highest average ED boarding minutes and LWBS risk.",
-    query: "SELECT facility, COUNT(*) AS ed_visits, AVG(boarding_minutes) AS avg_boarding_minutes, SUM(left_without_being_seen) AS lwbs_count FROM ed_flow GROUP BY facility ORDER BY avg_boarding_minutes DESC;",
-    tables: ["ed_flow"]
-  },
-  {
-    id: "enterprise_sepsis_bundle",
-    title: "Sepsis Bundle Compliance",
-    objective: "Review sepsis bundle compliance, antibiotic timing, lactate completion, and mortality by facility.",
-    query: "SELECT facility, COUNT(*) AS sepsis_cases, AVG(bundle_compliant) AS bundle_compliance_rate, AVG(antibiotic_minutes) AS avg_antibiotic_minutes, SUM(mortality_flag) AS mortality_count FROM sepsis_cases GROUP BY facility ORDER BY bundle_compliance_rate ASC;",
-    tables: ["sepsis_cases"]
-  },
-  {
-    id: "enterprise_harm_events",
-    title: "Preventable Harm Events",
-    objective: "Find departments with the most preventable harm events.",
-    query: "SELECT facility, department, event_type, COUNT(*) AS event_count, SUM(preventable_flag) AS preventable_events FROM quality_events GROUP BY facility, department, event_type ORDER BY preventable_events DESC;",
-    tables: ["quality_events"]
-  },
-  {
-    id: "enterprise_hcahps",
-    title: "Patient Experience by Department",
-    objective: "Compare patient experience scores by facility and department.",
-    query: "SELECT facility, department, AVG(communication_score) AS avg_communication, AVG(responsiveness_score) AS avg_responsiveness, AVG(discharge_info_score) AS avg_discharge_info, AVG(overall_rating) AS avg_overall_rating FROM patient_experience GROUP BY facility, department ORDER BY avg_overall_rating ASC;",
-    tables: ["patient_experience"]
-  },
-  {
-    id: "enterprise_rn_turnover",
-    title: "RN Turnover and Premium Labor",
-    objective: "Identify departments with high RN turnover, vacancy, and premium labor pressure.",
-    query: "SELECT facility, department, AVG(rn_turnover_rate) AS avg_rn_turnover, AVG(vacancy_rate) AS avg_vacancy, SUM(premium_labor_hours) AS premium_labor_hours FROM staffing GROUP BY facility, department ORDER BY avg_rn_turnover DESC;",
-    tables: ["staffing"]
-  },
-  {
-    id: "enterprise_or_utilization",
-    title: "OR Utilization",
-    objective: "Estimate OR utilization by facility and service line.",
-    query: "SELECT facility, service_line, COUNT(*) AS cases, SUM(case_minutes) AS total_case_minutes, SUM(block_minutes) AS total_block_minutes, ROUND(SUM(case_minutes) * 1.0 / SUM(block_minutes), 3) AS utilization_rate, AVG(turnover_minutes) AS avg_turnover_minutes FROM or_cases GROUP BY facility, service_line ORDER BY utilization_rate ASC;",
-    tables: ["or_cases"]
-  }
-];
-
-function installGuidedPromptExpansion() {
-  if (typeof getSandboxPromptOptions !== "function" || window.__careopsGuidedPromptPatched) return;
-  window.__careopsGuidedPromptPatched = true;
-
-  const originalGetSandboxPromptOptions = getSandboxPromptOptions;
-
-  getSandboxPromptOptions = function patchedGetSandboxPromptOptions() {
-    const basePrompts = originalGetSandboxPromptOptions();
-    const ids = new Set(basePrompts.map((prompt) => prompt.id));
-    const extras = CAREOPS_EXTRA_GUIDED_PROMPTS.filter((prompt) => !ids.has(prompt.id));
-    return [...extras, ...basePrompts];
-  };
-}
-
-/* ================= ROUTING + INIT PATCH ================= */
-
-function patchCareOpsShowSectionForAi() {
-  if (typeof showSection !== "function" || window.__careopsShowSectionAiPatched) return;
-  window.__careopsShowSectionAiPatched = true;
-
-  const originalShowSection = showSection;
-
-  showSection = function patchedShowSection(sectionId) {
-    const knownSections = [
-      "track-overview",
-      "lesson-workspace",
-      "sandbox-workspace",
-      "executive-workspace",
-      "glossary-workspace",
-      "ai-workspace"
-    ];
-
-    knownSections.forEach((id) => {
-      const el = document.getElementById(id);
-      if (el) el.classList.toggle("hidden", id !== sectionId);
+    const existing = new Set(schema.tables.map((table) => table.name));
+    ENTERPRISE_TABLES.forEach((table) => {
+      if (!existing.has(table.name)) schema.tables.push(table);
     });
 
-    if (!knownSections.includes(sectionId)) {
-      originalShowSection(sectionId);
-    }
-  };
-}
-
-function bindCareOpsV2Navigation() {
-  const aiBtn = document.getElementById("nav-ai-btn");
-  if (aiBtn && !aiBtn.dataset.bound) {
-    aiBtn.dataset.bound = "true";
-    aiBtn.onclick = () => showAiCompanionWorkspace();
+    schema.relationships = Array.from(new Set([...(schema.relationships || []), ...ENTERPRISE_RELATIONSHIPS]));
   }
-}
 
-function initCareOpsV2Addons() {
-  installGlossaryExpansion();
-  installEnterpriseSchemaExpansion();
-  installEnterpriseDatabasePatch();
-  installGuidedPromptExpansion();
-  patchCareOpsShowSectionForAi();
+  function makeEnterpriseRows() {
+    const facilities = ["Georgetown", "Waccamaw", "Market Common"];
+    const departments = ["Emergency", "Med Surg", "ICU", "Surgery", "Cardiology", "Women Services"];
+    const serviceLines = ["Medicine", "Surgery", "Cardiology", "Orthopedics", "Women Services"];
+    const payers = ["Medicare", "Medicaid", "Commercial", "Medicare Advantage", "Self Pay"];
+    const rows = { ed_flow: [], quality_events: [], sepsis_cases: [], patient_experience: [], staffing: [], or_cases: [], authorizations: [], drg_cases: [] };
 
-  bindCareOpsV2Navigation();
-  bindCareOpsTutorial();
-  bindAiCompanion();
+    for (let i = 1; i <= 240; i++) {
+      const facility = facilities[i % facilities.length];
+      const department = departments[i % departments.length];
+      const patientId = ((i - 1) % 120) + 1;
+      const encounterId = i;
 
-  renderAiCompanionThread();
+      rows.ed_flow.push({
+        ed_flow_id: i, encounter_id: encounterId, patient_id: patientId, facility,
+        arrival_date: `2026-${String((i % 12) + 1).padStart(2, "0")}-${String((i % 27) + 1).padStart(2, "0")}`,
+        triage_minutes: 5 + (i % 45),
+        door_to_provider_minutes: 12 + (i % 130),
+        boarding_minutes: i % 3 === 0 ? 180 + (i % 420) : i % 95,
+        left_without_being_seen: i % 19 === 0 ? 1 : 0
+      });
 
-  if (typeof renderSchema === "function") renderSchema();
-  if (typeof renderGlossary === "function") renderGlossary();
+      rows.quality_events.push({
+        event_id: i, encounter_id: encounterId, patient_id: patientId, facility, department,
+        event_type: ["Fall", "Pressure Injury", "Medication Event", "Hospital Acquired Infection"][i % 4],
+        harm_level: ["None", "Low", "Moderate", "Severe"][i % 4],
+        preventable_flag: i % 5 === 0 ? 1 : 0,
+        event_date: `2026-${String((i % 12) + 1).padStart(2, "0")}-${String((i % 27) + 1).padStart(2, "0")}`
+      });
 
-  showCareOpsTutorial(false);
-}
+      rows.sepsis_cases.push({
+        sepsis_case_id: i, encounter_id: encounterId, patient_id: patientId, facility, department,
+        bundle_compliant: i % 4 === 0 ? 0 : 1,
+        antibiotic_minutes: 35 + (i % 160),
+        lactate_completed: i % 6 === 0 ? 0 : 1,
+        mortality_flag: i % 13 === 0 ? 1 : 0
+      });
 
-document.addEventListener("DOMContentLoaded", () => {
-  setTimeout(initCareOpsV2Addons, 0);
-});
+      rows.patient_experience.push({
+        survey_id: i, encounter_id: encounterId, patient_id: patientId, facility, department,
+        communication_score: 60 + (i % 40),
+        responsiveness_score: 55 + (i % 42),
+        discharge_info_score: 58 + (i % 38),
+        overall_rating: 65 + (i % 35)
+      });
+
+      rows.authorizations.push({
+        authorization_id: i, encounter_id: encounterId, patient_id: patientId,
+        payer: payers[i % payers.length],
+        service_line: serviceLines[i % serviceLines.length],
+        authorization_status: i % 7 === 0 ? "Denied" : "Approved",
+        denial_reason_group: i % 7 === 0 ? ["Missing Auth", "Medical Necessity", "Timely Filing", "Eligibility"][i % 4] : "",
+        request_date: `2026-${String((i % 12) + 1).padStart(2, "0")}-01`,
+        decision_date: `2026-${String((i % 12) + 1).padStart(2, "0")}-03`
+      });
+
+      rows.drg_cases.push({
+        drg_case_id: i, encounter_id: encounterId, patient_id: patientId,
+        drg: ["291 Heart Failure", "470 Joint Replacement", "871 Sepsis", "194 Pneumonia", "392 GI Disorder"][i % 5],
+        drg_weight: Number((0.8 + (i % 28) / 10).toFixed(2)),
+        expected_los_days: Number((2.5 + (i % 8)).toFixed(1)),
+        actual_los_days: Number((2.2 + (i % 11)).toFixed(1)),
+        mortality_risk: Number((0.02 + (i % 20) / 100).toFixed(2))
+      });
+    }
+
+    for (let i = 1; i <= 96; i++) {
+      const facility = facilities[i % facilities.length];
+      const department = departments[i % departments.length];
+
+      rows.staffing.push({
+        staffing_id: i, facility, department,
+        month: `2026-${String((i % 12) + 1).padStart(2, "0")}`,
+        rn_turnover_rate: Number((8 + (i % 18) + (department === "ICU" ? 4 : 0)).toFixed(1)),
+        vacancy_rate: Number((5 + (i % 12)).toFixed(1)),
+        premium_labor_hours: 80 + (i * 11) % 650,
+        hours_per_patient_day: Number((5.5 + (i % 30) / 10).toFixed(1))
+      });
+
+      rows.or_cases.push({
+        or_case_id: i, facility,
+        service_line: serviceLines[i % serviceLines.length],
+        surgeon_provider_id: (i % 12) + 1,
+        case_date: `2026-${String((i % 12) + 1).padStart(2, "0")}-${String((i % 27) + 1).padStart(2, "0")}`,
+        block_minutes: 480,
+        case_minutes: 120 + (i % 260),
+        turnover_minutes: 18 + (i % 55),
+        cancelled_flag: i % 14 === 0 ? 1 : 0
+      });
+    }
+
+    return rows;
+  }
+
+  function createEnterpriseTables(db) {
+    if (!db) return;
+    db.run(`
+      CREATE TABLE IF NOT EXISTS ed_flow (ed_flow_id INTEGER, encounter_id INTEGER, patient_id INTEGER, facility TEXT, arrival_date TEXT, triage_minutes INTEGER, door_to_provider_minutes INTEGER, boarding_minutes INTEGER, left_without_being_seen INTEGER);
+      CREATE TABLE IF NOT EXISTS quality_events (event_id INTEGER, encounter_id INTEGER, patient_id INTEGER, facility TEXT, department TEXT, event_type TEXT, harm_level TEXT, preventable_flag INTEGER, event_date TEXT);
+      CREATE TABLE IF NOT EXISTS sepsis_cases (sepsis_case_id INTEGER, encounter_id INTEGER, patient_id INTEGER, facility TEXT, department TEXT, bundle_compliant INTEGER, antibiotic_minutes INTEGER, lactate_completed INTEGER, mortality_flag INTEGER);
+      CREATE TABLE IF NOT EXISTS patient_experience (survey_id INTEGER, encounter_id INTEGER, patient_id INTEGER, facility TEXT, department TEXT, communication_score INTEGER, responsiveness_score INTEGER, discharge_info_score INTEGER, overall_rating INTEGER);
+      CREATE TABLE IF NOT EXISTS staffing (staffing_id INTEGER, facility TEXT, department TEXT, month TEXT, rn_turnover_rate REAL, vacancy_rate REAL, premium_labor_hours INTEGER, hours_per_patient_day REAL);
+      CREATE TABLE IF NOT EXISTS or_cases (or_case_id INTEGER, facility TEXT, service_line TEXT, surgeon_provider_id INTEGER, case_date TEXT, block_minutes INTEGER, case_minutes INTEGER, turnover_minutes INTEGER, cancelled_flag INTEGER);
+      CREATE TABLE IF NOT EXISTS authorizations (authorization_id INTEGER, encounter_id INTEGER, patient_id INTEGER, payer TEXT, service_line TEXT, authorization_status TEXT, denial_reason_group TEXT, request_date TEXT, decision_date TEXT);
+      CREATE TABLE IF NOT EXISTS drg_cases (drg_case_id INTEGER, encounter_id INTEGER, patient_id INTEGER, drg TEXT, drg_weight REAL, expected_los_days REAL, actual_los_days REAL, mortality_risk REAL);
+    `);
+  }
+
+  function insertRows(db, tableName, rows) {
+    if (!db || !rows?.length) return;
+
+    if (typeof seedTableIntoDb === "function") {
+      seedTableIntoDb(db, tableName, rows);
+      return;
+    }
+
+    const columns = Object.keys(rows[0]);
+    const placeholders = columns.map(() => "?").join(",");
+    const stmt = db.prepare(`INSERT INTO ${tableName} (${columns.join(",")}) VALUES (${placeholders})`);
+    rows.forEach((row) => stmt.run(columns.map((column) => row[column])));
+    stmt.free();
+  }
+
+  function seedEnterpriseData(db) {
+    if (!db) return;
+    const rows = makeEnterpriseRows();
+
+    Object.entries(rows).forEach(([tableName, tableRows]) => insertRows(db, tableName, tableRows));
+
+    if (typeof schema !== "undefined" && schema?.tables) {
+      schema.tables.forEach((table) => {
+        if (rows[table.name]) table.sampleRows = rows[table.name].slice(0, 5);
+      });
+    }
+  }
+
+  function patchDatabaseInit() {
+    if (typeof initializeSandboxDatabase !== "function" || window.__careopsDbPlusPatched) return;
+    window.__careopsDbPlusPatched = true;
+
+    const original = initializeSandboxDatabase;
+    initializeSandboxDatabase = async function patchedInitializeSandboxDatabase() {
+      await original();
+
+      const db = typeof sandboxDb !== "undefined" ? sandboxDb : (typeof sqlDb !== "undefined" ? sqlDb : null);
+      if (!db) return;
+
+      createEnterpriseTables(db);
+      seedEnterpriseData(db);
+    };
+  }
+
+  /* ================= GUIDED PROMPTS EXPANSION ================= */
+
+  const PROMPTS_PLUS = [
+    ["ed_boarding_facility", "ED Boarding by Facility", "Identify facilities with the highest average ED boarding minutes and LWBS risk.", "SELECT facility, COUNT(*) AS ed_visits, AVG(boarding_minutes) AS avg_boarding_minutes, SUM(left_without_being_seen) AS lwbs_count FROM ed_flow GROUP BY facility ORDER BY avg_boarding_minutes DESC;", ["ed_flow"]],
+    ["ed_lwbs_driver", "LWBS Driver Review", "Find where left-without-being-seen risk is concentrated.", "SELECT facility, COUNT(*) AS ed_visits, SUM(left_without_being_seen) AS lwbs_count, ROUND(SUM(left_without_being_seen) * 1.0 / COUNT(*), 4) AS lwbs_rate, AVG(door_to_provider_minutes) AS avg_door_to_provider FROM ed_flow GROUP BY facility ORDER BY lwbs_rate DESC;", ["ed_flow"]],
+    ["sepsis_bundle", "Sepsis Bundle Compliance", "Review sepsis bundle compliance, antibiotic timing, lactate completion, and mortality by facility.", "SELECT facility, COUNT(*) AS sepsis_cases, AVG(bundle_compliant) AS bundle_compliance_rate, AVG(antibiotic_minutes) AS avg_antibiotic_minutes, SUM(mortality_flag) AS mortality_count FROM sepsis_cases GROUP BY facility ORDER BY bundle_compliance_rate ASC;", ["sepsis_cases"]],
+    ["harm_events", "Preventable Harm Events", "Find departments with the most preventable harm events.", "SELECT facility, department, event_type, COUNT(*) AS event_count, SUM(preventable_flag) AS preventable_events FROM quality_events GROUP BY facility, department, event_type ORDER BY preventable_events DESC;", ["quality_events"]],
+    ["patient_experience", "Patient Experience by Department", "Compare patient experience scores by facility and department.", "SELECT facility, department, AVG(communication_score) AS avg_communication, AVG(responsiveness_score) AS avg_responsiveness, AVG(discharge_info_score) AS avg_discharge_info, AVG(overall_rating) AS avg_overall_rating FROM patient_experience GROUP BY facility, department ORDER BY avg_overall_rating ASC;", ["patient_experience"]],
+    ["rn_turnover", "RN Turnover and Premium Labor", "Identify departments with high RN turnover, vacancy, and premium labor pressure.", "SELECT facility, department, AVG(rn_turnover_rate) AS avg_rn_turnover, AVG(vacancy_rate) AS avg_vacancy, SUM(premium_labor_hours) AS premium_labor_hours FROM staffing GROUP BY facility, department ORDER BY avg_rn_turnover DESC;", ["staffing"]],
+    ["or_utilization", "OR Utilization", "Estimate OR utilization by facility and service line.", "SELECT facility, service_line, COUNT(*) AS cases, SUM(case_minutes) AS total_case_minutes, SUM(block_minutes) AS total_block_minutes, ROUND(SUM(case_minutes) * 1.0 / SUM(block_minutes), 3) AS utilization_rate, AVG(turnover_minutes) AS avg_turnover_minutes FROM or_cases GROUP BY facility, service_line ORDER BY utilization_rate ASC;", ["or_cases"]],
+    ["auth_denials", "Authorization Denial Exposure", "Identify payer and service-line patterns in authorization denials.", "SELECT payer, service_line, COUNT(*) AS auth_count, SUM(CASE WHEN authorization_status = 'Denied' THEN 1 ELSE 0 END) AS denied_auths FROM authorizations GROUP BY payer, service_line ORDER BY denied_auths DESC;", ["authorizations"]],
+    ["drg_los_variance", "Actual vs Expected LOS by DRG", "Find DRGs where actual LOS exceeds expected LOS.", "SELECT drg, COUNT(*) AS cases, AVG(expected_los_days) AS avg_expected_los, AVG(actual_los_days) AS avg_actual_los, AVG(actual_los_days - expected_los_days) AS avg_los_variance FROM drg_cases GROUP BY drg ORDER BY avg_los_variance DESC;", ["drg_cases"]],
+    ["mortality_risk", "Mortality Risk by DRG", "Review mortality risk and observed mortality concentration.", "SELECT d.drg, COUNT(*) AS cases, AVG(d.mortality_risk) AS avg_mortality_risk, SUM(s.mortality_flag) AS observed_deaths FROM drg_cases d LEFT JOIN sepsis_cases s ON d.encounter_id = s.encounter_id GROUP BY d.drg ORDER BY observed_deaths DESC;", ["drg_cases","sepsis_cases"]],
+    ["obs_over_48", "Observation >48 by Department", "Find departments with prolonged observation stays.", "SELECT facility, department, COUNT(*) AS observation_cases, SUM(CASE WHEN obs_hours > 48 THEN 1 ELSE 0 END) AS obs_over_48, ROUND(SUM(CASE WHEN obs_hours > 48 THEN 1 ELSE 0 END) * 1.0 / COUNT(*), 4) AS obs_over_48_rate, AVG(obs_hours) AS avg_obs_hours FROM observations GROUP BY facility, department ORDER BY obs_over_48 DESC;", ["observations"]],
+    ["discharge_lag", "Discharge Order-to-Departure Lag", "Find departments with discharge delay after discharge order.", "SELECT facility, department, COUNT(*) AS discharge_count, AVG(departure_minutes - discharge_order_minutes) AS avg_order_to_departure_minutes, SUM(delayed_for_transport) AS transport_delay_cases FROM discharges GROUP BY facility, department ORDER BY avg_order_to_departure_minutes DESC;", ["discharges"]]
+  ];
+
+  function patchGuidedPrompts() {
+    if (typeof getSandboxPromptOptions !== "function" || window.__careopsPromptPlusPatched) return;
+    window.__careopsPromptPlusPatched = true;
+
+    const original = getSandboxPromptOptions;
+    getSandboxPromptOptions = function patchedGetSandboxPromptOptions() {
+      const base = original();
+      const existing = new Set(base.map((p) => p.id));
+      const extras = PROMPTS_PLUS
+        .filter(([id]) => !existing.has(id))
+        .map(([id, title, objective, query, tables]) => ({ id, title, objective, query, tables, difficulty: "intermediate" }));
+      return [...extras, ...base];
+    };
+  }
+
+  function initCareOpsV2Phase1() {
+    ensureAiNavButton();
+    ensureAiWorkspace();
+    bindAiNavigation();
+    bindAiCompanion();
+
+    installGlossaryPlus();
+    installSchemaPlus();
+    patchDatabaseInit();
+    patchGuidedPrompts();
+
+    if (typeof renderSchema === "function") renderSchema();
+    if (typeof renderGlossary === "function") renderGlossary();
+    if (typeof renderSandboxPromptList === "function") renderSandboxPromptList();
+
+    showSpotlightTour(false);
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    setTimeout(initCareOpsV2Phase1, 0);
+  });
+})();
