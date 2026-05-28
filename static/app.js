@@ -11083,3 +11083,25 @@ function attachPersistentNavigationDelegates() {
     setTimeout(initCareOpsV2Phase1, 0);
   });
 })();
+
+/* ======================================================
+   CAREOPS V2 ROUTING FIX
+   Ensures AI Companion closes when leaving AI tab
+====================================================== */
+
+function closeAiCompanionWorkspace() {
+  document.body.classList.remove("ai-mode");
+
+  const aiWorkspace = document.getElementById("ai-workspace");
+  if (aiWorkspace) aiWorkspace.classList.add("hidden");
+}
+
+["nav-overview-btn", "nav-sandbox-btn", "nav-executive-btn", "nav-glossary-btn"].forEach((id) => {
+  const btn = document.getElementById(id);
+  if (!btn || btn.dataset.aiCloseBound === "true") return;
+
+  btn.dataset.aiCloseBound = "true";
+  btn.addEventListener("click", () => {
+    closeAiCompanionWorkspace();
+  });
+});
