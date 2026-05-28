@@ -1778,10 +1778,6 @@ body.executive-mode .play-area {
     flex: 0 0 auto !important;
 }
 
-#nav-ai-btn {
-    display: none !important;
-}
-
 /* ================= SQL Lab / Sandbox ================= */
 .sandbox-workspace,
 #sandbox-workspace {
