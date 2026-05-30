@@ -11085,23 +11085,618 @@ function attachPersistentNavigationDelegates() {
 })();
 
 /* ======================================================
-   CAREOPS V2 ROUTING FIX
-   Ensures AI Companion closes when leaving AI tab
+   CAREOPS V2 PHASE 2
+   Clean Routing + AI Companion v2 + Executive KPI Expansion + Guided Prompt Expansion
+   Later split into:
+   navigation.js, aiCompanion.js, executiveInstruments.js, sandboxPrompts.js, glossaryExpansion.js
 ====================================================== */
 
-function closeAiCompanionWorkspace() {
-  document.body.classList.remove("ai-mode");
+(() => {
+  if (window.__careopsV2Phase2Installed) return;
+  window.__careopsV2Phase2Installed = true;
 
-  const aiWorkspace = document.getElementById("ai-workspace");
-  if (aiWorkspace) aiWorkspace.classList.add("hidden");
-}
+  function cxEscape(value) {
+    if (typeof escapeHtml === "function") return escapeHtml(value);
+    return String(value ?? "").replace(/[&<>"']/g, (m) => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#039;"
+    }[m]));
+  }
 
-["nav-overview-btn", "nav-sandbox-btn", "nav-executive-btn", "nav-glossary-btn"].forEach((id) => {
-  const btn = document.getElementById(id);
-  if (!btn || btn.dataset.aiCloseBound === "true") return;
+  function cxSetHtml(id, html) {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = html;
+  }
 
-  btn.dataset.aiCloseBound = "true";
-  btn.addEventListener("click", () => {
-    closeAiCompanionWorkspace();
+  function cxCloseAiWorkspace() {
+    document.body.classList.remove("ai-mode");
+
+    const aiWorkspace = document.getElementById("ai-workspace");
+    if (aiWorkspace) aiWorkspace.classList.add("hidden");
+  }
+
+  function cxHideNonAiWorkspaces(targetId) {
+    ["track-overview", "lesson-workspace", "sandbox-workspace", "executive-workspace", "glossary-workspace", "ai-workspace"].forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) el.classList.toggle("hidden", id !== targetId);
+    });
+  }
+
+  function installCleanRouting() {
+    const nonAiButtons = ["nav-overview-btn", "nav-sandbox-btn", "nav-executive-btn", "nav-glossary-btn", "nav-reset-btn"];
+
+    nonAiButtons.forEach((id) => {
+      const btn = document.getElementById(id);
+      if (!btn || btn.dataset.cxRoutingBound === "true") return;
+
+      btn.dataset.cxRoutingBound = "true";
+      btn.addEventListener("click", () => {
+        cxCloseAiWorkspace();
+      }, true);
+    });
+
+    const aiBtn = document.getElementById("nav-ai-btn");
+    if (aiBtn) {
+      aiBtn.style.display = "";
+      aiBtn.onclick = () => {
+        document.body.classList.add("ai-mode");
+        document.body.classList.remove("sandbox-mode", "executive-mode", "glossary-mode");
+        cxHideNonAiWorkspaces("ai-workspace");
+        cxRenderAiThread();
+        document.getElementById("ai-workspace")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      };
+    }
+  }
+
+  /* ================= AI COMPANION V2 ================= */
+
+  const CX_AI_SEED = "I’m your CAREOPS AI Companion. Paste deidentified hospital data, SQL output, or a KPI issue. I’ll identify likely KPI category, data grain, validation checks, root-cause areas, SQL cuts, and executive-ready actions.";
+
+  let cxAiThread = [{ role: "assistant", content: CX_AI_SEED }];
+
+  function cxSplitDelimitedLine(line) {
+    const trimmed = String(line || "").trim();
+    if (!trimmed) return [];
+
+    if (trimmed.includes("\t")) return trimmed.split("\t").map((x) => x.trim());
+    if (trimmed.includes("|")) return trimmed.split("|").map((x) => x.trim()).filter(Boolean);
+    if (trimmed.includes(",")) return trimmed.split(",").map((x) => x.trim());
+    return trimmed.split(/\s{2,}/).map((x) => x.trim()).filter(Boolean);
+  }
+
+  function cxParsePastedData(text) {
+    const lines = String(text || "")
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .filter((line) => !/^[-| ]+$/.test(line));
+
+    if (lines.length < 2) {
+      return { hasTable: false, columns: [], rows: [], rowCount: 0, numericColumns: [], categoricalColumns: [] };
+    }
+
+    const header = cxSplitDelimitedLine(lines[0]);
+    if (header.length < 2) {
+      return { hasTable: false, columns: [], rows: [], rowCount: 0, numericColumns: [], categoricalColumns: [] };
+    }
+
+    const rows = lines.slice(1).map((line) => {
+      const values = cxSplitDelimitedLine(line);
+      const row = {};
+      header.forEach((col, index) => {
+        row[col] = values[index] ?? "";
+      });
+      return row;
+    }).filter((row) => Object.values(row).some((v) => String(v).trim() !== ""));
+
+    const numericColumns = header.filter((col) => {
+      const values = rows.map((row) => String(row[col] ?? "").replace(/[$,%]/g, "").trim()).filter(Boolean);
+      if (!values.length) return false;
+      const numericCount = values.filter((value) => !Number.isNaN(Number(value))).length;
+      return numericCount / values.length >= 0.7;
+    });
+
+    const categoricalColumns = header.filter((col) => !numericColumns.includes(col));
+
+    return {
+      hasTable: rows.length > 0,
+      columns: header,
+      rows,
+      rowCount: rows.length,
+      numericColumns,
+      categoricalColumns
+    };
+  }
+
+  const CX_KPI_DETECTORS = [
+    { key: "readmissions", label: "Readmissions", terms: ["readmission", "readmit", "30 day", "30-day"], tables: ["readmissions", "encounters", "discharges"], cuts: ["facility", "payer", "discharge disposition", "diagnosis/DRG", "days to readmit", "follow-up status"] },
+    { key: "denials", label: "Denials / Revenue Cycle", terms: ["denial", "denied", "claim", "authorization", "auth", "dnfb", "a/r", "clean claim"], tables: ["claims", "authorizations", "charges"], cuts: ["payer", "denial reason", "department", "service line", "preventability", "dollars at risk"] },
+    { key: "los", label: "Length of Stay / Throughput", terms: ["los", "length of stay", "expected los", "discharge delay"], tables: ["encounters", "discharges", "drg_cases"], cuts: ["facility", "department", "DRG", "discharge disposition", "LOS band", "placement delay"] },
+    { key: "ed", label: "ED Flow / Boarding", terms: ["ed", "boarding", "lwbs", "door-to-provider", "door to provider", "triage"], tables: ["ed_flow", "encounters"], cuts: ["facility", "arrival hour", "boarding minutes", "door-to-provider", "LWBS", "inpatient capacity"] },
+    { key: "observation", label: "Observation Utilization", terms: ["observation", "obs", "code 44", "48"], tables: ["observations", "encounters"], cuts: ["facility", "department", "payer", "obs hours", "converted to inpatient", "Code 44"] },
+    { key: "sepsis", label: "Sepsis", terms: ["sepsis", "bundle", "lactate", "antibiotic"], tables: ["sepsis_cases", "encounters"], cuts: ["facility", "department", "bundle compliance", "antibiotic minutes", "lactate completion", "mortality"] },
+    { key: "mortality", label: "Mortality / O:E", terms: ["mortality", "death", "observed", "expected", "o/e"], tables: ["drg_cases", "sepsis_cases", "encounters"], cuts: ["DRG", "risk score", "service line", "ICU", "provider group", "case mix"] },
+    { key: "experience", label: "Patient Experience", terms: ["hcahps", "experience", "satisfaction", "communication", "responsiveness"], tables: ["patient_experience", "encounters"], cuts: ["facility", "department", "domain score", "discharge info", "staffing", "wait time"] },
+    { key: "staffing", label: "Staffing / Workforce", terms: ["staff", "rn", "turnover", "vacancy", "premium labor", "overtime"], tables: ["staffing"], cuts: ["facility", "department", "month", "turnover", "vacancy", "premium labor"] },
+    { key: "or", label: "OR Utilization", terms: ["or utilization", "surgery", "operating room", "turnover", "block time", "cancelled"], tables: ["or_cases"], cuts: ["facility", "service line", "surgeon", "block minutes", "turnover", "cancellation"] },
+    { key: "quality", label: "Quality / Harm Events", terms: ["fall", "harm", "pressure injury", "clabsi", "cauti", "infection", "safety"], tables: ["quality_events"], cuts: ["facility", "department", "event type", "harm level", "preventability", "event date"] }
+  ];
+
+  function cxDetectKpiTopic(text, parsed) {
+    const haystack = [
+      String(text || "").toLowerCase(),
+      ...(parsed.columns || []).map((c) => String(c).toLowerCase())
+    ].join(" ");
+
+    let best = null;
+    let bestScore = 0;
+
+    CX_KPI_DETECTORS.forEach((detector) => {
+      const score = detector.terms.reduce((sum, term) => sum + (haystack.includes(term) ? 1 : 0), 0);
+      if (score > bestScore) {
+        best = detector;
+        bestScore = score;
+      }
+    });
+
+    return best || {
+      key: "general",
+      label: "General Hospital Analytics",
+      tables: ["encounters", "patients", "claims"],
+      cuts: ["facility", "department", "payer", "provider", "service line", "time period"]
+    };
+  }
+
+  function cxColumnProfile(parsed) {
+    if (!parsed.hasTable) return "No structured table was detected. Treat this as a narrative KPI concern unless the user pastes rows with headers.";
+
+    const examples = parsed.rows.slice(0, 3);
+    return [
+      `Detected ${parsed.rowCount} rows and ${parsed.columns.length} columns.`,
+      `Columns: ${parsed.columns.join(", ")}`,
+      `Likely numeric fields: ${parsed.numericColumns.length ? parsed.numericColumns.join(", ") : "none detected"}`,
+      `Likely categorical fields: ${parsed.categoricalColumns.length ? parsed.categoricalColumns.join(", ") : "none detected"}`,
+      `Sample rows reviewed: ${examples.length}`
+    ].join("\n");
+  }
+
+  function cxSuggestedSql(topic, parsed) {
+    const columns = parsed.columns.map((c) => c.toLowerCase());
+    const facilityCol = parsed.columns.find((c) => /facility|hospital|site/i.test(c)) || "facility";
+    const deptCol = parsed.columns.find((c) => /department|dept|unit|service/i.test(c)) || "department";
+    const payerCol = parsed.columns.find((c) => /payer|insurance|plan/i.test(c)) || "payer";
+
+    if (topic.key === "denials") {
+      return [
+        "SELECT",
+        `  ${payerCol},`,
+        `  ${deptCol},`,
+        "  COUNT(*) AS claim_count,",
+        "  SUM(CASE WHEN claim_status = 'Denied' THEN 1 ELSE 0 END) AS denied_claims,",
+        "  SUM(CASE WHEN claim_status = 'Denied' THEN billed_amount ELSE 0 END) AS denied_dollars",
+        "FROM claims",
+        `GROUP BY ${payerCol}, ${deptCol}`,
+        "ORDER BY denied_dollars DESC;"
+      ].join("\n");
+    }
+
+    if (topic.key === "readmissions") {
+      return "SELECT facility, COUNT(*) AS index_cases, SUM(readmit_within_30_days) AS readmissions, ROUND(SUM(readmit_within_30_days) * 1.0 / COUNT(*), 4) AS readmission_rate FROM readmissions GROUP BY facility ORDER BY readmission_rate DESC;";
+    }
+
+    if (topic.key === "ed") {
+      return "SELECT facility, COUNT(*) AS ed_visits, AVG(door_to_provider_minutes) AS avg_door_to_provider, AVG(boarding_minutes) AS avg_boarding_minutes, SUM(left_without_being_seen) AS lwbs_count FROM ed_flow GROUP BY facility ORDER BY avg_boarding_minutes DESC;";
+    }
+
+    if (topic.key === "sepsis") {
+      return "SELECT facility, COUNT(*) AS sepsis_cases, AVG(bundle_compliant) AS bundle_compliance_rate, AVG(antibiotic_minutes) AS avg_antibiotic_minutes, SUM(mortality_flag) AS mortality_count FROM sepsis_cases GROUP BY facility ORDER BY bundle_compliance_rate ASC;";
+    }
+
+    if (topic.key === "staffing") {
+      return "SELECT facility, department, AVG(rn_turnover_rate) AS avg_turnover, AVG(vacancy_rate) AS avg_vacancy, SUM(premium_labor_hours) AS premium_labor_hours FROM staffing GROUP BY facility, department ORDER BY avg_turnover DESC;";
+    }
+
+    if (topic.key === "or") {
+      return "SELECT facility, service_line, COUNT(*) AS cases, ROUND(SUM(case_minutes) * 1.0 / SUM(block_minutes), 3) AS utilization_rate, AVG(turnover_minutes) AS avg_turnover_minutes, SUM(cancelled_flag) AS cancellations FROM or_cases GROUP BY facility, service_line ORDER BY utilization_rate ASC;";
+    }
+
+    return [
+      "SELECT",
+      `  ${facilityCol},`,
+      `  ${deptCol},`,
+      "  COUNT(*) AS record_count",
+      "FROM your_table",
+      `GROUP BY ${facilityCol}, ${deptCol}`,
+      "ORDER BY record_count DESC;"
+    ].join("\n");
+  }
+
+  function cxBuildAiV2Response(prompt) {
+    const parsed = cxParsePastedData(prompt);
+    const topic = cxDetectKpiTopic(prompt, parsed);
+    const sql = cxSuggestedSql(topic, parsed);
+
+    const riskLanguage = topic.key === "denials"
+      ? "financial leakage, avoidable rework, delayed cash, and payer-specific process failure"
+      : topic.key === "readmissions"
+        ? "avoidable utilization, care transition gaps, quality risk, and potential value-based performance exposure"
+        : topic.key === "ed"
+          ? "access failure, ED crowding, inpatient capacity pressure, LWBS risk, and patient experience deterioration"
+          : topic.key === "staffing"
+            ? "workforce instability, premium labor cost, quality risk, throughput constraints, and burnout"
+            : "performance variation, operational reliability risk, and leadership actionability gaps";
+
+    return [
+      `Executive Summary: This appears to be a ${topic.label} issue. The first priority is to determine whether the signal is a true operational problem, a mix-shift problem, a denominator issue, or a data-definition issue.`,
+      "",
+      "Detected Data Profile:",
+      cxColumnProfile(parsed),
+      "",
+      "Why This Matters:",
+      `This matters because ${topic.label.toLowerCase()} can create ${riskLanguage}. Leaders need to know where the problem is concentrated, what is driving it, and what action will move the metric.`,
+      "",
+      "Most Likely Drivers:",
+      `• Concentration by ${topic.cuts.slice(0, 4).join(", ")}`,
+      "• Workflow reliability breakdowns or inconsistent ownership",
+      "• Case mix, payer mix, staffing, access, or discharge-barrier shifts",
+      "• Outlier cases or small denominators distorting the overall rate",
+      "• Documentation, coding, status, or late-arriving data issues",
+      "",
+      "Data Quality Checks:",
+      "• Confirm numerator, denominator, exclusions, timeframe, and refresh cadence",
+      "• Validate table grain before counting patients, encounters, claims, or charge lines",
+      "• Separate volume change from rate change",
+      "• Compare current period to baseline and rolling trend",
+      "• Check for missing values, duplicate records, late-arriving records, and changed definitions",
+      "",
+      "Recommended Segmentation Cuts:",
+      topic.cuts.map((cut) => `• ${cut}`).join("\n"),
+      "",
+      "Suggested SQL / Data Logic:",
+      sql,
+      "",
+      "Recommended Actions:",
+      "• Build a driver table that ranks the highest-volume and highest-risk segments first",
+      "• Assign an operational owner to the top two drivers",
+      "• Validate findings with frontline workflow owners before escalating",
+      "• Track weekly movement on the driver metric, not only the final KPI",
+      "• Convert the finding into an executive message: what changed, why it matters, where it is concentrated, and what action is recommended",
+      "",
+      "Leadership Talking Point:",
+      `The immediate opportunity is to move beyond reporting the ${topic.label.toLowerCase()} result and isolate the specific segment responsible for the variance. Once the driver is confirmed, leadership can focus resources on the operational owner and workflow most likely to improve the metric.`
+    ].join("\n");
+  }
+
+  function cxRenderAiThread() {
+    const host = document.getElementById("ai-thread");
+    if (!host) return;
+
+    host.innerHTML = cxAiThread.map((msg) => `
+      <div class="ai-message ai-message-${cxEscape(msg.role)}">
+        <div class="ai-message-label">${msg.role === "user" ? "You" : "CAREOPS AI Companion"}</div>
+        <div class="ai-message-body">${cxEscape(msg.content).replace(/\n/g, "<br>")}</div>
+      </div>
+    `).join("");
+
+    host.scrollTop = host.scrollHeight;
+  }
+
+  function cxSendAiV2() {
+    const input = document.getElementById("ai-companion-input");
+    const prompt = String(input?.value || "").trim();
+    if (!prompt) return;
+
+    cxAiThread.push({ role: "user", content: prompt });
+    cxAiThread.push({ role: "assistant", content: cxBuildAiV2Response(prompt) });
+
+    if (input) input.value = "";
+    cxRenderAiThread();
+  }
+
+  function cxInstallAiV2() {
+    const sendBtn = document.getElementById("ai-send-btn");
+    if (sendBtn) sendBtn.onclick = cxSendAiV2;
+
+    const clearBtn = document.getElementById("ai-clear-thread-btn");
+    if (clearBtn) {
+      clearBtn.onclick = () => {
+        cxAiThread = [{ role: "assistant", content: CX_AI_SEED }];
+        cxRenderAiThread();
+      };
+    }
+
+    const templateBtn = document.getElementById("ai-use-executive-template-btn");
+    if (templateBtn) {
+      templateBtn.onclick = () => {
+        const input = document.getElementById("ai-companion-input");
+        if (!input) return;
+        input.value = [
+          "Analyze this deidentified hospital data or KPI concern using executive language.",
+          "",
+          "Return:",
+          "1. Executive summary",
+          "2. Detected KPI category",
+          "3. Data grain and columns",
+          "4. Likely operational / clinical / financial drivers",
+          "5. Data quality checks",
+          "6. Recommended segmentation cuts",
+          "7. SQL / data logic",
+          "8. Immediate actions",
+          "9. Leadership talking points",
+          "",
+          "Data / concern:"
+        ].join("\n");
+        input.focus();
+      };
+    }
+
+    const input = document.getElementById("ai-companion-input");
+    if (input && input.dataset.cxAiKeydown !== "true") {
+      input.dataset.cxAiKeydown = "true";
+      input.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" && !event.shiftKey) {
+          event.preventDefault();
+          cxSendAiV2();
+        }
+      }, true);
+    }
+
+    document.querySelectorAll(".ai-suggested-prompt").forEach((btn) => {
+      btn.onclick = () => {
+        const inputBox = document.getElementById("ai-companion-input");
+        if (!inputBox) return;
+        inputBox.value = btn.getAttribute("data-ai-prompt") || "";
+        inputBox.focus();
+      };
+    });
+
+    cxRenderAiThread();
+  }
+
+  /* ================= EXECUTIVE STUDIO V2 EXPANSION ================= */
+
+  const CX_EXEC_KPIS = [
+    {
+      id: "ed_boarding",
+      title: "ED Boarding",
+      category: "Access / Throughput",
+      targetDirection: "Lower is better",
+      definition: "Average time admitted ED patients remain in the ED waiting for an inpatient or observation bed.",
+      benchmark: "Frame against internal baseline, staffed bed availability, and operational targets.",
+      why: "ED boarding is an access, safety, patient experience, and capacity signal.",
+      drivers: ["Inpatient bed constraints", "Late-day discharge pattern", "Environmental services delays", "Transfer delays", "Staffing constraints", "High admission surges"],
+      actions: ["Daily bed huddle", "Discharge before noon focus", "Escalation pathway for boarded patients", "Unit-level barrier tracking", "Align staffing to arrival/admission patterns"],
+      dimensions: ["facility", "arrival hour", "admission hour", "department", "boarding_minutes", "discharge timing", "bed type"],
+      tables: ["ed_flow", "encounters", "discharges"],
+      sqlFocus: ["AVG", "GROUP BY", "time bands", "trend"],
+      starterSql: "SELECT facility, COUNT(*) AS ed_visits, AVG(boarding_minutes) AS avg_boarding_minutes, SUM(left_without_being_seen) AS lwbs_count FROM ed_flow GROUP BY facility ORDER BY avg_boarding_minutes DESC;"
+    },
+    {
+      id: "sepsis_bundle",
+      title: "Sepsis Bundle Compliance",
+      category: "Quality / Safety",
+      targetDirection: "Higher is better",
+      definition: "Percent of eligible sepsis cases receiving required bundle components within the required timeframe.",
+      benchmark: "Frame against internal baseline, regulatory expectation, and mortality-risk trend.",
+      why: "Sepsis compliance is tied to mortality, regulatory performance, and clinical reliability.",
+      drivers: ["Delayed recognition", "Antibiotic delay", "Lactate delay", "Documentation gaps", "ED-to-inpatient handoff variation"],
+      actions: ["Sepsis alert review", "Antibiotic turnaround improvement", "Lactate workflow hardwiring", "Case review by miss reason", "Provider and nursing feedback loop"],
+      dimensions: ["facility", "department", "antibiotic_minutes", "lactate_completed", "bundle_compliant", "mortality_flag"],
+      tables: ["sepsis_cases", "encounters"],
+      sqlFocus: ["AVG", "SUM flags", "rate calculation"],
+      starterSql: "SELECT facility, COUNT(*) AS sepsis_cases, AVG(bundle_compliant) AS bundle_compliance_rate, AVG(antibiotic_minutes) AS avg_antibiotic_minutes, SUM(mortality_flag) AS mortality_count FROM sepsis_cases GROUP BY facility ORDER BY bundle_compliance_rate ASC;"
+    },
+    {
+      id: "mortality_oe",
+      title: "Mortality O/E",
+      category: "Quality / Outcomes",
+      targetDirection: "Lower is better",
+      definition: "Observed mortality compared with expected mortality after accounting for patient risk.",
+      benchmark: "Frame around O/E < 1.0, internal trend, service-line concentration, and documentation/risk-adjustment integrity.",
+      why: "Mortality O/E is a board-level outcome measure and reputation signal.",
+      drivers: ["Case mix shift", "Risk adjustment gaps", "Clinical variation", "ICU cohort changes", "Sepsis or high-risk DRG concentration"],
+      actions: ["Review deaths by DRG/service line", "Validate documentation and risk capture", "Review high-mortality cohorts", "Connect mortality review to sepsis/ICU pathways"],
+      dimensions: ["DRG", "service line", "facility", "mortality_risk", "observed deaths", "expected deaths"],
+      tables: ["drg_cases", "sepsis_cases", "encounters"],
+      sqlFocus: ["JOIN", "risk grouping", "observed vs expected"],
+      starterSql: "SELECT d.drg, COUNT(*) AS cases, AVG(d.mortality_risk) AS avg_mortality_risk, SUM(s.mortality_flag) AS observed_deaths FROM drg_cases d LEFT JOIN sepsis_cases s ON d.encounter_id = s.encounter_id GROUP BY d.drg ORDER BY observed_deaths DESC;"
+    },
+    {
+      id: "patient_experience",
+      title: "Patient Experience / HCAHPS",
+      category: "Patient Experience",
+      targetDirection: "Higher is better",
+      definition: "Patient-reported experience scores across domains such as communication, responsiveness, discharge information, and overall rating.",
+      benchmark: "Frame against internal baseline, service-line trend, and top-box goal.",
+      why: "Patient experience affects reputation, trust, loyalty, and value-based performance.",
+      drivers: ["Communication variation", "Call light responsiveness", "Discharge education gaps", "Staffing pressure", "Wait times", "Environment and cleanliness"],
+      actions: ["Leader rounding", "Hourly rounding reliability", "Discharge teach-back", "Service recovery workflow", "Unit-level domain review"],
+      dimensions: ["facility", "department", "communication_score", "responsiveness_score", "discharge_info_score", "overall_rating"],
+      tables: ["patient_experience", "staffing"],
+      sqlFocus: ["AVG", "GROUP BY", "domain scores"],
+      starterSql: "SELECT facility, department, AVG(communication_score) AS avg_communication, AVG(responsiveness_score) AS avg_responsiveness, AVG(discharge_info_score) AS avg_discharge_info, AVG(overall_rating) AS avg_overall FROM patient_experience GROUP BY facility, department ORDER BY avg_overall ASC;"
+    },
+    {
+      id: "staffing_pressure",
+      title: "Staffing Pressure",
+      category: "Workforce / Operations",
+      targetDirection: "Lower turnover and vacancy are better",
+      definition: "Workforce pressure measured through turnover, vacancy, premium labor, and staffing intensity.",
+      benchmark: "Frame against internal baseline, budgeted staffing model, and patient volume/census trend.",
+      why: "Staffing pressure can drive premium labor, safety risk, throughput delays, and patient experience decline.",
+      drivers: ["RN turnover", "Vacancy", "Premium labor dependence", "Census mismatch", "Skill mix imbalance", "Burnout"],
+      actions: ["Unit-level retention plan", "Schedule redesign", "Premium labor review", "Census-to-staffing alignment", "Manager accountability dashboard"],
+      dimensions: ["facility", "department", "month", "rn_turnover_rate", "vacancy_rate", "premium_labor_hours", "hours_per_patient_day"],
+      tables: ["staffing"],
+      sqlFocus: ["AVG", "SUM", "trend by month"],
+      starterSql: "SELECT facility, department, AVG(rn_turnover_rate) AS avg_turnover, AVG(vacancy_rate) AS avg_vacancy, SUM(premium_labor_hours) AS premium_labor_hours FROM staffing GROUP BY facility, department ORDER BY avg_turnover DESC;"
+    },
+    {
+      id: "or_utilization",
+      title: "OR Utilization",
+      category: "Procedural / Finance",
+      targetDirection: "Higher utilization with controlled turnover is better",
+      definition: "Percent of available OR block time used for surgical case minutes.",
+      benchmark: "Frame against prime-time utilization targets, block utilization, turnover time, and cancellation rate.",
+      why: "OR utilization is a major capacity, revenue, staffing, and access metric.",
+      drivers: ["Unused block time", "Case cancellation", "Turnover delays", "Schedule imbalance", "Surgeon/service-line variation", "Staffing constraints"],
+      actions: ["Block governance", "Release unused block earlier", "Turnover workflow review", "Cancellation root-cause review", "Service-line capacity planning"],
+      dimensions: ["facility", "service_line", "surgeon_provider_id", "block_minutes", "case_minutes", "turnover_minutes", "cancelled_flag"],
+      tables: ["or_cases", "providers"],
+      sqlFocus: ["SUM", "rate calculation", "GROUP BY"],
+      starterSql: "SELECT facility, service_line, COUNT(*) AS cases, ROUND(SUM(case_minutes) * 1.0 / SUM(block_minutes), 3) AS utilization_rate, AVG(turnover_minutes) AS avg_turnover_minutes, SUM(cancelled_flag) AS cancellations FROM or_cases GROUP BY facility, service_line ORDER BY utilization_rate ASC;"
+    }
+  ];
+
+  function installExecutiveExpansion() {
+    try {
+      if (typeof EXECUTIVE_KPI_LIBRARY !== "undefined" && Array.isArray(EXECUTIVE_KPI_LIBRARY)) {
+        const existing = new Set(EXECUTIVE_KPI_LIBRARY.map((kpi) => kpi.id));
+        CX_EXEC_KPIS.forEach((kpi) => {
+          if (!existing.has(kpi.id)) EXECUTIVE_KPI_LIBRARY.push(kpi);
+        });
+      }
+
+      if (typeof EXECUTIVE_PROMPT_LIBRARY !== "undefined" && Array.isArray(EXECUTIVE_PROMPT_LIBRARY)) {
+        const existingPrompts = new Set(EXECUTIVE_PROMPT_LIBRARY.map((item) => item.id));
+        CX_EXEC_KPIS.forEach((kpi) => {
+          const id = `exec_${kpi.id}_deep_dive`;
+          if (!existingPrompts.has(id)) {
+            EXECUTIVE_PROMPT_LIBRARY.push({
+              id,
+              kpiId: kpi.id,
+              category: kpi.category,
+              title: `${kpi.title} Executive Deep Dive`,
+              prompt: [
+                `Analyze ${kpi.title} for hospital leadership.`,
+                "",
+                `Definition: ${kpi.definition}`,
+                `Why it matters: ${kpi.why}`,
+                "",
+                "Include:",
+                "1. Executive summary",
+                "2. Benchmark / target framing",
+                "3. Likely operational drivers",
+                "4. Data validation checks",
+                "5. Best segmentation cuts",
+                "6. SQL/data logic",
+                "7. Recommended actions",
+                "8. Leadership talking points"
+              ].join("\n")
+            });
+          }
+        });
+      }
+
+      if (typeof renderExecutivePromptLibrary === "function") renderExecutivePromptLibrary();
+      if (typeof renderExecutiveKpiSelect === "function") renderExecutiveKpiSelect();
+      if (typeof renderExecutiveIntelligencePanels === "function") renderExecutiveIntelligencePanels();
+    } catch (err) {
+      console.warn("Executive expansion skipped:", err);
+    }
+  }
+
+  /* ================= GUIDED PROMPT EXPANSION ================= */
+
+  const CX_GUIDED_PROMPTS = [
+    ["cx_ed_boarding", "ED Boarding by Facility", "Find ED boarding pressure by facility.", "SELECT facility, COUNT(*) AS ed_visits, AVG(boarding_minutes) AS avg_boarding_minutes FROM ed_flow GROUP BY facility ORDER BY avg_boarding_minutes DESC;", ["ed_flow"]],
+    ["cx_lwbs", "LWBS Risk", "Find left-without-being-seen risk by facility.", "SELECT facility, COUNT(*) AS ed_visits, SUM(left_without_being_seen) AS lwbs_count, ROUND(SUM(left_without_being_seen) * 1.0 / COUNT(*), 4) AS lwbs_rate FROM ed_flow GROUP BY facility ORDER BY lwbs_rate DESC;", ["ed_flow"]],
+    ["cx_door_provider", "Door-to-Provider Time", "Find front-end ED delay.", "SELECT facility, AVG(door_to_provider_minutes) AS avg_door_to_provider, COUNT(*) AS visits FROM ed_flow GROUP BY facility ORDER BY avg_door_to_provider DESC;", ["ed_flow"]],
+    ["cx_sepsis_bundle", "Sepsis Bundle Compliance", "Review bundle compliance by facility.", "SELECT facility, COUNT(*) AS cases, AVG(bundle_compliant) AS bundle_compliance_rate FROM sepsis_cases GROUP BY facility ORDER BY bundle_compliance_rate ASC;", ["sepsis_cases"]],
+    ["cx_sepsis_antibiotic", "Sepsis Antibiotic Timing", "Find antibiotic timing delays.", "SELECT facility, department, AVG(antibiotic_minutes) AS avg_antibiotic_minutes, COUNT(*) AS cases FROM sepsis_cases GROUP BY facility, department ORDER BY avg_antibiotic_minutes DESC;", ["sepsis_cases"]],
+    ["cx_mortality_drg", "Mortality by DRG", "Review mortality concentration by DRG.", "SELECT d.drg, COUNT(*) AS cases, AVG(d.mortality_risk) AS avg_mortality_risk, SUM(s.mortality_flag) AS observed_deaths FROM drg_cases d LEFT JOIN sepsis_cases s ON d.encounter_id = s.encounter_id GROUP BY d.drg ORDER BY observed_deaths DESC;", ["drg_cases", "sepsis_cases"]],
+    ["cx_expected_los", "Actual vs Expected LOS", "Find DRGs where actual LOS exceeds expected LOS.", "SELECT drg, COUNT(*) AS cases, AVG(expected_los_days) AS expected_los, AVG(actual_los_days) AS actual_los, AVG(actual_los_days - expected_los_days) AS los_variance FROM drg_cases GROUP BY drg ORDER BY los_variance DESC;", ["drg_cases"]],
+    ["cx_quality_events", "Quality Events", "Find quality event concentration.", "SELECT facility, department, event_type, COUNT(*) AS event_count FROM quality_events GROUP BY facility, department, event_type ORDER BY event_count DESC;", ["quality_events"]],
+    ["cx_preventable_harm", "Preventable Harm", "Find preventable harm events by department.", "SELECT facility, department, SUM(preventable_flag) AS preventable_events, COUNT(*) AS total_events FROM quality_events GROUP BY facility, department ORDER BY preventable_events DESC;", ["quality_events"]],
+    ["cx_harm_level", "Severe Harm Review", "Find severe harm events.", "SELECT facility, department, event_type, COUNT(*) AS severe_events FROM quality_events WHERE harm_level = 'Severe' GROUP BY facility, department, event_type ORDER BY severe_events DESC;", ["quality_events"]],
+    ["cx_hcahps_overall", "Patient Experience Overall", "Compare overall rating by facility and department.", "SELECT facility, department, AVG(overall_rating) AS avg_overall_rating FROM patient_experience GROUP BY facility, department ORDER BY avg_overall_rating ASC;", ["patient_experience"]],
+    ["cx_hcahps_domains", "Patient Experience Domains", "Compare communication, responsiveness, and discharge info.", "SELECT facility, department, AVG(communication_score) AS communication, AVG(responsiveness_score) AS responsiveness, AVG(discharge_info_score) AS discharge_info FROM patient_experience GROUP BY facility, department ORDER BY communication ASC;", ["patient_experience"]],
+    ["cx_staff_turnover", "RN Turnover", "Find departments with high RN turnover.", "SELECT facility, department, AVG(rn_turnover_rate) AS avg_turnover FROM staffing GROUP BY facility, department ORDER BY avg_turnover DESC;", ["staffing"]],
+    ["cx_staff_premium", "Premium Labor", "Find premium labor pressure.", "SELECT facility, department, SUM(premium_labor_hours) AS premium_labor_hours, AVG(vacancy_rate) AS avg_vacancy FROM staffing GROUP BY facility, department ORDER BY premium_labor_hours DESC;", ["staffing"]],
+    ["cx_or_utilization", "OR Utilization", "Estimate OR utilization by service line.", "SELECT facility, service_line, ROUND(SUM(case_minutes) * 1.0 / SUM(block_minutes), 3) AS utilization_rate FROM or_cases GROUP BY facility, service_line ORDER BY utilization_rate ASC;", ["or_cases"]],
+    ["cx_or_turnover", "OR Turnover", "Find long OR turnover times.", "SELECT facility, service_line, AVG(turnover_minutes) AS avg_turnover_minutes, COUNT(*) AS cases FROM or_cases GROUP BY facility, service_line ORDER BY avg_turnover_minutes DESC;", ["or_cases"]],
+    ["cx_or_cancel", "OR Cancellations", "Find cancellation concentration.", "SELECT facility, service_line, SUM(cancelled_flag) AS cancellations, COUNT(*) AS scheduled_cases FROM or_cases GROUP BY facility, service_line ORDER BY cancellations DESC;", ["or_cases"]],
+    ["cx_auth_denials", "Authorization Denials", "Find authorization denial exposure by payer and service line.", "SELECT payer, service_line, COUNT(*) AS authorizations, SUM(CASE WHEN authorization_status = 'Denied' THEN 1 ELSE 0 END) AS denied_authorizations FROM authorizations GROUP BY payer, service_line ORDER BY denied_authorizations DESC;", ["authorizations"]],
+    ["cx_auth_reason", "Authorization Denial Reasons", "Find authorization denial reasons.", "SELECT payer, denial_reason_group, COUNT(*) AS denial_count FROM authorizations WHERE authorization_status = 'Denied' GROUP BY payer, denial_reason_group ORDER BY denial_count DESC;", ["authorizations"]],
+    ["cx_drg_weight", "DRG Weight / CMI Proxy", "Estimate DRG weight by DRG.", "SELECT drg, COUNT(*) AS cases, AVG(drg_weight) AS avg_drg_weight FROM drg_cases GROUP BY drg ORDER BY avg_drg_weight DESC;", ["drg_cases"]],
+    ["cx_obs_over48", "Observation >48 Hours", "Find observation stays over 48 hours.", "SELECT facility, department, COUNT(*) AS obs_cases, SUM(CASE WHEN obs_hours > 48 THEN 1 ELSE 0 END) AS obs_over_48 FROM observations GROUP BY facility, department ORDER BY obs_over_48 DESC;", ["observations"]],
+    ["cx_discharge_delay", "Discharge Delay", "Find discharge order-to-departure lag.", "SELECT facility, department, AVG(departure_minutes - discharge_order_minutes) AS avg_order_to_departure_minutes FROM discharges GROUP BY facility, department ORDER BY avg_order_to_departure_minutes DESC;", ["discharges"]],
+    ["cx_readmit_facility", "Readmissions by Facility", "Find 30-day readmission rate by facility.", "SELECT facility, COUNT(*) AS index_cases, SUM(readmit_within_30_days) AS readmissions, ROUND(SUM(readmit_within_30_days) * 1.0 / COUNT(*), 4) AS readmission_rate FROM readmissions GROUP BY facility ORDER BY readmission_rate DESC;", ["readmissions"]],
+    ["cx_claim_denials", "Claim Denials by Payer", "Find denial exposure by payer.", "SELECT payer, COUNT(*) AS claims, SUM(CASE WHEN claim_status = 'Denied' THEN 1 ELSE 0 END) AS denied_claims, SUM(CASE WHEN claim_status = 'Denied' THEN billed_amount ELSE 0 END) AS denied_dollars FROM claims GROUP BY payer ORDER BY denied_dollars DESC;", ["claims"]]
+  ];
+
+  function installGuidedPromptExpansionV2() {
+    if (typeof getSandboxPromptOptions !== "function" || window.__careopsGuidedV2Patched) return;
+    window.__careopsGuidedV2Patched = true;
+
+    const original = getSandboxPromptOptions;
+    getSandboxPromptOptions = function patchedGetSandboxPromptOptionsV2() {
+      const base = original();
+      const existing = new Set(base.map((p) => p.id));
+      const extras = CX_GUIDED_PROMPTS
+        .filter(([id]) => !existing.has(id))
+        .map(([id, title, objective, query, tables]) => ({
+          id,
+          title,
+          objective,
+          query,
+          tables,
+          difficulty: "intermediate",
+          type: "KPI Investigation"
+        }));
+
+      return [...extras, ...base];
+    };
+
+    if (typeof renderSandboxPromptList === "function") renderSandboxPromptList();
+  }
+
+  /* ================= GLOSSARY MINI-EXPANSION ================= */
+
+  const CX_GLOSSARY_MORE = [
+    ["CMS Star Ratings", "analytics", "Public quality ratings for hospitals.", "They affect reputation and strategic positioning.", "Star ratings combine several quality domains."],
+    ["Value-Based Purchasing", "financial", "A payment model tying reimbursement to quality and experience.", "It connects operations, quality, finance, and patient experience.", "Poor HCAHPS may reduce value-based performance."],
+    ["Hospital-Acquired Condition", "clinical", "A condition arising during hospitalization.", "HACs create safety, compliance, and financial risk.", "Pressure injury and infection events may be HACs."],
+    ["Index Discharge", "clinical", "The discharge that starts a readmission measurement window.", "Readmission logic depends on correct index discharge identification.", "A readmission within 30 days links back to the index discharge."],
+    ["Payer Denial Reason", "financial", "The payer-stated category explaining why a claim was denied.", "Reason grouping tells leaders what workflow needs fixing.", "Authorization, coding, eligibility, and medical necessity are common groups."],
+    ["Service Recovery", "clinical", "A structured response to patient dissatisfaction.", "It can improve patient trust and experience scores.", "Leader rounding may trigger service recovery."],
+    ["Capacity Management", "analytics", "Managing beds, staffing, discharges, and demand.", "It affects ED boarding, LOS, surgery access, and patient flow.", "Capacity huddles are a common tactic."],
+    ["Case Management", "clinical", "Coordination of discharge planning, payer needs, and post-acute transitions.", "Case management affects LOS, readmissions, and observation performance.", "Placement delays often involve case management workflows."],
+    ["Post-Acute Placement", "clinical", "Discharge to SNF, rehab, home health, or other follow-up setting.", "Post-acute delays can increase LOS and readmission risk.", "SNF placement delays can hold inpatient beds."],
+    ["Metric Definition", "analytics", "The agreed numerator, denominator, exclusions, and timeframe for a KPI.", "Bad definitions cause conflicting dashboards.", "Readmission rate requires a clear index population and exclusion logic."]
+  ];
+
+  function installGlossaryMore() {
+    if (typeof GLOSSARY_TERMS === "undefined" || !Array.isArray(GLOSSARY_TERMS)) return;
+
+    const existing = new Set(GLOSSARY_TERMS.map((item) => String(item.term || "").toLowerCase()));
+    CX_GLOSSARY_MORE.forEach(([term, category, definition, why, example]) => {
+      if (!existing.has(term.toLowerCase())) {
+        GLOSSARY_TERMS.push({ term, category, definition, why, example });
+      }
+    });
+
+    if (typeof renderGlossary === "function") renderGlossary();
+  }
+
+  function initCareOpsV2Phase2() {
+    installCleanRouting();
+    cxInstallAiV2();
+    installExecutiveExpansion();
+    installGuidedPromptExpansionV2();
+    installGlossaryMore();
+
+    if (typeof renderExecutivePromptLibrary === "function") renderExecutivePromptLibrary();
+    if (typeof renderSandboxPromptList === "function") renderSandboxPromptList();
+    if (typeof renderGlossary === "function") renderGlossary();
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    setTimeout(initCareOpsV2Phase2, 50);
   });
-});
+
+  setTimeout(initCareOpsV2Phase2, 250);
+})();
