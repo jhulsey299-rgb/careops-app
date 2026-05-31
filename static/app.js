@@ -11698,5 +11698,57 @@ function attachPersistentNavigationDelegates() {
     setTimeout(initCareOpsV2Phase2, 50);
   });
 
+
   setTimeout(initCareOpsV2Phase2, 250);
 })();
+
+/* ======================================================
+   CAREOPS SQL LAB CLEANUP
+   Remove executive prompt packs from SQL Lab guided prompts
+====================================================== */
+
+(() => {
+  function removeExecutivePromptsFromSqlLab() {
+    const guidedPanel = document.getElementById("sandbox-guided-panel");
+    if (!guidedPanel) return;
+
+    guidedPanel.querySelectorAll(".sandbox-prompt-section, .sandbox-prompt-column, .sandbox-prompt-group").forEach((section) => {
+      const headingText = section.textContent || "";
+      if (headingText.includes("Executive Prompt Packs")) {
+        section.remove();
+      }
+    });
+
+    guidedPanel.querySelectorAll(".sandbox-prompt-card").forEach((card) => {
+      const text = card.textContent || "";
+      if (
+        text.includes("Executive Brief") ||
+        text.includes("Executive Prompt") ||
+        text.includes("leadership-ready recommendations")
+      ) {
+        card.remove();
+      }
+    });
+  }
+
+  const originalRenderSandboxPromptList = typeof renderSandboxPromptList === "function" ? renderSandboxPromptList : null;
+
+  if (originalRenderSandboxPromptList && !window.__careopsSqlLabCleanupPatched) {
+    window.__careopsSqlLabCleanupPatched = true;
+
+    renderSandboxPromptList = function patchedRenderSandboxPromptList() {
+      originalRenderSandboxPromptList();
+      removeExecutivePromptsFromSqlLab();
+    };
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    setTimeout(removeExecutivePromptsFromSqlLab, 200);
+  });
+
+  setTimeout(removeExecutivePromptsFromSqlLab, 500);
+})();
+
+
+
+
